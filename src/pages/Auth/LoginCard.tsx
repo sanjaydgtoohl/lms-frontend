@@ -48,8 +48,15 @@ export default function LoginCard() {
                       transition-all duration-300 ease-out">
         
         {/* Header - Compact & Elegant */}
-        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-center text-white mb-2 sm:mb-3">
-          <span className="text-orange-500">L</span> M S
+        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-center text-white mb-3 sm:mb-4">
+          <span className="inline-flex items-center justify-center gap-3">
+            <span className="relative inline-block text-white tracking-wide after:content-[''] after:absolute after:left-1/2 after:-translate-x-1/2 after:-bottom-1 after:h-[3px] sm:after:h-1 after:w-2/3 after:rounded-full after:bg-orange-500">
+              DGT
+              <span className="inline-block align-middle leading-none scale-y-125 text-[1.40em] relative -top-3.5 bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 bg-clip-text text-transparent">∞</span>
+              HL
+            </span>
+            <span className="align-middle leading-none relative -top-2 bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent font-extrabold tracking-wide drop-shadow-[0_0_14px_rgba(255,255,255,0.35)]">LMS</span>
+          </span>
         </h2>
         <p className="text-zinc-400 text-sm sm:text-base lg:text-lg mb-6 sm:mb-8 text-center">
           BUILT BY MOBIYOUNG
@@ -80,12 +87,12 @@ export default function LoginCard() {
            </div>
 
            {/* Login Button */}
-           <Button
+          <Button
              type="submit"
              variant="primary"
              size="lg"
              loading={isLoading}
-             className="w-full bg-orange-200 hover:bg-orange-300 text-black font-semibold py-3 sm:py-4 rounded-lg sm:rounded-xl 
+           className="w-full hover:!bg-orange-300 !bg-orange-400 !text-black font-semibold py-3 sm:py-4 rounded-lg sm:rounded-xl 
                         transition-all duration-300 active:scale-[0.98] 
                         shadow-[0_0_25px_rgba(255,165,0,0.3)] hover:shadow-[0_0_35px_rgba(255,165,0,0.5)] 
                         text-sm sm:text-base tracking-wide mt-3"

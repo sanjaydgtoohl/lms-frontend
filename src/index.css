@@ -15,6 +15,19 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Hide native password reveal/clear icons to avoid overlap with custom toggle */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+input[type="password"]::-webkit-credentials-auto-fill-button,
+input[type="password"]::-webkit-textfield-decoration-container,
+input[type="password"]::-webkit-clear-button,
+input[type="password"]::-webkit-inner-spin-button,
+input[type="password"]::-webkit-contacts-auto-fill-button {
+  display: none;
+}
+
 a {
   font-weight: 500;
   color: #646cff;

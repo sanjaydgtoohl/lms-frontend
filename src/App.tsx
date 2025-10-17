@@ -46,20 +46,20 @@ function App() {
         
         {/* Protected Routes with Layout */}
         <Route 
-          path="/*" 
+          path="/" 
           element={
             <ProtectedRoute>
               <Layout />
             </ProtectedRoute>
           }
         >
-          <Route path={ROUTES.DASHBOARD} element={<Dashboard />} />
-          <Route path={ROUTES.COURSES} element={<Courses />} />
-          <Route path={ROUTES.PROFILE} element={<Profile />} />
+          {/* Index redirects to dashboard */}
+          <Route index element={<Navigate to="dashboard" replace />} />
+          {/* Child routes must be relative when nested */}
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="courses" element={<Courses />} />
+          <Route path="profile" element={<Profile />} />
         </Route>
-        
-        {/* Default redirect */}
-        <Route path="/" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
         
         {/* 404 Route */}
         <Route path="*" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
