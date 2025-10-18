@@ -22,12 +22,12 @@ const Input = forwardRef<HTMLInputElement, InputProps & React.InputHTMLAttribute
     : 'border-gray-300 bg-white hover:border-gray-400 focus:border-orange-500';
   const disabledClasses = disabled ? 'bg-gray-100 cursor-not-allowed opacity-60' : '';
 
-  const inputClasses = `${baseClasses} ${stateClasses} ${disabledClasses}`;
+  const inputClasses = `${baseClasses} ${stateClasses} ${disabledClasses} ${isPassword ? 'pr-10' : ''}`;
 
   return (
     <div className="space-y-1">
       {label && (
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-white">
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
         </label>
@@ -49,7 +49,7 @@ const Input = forwardRef<HTMLInputElement, InputProps & React.InputHTMLAttribute
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+            className="password-toggle-btn absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 !bg-transparent hover:!bg-transparent active:!bg-transparent !border-0 !outline-none focus:!outline-none !ring-0 focus:!ring-0 focus:!ring-offset-0 !shadow-none appearance-none"
           >
             {showPassword ? (
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
