@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { User, AuthState } from '../types';
 import { apiClient } from '../services/api';
+import { loginService } from '../services/Login';
 
 interface AuthStore extends AuthState {
   login: (email: string, password: string) => Promise<void>;
@@ -25,7 +26,7 @@ export const useAuthStore = create<AuthStore>()(
         try {
           const response = await apiClient.login({ email, password });
           set({
-            user: response.user,
+            user: null, // User data not returned in login response
             token: response.token,
             isAuthenticated: true,
             isLoading: false,
@@ -55,7 +56,7 @@ export const useAuthStore = create<AuthStore>()(
       logout: async () => {
         set({ isLoading: true });
         try {
-          await apiClient.logout();
+          await loginService.logout();
         } finally {
           set({
             user: null,

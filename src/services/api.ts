@@ -6,6 +6,7 @@ import type {
   User, 
   Course
 } from '../types';
+import { loginService } from './Login';
 
 class ApiClient {
   private baseURL: string;
@@ -48,19 +49,14 @@ class ApiClient {
 
   // Auth Methods
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const response = await this.request<AuthResponse>(
-      API_ENDPOINTS.AUTH.LOGIN,
-      {
-        method: 'POST',
-        body: JSON.stringify(credentials),
-      }
-    );
-
-    if (response.data.token) {
-      this.setToken(response.data.token);
+    // Use the dedicated login service for proper API handling
+    const response = await loginService.login(credentials);
+    
+    if (response.token) {
+      this.setToken(response.token);
     }
 
-    return response.data;
+    return response;
   }
 
   async register(userData: Partial<User> & { password: string }): Promise<AuthResponse> {
