@@ -11,7 +11,7 @@ const AgencyMaster: React.FC = () => {
 
   const headerActions = (
     <Button
-      variant="primary"
+      variant="master"
       size="sm"
       onClick={handleCreateAgency}
       className="flex items-center space-x-2"

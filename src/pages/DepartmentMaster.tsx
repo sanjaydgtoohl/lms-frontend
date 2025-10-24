@@ -58,8 +58,8 @@ const DepartmentMaster: React.FC = () => {
           className={`
             px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200
             ${i === currentPage
-              ? 'bg-[var(--primary)] text-white'
-              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)]'
+              ? 'bg-green-100 text-black'
+              : 'text-[var(--text-secondary)] hover:text-black hover:bg-green-50'
             }
           `}
         >
@@ -78,7 +78,7 @@ const DepartmentMaster: React.FC = () => {
           <button
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-2 text-[var(--text-secondary)] hover:text-black hover:bg-green-50 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -88,7 +88,7 @@ const DepartmentMaster: React.FC = () => {
           <button
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-2 text-[var(--text-secondary)] hover:text-black hover:bg-green-50 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -108,7 +108,7 @@ const DepartmentMaster: React.FC = () => {
               <h2 className="text-lg font-semibold text-[var(--text-primary)]">Department Master</h2>
               <div className="flex items-center space-x-2">
                 <Button
-                  variant="primary"
+                  variant="master"
                   size="sm"
                   onClick={handleCreateDepartment}
                   className="flex items-center space-x-2"

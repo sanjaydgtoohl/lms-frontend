@@ -156,8 +156,8 @@ const IndustryMaster: React.FC = () => {
           className={`
             px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200
             ${i === currentPage
-              ? 'bg-[var(--primary)] text-white'
-              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)]'
+              ? 'bg-green-100 text-black'
+              : 'text-[var(--text-secondary)] hover:text-black hover:bg-green-50'
             }
           `}
         >
@@ -176,7 +176,7 @@ const IndustryMaster: React.FC = () => {
           <button
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-2 text-[var(--text-secondary)] hover:text-black hover:bg-green-50 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -186,7 +186,7 @@ const IndustryMaster: React.FC = () => {
           <button
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-2 text-[var(--text-secondary)] hover:text-black hover:bg-green-50 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -205,7 +205,7 @@ const IndustryMaster: React.FC = () => {
             <h2 className="text-lg font-semibold text-[var(--text-primary)]">Industry Master</h2>
             <button
               onClick={handleCreateIndustry}
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+              className="flex items-center space-x-2 px-4 py-2 bg-green-100 hover:bg-green-200 text-black text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
             >
               <Plus className="w-4 h-4" />
               <span>Create Industry</span>
@@ -270,7 +270,7 @@ const IndustryMaster: React.FC = () => {
             <h2 className="text-lg font-semibold text-[var(--text-primary)]">Industry Master</h2>
             <button
               onClick={handleCreateIndustry}
-              className="flex items-center space-x-2 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+              className="flex items-center space-x-2 px-3 py-2 bg-green-100 hover:bg-green-200 text-black text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
             >
               <Plus className="w-4 h-4" />
               <span>Create</span>

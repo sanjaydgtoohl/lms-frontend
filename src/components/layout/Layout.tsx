@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
 
 const Layout: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const location = useLocation();
 
   // Handle responsive sidebar
   useEffect(() => {
@@ -26,28 +25,6 @@ const Layout: React.FC = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
 
-  // Get page title from current route
-  const getPageTitle = () => {
-    const path = location.pathname;
-    const titleMap: { [key: string]: string } = {
-      '/dashboard': 'Dashboard',
-      '/lead-source': 'Lead Source',
-      '/lead-management': 'Lead Management',
-      '/master/brand': 'Brand Master',
-      '/master/agency': 'Agency Master',
-      '/master/department': 'Department Master',
-      '/master/designation': 'Designation Master',
-      '/master/industry': 'Industry Master',
-      '/brief': 'Brief',
-      '/miss-campaign': 'Miss Campaign',
-      '/campaign-management': 'Campaign Management',
-      '/finance': 'Finance',
-      '/user-management': 'User Management',
-      '/settings': 'Settings',
-    };
-    return titleMap[path] || 'Dashboard';
-  };
-
   return (
     <div className="min-h-screen bg-[var(--background)] flex">
       {/* Sidebar */}
@@ -57,7 +34,7 @@ const Layout: React.FC = () => {
       <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'} w-full`}>
         {/* Header */}
         <Header 
-          pageTitle={getPageTitle()} 
+          // pageTitle={getPageTitle()} 
         />
         
         {/* Main Content */}

@@ -2,23 +2,21 @@ import React from 'react';
 import { Bell, Plus, User } from 'lucide-react';
 
 interface HeaderProps {
-  pageTitle: string;
   onCreateClick?: () => void;
   createButtonText?: string;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
-  pageTitle, 
   onCreateClick, 
   createButtonText = "Create Source" 
 }) => {
   return (
     <header className="bg-white border-b border-[var(--border-color)] shadow-sm">
-      <div className="flex items-center justify-between px-6 py-4">
+      <div className="flex items-center justify-between px-6" style={{ paddingBottom: '11px', paddingTop: '11px' }}>
         {/* Page Title */}
         <div>
           <h1 className="text-xl font-semibold text-[var(--text-primary)]">
-            {pageTitle}
+          
           </h1>
         </div>
 

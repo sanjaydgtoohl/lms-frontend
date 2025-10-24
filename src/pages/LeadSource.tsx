@@ -11,7 +11,7 @@ const LeadSource: React.FC = () => {
 
   const headerActions = (
     <Button
-      variant="primary"
+      variant="master"
       size="sm"
       onClick={handleCreateSource}
       className="flex items-center space-x-2"

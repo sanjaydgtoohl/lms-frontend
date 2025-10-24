@@ -19,6 +19,7 @@ const Button: React.FC<ButtonProps & React.ButtonHTMLAttributes<HTMLButtonElemen
     secondary: 'bg-gray-500 hover:bg-gray-600 text-white focus:ring-gray-500',
     outline: 'border border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white focus:ring-orange-500',
     ghost: 'text-orange-500 hover:bg-orange-50 focus:ring-orange-500',
+    master: 'bg-green-100 hover:bg-green-200 text-black focus:ring-green-200',
   };
 
   const sizeClasses = {
