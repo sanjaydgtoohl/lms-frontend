@@ -1,94 +1,102 @@
 import React from 'react';
 import { useAuthStore } from '../store/auth';
+import { Target, Users, TrendingUp, DollarSign } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuthStore();
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Welcome back, {user?.firstName || 'User'}!
-          </h1>
-          <p className="mt-2 text-gray-600">
-            Here's what's happening with your learning journey.
-          </p>
-        </div>
+    <div className="p-6 space-y-6 w-full">
+      {/* Welcome Section */}
+      <div className="bg-white rounded-xl shadow-sm border border-[var(--border-color)] p-6">
+        <h1 className="text-2xl font-semibold text-[var(--text-primary)] mb-2">
+          Welcome back, {user?.firstName || 'User'}!
+        </h1>
+        <p className="text-[var(--text-secondary)]">
+          Here's what's happening with your Lead Management System.
+        </p>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Stats Cards */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-orange-100 rounded-md flex items-center justify-center">
-                  <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                  </svg>
-                </div>
-              </div>
-              <div className="ml-4">
-                <h3 className="text-lg font-medium text-gray-900">Courses Enrolled</h3>
-                <p className="text-2xl font-bold text-orange-600">12</p>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-white rounded-xl shadow-sm border border-[var(--border-color)] p-6 hover:shadow-md transition-all duration-200">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-gradient-to-br from-[var(--primary)] to-[#005A61] rounded-xl flex items-center justify-center">
+                <Target className="w-6 h-6 text-white" />
               </div>
             </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-green-100 rounded-md flex items-center justify-center">
-                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-              </div>
-              <div className="ml-4">
-                <h3 className="text-lg font-medium text-gray-900">Completed</h3>
-                <p className="text-2xl font-bold text-green-600">8</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-blue-100 rounded-md flex items-center justify-center">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-              </div>
-              <div className="ml-4">
-                <h3 className="text-lg font-medium text-gray-900">Hours Learned</h3>
-                <p className="text-2xl font-bold text-blue-600">156</p>
-              </div>
+            <div className="ml-4">
+              <h3 className="text-sm font-medium text-[var(--text-secondary)]">Total Leads</h3>
+              <p className="text-2xl font-bold text-[var(--text-primary)]">1,247</p>
             </div>
           </div>
         </div>
 
-        {/* Recent Activity */}
-        <div className="mt-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Recent Activity</h2>
-          <div className="bg-white rounded-lg shadow">
-            <div className="p-6">
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                  <p className="text-gray-700">Completed "React Fundamentals" course</p>
-                  <span className="text-sm text-gray-500">2 hours ago</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <p className="text-gray-700">Started "Advanced TypeScript" course</p>
-                  <span className="text-sm text-gray-500">1 day ago</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <p className="text-gray-700">Earned "JavaScript Expert" badge</p>
-                  <span className="text-sm text-gray-500">3 days ago</span>
-                </div>
+        <div className="bg-white rounded-xl shadow-sm border border-[var(--border-color)] p-6 hover:shadow-md transition-all duration-200">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center">
+                <Users className="w-6 h-6 text-white" />
               </div>
+            </div>
+            <div className="ml-4">
+              <h3 className="text-sm font-medium text-[var(--text-secondary)]">Converted</h3>
+              <p className="text-2xl font-bold text-[var(--text-primary)]">324</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-[var(--border-color)] p-6 hover:shadow-md transition-all duration-200">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-white" />
+              </div>
+            </div>
+            <div className="ml-4">
+              <h3 className="text-sm font-medium text-[var(--text-secondary)]">Conversion Rate</h3>
+              <p className="text-2xl font-bold text-[var(--text-primary)]">26.0%</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-[var(--border-color)] p-6 hover:shadow-md transition-all duration-200">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-white" />
+              </div>
+            </div>
+            <div className="ml-4">
+              <h3 className="text-sm font-medium text-[var(--text-secondary)]">Revenue</h3>
+              <p className="text-2xl font-bold text-[var(--text-primary)]">$45.2K</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Activity */}
+      <div className="bg-white rounded-xl shadow-sm border border-[var(--border-color)]">
+        <div className="px-6 py-4 border-b border-[var(--border-color)]">
+          <h2 className="text-lg font-semibold text-[var(--text-primary)]">Recent Activity</h2>
+        </div>
+        <div className="p-6">
+          <div className="space-y-4">
+            <div className="flex items-center space-x-3 p-3 hover:bg-[var(--hover-bg)] rounded-lg transition-colors duration-200">
+              <div className="w-2 h-2 bg-[var(--primary)] rounded-full"></div>
+              <p className="text-[var(--text-primary)]">New lead from Website Contact Form</p>
+              <span className="text-sm text-[var(--text-secondary)] ml-auto">2 hours ago</span>
+            </div>
+            <div className="flex items-center space-x-3 p-3 hover:bg-[var(--hover-bg)] rounded-lg transition-colors duration-200">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <p className="text-[var(--text-primary)]">Lead converted to customer</p>
+              <span className="text-sm text-[var(--text-secondary)] ml-auto">1 day ago</span>
+            </div>
+            <div className="flex items-center space-x-3 p-3 hover:bg-[var(--hover-bg)] rounded-lg transition-colors duration-200">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <p className="text-[var(--text-primary)]">Campaign "Q1 Outreach" launched</p>
+              <span className="text-sm text-[var(--text-secondary)] ml-auto">3 days ago</span>
             </div>
           </div>
         </div>

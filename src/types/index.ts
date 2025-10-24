@@ -72,9 +72,13 @@ export interface Lesson {
 
 // API Response Types
 export interface ApiResponse<T> {
-  data: T;
-  message: string;
   success: boolean;
+  message: string;
+  meta: {
+    timestamp: string;
+    status_code: number;
+  };
+  data: T;
 }
 
 export interface PaginatedResponse<T> {
@@ -99,7 +103,7 @@ export interface FormField {
 
 // UI Component Types
 export interface ButtonProps {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'master';
   size?: 'sm' | 'md' | 'lg';
   disabled?: boolean;
   loading?: boolean;
