@@ -1,0 +1,337 @@
+import React, { useState } from 'react';
+import { Edit, ChevronLeft, ChevronRight } from 'lucide-react';
+
+interface LeadSource {
+  id: string;
+  source: string;
+  subSource: string;
+  dateTime: string;
+}
+
+interface Agency {
+  id: string;
+  agencyGroup: string;
+  agencyName: string;
+  agencyType: string;
+  contactPerson: string;
+  dateTime: string;
+}
+
+interface MainContentProps {
+  title?: string;
+  headerActions?: React.ReactNode;
+  dataType?: 'leadSource' | 'agency';
+}
+
+const MainContent: React.FC<MainContentProps> = ({ title = "Lead Sources", headerActions, dataType = 'leadSource' }) => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // Sample data
+  const leadSources: LeadSource[] = [
+    { id: 'LS001', source: 'Website', subSource: 'Contact Form', dateTime: '2024-01-15 10:30 AM' },
+    { id: 'LS002', source: 'Social Media', subSource: 'LinkedIn', dateTime: '2024-01-15 11:45 AM' },
+    { id: 'LS003', source: 'Email Campaign', subSource: 'Newsletter', dateTime: '2024-01-15 02:15 PM' },
+    { id: 'LS004', source: 'Referral', subSource: 'Client Referral', dateTime: '2024-01-15 03:20 PM' },
+    { id: 'LS005', source: 'Website', subSource: 'Live Chat', dateTime: '2024-01-15 04:10 PM' },
+    { id: 'LS006', source: 'Social Media', subSource: 'Facebook', dateTime: '2024-01-15 05:30 PM' },
+    { id: 'LS007', source: 'Cold Call', subSource: 'Direct Call', dateTime: '2024-01-15 09:15 AM' },
+    { id: 'LS008', source: 'Event', subSource: 'Trade Show', dateTime: '2024-01-15 01:45 PM' },
+    { id: 'LS009', source: 'Website', subSource: 'Download', dateTime: '2024-01-15 06:20 PM' },
+    { id: 'LS010', source: 'Email Campaign', subSource: 'Follow-up', dateTime: '2024-01-15 07:30 PM' },
+  ];
+
+  const agencies: Agency[] = [
+    { id: '#CMPR01', agencyGroup: 'Group 1', agencyName: 'Agency 1', agencyType: 'Offline', contactPerson: '2', dateTime: '02-07-2025 22:23' },
+    { id: '#CMPR01', agencyGroup: 'Group 1', agencyName: 'Agency 2', agencyType: 'Online', contactPerson: '3', dateTime: '02-07-2025 22:23' },
+    { id: '#CMPR01', agencyGroup: 'Group 2', agencyName: 'Agency 3', agencyType: 'Online', contactPerson: '5', dateTime: '02-07-2025 22:23' },
+    { id: '#CMPR01', agencyGroup: 'Group 2', agencyName: 'Agency 4', agencyType: 'Offline', contactPerson: '3', dateTime: '02-07-2025 22:23' },
+    { id: '#CMPR01', agencyGroup: 'Group 2', agencyName: 'Agency 5', agencyType: 'Both', contactPerson: '6', dateTime: '02-07-2025 22:23' },
+  ];
+
+  const currentDataArray = dataType === 'agency' ? agencies : leadSources;
+  const totalPages = Math.ceil(currentDataArray.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentData = currentDataArray.slice(startIndex, endIndex);
+
+  const handleEdit = (id: string) => {
+    console.log(`Edit ${dataType === 'agency' ? 'agency' : 'lead source'}:`, id);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const renderPagination = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+    
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <button
+          key={i}
+          onClick={() => handlePageChange(i)}
+          className={`
+            px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200
+            ${i === currentPage
+              ? 'bg-[var(--primary)] text-white'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)]'
+            }
+          `}
+        >
+          {i}
+        </button>
+      );
+    }
+
+    return (
+      <div className="flex items-center justify-between mt-6">
+        <div className="text-sm text-[var(--text-secondary)]">
+          Showing {startIndex + 1} to {Math.min(endIndex, currentDataArray.length)} of {currentDataArray.length} entries
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          
+          {pages}
+          
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex-1 p-6 w-full">
+      {/* Desktop Table View */}
+      <div className="hidden lg:block">
+        <div className="bg-white rounded-xl shadow-sm border border-[var(--border-color)] overflow-hidden">
+          {/* Table Header */}
+          <div className="bg-[var(--accent)] px-6 py-4 border-b border-[var(--border-color)]">
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-semibold text-[var(--text-primary)]">{title}</h2>
+              {headerActions && (
+                <div className="flex items-center space-x-2">
+                  {headerActions}
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  {dataType === 'agency' ? (
+                    <>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                        Agency ID
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                        Agency Group
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                        Agency Name
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                        Agency Type
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                        Contact Person
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                        Date & Time
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                        Action
+                      </th>
+                    </>
+                  ) : (
+                    <>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                        Source ID
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                        Source
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                        Sub-Source
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                        Date & Time
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                        Action
+                      </th>
+                    </>
+                  )}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--border-color)]">
+                {currentData.map((item) => (
+                  <tr 
+                    key={item.id} 
+                    className="hover:bg-[var(--hover-bg)] transition-colors duration-200"
+                  >
+                    {dataType === 'agency' ? (
+                      <>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[var(--text-primary)]">
+                          {(item as Agency).id}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-primary)]">
+                          {(item as Agency).agencyGroup}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-primary)]">
+                          {(item as Agency).agencyName}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-primary)]">
+                          {(item as Agency).agencyType}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-primary)]">
+                          {(item as Agency).contactPerson}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-secondary)]">
+                          {(item as Agency).dateTime}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <button
+                            onClick={() => handleEdit(item.id)}
+                            className="p-2 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] rounded-lg transition-all duration-200"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[var(--text-primary)]">
+                          {item.id}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-primary)]">
+                          {(item as LeadSource).source}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-primary)]">
+                          {(item as LeadSource).subSource}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-secondary)]">
+                          {item.dateTime}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <button
+                            onClick={() => handleEdit(item.id)}
+                            className="p-2 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] rounded-lg transition-all duration-200"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Card View */}
+      <div className="lg:hidden space-y-4">
+        <div className="bg-white rounded-xl shadow-sm border border-[var(--border-color)] p-4">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-[var(--text-primary)]">{title}</h2>
+            {headerActions && (
+              <div className="flex items-center space-x-2">
+                {headerActions}
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {currentData.map((item) => (
+          <div 
+            key={item.id}
+            className="bg-white rounded-xl shadow-sm border border-[var(--border-color)] p-4 hover:shadow-md transition-all duration-200"
+          >
+            <div className="flex justify-between items-start mb-3">
+              <div className="text-sm font-medium text-[var(--text-primary)]">{item.id}</div>
+              <button
+                onClick={() => handleEdit(item.id)}
+                className="p-2 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] rounded-lg transition-all duration-200"
+              >
+                <Edit className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="space-y-2">
+              {dataType === 'agency' ? (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-[var(--text-secondary)]">Agency Group:</span>
+                    <span className="text-sm font-medium text-[var(--text-primary)]">{(item as Agency).agencyGroup}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-[var(--text-secondary)]">Agency Name:</span>
+                    <span className="text-sm font-medium text-[var(--text-primary)]">{(item as Agency).agencyName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-[var(--text-secondary)]">Agency Type:</span>
+                    <span className="text-sm font-medium text-[var(--text-primary)]">{(item as Agency).agencyType}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-[var(--text-secondary)]">Contact Person:</span>
+                    <span className="text-sm font-medium text-[var(--text-primary)]">{(item as Agency).contactPerson}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-[var(--text-secondary)]">Date & Time:</span>
+                    <span className="text-sm text-[var(--text-secondary)]">{item.dateTime}</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-[var(--text-secondary)]">Source:</span>
+                    <span className="text-sm font-medium text-[var(--text-primary)]">{(item as LeadSource).source}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-[var(--text-secondary)]">Sub-Source:</span>
+                    <span className="text-sm font-medium text-[var(--text-primary)]">{(item as LeadSource).subSource}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-[var(--text-secondary)]">Date & Time:</span>
+                    <span className="text-sm text-[var(--text-secondary)]">{item.dateTime}</span>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Pagination */}
+      {renderPagination()}
+    </div>
+  );
+};
+
+export default MainContent;

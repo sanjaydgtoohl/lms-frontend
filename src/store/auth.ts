@@ -42,7 +42,7 @@ export const useAuthStore = create<AuthStore>()(
         try {
           const response = await apiClient.register(userData);
           set({
-            user: response.user,
+            user: null, // User data not returned in register response
             token: response.token,
             isAuthenticated: true,
             isLoading: false,
@@ -71,7 +71,7 @@ export const useAuthStore = create<AuthStore>()(
         try {
           const response = await apiClient.refreshToken();
           set({
-            user: response.user,
+            user: null, // User data not returned in refresh response
             token: response.token,
             isAuthenticated: true,
           });
