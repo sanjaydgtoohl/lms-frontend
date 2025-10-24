@@ -5,6 +5,12 @@ import LoginCard from './pages/Auth/LoginCard';
 import Dashboard from './pages/Dashboard';
 import Courses from './pages/Courses';
 import Profile from './pages/Profile';
+import LeadSource from './pages/LeadSource';
+import AgencyMaster from './pages/AgencyMaster';
+import BrandMaster from './pages/BrandMaster';
+import IndustryMaster from './pages/IndustryMaster';
+import DesignationMaster from './pages/DesignationMaster';
+import DepartmentMaster from './pages/DepartmentMaster';
 import Layout from './components/layout/Layout';
 import { ROUTES } from './constants';
 
@@ -59,6 +65,12 @@ function App() {
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="courses" element={<Courses />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="lead-source" element={<LeadSource />} />
+          <Route path="master/brand" element={<BrandMaster />} />
+          <Route path="master/agency" element={<AgencyMaster />} />
+          <Route path="master/industry" element={<IndustryMaster />} />
+          <Route path="master/designation" element={<DesignationMaster />} />
+          <Route path="master/department" element={<DepartmentMaster />} />
         </Route>
         
         {/* 404 Route */}

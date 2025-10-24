@@ -1,5 +1,5 @@
 // API Configuration
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 // Routes
 export const ROUTES = {
@@ -10,6 +10,20 @@ export const ROUTES = {
   COURSES: '/courses',
   PROFILE: '/profile',
   SETTINGS: '/settings',
+  // LMS Routes
+  LEAD_SOURCE: '/lead-source',
+  LEAD_MANAGEMENT: '/lead-management',
+  BRIEF: '/brief',
+  MISS_CAMPAIGN: '/miss-campaign',
+  CAMPAIGN_MANAGEMENT: '/campaign-management',
+  FINANCE: '/finance',
+  USER_MANAGEMENT: '/user-management',
+  // Master Data Routes
+  BRAND_MASTER: '/master/brand',
+  AGENCY_MASTER: '/master/agency',
+  DEPARTMENT_MASTER: '/master/department',
+  DESIGNATION_MASTER: '/master/designation',
+  INDUSTRY_MASTER: '/master/industry',
 } as const;
 
 // User Roles

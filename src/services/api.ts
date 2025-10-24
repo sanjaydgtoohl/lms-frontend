@@ -36,7 +36,7 @@ class ApiClient {
       const response = await fetch(url, config);
       const data = await response.json();
 
-      if (!response.ok) {
+      if (!response.ok || !data.success) {
         throw new Error(data.message || 'An error occurred');
       }
 
