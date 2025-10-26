@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Edit, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { Edit, ChevronLeft, ChevronRight, Plus, Eye, Trash } from 'lucide-react';
 import Button from '../components/ui/Button';
 
 interface Department {
@@ -33,6 +33,14 @@ const DepartmentMaster: React.FC = () => {
 
   const handleEdit = (id: string) => {
     console.log('Edit department:', id);
+  };
+
+  const handleView = (id: string) => {
+    console.log('View department:', id);
+  };
+
+  const handleDelete = (id: string) => {
+    console.log('Delete department:', id);
   };
 
   const handlePageChange = (page: number) => {
@@ -155,12 +163,29 @@ const DepartmentMaster: React.FC = () => {
                       {item.dateTime}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <button
-                        onClick={() => handleEdit(item.id)}
-                        className="p-2 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] rounded-lg transition-all duration-200"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleEdit(item.id)}
+                          className="p-2 text-[var(--text-secondary)] hover:text-blue-500 hover:scale-105 transform transition-all duration-200"
+                          title="Edit Department"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleView(item.id)}
+                          className="p-2 text-[var(--text-secondary)] hover:text-blue-500 hover:scale-105 transform transition-all duration-200"
+                          title="View Department"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          className="p-2 text-[var(--text-secondary)] hover:text-blue-500 hover:scale-105 transform transition-all duration-200"
+                          title="Delete Department"
+                        >
+                          <Trash className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -196,12 +221,26 @@ const DepartmentMaster: React.FC = () => {
           >
             <div className="flex justify-between items-start mb-3">
               <div className="text-sm font-medium text-[var(--text-primary)]">{item.id}</div>
-              <button
-                onClick={() => handleEdit(item.id)}
-                className="p-2 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] rounded-lg transition-all duration-200"
-              >
-                <Edit className="w-4 h-4" />
-              </button>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => handleEdit(item.id)}
+                  className="p-2 text-[var(--text-secondary)] hover:text-blue-500 hover:scale-105 transform transition-all duration-200"
+                >
+                  <Edit className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleView(item.id)}
+                  className="p-2 text-[var(--text-secondary)] hover:text-blue-500 hover:scale-105 transform transition-all duration-200"
+                >
+                  <Eye className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleDelete(item.id)}
+                  className="p-2 text-[var(--text-secondary)] hover:text-blue-500 hover:scale-105 transform transition-all duration-200"
+                >
+                  <Trash className="w-4 h-4" />
+                </button>
+              </div>
             </div>
             
             <div className="space-y-2">

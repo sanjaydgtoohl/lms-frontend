@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Database,
@@ -21,6 +21,7 @@ import {
   Factory,
   UserCheck,
 } from "lucide-react";
+import { useAuthStore } from "../../store/auth";
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -36,9 +37,20 @@ interface NavigationItem {
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuthStore();
   const [expandedItems, setExpandedItems] = useState<string[]>(["master-data"]);
   const [showMobilePopup, setShowMobilePopup] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
   
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -169,13 +181,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
               <Link
                 key={child.name}
                 to={child.path || ""}
-                className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50"
+                className="flex items-center px-4 py-2 text-sm text-black hover:bg-green-50"
                 onClick={() => setShowMobilePopup(false)}
               >
                 {React.createElement(child.icon, {
-                  className: "w-4 h-4 mr-2 text-gray-500",
+                  className: "w-4 h-4 mr-2 text-black",
                 })}
-                <span>{child.name}</span>
+                <span className="text-black">{child.name}</span>
               </Link>
             ))}
           </div>
@@ -193,13 +205,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
   return (
     <div
       className={`
-        fixed left-0 top-0 h-full bg-white border-r border-gray-200 shadow-sm
+        flex flex-col fixed left-0 top-0 h-full bg-white border-r border-gray-200 shadow-sm
         transition-all duration-300 ease-in-out z-30
         ${isCollapsed ? "w-16" : "w-64"}
       `}
     >
       {/* Logo Section */}
-      <div className="flex h-16 border-b border-gray-100 shadow-sm pl-3">
+      <div className="flex h-16 pl-3">
         {isCollapsed ? (
           <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
             <span className="text-gray-700 font-bold text-xl">L</span>
@@ -223,7 +235,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-4 px-2">
+  <nav className="flex-1 overflow-y-auto py-4 px-2 scrolling-touch">
         <div className="space-y-1">
           {navigationItems.map((item) => renderNavigationItem(item))}
         </div>
@@ -243,6 +255,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
         </div>
 
         <div
+          onClick={handleLogout}
           className={`flex items-center px-4 py-2.5 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-all cursor-pointer ${
             isCollapsed ? "px-2 justify-center" : ""
           }`}

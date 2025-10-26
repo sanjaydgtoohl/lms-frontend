@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Edit, Plus, ChevronLeft, ChevronRight, User } from 'lucide-react';
+import CreateBrandForm from './CreateBrandForm';
+import { Edit, Plus, ChevronLeft, ChevronRight, Eye, Trash } from 'lucide-react';
 
 interface Brand {
   id: string;
@@ -20,8 +21,8 @@ const BrandMaster: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Sample data as requested
-  const brands: Brand[] = [
+  // Sample data as requested (stored in state so new items can be added)
+  const [brands, setBrands] = useState<Brand[]>([
     { 
       id: '#CMPR01', 
       name: 'Nike', 
@@ -37,7 +38,7 @@ const BrandMaster: React.FC = () => {
       dateTime: '02-07-2025 22:23' 
     },
     { 
-      id: '#CMPR01', 
+      id: '#CMPR02', 
       name: 'Puma', 
       agencyName: 'Agency 1', 
       brandType: 'Local', 
@@ -51,7 +52,7 @@ const BrandMaster: React.FC = () => {
       dateTime: '02-07-2025 22:21' 
     },
     { 
-      id: '#CMPR01', 
+      id: '#CMPR03', 
       name: 'Apple', 
       agencyName: 'Direct', 
       brandType: 'Local', 
@@ -65,7 +66,7 @@ const BrandMaster: React.FC = () => {
       dateTime: '02-07-2025 22:23' 
     },
     { 
-      id: '#CMPR01', 
+      id: '#CMPR04', 
       name: 'Pepsi', 
       agencyName: 'Agency 2', 
       brandType: 'Regional', 
@@ -79,7 +80,7 @@ const BrandMaster: React.FC = () => {
       dateTime: '02-07-2025 22:23' 
     },
     { 
-      id: '#CMPR01', 
+      id: '#CMPR05', 
       name: 'Coca Cola', 
       agencyName: 'Agency 2', 
       brandType: 'Regional', 
@@ -92,7 +93,7 @@ const BrandMaster: React.FC = () => {
       pinCode: '328001', 
       dateTime: '02-07-2025 22:23' 
     },
-  ];
+  ]);
 
   const totalPages = Math.ceil(brands.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -107,8 +108,44 @@ const BrandMaster: React.FC = () => {
     console.log('View brand:', id);
   };
 
+  const handleDelete = (id: string) => {
+    console.log('Delete brand:', id);
+  };
+
   const handleCreateBrand = () => {
-    console.log('Create new brand');
+    setShowCreate(true);
+  };
+
+  const [showCreate, setShowCreate] = useState(false);
+
+  const formatDateTime = (d: Date) => {
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    const hh = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    return `${dd}-${mm}-${yyyy} ${hh}:${min}`;
+  };
+
+  const handleSaveBrand = (data: any) => {
+    const newBrand: Brand = {
+      id: `#CMPR${Math.floor(Math.random() * 90000) + 10000}`,
+      name: data.brandName || 'Untitled',
+      agencyName: data.agency || 'Direct',
+      brandType: data.brandType || '',
+      contactPerson: '0',
+      industry: data.industry || '',
+      country: data.country || '',
+      state: data.state || '',
+      city: data.city || '',
+      zone: data.zone || '',
+      pinCode: data.postalCode || '',
+      dateTime: formatDateTime(new Date()),
+    };
+
+    // Add new brand to top of list and reset to first page so user sees it
+    setBrands(prev => [newBrand, ...prev]);
+    setCurrentPage(1);
   };
 
   const handlePageChange = (page: number) => {
@@ -174,12 +211,16 @@ const BrandMaster: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 p-6 w-full max-w-full overflow-hidden">
+  <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
+      {showCreate ? (
+        <CreateBrandForm inline onClose={() => setShowCreate(false)} onSave={handleSaveBrand} />
+      ) : (
+        <>
       {/* Desktop Table View */}
       <div className="hidden lg:block">
         <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
           {/* Table Header */}
-          <div className="bg-[var(--accent)] px-6 py-4 border-b border-[var(--border-color)] flex justify-between items-center">
+          <div className="bg-[var(--accent)] px-6 py-4 flex justify-between items-center">
             <h2 className="text-lg font-semibold text-[var(--text-primary)]">Brand Master</h2>
             <button
               onClick={handleCreateBrand}
@@ -191,7 +232,7 @@ const BrandMaster: React.FC = () => {
           </div>
           
           {/* Table */}
-          <div className="overflow-x-auto max-w-full">
+          <div className="overflow-x-auto max-w-full w-full">
             <table className="w-full min-w-[1200px]">
               <thead className="bg-gray-50">
                 <tr>
@@ -282,17 +323,24 @@ const BrandMaster: React.FC = () => {
                       <div className="flex items-center space-x-2">
                         <button
                           onClick={() => handleEdit(item.id)}
-                          className="p-2 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] rounded-lg transition-all duration-200"
+                          className="p-2 text-[var(--text-secondary)] hover:text-blue-500 hover:scale-105 transform transition-all duration-200"
                           title="Edit Brand"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleView(item.id)}
-                          className="p-2 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] rounded-lg transition-all duration-200"
+                          className="p-2 text-[var(--text-secondary)] hover:text-blue-500 hover:scale-105 transform transition-all duration-200"
                           title="View Brand"
                         >
-                          <User className="w-4 h-4" />
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          className="p-2 text-[var(--text-secondary)] hover:text-blue-500 hover:scale-105 transform transition-all duration-200"
+                          title="Delete Brand"
+                        >
+                          <Trash className="w-4 h-4" />
                         </button>
                       </div>
                     </td>
@@ -329,17 +377,24 @@ const BrandMaster: React.FC = () => {
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => handleEdit(item.id)}
-                  className="p-2 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] rounded-lg transition-all duration-200"
+                  className="p-2 text-[var(--text-secondary)] hover:text-blue-500 hover:scale-105 transform transition-all duration-200"
                   title="Edit Brand"
                 >
                   <Edit className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => handleView(item.id)}
-                  className="p-2 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] rounded-lg transition-all duration-200"
+                  className="p-2 text-[var(--text-secondary)] hover:text-blue-500 hover:scale-105 transform transition-all duration-200"
                   title="View Brand"
                 >
-                  <User className="w-4 h-4" />
+                  <Eye className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleDelete(item.id)}
+                  className="p-2 text-[var(--text-secondary)] hover:text-blue-500 hover:scale-105 transform transition-all duration-200"
+                  title="Delete Brand"
+                >
+                  <Trash className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -373,9 +428,10 @@ const BrandMaster: React.FC = () => {
           </div>
         ))}
       </div>
-
-      {/* Pagination */}
-      {renderPagination()}
+          {/* Pagination */}
+          {renderPagination()}
+        </>
+      )}
     </div>
   );
 };

@@ -48,14 +48,14 @@ export default function LoginCard() {
                       transition-all duration-300 ease-out">
         
         {/* Header - Compact & Elegant */}
-        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-center text-white mb-3 sm:mb-4">
-          <span className="inline-flex items-center justify-center gap-3">
-            <span className="relative inline-block text-white tracking-wide after:content-[''] after:absolute after:left-1/2 after:-translate-x-1/2 after:-bottom-1 after:h-[3px] sm:after:h-1 after:w-2/3 after:rounded-full after:bg-orange-500">
+        <h2 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold text-center text-white mb-3 sm:mb-4 whitespace-nowrap">
+          <span className="inline-flex items-center justify-center gap-1 sm:gap-3">
+            <span className="relative inline-flex items-center text-white tracking-wide after:content-[''] after:absolute after:left-1/2 after:-translate-x-1/2 after:-bottom-1 after:h-[3px] sm:after:h-1 after:w-2/3 after:rounded-full after:bg-orange-500">
               DGT
-              <span className="inline-block align-middle leading-none scale-y-125 text-[1.40em] relative -top-3.5 bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 bg-clip-text text-transparent">∞</span>
+              <span className="inline-block align-middle leading-none scale-y-125 text-[1.40em] relative -top-1 bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 bg-clip-text text-transparent">∞</span>
               HL
             </span>
-            <span className="align-middle leading-none relative -top-2 bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent font-extrabold tracking-wide drop-shadow-[0_0_14px_rgba(255,255,255,0.35)]">LMS</span>
+            <span className="align-middle leading-none relative -top-0.6 bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent font-extrabold tracking-wide drop-shadow-[0_0_14px_rgba(255,255,255,0.35)]">LMS</span>
           </span>
         </h2>
         <p className="text-zinc-400 text-sm sm:text-base lg:text-lg mb-6 sm:mb-8 text-center">

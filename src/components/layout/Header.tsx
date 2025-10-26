@@ -11,7 +11,7 @@ const Header: React.FC<HeaderProps> = ({
   createButtonText = "Create Source" 
 }) => {
   return (
-    <header className="bg-white border-b border-[var(--border-color)] shadow-sm">
+    <header className="bg-white shadow-sm sticky top-0 z-20">
       <div className="flex items-center justify-between px-6" style={{ paddingBottom: '11px', paddingTop: '11px' }}>
         {/* Page Title */}
         <div>

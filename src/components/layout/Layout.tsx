@@ -30,15 +30,15 @@ const Layout: React.FC = () => {
       {/* Sidebar */}
       <Sidebar isCollapsed={sidebarCollapsed} onToggle={toggleSidebar} />
       
-      {/* Main Content Area */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'} w-full`}>
+  {/* Main Content Area (use padding to account for fixed Sidebar so total page width stays within viewport) */}
+  <div className={`flex-1 flex flex-col min-h-0 transition-all duration-300 ${sidebarCollapsed ? 'pl-16' : 'pl-64'} w-full`}>
         {/* Header */}
         <Header 
           // pageTitle={getPageTitle()} 
         />
         
         {/* Main Content */}
-        <main className="flex-1 overflow-hidden w-full">
+        <main className="flex-1 overflow-auto w-full overflow-x-hidden">
           <Outlet />
         </main>
       </div>

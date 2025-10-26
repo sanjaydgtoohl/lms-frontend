@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Edit, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Edit, Plus, ChevronLeft, ChevronRight, Eye, Trash } from 'lucide-react';
 
 interface Designation {
   id: string;
@@ -129,6 +129,14 @@ const DesignationMaster: React.FC = () => {
     console.log('Edit designation:', id);
   };
 
+  const handleView = (id: string) => {
+    console.log('View designation:', id);
+  };
+
+  const handleDelete = (id: string) => {
+    console.log('Delete designation:', id);
+  };
+
   const handleCreateDesignation = () => {
     console.log('Create new designation');
   };
@@ -247,13 +255,29 @@ const DesignationMaster: React.FC = () => {
                       {item.dateTime}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <button
-                        onClick={() => handleEdit(item.id)}
-                        className="p-2 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] rounded-lg transition-all duration-200"
-                        title="Edit Designation"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleEdit(item.id)}
+                          className="p-2 text-[var(--text-secondary)] hover:text-blue-500 hover:scale-105 transform transition-all duration-200"
+                          title="Edit Designation"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleView(item.id)}
+                          className="p-2 text-[var(--text-secondary)] hover:text-blue-500 hover:scale-105 transform transition-all duration-200"
+                          title="View Designation"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          className="p-2 text-[var(--text-secondary)] hover:text-blue-500 hover:scale-105 transform transition-all duration-200"
+                          title="Delete Designation"
+                        >
+                          <Trash className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -285,13 +309,29 @@ const DesignationMaster: React.FC = () => {
           >
             <div className="flex justify-between items-start mb-3">
               <div className="text-sm font-medium text-[var(--text-primary)]">{item.id}</div>
-              <button
-                onClick={() => handleEdit(item.id)}
-                className="p-2 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] rounded-lg transition-all duration-200"
-                title="Edit Designation"
-              >
-                <Edit className="w-4 h-4" />
-              </button>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => handleEdit(item.id)}
+                  className="p-2 text-[var(--text-secondary)] hover:text-blue-500 hover:scale-105 transform transition-all duration-200"
+                  title="Edit Designation"
+                >
+                  <Edit className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleView(item.id)}
+                  className="p-2 text-[var(--text-secondary)] hover:text-blue-500 hover:scale-105 transform transition-all duration-200"
+                  title="View Designation"
+                >
+                  <Eye className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleDelete(item.id)}
+                  className="p-2 text-[var(--text-secondary)] hover:text-blue-500 hover:scale-105 transform transition-all duration-200"
+                  title="Delete Designation"
+                >
+                  <Trash className="w-4 h-4" />
+                </button>
+              </div>
             </div>
             
             <div className="space-y-2">
