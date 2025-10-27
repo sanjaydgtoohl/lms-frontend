@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import CreateBrandForm from './CreateBrandForm';
-import { Edit, Plus, ChevronLeft, ChevronRight, Eye, Trash } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import ActionMenu from '../components/ui/ActionMenu';
+import MasterView from '../components/ui/MasterView';
+import MasterEdit from '../components/ui/MasterEdit';
+import Pagination from '../components/ui/Pagination';
 
 interface Brand {
   id: string;
@@ -95,17 +99,19 @@ const BrandMaster: React.FC = () => {
     },
   ]);
 
-  const totalPages = Math.ceil(brands.length / itemsPerPage);
+  // totalPages calculated but not used directly
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentData = brands.slice(startIndex, endIndex);
 
   const handleEdit = (id: string) => {
-    console.log('Edit brand:', id);
+    const found = brands.find(b => b.id === id) || null;
+    setEditItem(found);
   };
 
   const handleView = (id: string) => {
-    console.log('View brand:', id);
+    const found = brands.find(b => b.id === id) || null;
+    setViewItem(found);
   };
 
   const handleDelete = (id: string) => {
@@ -148,79 +154,35 @@ const BrandMaster: React.FC = () => {
     setCurrentPage(1);
   };
 
+  // edit/view state and handlers
+  const [viewItem, setViewItem] = useState<Brand | null>(null);
+  const [editItem, setEditItem] = useState<Brand | null>(null);
+
+  const handleSaveEditedBrand = (updated: Record<string, any>) => {
+    setBrands(prev => prev.map(b => (b.id === updated.id ? { ...b, ...updated } as Brand : b)));
+  };
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
 
-  const renderPagination = () => {
-    const pages = [];
-    const maxVisiblePages = 5;
-    
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-    
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
 
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(
-        <button
-          key={i}
-          onClick={() => handlePageChange(i)}
-          className={`
-            px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200
-            ${i === currentPage
-              ? 'bg-green-100 text-black'
-              : 'text-[var(--text-secondary)] hover:text-black hover:bg-green-50'
-            }
-          `}
-        >
-          {i}
-        </button>
-      );
-    }
-
-    return (
-      <div className="flex items-center justify-between mt-6">
-        <div className="text-sm text-[var(--text-secondary)]">
-          Showing {startIndex + 1} to {Math.min(endIndex, brands.length)} of {brands.length} entries
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="p-2 text-[var(--text-secondary)] hover:text-black hover:bg-green-50 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          
-          {pages}
-          
-          <button
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="p-2 text-[var(--text-secondary)] hover:text-black hover:bg-green-50 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-    );
-  };
 
   return (
   <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
       {showCreate ? (
         <CreateBrandForm inline onClose={() => setShowCreate(false)} onSave={handleSaveBrand} />
+      ) : viewItem ? (
+        <MasterView title={`View Brand ${viewItem.id}`} item={viewItem} onClose={() => setViewItem(null)} />
+      ) : editItem ? (
+        <MasterEdit title={`Edit Brand ${editItem.id}`} item={editItem} onClose={() => setEditItem(null)} onSave={handleSaveEditedBrand} />
       ) : (
         <>
       {/* Desktop Table View */}
       <div className="hidden lg:block">
         <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
           {/* Table Header */}
-          <div className="bg-[var(--accent)] px-6 py-4 flex justify-between items-center">
+          <div className="bg-gray-50 px-6 py-4 flex justify-between items-center">
             <h2 className="text-lg font-semibold text-[var(--text-primary)]">Brand Master</h2>
             <button
               onClick={handleCreateBrand}
@@ -279,7 +241,7 @@ const BrandMaster: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-[var(--border-color)]">
                 {currentData.map((item, index) => (
-                  <tr 
+              <tr 
                     key={item.id + item.name + index}
                     className="hover:bg-[var(--hover-bg)] transition-colors duration-200"
                   >
@@ -319,31 +281,14 @@ const BrandMaster: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-secondary)]">
                       {item.dateTime}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => handleEdit(item.id)}
-                          className="p-2 text-[var(--text-secondary)] hover:text-blue-500 hover:scale-105 transform transition-all duration-200"
-                          title="Edit Brand"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleView(item.id)}
-                          className="p-2 text-[var(--text-secondary)] hover:text-blue-500 hover:scale-105 transform transition-all duration-200"
-                          title="View Brand"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(item.id)}
-                          className="p-2 text-[var(--text-secondary)] hover:text-blue-500 hover:scale-105 transform transition-all duration-200"
-                          title="Delete Brand"
-                        >
-                          <Trash className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <ActionMenu
+                            isLast={index >= currentData.length - 2}
+                            onEdit={() => handleEdit(item.id)}
+                            onView={() => handleView(item.id)}
+                            onDelete={() => handleDelete(item.id)}
+                          />
+                        </td>
                   </tr>
                 ))}
               </tbody>
@@ -368,35 +313,17 @@ const BrandMaster: React.FC = () => {
         </div>
         
         {currentData.map((item, index) => (
-          <div 
+            <div 
             key={item.id + item.name + index}
             className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] p-4 hover:shadow-md transition-all duration-200"
           >
             <div className="flex justify-between items-start mb-3">
               <div className="text-sm font-medium text-[var(--text-primary)]">{item.id}</div>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => handleEdit(item.id)}
-                  className="p-2 text-[var(--text-secondary)] hover:text-blue-500 hover:scale-105 transform transition-all duration-200"
-                  title="Edit Brand"
-                >
-                  <Edit className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => handleView(item.id)}
-                  className="p-2 text-[var(--text-secondary)] hover:text-blue-500 hover:scale-105 transform transition-all duration-200"
-                  title="View Brand"
-                >
-                  <Eye className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => handleDelete(item.id)}
-                  className="p-2 text-[var(--text-secondary)] hover:text-blue-500 hover:scale-105 transform transition-all duration-200"
-                  title="Delete Brand"
-                >
-                  <Trash className="w-4 h-4" />
-                </button>
-              </div>
+              <ActionMenu
+                onEdit={() => handleEdit(item.id)}
+                onView={() => handleView(item.id)}
+                onDelete={() => handleDelete(item.id)}
+              />
             </div>
             
             <div className="space-y-2">
@@ -429,7 +356,12 @@ const BrandMaster: React.FC = () => {
         ))}
       </div>
           {/* Pagination */}
-          {renderPagination()}
+          <Pagination
+            currentPage={currentPage}
+            totalItems={brands.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={handlePageChange}
+          />
         </>
       )}
     </div>

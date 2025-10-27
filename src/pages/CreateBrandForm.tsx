@@ -242,7 +242,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
       className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden"
     >
       {/* Header with green accent (matches Brand Master header) */}
-      <div className="bg-[var(--accent)] px-6 py-4 border-b border-[var(--border-color)] flex items-center">
+      <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)] flex items-center">
         <h3 className="text-lg font-semibold text-[var(--text-primary)]">Create Brand</h3>
       </div>
 

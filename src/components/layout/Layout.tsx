@@ -38,7 +38,7 @@ const Layout: React.FC = () => {
         />
         
         {/* Main Content */}
-        <main className="flex-1 overflow-auto w-full overflow-x-hidden">
+        <main className="flex-1 overflow-auto w-full overflow-x-hidden" style={{ paddingLeft: '20px', paddingRight: '20px' }}>
           <Outlet />
         </main>
       </div>

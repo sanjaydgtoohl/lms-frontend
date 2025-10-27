@@ -214,12 +214,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
       <div className="flex h-16 pl-3">
         {isCollapsed ? (
           <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
-            <span className="text-gray-700 font-bold text-xl">L</span>
+            <span className="text-[#F5F7FA] font-bold text-xl">L</span>
           </div>
         ) : (
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
-              <span className="text-gray-700 font-bold text-xl">L</span>
+              <span className="text-[#F5F7FA] font-bold text-xl">L</span>
             </div>
             <div className="flex flex-col">
               <span className="text-xl font-bold text-gray-800 tracking-wide leading-none">
