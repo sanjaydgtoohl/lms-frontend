@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import MainContent from '../components/layout/MainContent';
 import Button from '../components/ui/Button';
 import { Plus } from 'lucide-react';
@@ -6,14 +6,20 @@ import CreateAgencyForm from './CreateAgencyForm';
 import MasterView from '../components/ui/MasterView';
 import MasterEdit from '../components/ui/MasterEdit';
 import type { Agency } from '../components/layout/MainContent';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { ROUTES } from '../constants';
 
 const AgencyMaster: React.FC = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [viewItem, setViewItem] = useState<Agency | null>(null);
   const [editItem, setEditItem] = useState<Agency | null>(null);
 
+  const navigate = useNavigate();
+  const params = useParams();
+  const location = useLocation();
+
   const handleCreateAgency = () => {
-    setShowCreate(true);
+    navigate(`${ROUTES.AGENCY_MASTER}/create`);
   };
 
   const handleSaveAgency = (data: any) => {
@@ -23,18 +29,50 @@ const AgencyMaster: React.FC = () => {
   };
 
   const handleView = (item: Agency) => {
-    setViewItem(item);
+    navigate(`${ROUTES.AGENCY_MASTER}/${encodeURIComponent(item.id)}`);
   };
 
   const handleEdit = (item: Agency) => {
-    setEditItem(item);
+    navigate(`${ROUTES.AGENCY_MASTER}/${encodeURIComponent(item.id)}/edit`);
   };
 
   const handleSaveEdit = (updated: Record<string, any>) => {
     // Update in API/store as needed
     console.log('Save edited agency:', updated);
-    setEditItem(null);
+    navigate(ROUTES.AGENCY_MASTER);
   };
+
+  // Sync UI state with route params
+  useEffect(() => {
+    const rawId = params.id;
+    const id = rawId ? decodeURIComponent(rawId) : undefined;
+
+    if (location.pathname.endsWith('/create')) {
+      setShowCreate(true);
+      setViewItem(null);
+      setEditItem(null);
+      return;
+    }
+
+    if (location.pathname.endsWith('/edit') && id) {
+      // find the agency in whatever source; for now we set a placeholder
+      setEditItem({ id } as Agency);
+      setViewItem(null);
+      setShowCreate(false);
+      return;
+    }
+
+    if (id) {
+      setViewItem({ id } as Agency);
+      setShowCreate(false);
+      setEditItem(null);
+      return;
+    }
+
+    setShowCreate(false);
+    setViewItem(null);
+    setEditItem(null);
+  }, [location.pathname, params.id]);
 
   const headerActions = (
     <Button
@@ -51,11 +89,11 @@ const AgencyMaster: React.FC = () => {
   return (
     <>
       {showCreate ? (
-        <CreateAgencyForm inline onClose={() => setShowCreate(false)} onSave={handleSaveAgency} />
+        <CreateAgencyForm inline onClose={() => navigate(ROUTES.AGENCY_MASTER)} onSave={handleSaveAgency} />
       ) : viewItem ? (
-        <MasterView title={`View Agency ${viewItem.id}`} item={viewItem} onClose={() => setViewItem(null)} />
+        <MasterView title={`View Agency ${viewItem.id}`} item={viewItem} onClose={() => navigate(ROUTES.AGENCY_MASTER)} />
       ) : editItem ? (
-        <MasterEdit title={`Edit Agency ${editItem.id}`} item={editItem} onClose={() => setEditItem(null)} onSave={handleSaveEdit} />
+        <MasterEdit title={`Edit Agency ${editItem.id}`} item={editItem} onClose={() => navigate(ROUTES.AGENCY_MASTER)} onSave={handleSaveEdit} />
       ) : (
         <MainContent<Agency>
           title="Agency Master" 

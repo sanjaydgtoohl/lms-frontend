@@ -1,8 +1,9 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Button, Input } from '../../components/ui';
+import { Button, Input, NotificationPopup } from '../../components/ui';
 import { useAuthStore } from '../../store/auth';
+import { useUiStore } from '../../store/ui';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -13,6 +14,8 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginCard() {
   const { login, isLoading } = useAuthStore();
+  const showNotification = useUiStore((s) => s.showNotification);
+  const notification = useUiStore((s) => s.notification);
 
   const {
     register,
@@ -25,13 +28,22 @@ export default function LoginCard() {
   const onSubmit = async (data: LoginFormData) => {
     try {
       await login(data.email, data.password);
-    } catch (error) {
-      console.error('Login failed:', error);
+    } catch (error: any) {
+      showNotification(error?.message || 'Login failed. Please check your credentials.', 'error', 'Login Error');
     }
   };
 
   return (
     <div className="fixed inset-0 w-full h-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-zinc-950 via-black to-zinc-900">
+      {/* Error Popup */}
+      <NotificationPopup
+        isOpen={notification.isOpen}
+        onClose={() => useUiStore.getState().hideNotification()}
+        message={notification.message}
+        type={notification.type}
+        title={notification.title}
+      />
+      
       {/* ✨ Full-screen animated background effects */}
       <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-transparent to-orange-600/10" />
       <div className="absolute w-[800px] h-[800px] bg-orange-500/20 rounded-full blur-[300px] top-[-200px] left-[-200px] animate-pulse" />

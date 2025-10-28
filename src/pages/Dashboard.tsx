@@ -88,7 +88,7 @@ const Dashboard: React.FC = () => {
             </div>
             <div className="ml-4">
               <h3 className="text-sm font-medium text-[var(--text-secondary)]">Monthly Revenue</h3>
-              <p className="text-2xl font-bold text-[var(--text-primary)]">₹2,850,000</p>
+              <p className="text-2xl font-bold text-[var(--text-primary)]">₹2,850,0</p>
             </div>
           </div>
         </div>

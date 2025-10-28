@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CreateBrandForm from './CreateBrandForm';
 import { Plus } from 'lucide-react';
 import ActionMenu from '../components/ui/ActionMenu';
 import MasterView from '../components/ui/MasterView';
 import MasterEdit from '../components/ui/MasterEdit';
 import Pagination from '../components/ui/Pagination';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { ROUTES } from '../constants';
 
 interface Brand {
   id: string;
@@ -104,14 +106,17 @@ const BrandMaster: React.FC = () => {
   const endIndex = startIndex + itemsPerPage;
   const currentData = brands.slice(startIndex, endIndex);
 
+  const navigate = useNavigate();
+  const params = useParams();
+  const location = useLocation();
+
   const handleEdit = (id: string) => {
-    const found = brands.find(b => b.id === id) || null;
-    setEditItem(found);
+    // navigate to edit route
+    navigate(`${ROUTES.BRAND_MASTER}/${encodeURIComponent(id)}/edit`);
   };
 
   const handleView = (id: string) => {
-    const found = brands.find(b => b.id === id) || null;
-    setViewItem(found);
+    navigate(`${ROUTES.BRAND_MASTER}/${encodeURIComponent(id)}`);
   };
 
   const handleDelete = (id: string) => {
@@ -119,7 +124,7 @@ const BrandMaster: React.FC = () => {
   };
 
   const handleCreateBrand = () => {
-    setShowCreate(true);
+    navigate(`${ROUTES.BRAND_MASTER}/create`);
   };
 
   const [showCreate, setShowCreate] = useState(false);
@@ -158,6 +163,40 @@ const BrandMaster: React.FC = () => {
   const [viewItem, setViewItem] = useState<Brand | null>(null);
   const [editItem, setEditItem] = useState<Brand | null>(null);
 
+  // Sync view/edit/create state from the current URL
+  useEffect(() => {
+    const rawId = params.id;
+    const id = rawId ? decodeURIComponent(rawId) : undefined;
+
+    if (location.pathname.endsWith('/create')) {
+      setShowCreate(true);
+      setViewItem(null);
+      setEditItem(null);
+      return;
+    }
+
+    if (location.pathname.endsWith('/edit') && id) {
+      const found = brands.find(b => b.id === id) || null;
+      setEditItem(found);
+      setViewItem(null);
+      setShowCreate(false);
+      return;
+    }
+
+    if (id) {
+      const found = brands.find(b => b.id === id) || null;
+      setViewItem(found);
+      setShowCreate(false);
+      setEditItem(null);
+      return;
+    }
+
+    // default listing state
+    setShowCreate(false);
+    setViewItem(null);
+    setEditItem(null);
+  }, [location.pathname, params.id, brands]);
+
   const handleSaveEditedBrand = (updated: Record<string, any>) => {
     setBrands(prev => prev.map(b => (b.id === updated.id ? { ...b, ...updated } as Brand : b)));
   };
@@ -171,11 +210,11 @@ const BrandMaster: React.FC = () => {
   return (
   <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
       {showCreate ? (
-        <CreateBrandForm inline onClose={() => setShowCreate(false)} onSave={handleSaveBrand} />
+        <CreateBrandForm inline onClose={() => navigate(ROUTES.BRAND_MASTER)} onSave={handleSaveBrand} />
       ) : viewItem ? (
-        <MasterView title={`View Brand ${viewItem.id}`} item={viewItem} onClose={() => setViewItem(null)} />
+        <MasterView title={`View Brand ${viewItem.id}`} item={viewItem} onClose={() => navigate(ROUTES.BRAND_MASTER)} />
       ) : editItem ? (
-        <MasterEdit title={`Edit Brand ${editItem.id}`} item={editItem} onClose={() => setEditItem(null)} onSave={handleSaveEditedBrand} />
+        <MasterEdit title={`Edit Brand ${editItem.id}`} item={editItem} onClose={() => navigate(ROUTES.BRAND_MASTER)} onSave={handleSaveEditedBrand} />
       ) : (
         <>
       {/* Desktop Table View */}

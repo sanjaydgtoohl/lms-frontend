@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, ChevronLeft } from 'lucide-react';
 import ActionMenu from '../components/ui/ActionMenu';
 import Pagination from '../components/ui/Pagination';
 import { motion } from 'framer-motion';
 import MasterView from '../components/ui/MasterView';
 import MasterEdit from '../components/ui/MasterEdit';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { ROUTES } from '../constants';
 
 interface Designation {
   id: string;
@@ -110,8 +112,12 @@ const DesignationMaster: React.FC = () => {
   const endIndex = startIndex + itemsPerPage;
   const currentData = designations.slice(startIndex, endIndex);
 
+  const navigate = useNavigate();
+  const params = useParams();
+  const location = useLocation();
+
   const handleCreateDesignation = () => {
-    setShowCreate(true);
+    navigate(`${ROUTES.DESIGNATION_MASTER}/create`);
   };
 
   const handleSaveDesignation = (data: any) => {
@@ -126,13 +132,11 @@ const DesignationMaster: React.FC = () => {
   };
 
   const handleEdit = (id: string) => {
-    const found = designations.find(d => d.id === id) || null;
-    setEditItem(found);
+    navigate(`${ROUTES.DESIGNATION_MASTER}/${encodeURIComponent(id)}/edit`);
   };
 
   const handleView = (id: string) => {
-    const found = designations.find(d => d.id === id) || null;
-    setViewItem(found);
+    navigate(`${ROUTES.DESIGNATION_MASTER}/${encodeURIComponent(id)}`);
   };
 
   const handleDelete = (id: string) => {
@@ -145,6 +149,38 @@ const DesignationMaster: React.FC = () => {
 
   const [viewItem, setViewItem] = useState<Designation | null>(null);
   const [editItem, setEditItem] = useState<Designation | null>(null);
+
+  useEffect(() => {
+    const rawId = params.id;
+    const id = rawId ? decodeURIComponent(rawId) : undefined;
+
+    if (location.pathname.endsWith('/create')) {
+      setShowCreate(true);
+      setViewItem(null);
+      setEditItem(null);
+      return;
+    }
+
+    if (location.pathname.endsWith('/edit') && id) {
+      const found = designations.find(d => d.id === id) || null;
+      setEditItem(found);
+      setViewItem(null);
+      setShowCreate(false);
+      return;
+    }
+
+    if (id) {
+      const found = designations.find(d => d.id === id) || null;
+      setViewItem(found);
+      setShowCreate(false);
+      setEditItem(null);
+      return;
+    }
+
+    setShowCreate(false);
+    setViewItem(null);
+    setEditItem(null);
+  }, [location.pathname, params.id, designations]);
 
   const handleSaveEditedDesignation = (updated: Record<string, any>) => {
     setDesignations(prev => prev.map(d => (d.id === updated.id ? { ...d, ...updated } as Designation : d)));
@@ -164,11 +200,11 @@ const DesignationMaster: React.FC = () => {
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
       {showCreate ? (
-        <CreateDesignationForm onClose={() => setShowCreate(false)} onSave={handleSaveDesignation} />
+        <CreateDesignationForm onClose={() => navigate(ROUTES.DESIGNATION_MASTER)} onSave={handleSaveDesignation} />
       ) : viewItem ? (
-        <MasterView title={`View Designation ${viewItem.id}`} item={viewItem} onClose={() => setViewItem(null)} />
+        <MasterView title={`View Designation ${viewItem.id}`} item={viewItem} onClose={() => navigate(ROUTES.DESIGNATION_MASTER)} />
       ) : editItem ? (
-        <MasterEdit title={`Edit Designation ${editItem.id}`} item={editItem} onClose={() => setEditItem(null)} onSave={handleSaveEditedDesignation} />
+        <MasterEdit title={`Edit Designation ${editItem.id}`} item={editItem} onClose={() => navigate(ROUTES.DESIGNATION_MASTER)} onSave={handleSaveEditedDesignation} />
       ) : (
         <>
           {/* Desktop Table View */}

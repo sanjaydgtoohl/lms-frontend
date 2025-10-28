@@ -1,15 +1,14 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard,
-  Database,
+  LayoutGrid,
   ChevronDown,
   ChevronRight,
-  Target,
-  Users,
   FileText,
-  Megaphone,
-  Speaker,
+  Users,
+  MessageSquare,
+  Globe,
+  Tag,
   DollarSign,
   UserCog,
   Settings,
@@ -18,8 +17,8 @@ import {
   Building2,
   Briefcase,
   GraduationCap,
-  Factory,
-  UserCheck,
+  Search,
+  Radio,
 } from "lucide-react";
 import { useAuthStore } from "../../store/auth";
 
@@ -66,24 +65,24 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
   }, []);
 
   const navigationItems: NavigationItem[] = [
-    { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+    { name: "Dashboard", path: "/dashboard", icon: LayoutGrid },
     {
       name: "Master Data",
-      icon: Database,
+      icon: FileText,
       children: [
         { name: "Brand Master", path: "/master/brand", icon: Building2 },
         { name: "Agency Master", path: "/master/agency", icon: Briefcase },
         { name: "Department Master", path: "/master/department", icon: GraduationCap },
-        { name: "Designation Master", path: "/master/designation", icon: UserCheck },
-        { name: "Industry Master", path: "/master/industry", icon: Factory },
-        { name: "Lead Source", path: "/lead-source", icon: Target },
+        { name: "Designation Master", path: "/master/designation", icon: Users },
+        { name: "Industry Master", path: "/master/industry", icon: Radio },
+        { name: "Lead Source", path: "/lead-source", icon: Search },
       ],
     },
     { name: "Lead Management", path: "/lead-management", icon: Users },
-    { name: "Brief", path: "/brief", icon: FileText },
-    { name: "Miss Campaign", path: "/miss-campaign", icon: Megaphone },
-    { name: "Campaign Management", path: "/campaign-management", icon: Speaker },
-    { name: "Finance", path: "/finance", icon: DollarSign },
+    { name: "Brief", path: "/brief", icon: MessageSquare },
+    { name: "Miss Campaign", path: "/miss-campaign", icon: Globe },
+  { name: "Campaign Management", path: "/campaign-management", icon: Tag },
+  { name: "Finance", path: "/finance", icon: DollarSign },
     { name: "User Management", path: "/user-management", icon: UserCog },
     { name: "Settings", path: "/settings", icon: Settings },
   ];
@@ -142,10 +141,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
             >
               <IconComponent
                 // enforce a fixed visual size and prevent flex shrinking so icons remain
-                // identical across breakpoints (w-5 = 1.25rem = 20px)
-                className={`shrink-0 w-5 h-5 min-w-[1.25rem] min-h-[1.25rem] text-black ${isCollapsed ? "" : "mr-3"}`}
+                // identical across breakpoints (w-4 = 1rem = 16px)
+                className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)] ${isCollapsed ? "" : "mr-2.5"}`}
               />
-              {!isCollapsed && <span className="text-black">{item.name}</span>}
+              {!isCollapsed && <span className="text-[var(--text-primary)]">{item.name}</span>}
             </Link>
           ) : (
             <div
@@ -154,18 +153,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
               }`}
             >
               <IconComponent
-                className={`shrink-0 w-5 h-5 min-w-[1.25rem] min-h-[1.25rem] text-black ${isCollapsed ? "" : "mr-3"}`}
+                className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)] ${isCollapsed ? "" : "mr-2.5"}`}
               />
-              {!isCollapsed && <span className="text-black">{item.name}</span>}
+              {!isCollapsed && <span className="text-[var(--text-primary)]">{item.name}</span>}
             </div>
           )}
 
           {hasChildren && !isCollapsed && (
             <div className="ml-auto">
               {isExpanded ? (
-                <ChevronDown className="shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-black" />
+                <ChevronDown className="shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)]" />
               ) : (
-                <ChevronRight className="shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-black" />
+                <ChevronRight className="shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)]" />
               )}
             </div>
           )}
@@ -181,13 +180,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
               <Link
                 key={child.name}
                 to={child.path || ""}
-                className="flex items-center px-4 py-2 text-sm text-black hover:bg-green-50"
+                className="flex items-center px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-green-50"
                 onClick={() => setShowMobilePopup(false)}
               >
                 {React.createElement(child.icon, {
-                  className: "w-4 h-4 mr-2 text-black",
+                  className: "w-4 h-4 mr-2 text-[var(--text-primary)]",
                 })}
-                <span className="text-black">{child.name}</span>
+                <span className="text-[var(--text-primary)]">{child.name}</span>
               </Link>
             ))}
           </div>
@@ -211,25 +210,26 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
       `}
     >
       {/* Logo Section */}
-      <div className="flex h-16 pl-3">
+      <div className="flex h-16 items-center px-4">
         {isCollapsed ? (
-          <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
-            <span className="text-[#F5F7FA] font-bold text-xl">L</span>
+          <div className="w-full flex items-center justify-center">
+            <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
+              <span className="text-[#F5F7FA] font-semibold text-xl leading-none">L</span>
+            </div>
           </div>
         ) : (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 w-full">
             <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
-              <span className="text-[#F5F7FA] font-bold text-xl">L</span>
+              <span className="text-[#F5F7FA] font-semibold text-xl leading-none">L</span>
             </div>
             <div className="flex flex-col">
-              <span className="text-xl font-bold text-gray-800 tracking-wide leading-none">
+              <span className="text-xl font-semibold text-[var(--text-primary)] tracking-wide leading-none">
                 LMS
               </span>
-              <span className="text-sm text-gray-500 tracking-wide">
+              <span className="text-sm font-medium text-[var(--text-secondary)] tracking-wide">
                 Mobiyoung
               </span>
             </div>
-       
           </div>
         )}
       </div>
@@ -244,14 +244,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
       {/* Footer Section */}
       <div className="border-t border-gray-100 p-3 space-y-2">
         <div
-          className={`flex items-center px-4 py-2.5 text-sm font-medium text-black rounded-lg hover:bg-green-50 transition-all cursor-pointer ${
+          className={`flex items-center px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] rounded-lg hover:bg-green-50 transition-all cursor-pointer ${
             isCollapsed ? "px-2 justify-center" : ""
           }`}
         >
           <HelpCircle
-            className={`shrink-0 w-5 h-5 min-w-[1.25rem] min-h-[1.25rem] text-black ${isCollapsed ? "" : "mr-3"}`}
+            className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)] ${isCollapsed ? "" : "mr-2.5"}`}
           />
-          {!isCollapsed && <span className="text-black">Help</span>}
+          {!isCollapsed && <span className="text-[var(--text-primary)]">Help</span>}
         </div>
 
         <div
@@ -260,7 +260,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
             isCollapsed ? "px-2 justify-center" : ""
           }`}
         >
-          <LogOut className={`shrink-0 w-5 h-5 min-w-[1.25rem] min-h-[1.25rem] ${isCollapsed ? "" : "mr-3"}`} />
+          <LogOut className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-red-600 ${isCollapsed ? "" : "mr-2.5"}`} />
           {!isCollapsed && <span>Logout</span>}
         </div>
       </div>

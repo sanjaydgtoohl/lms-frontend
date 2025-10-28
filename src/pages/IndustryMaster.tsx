@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import ActionMenu from '../components/ui/ActionMenu';
 import CreateIndustryForm from './CreateIndustryForm';
 import MasterView from '../components/ui/MasterView';
 import MasterEdit from '../components/ui/MasterEdit';
 import Pagination from '../components/ui/Pagination';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { ROUTES } from '../constants';
 
 interface Industry {
   id: string;
@@ -36,7 +38,11 @@ const IndustryMaster: React.FC = () => {
   const endIndex = startIndex + itemsPerPage;
   const currentData = industries.slice(startIndex, endIndex);
 
-  const handleCreateIndustry = () => setShowCreate(true);
+  const navigate = useNavigate();
+  const params = useParams();
+  const location = useLocation();
+
+  const handleCreateIndustry = () => navigate(`${ROUTES.INDUSTRY_MASTER}/create`);
 
   const handleSaveIndustry = (data: any) => {
     const newIndustry: Industry = {
@@ -49,12 +55,10 @@ const IndustryMaster: React.FC = () => {
   };
 
   const handleEdit = (id: string) => {
-    const found = industries.find(i => i.id === id) || null;
-    setEditItem(found);
+    navigate(`${ROUTES.INDUSTRY_MASTER}/${encodeURIComponent(id)}/edit`);
   };
   const handleView = (id: string) => {
-    const found = industries.find(i => i.id === id) || null;
-    setViewItem(found);
+    navigate(`${ROUTES.INDUSTRY_MASTER}/${encodeURIComponent(id)}`);
   };
   const handleDelete = (id: string) => console.log('Delete industry:', id);
 
@@ -62,6 +66,39 @@ const IndustryMaster: React.FC = () => {
 
   const [viewItem, setViewItem] = useState<Industry | null>(null);
   const [editItem, setEditItem] = useState<Industry | null>(null);
+
+  // sync UI with route
+  useEffect(() => {
+    const rawId = params.id;
+    const id = rawId ? decodeURIComponent(rawId) : undefined;
+
+    if (location.pathname.endsWith('/create')) {
+      setShowCreate(true);
+      setViewItem(null);
+      setEditItem(null);
+      return;
+    }
+
+    if (location.pathname.endsWith('/edit') && id) {
+      const found = industries.find(i => i.id === id) || null;
+      setEditItem(found);
+      setViewItem(null);
+      setShowCreate(false);
+      return;
+    }
+
+    if (id) {
+      const found = industries.find(i => i.id === id) || null;
+      setViewItem(found);
+      setShowCreate(false);
+      setEditItem(null);
+      return;
+    }
+
+    setShowCreate(false);
+    setViewItem(null);
+    setEditItem(null);
+  }, [location.pathname, params.id, industries]);
 
   const handleSaveEditedIndustry = (updated: Record<string, any>) => {
     setIndustries(prev => prev.map(i => (i.id === updated.id ? { ...i, ...updated } as Industry : i)));
@@ -81,11 +118,11 @@ const IndustryMaster: React.FC = () => {
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
       {showCreate ? (
-        <CreateIndustryForm onClose={() => setShowCreate(false)} onSave={handleSaveIndustry} />
+        <CreateIndustryForm onClose={() => navigate(ROUTES.INDUSTRY_MASTER)} onSave={handleSaveIndustry} />
       ) : viewItem ? (
-        <MasterView title={`View Industry ${viewItem.id}`} item={viewItem} onClose={() => setViewItem(null)} />
+        <MasterView title={`View Industry ${viewItem.id}`} item={viewItem} onClose={() => navigate(ROUTES.INDUSTRY_MASTER)} />
       ) : editItem ? (
-        <MasterEdit title={`Edit Industry ${editItem.id}`} item={editItem} onClose={() => setEditItem(null)} onSave={handleSaveEditedIndustry} />
+        <MasterEdit title={`Edit Industry ${editItem.id}`} item={editItem} onClose={() => navigate(ROUTES.INDUSTRY_MASTER)} onSave={handleSaveEditedIndustry} />
       ) : (
         <>
           {/* Desktop Table View */}

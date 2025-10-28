@@ -1,69 +1,108 @@
 import React from 'react';
+import './NotificationPopup.css';
 
 interface NotificationPopupProps {
   isOpen: boolean;
   onClose: () => void;
+  message?: string;
+  type?: 'success' | 'error' | 'info';
+  title?: string;
 }
 
-const NotificationPopup: React.FC<NotificationPopupProps> = ({ isOpen, onClose }) => {
+const NotificationPopup: React.FC<NotificationPopupProps> = ({ 
+  isOpen, 
+  onClose, 
+  message = "", 
+  type = "info",
+  title = type === 'error' ? 'Error' : type === 'success' ? 'Success' : 'Notification'
+}) => {
   if (!isOpen) return null;
+
+  const styles = {
+    error: {
+      bg: 'bg-gradient-to-r from-red-50 to-red-100',
+      border: 'border-l-4 border-red-500',
+      text: 'text-red-800',
+      icon: 'text-red-500',
+      shadow: 'shadow-red-100'
+    },
+    success: {
+      bg: 'bg-gradient-to-r from-emerald-50 to-emerald-100',
+      border: 'border-l-4 border-emerald-500',
+      text: 'text-emerald-800',
+      icon: 'text-emerald-500',
+      shadow: 'shadow-emerald-100'
+    },
+    info: {
+      bg: 'bg-gradient-to-r from-blue-50 to-blue-100',
+      border: 'border-l-4 border-blue-500',
+      text: 'text-blue-800',
+      icon: 'text-blue-500',
+      shadow: 'shadow-blue-100'
+    }
+  };
+
+  const currentStyle = styles[type];
 
   return (
     <>
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 z-30" 
+        className="fixed inset-0 z-30 bg-black/10 backdrop-blur-[2px]" 
         onClick={onClose}
       />
 
       {/* Popup */}
-      <div className="absolute right-0 mt-2 w-80 rounded-lg bg-white shadow-lg z-40 border border-[var(--border-color)]">
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-[var(--text-primary)]">Notifications</h3>
-            <button 
+      <div 
+        className={`
+          fixed top-4 right-4 w-96 bg-white z-40 
+          ${currentStyle.border}
+          rounded-lg shadow-lg shadow-black/5 
+          transform transition-all duration-300 ease-out
+          animate-slideIn
+        `}
+      >
+        <div className={`relative p-4 ${currentStyle.bg}`}>
+          <div className="flex items-center space-x-3">
+            {/* Icon based on type */}
+            <div className={`${currentStyle.icon}`}>
+              {type === 'error' && (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              )}
+              {type === 'success' && (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              )}
+              {type === 'info' && (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              )}
+            </div>
+
+            <div className="flex-1">
+              <h3 className={`font-semibold ${currentStyle.text} text-base`}>{title}</h3>
+            </div>
+
+            {/* <button 
               onClick={onClose}
-              className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              className={`${currentStyle.icon} hover:opacity-75 transition-opacity`}
             >
               <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
-            </button>
+            </button> */}
           </div>
           
-          {/* Notification List */}
-          <div className="space-y-4 max-h-[400px] overflow-y-auto">
-            {/* Example notifications - replace with your actual notifications */}
-            <div className="p-3 bg-[var(--hover-bg)] rounded-md">
-              <div className="flex items-start">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-[var(--text-primary)]">New Course Added</p>
-                  <p className="text-xs text-[var(--text-secondary)] mt-1">React Advanced Course has been added to your learning path.</p>
-                  <span className="text-xs text-[var(--text-secondary)] mt-2 block">2 hours ago</span>
-                </div>
-                <div className="ml-3">
-                  <div className="h-2 w-2 bg-[#FE5C73] rounded-full"></div>
-                </div>
-              </div>
+          {/* Message Content */}
+          {message && (
+            <div className="mt-2 ml-9">
+              <p className={`text-sm ${currentStyle.text} opacity-90`}>{message}</p>
             </div>
-
-            <div className="p-3 hover:bg-[var(--hover-bg)] rounded-md transition-colors">
-              <div className="flex items-start">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-[var(--text-primary)]">Assignment Due</p>
-                  <p className="text-xs text-[var(--text-secondary)] mt-1">TypeScript Fundamentals assignment is due tomorrow.</p>
-                  <span className="text-xs text-[var(--text-secondary)] mt-2 block">5 hours ago</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* View All Link */}
-          <div className="mt-4 pt-3 border-t border-[var(--border-color)]">
-            <button className="text-sm text-[var(--primary)] hover:text-[#005A61] font-medium w-full text-center">
-              View All Notifications
-            </button>
-          </div>
+          )}
         </div>
       </div>
     </>

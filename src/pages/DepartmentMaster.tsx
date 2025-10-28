@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, Plus } from 'lucide-react';
 import ActionMenu from '../components/ui/ActionMenu';
 import { motion } from 'framer-motion';
@@ -6,6 +6,8 @@ import Button from '../components/ui/Button';
 import MasterView from '../components/ui/MasterView';
 import MasterEdit from '../components/ui/MasterEdit';
 import Pagination from '../components/ui/Pagination';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { ROUTES } from '../constants';
 
 interface Department {
   id: string;
@@ -105,6 +107,9 @@ const DepartmentMaster: React.FC = () => {
   ]);
 
   const [showCreate, setShowCreate] = useState(false);
+  const navigate = useNavigate();
+  const params = useParams();
+  const location = useLocation();
 
   // totalPages calculated but not used directly
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -112,7 +117,7 @@ const DepartmentMaster: React.FC = () => {
   const currentData = departments.slice(startIndex, endIndex);
 
   const handleCreateDepartment = () => {
-    setShowCreate(true);
+    navigate(`${ROUTES.DEPARTMENT_MASTER}/create`);
   };
 
   const handleSaveDepartment = (data: any) => {
@@ -127,13 +132,11 @@ const DepartmentMaster: React.FC = () => {
   };
 
   const handleEdit = (id: string) => {
-    const found = departments.find(d => d.id === id) || null;
-    setEditItem(found);
+    navigate(`${ROUTES.DEPARTMENT_MASTER}/${encodeURIComponent(id)}/edit`);
   };
 
   const handleView = (id: string) => {
-    const found = departments.find(d => d.id === id) || null;
-    setViewItem(found);
+    navigate(`${ROUTES.DEPARTMENT_MASTER}/${encodeURIComponent(id)}`);
   };
 
   const handleDelete = (id: string) => {
@@ -147,6 +150,38 @@ const DepartmentMaster: React.FC = () => {
   const [viewItem, setViewItem] = useState<Department | null>(null);
   const [editItem, setEditItem] = useState<Department | null>(null);
 
+  useEffect(() => {
+    const rawId = params.id;
+    const id = rawId ? decodeURIComponent(rawId) : undefined;
+
+    if (location.pathname.endsWith('/create')) {
+      setShowCreate(true);
+      setViewItem(null);
+      setEditItem(null);
+      return;
+    }
+
+    if (location.pathname.endsWith('/edit') && id) {
+      const found = departments.find(d => d.id === id) || null;
+      setEditItem(found);
+      setViewItem(null);
+      setShowCreate(false);
+      return;
+    }
+
+    if (id) {
+      const found = departments.find(d => d.id === id) || null;
+      setViewItem(found);
+      setShowCreate(false);
+      setEditItem(null);
+      return;
+    }
+
+    setShowCreate(false);
+    setViewItem(null);
+    setEditItem(null);
+  }, [location.pathname, params.id, departments]);
+
   const handleSaveEditedDepartment = (updated: Record<string, any>) => {
     setDepartments(prev => prev.map(d => (d.id === updated.id ? { ...d, ...updated } as Department : d)));
   };
@@ -156,11 +191,11 @@ const DepartmentMaster: React.FC = () => {
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
       {showCreate ? (
-        <CreateDepartmentForm onClose={() => setShowCreate(false)} onSave={handleSaveDepartment} />
+        <CreateDepartmentForm onClose={() => navigate(ROUTES.DEPARTMENT_MASTER)} onSave={handleSaveDepartment} />
       ) : viewItem ? (
-        <MasterView title={`View Department ${viewItem.id}`} item={viewItem} onClose={() => setViewItem(null)} />
+        <MasterView title={`View Department ${viewItem.id}`} item={viewItem} onClose={() => navigate(ROUTES.DEPARTMENT_MASTER)} />
       ) : editItem ? (
-        <MasterEdit title={`Edit Department ${editItem.id}`} item={editItem} onClose={() => setEditItem(null)} onSave={handleSaveEditedDepartment} />
+        <MasterEdit title={`Edit Department ${editItem.id}`} item={editItem} onClose={() => navigate(ROUTES.DEPARTMENT_MASTER)} onSave={handleSaveEditedDepartment} />
       ) : (
         <>
           {/* Desktop Table View */}
