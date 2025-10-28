@@ -2,6 +2,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button, Input, NotificationPopup } from '../../components/ui';
+import { useState } from 'react';
 import { useAuthStore } from '../../store/auth';
 import { useUiStore } from '../../store/ui';
 
@@ -16,6 +17,7 @@ export default function LoginCard() {
   const { login, isLoading } = useAuthStore();
   const showNotification = useUiStore((s) => s.showNotification);
   const notification = useUiStore((s) => s.notification);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   const {
     register,
@@ -28,8 +30,12 @@ export default function LoginCard() {
   const onSubmit = async (data: LoginFormData) => {
     try {
       await login(data.email, data.password);
+      // Clear any previous inline login error on success
+      setLoginError(null);
     } catch (error: any) {
-      showNotification(error?.message || 'Login failed. Please check your credentials.', 'error', 'Login Error');
+      // Hide global notification popup and show inline message instead
+      useUiStore.getState().hideNotification();
+      setLoginError(error?.message || 'Login failed. Please check your credentials.');
     }
   };
 
@@ -70,9 +76,19 @@ export default function LoginCard() {
             <span className="align-middle leading-none relative -top-0.6 bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent font-extrabold tracking-wide drop-shadow-[0_0_14px_rgba(255,255,255,0.35)]">LMS</span>
           </span>
         </h2>
-        <p className="text-zinc-400 text-sm sm:text-base lg:text-lg mb-6 sm:mb-8 text-center">
+        <p className="text-zinc-400 text-sm sm:text-base lg:text-lg mb-2 sm:mb-3 text-center">
           BUILT BY MOBIYOUNG
         </p>
+
+        {/* Inline server error (shown instead of popup for login failures) */}
+        {loginError && (
+          <div className="w-full text-center mb-4">
+            <div className="inline-block bg-red-900/60 text-red-100 px-3 py-2 rounded-md text-sm sm:text-base">
+              <strong className="mr-1">Login Error:</strong>
+              <span>{loginError}</span>
+            </div>
+          </div>
+        )}
 
          {/* Form - Clean & Simple */}
          <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-sm sm:max-w-md space-y-4 sm:space-y-5">

@@ -18,14 +18,10 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-20">
+  <header className="bg-white shadow-sm sticky top-0 z-20 border-b border-gray-200">
       <div className="flex items-center justify-between px-6" style={{ paddingBottom: '11px', paddingTop: '11px' }}>
-        {/* Page Title */}
-        <div>
-          <h1 className="text-xl font-semibold text-[var(--text-primary)]">
-          
-          </h1>
-        </div>
+        {/* Page Title (Breadcrumb moved to Layout) */}
+        <div />
 
         {/* Right Section */}
         <div className="flex items-center space-x-4">

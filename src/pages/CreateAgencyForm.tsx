@@ -111,6 +111,14 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
         <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
           <div className="bg-gray-50 px-5 py-4 border-b border-[var(--border-color)] flex items-center justify-between">
             <h3 className="text-lg font-semibold text-[var(--text-primary)]">Create Agency</h3>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex items-center space-x-2 text-[var(--text-secondary)] hover:text-black"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span className="text-sm">Back</span>
+            </button>
           </div>
 
           <div className="p-5 bg-[#F9FAFB] space-y-5">
@@ -277,16 +285,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
           </div>
         )}
 
-        <div className="flex items-center justify-between">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex items-center space-x-2 px-4 py-2 text-[var(--text-secondary)] hover:text-black"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            <span>Back to Agency Master</span>
-          </button>
-
+        <div className="flex items-center justify-end">
           <button
             onClick={handleSubmit}
             className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white hover:bg-[#066a6d] shadow-sm"

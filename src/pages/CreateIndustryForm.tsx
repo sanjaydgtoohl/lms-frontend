@@ -38,8 +38,16 @@ const CreateIndustryForm: React.FC<Props> = ({ onClose, onSave }) => {
       transition={{ duration: 0.22 }}
       className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden"
     >
-      <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)] flex items-center">
+      <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between">
         <h3 className="text-lg font-semibold text-[var(--text-primary)]">Create Industry</h3>
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex items-center space-x-2 text-[var(--text-secondary)] hover:text-black"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <span className="text-sm">Back</span>
+        </button>
       </div>
 
       <div className="p-6 bg-[#F9FAFB]">
@@ -56,16 +64,7 @@ const CreateIndustryForm: React.FC<Props> = ({ onClose, onSave }) => {
             {error && <div className="text-xs text-red-500 mt-1">{error}</div>}
           </div>
 
-          <div className="flex items-center justify-between">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex items-center space-x-2 px-4 py-2 text-[var(--text-secondary)] hover:text-black"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              <span>Back to Industry Master</span>
-            </button>
-
+          <div className="flex items-center justify-end">
             <button
               type="submit"
               className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white hover:bg-[#066a6d] shadow-sm"

@@ -8,6 +8,7 @@ import MasterEdit from '../components/ui/MasterEdit';
 import type { Agency } from '../components/layout/MainContent';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants';
+import { getItem } from '../data/masterData';
 
 const AgencyMaster: React.FC = () => {
   const [showCreate, setShowCreate] = useState(false);
@@ -55,15 +56,19 @@ const AgencyMaster: React.FC = () => {
     }
 
     if (location.pathname.endsWith('/edit') && id) {
-      // find the agency in whatever source; for now we set a placeholder
-      setEditItem({ id } as Agency);
+      // Try to load full agency data from in-memory sample data
+      const fetched = getItem('agency', id);
+      if (fetched) setEditItem(fetched as Agency);
+      else setEditItem({ id } as Agency);
       setViewItem(null);
       setShowCreate(false);
       return;
     }
 
     if (id) {
-      setViewItem({ id } as Agency);
+      const fetched = getItem('agency', id);
+      if (fetched) setViewItem(fetched as Agency);
+      else setViewItem({ id } as Agency);
       setShowCreate(false);
       setEditItem(null);
       return;
