@@ -7,6 +7,13 @@ import MasterView from '../components/ui/MasterView';
 import MasterEdit from '../components/ui/MasterEdit';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants';
+import {
+  listDesignations,
+  deleteDesignation,
+  updateDesignation,
+  createDesignation,
+  type Designation as ApiDesignation,
+} from '../services/DesignationMaster';
 
 interface Designation {
   id: string;
@@ -96,15 +103,10 @@ const DesignationMaster: React.FC = () => {
   const [showCreate, setShowCreate] = useState(false);
   const itemsPerPage = 10;
 
-  // Store designations in state so we can add new ones
-  const [designations, setDesignations] = useState<Designation[]>([
-    { id: '#CMP801', name: 'Designation 1', dateTime: '02-07-2025 22:23' },
-    { id: '#CMP802', name: 'Software Engineer', dateTime: '02-07-2025 22:24' },
-    { id: '#CMP803', name: 'Senior Developer', dateTime: '02-07-2025 22:25' },
-    { id: '#CMP804', name: 'Team Lead', dateTime: '02-07-2025 22:26' },
-    { id: '#CMP805', name: 'Project Manager', dateTime: '02-07-2025 22:27' },
-    // More designations...
-  ]);
+  // Store designations in state fetched from API
+  const [designations, setDesignations] = useState<Designation[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // totalPages calculated but not used directly
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -120,14 +122,16 @@ const DesignationMaster: React.FC = () => {
   };
 
   const handleSaveDesignation = (data: any) => {
-    const newDesignation: Designation = {
-      id: `#CMP${Math.floor(Math.random() * 90000) + 10000}`,
-      name: data.name || 'Untitled',
-      dateTime: data.dateTime || new Date().toLocaleString(),
-    };
-
-    setDesignations(prev => [newDesignation, ...prev]);
-    setCurrentPage(1);
+    // create on server then refresh list
+    (async () => {
+      try {
+        await createDesignation({ name: data.name });
+        await refresh();
+        setCurrentPage(1);
+      } catch (e: any) {
+        alert(e?.message || 'Failed to create designation');
+      }
+    })();
   };
 
   const handleEdit = (id: string) => {
@@ -138,8 +142,15 @@ const DesignationMaster: React.FC = () => {
     navigate(`${ROUTES.DESIGNATION_MASTER}/${encodeURIComponent(id)}`);
   };
 
-  const handleDelete = (id: string) => {
-    console.log('Delete designation:', id);
+  const handleDelete = async (id: string) => {
+    const confirm = window.confirm('Delete this designation?');
+    if (!confirm) return;
+    try {
+      await deleteDesignation(id);
+      setDesignations(prev => prev.filter(d => d.id !== id));
+    } catch (e: any) {
+      alert(e?.message || 'Failed to delete');
+    }
   };
 
   const handlePageChange = (page: number) => {
@@ -148,6 +159,26 @@ const DesignationMaster: React.FC = () => {
 
   const [viewItem, setViewItem] = useState<Designation | null>(null);
   const [editItem, setEditItem] = useState<Designation | null>(null);
+
+  const refresh = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await listDesignations();
+      const mapped: Designation[] = (data as ApiDesignation[]).map((it) => ({
+        id: String(it.id),
+        name: it.name,
+        dateTime: it.created_at || '',
+      }));
+      setDesignations(mapped);
+    } catch (e: any) {
+      setError(e?.message || 'Failed to load designations');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { refresh(); }, []);
 
   useEffect(() => {
     const rawId = params.id;
@@ -182,7 +213,14 @@ const DesignationMaster: React.FC = () => {
   }, [location.pathname, params.id, designations]);
 
   const handleSaveEditedDesignation = (updated: Record<string, any>) => {
-    setDesignations(prev => prev.map(d => (d.id === updated.id ? { ...d, ...updated } as Designation : d)));
+    (async () => {
+      try {
+        await updateDesignation(updated.id, { name: updated.name });
+        setDesignations(prev => prev.map(d => (d.id === updated.id ? { ...d, name: updated.name } as Designation : d)));
+      } catch (e: any) {
+        alert(e?.message || 'Failed to update');
+      }
+    })();
   };
 
   const renderPagination = () => {
