@@ -7,6 +7,7 @@ import MasterEdit from '../components/ui/MasterEdit';
 import Pagination from '../components/ui/Pagination';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants';
+import { listIndustries, deleteIndustry, updateIndustry, type Industry as ApiIndustry } from '../services/IndustryMaster';
 
 interface Industry {
   id: string;
@@ -19,19 +20,9 @@ const IndustryMaster: React.FC = () => {
   const [showCreate, setShowCreate] = useState(false);
   const itemsPerPage = 10;
 
-  // move sample data into state so we can append new items
-  const [industries, setIndustries] = useState<Industry[]>([
-    { id: '#CMP801', name: 'Industry 1', dateTime: '02-07-2025 22:23' },
-    { id: '#CMP802', name: 'Technology', dateTime: '02-07-2025 22:24' },
-    { id: '#CMP803', name: 'Healthcare', dateTime: '02-07-2025 22:25' },
-    { id: '#CMP804', name: 'Finance', dateTime: '02-07-2025 22:26' },
-    { id: '#CMP805', name: 'Education', dateTime: '02-07-2025 22:27' },
-    { id: '#CMP806', name: 'Manufacturing', dateTime: '02-07-2025 22:28' },
-    { id: '#CMP807', name: 'Retail', dateTime: '02-07-2025 22:29' },
-    { id: '#CMP808', name: 'Real Estate', dateTime: '02-07-2025 22:30' },
-    { id: '#CMP809', name: 'Automotive', dateTime: '02-07-2025 22:31' },
-    { id: '#CMP810', name: 'Energy', dateTime: '02-07-2025 22:32' },
-  ]);
+  const [industries, setIndustries] = useState<Industry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // totalPages calculated but not used directly
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -44,14 +35,9 @@ const IndustryMaster: React.FC = () => {
 
   const handleCreateIndustry = () => navigate(`${ROUTES.INDUSTRY_MASTER}/create`);
 
-  const handleSaveIndustry = (data: any) => {
-    const newIndustry: Industry = {
-      id: `#CMP${Math.floor(Math.random() * 90000) + 10000}`,
-      name: data.name || 'Untitled',
-      dateTime: data.dateTime || new Date().toLocaleString(),
-    };
-    setIndustries(prev => [newIndustry, ...prev]);
-    setCurrentPage(1);
+  const handleSaveIndustry = () => {
+    // After create form closes, refresh the list from API
+    refresh();
   };
 
   const handleEdit = (id: string) => {
@@ -60,12 +46,41 @@ const IndustryMaster: React.FC = () => {
   const handleView = (id: string) => {
     navigate(`${ROUTES.INDUSTRY_MASTER}/${encodeURIComponent(id)}`);
   };
-  const handleDelete = (id: string) => console.log('Delete industry:', id);
+  const handleDelete = async (id: string) => {
+    const confirm = window.confirm('Delete this industry?');
+    if (!confirm) return;
+    try {
+      await deleteIndustry(id);
+      setIndustries(prev => prev.filter(i => i.id !== id));
+    } catch (e: any) {
+      alert(e?.message || 'Failed to delete');
+    }
+  };
 
   const handlePageChange = (page: number) => setCurrentPage(page);
 
   const [viewItem, setViewItem] = useState<Industry | null>(null);
   const [editItem, setEditItem] = useState<Industry | null>(null);
+
+  const refresh = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await listIndustries();
+      const mapped: Industry[] = (data as ApiIndustry[]).map((it) => ({
+        id: String(it.id),
+        name: it.name,
+        dateTime: it.created_at || '',
+      }));
+      setIndustries(mapped);
+    } catch (e: any) {
+      setError(e?.message || 'Failed to load industries');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { refresh(); }, []);
 
   // sync UI with route
   useEffect(() => {
@@ -100,8 +115,13 @@ const IndustryMaster: React.FC = () => {
     setEditItem(null);
   }, [location.pathname, params.id, industries]);
 
-  const handleSaveEditedIndustry = (updated: Record<string, any>) => {
-    setIndustries(prev => prev.map(i => (i.id === updated.id ? { ...i, ...updated } as Industry : i)));
+  const handleSaveEditedIndustry = async (updated: Record<string, any>) => {
+    try {
+      await updateIndustry(updated.id, { name: updated.name });
+      setIndustries(prev => prev.map(i => (i.id === updated.id ? { ...i, name: updated.name } as Industry : i)));
+    } catch (e: any) {
+      alert(e?.message || 'Failed to update');
+    }
   };
 
   const renderPagination = () => {
@@ -133,6 +153,12 @@ const IndustryMaster: React.FC = () => {
                 <button onClick={handleCreateIndustry} className="flex items-center space-x-2 px-4 py-2 bg-green-100 hover:bg-green-200 text-black text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"><Plus className="w-4 h-4" /><span>Create Industry</span></button>
               </div>
 
+              {error && (
+                <div className="px-6 py-3 text-sm text-red-600 bg-red-50 border-b border-[var(--border-color)]">{error}</div>
+              )}
+              {loading ? (
+                <div className="px-6 py-6 text-sm text-[var(--text-secondary)]">Loading...</div>
+              ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50">
@@ -162,6 +188,7 @@ const IndustryMaster: React.FC = () => {
                   </tbody>
                 </table>
               </div>
+              )}
             </div>
           </div>
 

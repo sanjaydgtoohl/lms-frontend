@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft } from 'lucide-react';
+import { createIndustry } from '../services/IndustryMaster';
 
 type Props = {
   onClose: () => void;
@@ -10,6 +11,7 @@ type Props = {
 const CreateIndustryForm: React.FC<Props> = ({ onClose, onSave }) => {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const formatDateTime = (d: Date) => {
     const dd = String(d.getDate()).padStart(2, '0');
@@ -20,14 +22,22 @@ const CreateIndustryForm: React.FC<Props> = ({ onClose, onSave }) => {
     return `${dd}-${mm}-${yyyy} ${hh}:${min}`;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
       setError('Industry Name is required');
       return;
     }
-    if (onSave) onSave({ name, dateTime: formatDateTime(new Date()) });
-    onClose();
+    try {
+      setSaving(true);
+      await createIndustry({ name });
+      if (onSave) onSave({ name, dateTime: formatDateTime(new Date()) });
+      onClose();
+    } catch (err: any) {
+      setError(err?.message || 'Failed to create industry');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -67,9 +77,10 @@ const CreateIndustryForm: React.FC<Props> = ({ onClose, onSave }) => {
           <div className="flex items-center justify-end">
             <button
               type="submit"
-              className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white hover:bg-[#066a6d] shadow-sm"
+              className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white hover:bg-[#066a6d] shadow-sm disabled:opacity-60"
+              disabled={saving}
             >
-              Save Industry
+              {saving ? 'Saving...' : 'Save Industry'}
             </button>
           </div>
         </form>
