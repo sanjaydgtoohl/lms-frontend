@@ -108,4 +108,23 @@ export async function deleteLeadSubSource(id: string | number): Promise<void> {
   await handleResponse<unknown>(res);
 }
 
+export type UpdateLeadSubSourcePayload = {
+  name: string;
+  description?: string | null;
+  status?: string | number;
+  lead_source_id: string | number;
+};
+
+export async function updateLeadSubSource(
+  id: string | number,
+  payload: UpdateLeadSubSourcePayload
+): Promise<LeadSourceItem> {
+  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.UPDATE(String(id))}`, {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  });
+  return handleResponse<LeadSourceItem>(res);
+}
+
 

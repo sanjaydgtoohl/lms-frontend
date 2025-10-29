@@ -6,7 +6,8 @@ import Pagination from '../components/ui/Pagination';
 import CreateSourceForm from './CreateSourceForm';
 import MasterView from '../components/ui/MasterView';
 import MasterEdit from '../components/ui/MasterEdit';
-import { listLeadSources, deleteLeadSubSource, type LeadSourceItem } from '../services/LeadSource';
+import { listLeadSources, deleteLeadSubSource, updateLeadSubSource, type LeadSourceItem } from '../services/LeadSource';
+import { fetchLeadSources } from '../services/CreateSourceForm';
 import { ROUTES } from '../constants';
 
 const LeadSource: React.FC = () => {
@@ -73,9 +74,26 @@ const LeadSource: React.FC = () => {
     navigate(`${ROUTES.SOURCE_MASTER}/${encodeURIComponent(item.id)}/edit`);
   };
 
-  const handleSaveEdit = (updated: Record<string, any>) => {
-    setItems(prev => prev.map(i => (i.id === updated.id ? { ...i, ...updated } : i)));
-    navigate(ROUTES.SOURCE_MASTER);
+  const handleSaveEdit = async (updated: Record<string, any>) => {
+    try {
+      // Map UI fields to API payload
+      const name = updated.subSource ?? updated.name ?? '';
+      const leadSourceName = updated.source; // UI holds name
+      // Resolve source id by name
+      const sourceOptions = await fetchLeadSources();
+      const matched = sourceOptions.find(s => s.name === leadSourceName);
+      const leadSourceId = matched ? matched.id : leadSourceName; // fallback to given value
+      await updateLeadSubSource(updated.id, {
+        name,
+        lead_source_id: leadSourceId,
+        status: 1,
+      });
+      setItems(prev => prev.map(i => (i.id === updated.id ? { ...i, subSource: name, source: leadSourceName } : i)));
+    } catch (e: any) {
+      alert(e?.message || 'Failed to update');
+    } finally {
+      navigate(ROUTES.SOURCE_MASTER);
+    }
   };
 
   // helper to refresh list is available if needed (removed because unused)
