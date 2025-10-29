@@ -18,7 +18,7 @@ const LeadSource: React.FC = () => {
   const [items, setItems] = useState<LeadSourceItem[]>([]);
   const [viewItem, setViewItem] = useState<LeadSourceItem | null>(null);
   const [editItem, setEditItem] = useState<LeadSourceItem | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  // track deletion in-flight if needed (not used currently)
 
   useEffect(() => {
     let isMounted = true;
@@ -78,24 +78,12 @@ const LeadSource: React.FC = () => {
     navigate(ROUTES.SOURCE_MASTER);
   };
 
-  const refreshList = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await listLeadSources();
-      setItems(data);
-    } catch (e: any) {
-      setError(e?.message || 'Failed to load lead sources');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // helper to refresh list is available if needed (removed because unused)
 
   const handleDelete = async (item: LeadSourceItem) => {
     const confirm = window.confirm(`Delete sub-source "${item.subSource || item.id}"?`);
     if (!confirm) return;
     try {
-      setDeletingId(String(item.id));
       await deleteLeadSubSource(item.id);
       // remove locally, then optionally refresh
       setItems(prev => prev.filter(i => i.id !== item.id));
@@ -103,7 +91,6 @@ const LeadSource: React.FC = () => {
     } catch (e: any) {
       alert(e?.message || 'Failed to delete');
     } finally {
-      setDeletingId(null);
     }
   };
 

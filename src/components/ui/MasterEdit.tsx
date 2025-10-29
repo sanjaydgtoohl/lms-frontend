@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft } from 'lucide-react';
+import { fetchLeadSources, type LeadSource } from '../../services/CreateSourceForm';
 
 type Props = {
   title?: string;
@@ -11,12 +12,33 @@ type Props = {
 
 const MasterEdit: React.FC<Props> = ({ title = 'Edit', item, onClose, onSave }) => {
   const [form, setForm] = useState<Record<string, any>>(item || {});
+  const [options, setOptions] = useState<LeadSource[]>([]);
+  const [loadingOptions, setLoadingOptions] = useState(false);
 
   if (!item) return null;
 
   const handleChange = (key: string, value: any) => {
     setForm(prev => ({ ...prev, [key]: value }));
   };
+
+  useEffect(() => {
+    let mounted = true;
+    setLoadingOptions(true);
+    fetchLeadSources()
+      .then(list => {
+        if (!mounted) return;
+        setOptions(list);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setOptions([]);
+      })
+      .finally(() => {
+        if (!mounted) return;
+        setLoadingOptions(false);
+      });
+    return () => { mounted = false; };
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,14 +64,28 @@ const MasterEdit: React.FC<Props> = ({ title = 'Edit', item, onClose, onSave }) 
         </div>
 
       <div className="p-6 bg-[#F9FAFB] space-y-4">
-        {Object.entries(form).filter(([k]) => k !== 'id').map(([k]) => (
+  {Object.entries(form).filter(([k]) => k !== 'id' && k !== 'dateTime' && k !== 'date_time').map(([k]) => (
           <div key={k}>
             <label className="block text-sm text-[var(--text-secondary)] mb-1">{k.replace(/([A-Z])/g, ' $1')}</label>
-            <input
-              value={form[k] ?? ''}
-              onChange={(e) => handleChange(k, e.target.value)}
-              className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-            />
+            {k === 'source' ? (
+              <select
+                value={form[k] ?? ''}
+                onChange={(e) => handleChange(k, e.target.value)}
+                className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                disabled={loadingOptions}
+              >
+                <option value="">{loadingOptions ? 'Loading...' : 'Select Source Name'}</option>
+                {!loadingOptions && options.map(opt => (
+                  <option key={String(opt.id)} value={opt.name}>{opt.name}</option>
+                ))}
+              </select>
+            ) : (
+              <input
+                value={form[k] ?? ''}
+                onChange={(e) => handleChange(k, e.target.value)}
+                className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+              />
+            )}
           </div>
         ))}
 
