@@ -6,7 +6,7 @@ import Pagination from '../components/ui/Pagination';
 import CreateSourceForm from './CreateSourceForm';
 import MasterView from '../components/ui/MasterView';
 import MasterEdit from '../components/ui/MasterEdit';
-import { listLeadSources, type LeadSourceItem } from '../services/LeadSource';
+import { listLeadSources, deleteLeadSubSource, type LeadSourceItem } from '../services/LeadSource';
 import { ROUTES } from '../constants';
 
 const LeadSource: React.FC = () => {
@@ -18,6 +18,7 @@ const LeadSource: React.FC = () => {
   const [items, setItems] = useState<LeadSourceItem[]>([]);
   const [viewItem, setViewItem] = useState<LeadSourceItem | null>(null);
   const [editItem, setEditItem] = useState<LeadSourceItem | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -75,6 +76,35 @@ const LeadSource: React.FC = () => {
   const handleSaveEdit = (updated: Record<string, any>) => {
     setItems(prev => prev.map(i => (i.id === updated.id ? { ...i, ...updated } : i)));
     navigate(ROUTES.SOURCE_MASTER);
+  };
+
+  const refreshList = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await listLeadSources();
+      setItems(data);
+    } catch (e: any) {
+      setError(e?.message || 'Failed to load lead sources');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (item: LeadSourceItem) => {
+    const confirm = window.confirm(`Delete sub-source "${item.subSource || item.id}"?`);
+    if (!confirm) return;
+    try {
+      setDeletingId(String(item.id));
+      await deleteLeadSubSource(item.id);
+      // remove locally, then optionally refresh
+      setItems(prev => prev.filter(i => i.id !== item.id));
+      // await refreshList(); // keep commented for performance; enable if needed
+    } catch (e: any) {
+      alert(e?.message || 'Failed to delete');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   // Sync view/edit/create state from the current URL
@@ -158,7 +188,7 @@ const LeadSource: React.FC = () => {
                               isLast={index >= currentData.length - 2}
                               onEdit={() => handleEdit(item)}
                               onView={() => handleView(item)}
-                              onDelete={() => console.log('Delete lead source:', item.id)}
+                              onDelete={() => handleDelete(item)}
                             />
                           </td>
                         </tr>
@@ -187,7 +217,7 @@ const LeadSource: React.FC = () => {
                     isLast={index === currentData.length - 1}
                     onEdit={() => handleEdit(item)}
                     onView={() => handleView(item)}
-                    onDelete={() => console.log('Delete lead source:', item.id)}
+                    onDelete={() => handleDelete(item)}
                   />
                 </div>
 

@@ -99,4 +99,13 @@ export async function deleteLeadSource(id: string): Promise<void> {
   await handleResponse<unknown>(res);
 }
 
+// Alias with clearer name for lead sub-source deletion
+export async function deleteLeadSubSource(id: string | number): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.DELETE(String(id))}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+  await handleResponse<unknown>(res);
+}
+
 
