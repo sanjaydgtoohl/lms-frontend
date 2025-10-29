@@ -24,6 +24,7 @@ export const ROUTES = {
   DEPARTMENT_MASTER: '/master/department',
   DESIGNATION_MASTER: '/master/designation',
   INDUSTRY_MASTER: '/master/industry',
+  SOURCE_MASTER: '/master/source',
 } as const;
 
 // User Roles

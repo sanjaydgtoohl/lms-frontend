@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import ActionMenu from '../components/ui/ActionMenu';
 import Pagination from '../components/ui/Pagination';
 import CreateSourceForm from './CreateSourceForm';
 import MasterView from '../components/ui/MasterView';
 import MasterEdit from '../components/ui/MasterEdit';
 import { listLeadSources, type LeadSourceItem } from '../services/LeadSource';
+import { ROUTES } from '../constants';
 
 const LeadSource: React.FC = () => {
   const [showCreate, setShowCreate] = useState(false);
@@ -39,7 +41,14 @@ const LeadSource: React.FC = () => {
   const endIndex = startIndex + itemsPerPage;
   const currentData = items.slice(startIndex, endIndex);
 
-  const handleCreate = () => setShowCreate(true);
+  const navigate = useNavigate();
+  const params = useParams();
+  const location = useLocation();
+
+  const handleCreate = () => {
+    navigate(`${ROUTES.SOURCE_MASTER}/create`);
+  };
+
   const handlePageChange = (page: number) => setCurrentPage(page);
 
   const handleSaveSource = (data: any) => {
@@ -52,24 +61,64 @@ const LeadSource: React.FC = () => {
     };
     setItems(prev => [newItem, ...prev]);
     setCurrentPage(1);
-    setShowCreate(false);
+    navigate(ROUTES.SOURCE_MASTER);
   };
 
-  const handleView = (item: LeadSourceItem) => setViewItem(item);
-  const handleEdit = (item: LeadSourceItem) => setEditItem(item);
+  const handleView = (item: LeadSourceItem) => {
+    navigate(`${ROUTES.SOURCE_MASTER}/${encodeURIComponent(item.id)}`);
+  };
+
+  const handleEdit = (item: LeadSourceItem) => {
+    navigate(`${ROUTES.SOURCE_MASTER}/${encodeURIComponent(item.id)}/edit`);
+  };
+
   const handleSaveEdit = (updated: Record<string, any>) => {
     setItems(prev => prev.map(i => (i.id === updated.id ? { ...i, ...updated } : i)));
-    setEditItem(null);
+    navigate(ROUTES.SOURCE_MASTER);
   };
+
+  // Sync view/edit/create state from the current URL
+  useEffect(() => {
+    const rawId = params.id;
+    const id = rawId ? decodeURIComponent(rawId) : undefined;
+
+    if (location.pathname.endsWith('/create')) {
+      setShowCreate(true);
+      setViewItem(null);
+      setEditItem(null);
+      return;
+    }
+
+    if (location.pathname.endsWith('/edit') && id) {
+      const found = items.find(i => i.id === id) || null;
+      setEditItem(found);
+      setViewItem(null);
+      setShowCreate(false);
+      return;
+    }
+
+    if (id) {
+      const found = items.find(i => i.id === id) || null;
+      setViewItem(found);
+      setShowCreate(false);
+      setEditItem(null);
+      return;
+    }
+
+    // default listing state
+    setShowCreate(false);
+    setViewItem(null);
+    setEditItem(null);
+  }, [location.pathname, params.id, items]);
 
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
       {showCreate ? (
-        <CreateSourceForm inline onClose={() => setShowCreate(false)} onSave={handleSaveSource} />
+        <CreateSourceForm inline onClose={() => navigate(ROUTES.SOURCE_MASTER)} onSave={handleSaveSource} />
       ) : viewItem ? (
-        <MasterView title={`View Lead Source ${viewItem.id}`} item={viewItem} onClose={() => setViewItem(null)} />
+        <MasterView title={`View Lead Source ${viewItem.id}`} item={viewItem} onClose={() => navigate(ROUTES.SOURCE_MASTER)} />
       ) : editItem ? (
-        <MasterEdit title={`Edit Lead Source ${editItem.id}`} item={editItem} onClose={() => setEditItem(null)} onSave={handleSaveEdit} />
+        <MasterEdit title={`Edit Lead Source ${editItem.id}`} item={editItem} onClose={() => navigate(ROUTES.SOURCE_MASTER)} onSave={handleSaveEdit} />
       ) : (
         <>
           {/* Desktop Table View */}
