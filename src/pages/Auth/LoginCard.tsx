@@ -15,7 +15,6 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginCard() {
   const { login, isLoading } = useAuthStore();
-  const showNotification = useUiStore((s) => s.showNotification);
   const notification = useUiStore((s) => s.notification);
   const [loginError, setLoginError] = useState<string | null>(null);
 
