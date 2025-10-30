@@ -8,6 +8,13 @@ import MasterEdit from '../components/ui/MasterEdit';
 import Pagination from '../components/ui/Pagination';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants';
+import {
+  listDepartments,
+  createDepartment,
+  updateDepartment,
+  deleteDepartment,
+  type Department as ApiDepartment,
+} from '../services/DepartmentMaster';
 
 interface Department {
   id: string;
@@ -96,14 +103,10 @@ const DepartmentMaster: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // store departments in state so we can add new ones
-  const [departments, setDepartments] = useState<Department[]>([
-    { id: '#CMPR01', name: 'Department 1', dateTime: '02-07-2025 22:23' },
-    { id: '#CMPR02', name: 'Department 2', dateTime: '02-07-2025 22:23' },
-    { id: '#CMPR03', name: 'Department 3', dateTime: '02-07-2025 22:23' },
-    { id: '#CMPR04', name: 'Department 4', dateTime: '02-07-2025 22:23' },
-    { id: '#CMPR05', name: 'Department 5', dateTime: '02-07-2025 22:23' },
-  ]);
+  // Store departments in state fetched from API
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [showCreate, setShowCreate] = useState(false);
   const navigate = useNavigate();
@@ -120,14 +123,16 @@ const DepartmentMaster: React.FC = () => {
   };
 
   const handleSaveDepartment = (data: any) => {
-    const newDept: Department = {
-      id: `#CMPR${Math.floor(Math.random() * 90000) + 10000}`,
-      name: data.name || 'Untitled',
-      dateTime: data.dateTime || new Date().toLocaleString(),
-    };
-
-    setDepartments(prev => [newDept, ...prev]);
-    setCurrentPage(1);
+    // Create on server then refresh list
+    (async () => {
+      try {
+        await createDepartment({ name: data.name });
+        await refresh();
+        setCurrentPage(1);
+      } catch (e: any) {
+        alert(e?.message || 'Failed to create department');
+      }
+    })();
   };
 
   const handleEdit = (id: string) => {
@@ -138,8 +143,15 @@ const DepartmentMaster: React.FC = () => {
     navigate(`${ROUTES.DEPARTMENT_MASTER}/${encodeURIComponent(id)}`);
   };
 
-  const handleDelete = (id: string) => {
-    console.log('Delete department:', id);
+  const handleDelete = async (id: string) => {
+    const confirm = window.confirm('Delete this department?');
+    if (!confirm) return;
+    try {
+      await deleteDepartment(id);
+      setDepartments(prev => prev.filter(d => d.id !== id));
+    } catch (e: any) {
+      alert(e?.message || 'Failed to delete');
+    }
   };
 
   const handlePageChange = (page: number) => {
@@ -148,6 +160,26 @@ const DepartmentMaster: React.FC = () => {
 
   const [viewItem, setViewItem] = useState<Department | null>(null);
   const [editItem, setEditItem] = useState<Department | null>(null);
+
+  const refresh = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await listDepartments();
+      const mapped: Department[] = (data as ApiDepartment[]).map((it) => ({
+        id: String(it.id),
+        name: it.name,
+        dateTime: it.created_at || '',
+      }));
+      setDepartments(mapped);
+    } catch (e: any) {
+      setError(e?.message || 'Failed to load departments');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { refresh(); }, []);
 
   useEffect(() => {
     const rawId = params.id;
@@ -182,7 +214,14 @@ const DepartmentMaster: React.FC = () => {
   }, [location.pathname, params.id, departments]);
 
   const handleSaveEditedDepartment = (updated: Record<string, any>) => {
-    setDepartments(prev => prev.map(d => (d.id === updated.id ? { ...d, ...updated } as Department : d)));
+    (async () => {
+      try {
+        await updateDepartment(updated.id, { name: updated.name });
+        setDepartments(prev => prev.map(d => (d.id === updated.id ? { ...d, name: updated.name } as Department : d)));
+      } catch (e: any) {
+        alert(e?.message || 'Failed to update');
+      }
+    })();
   };
 
 
