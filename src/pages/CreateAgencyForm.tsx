@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { listAgencyTypes, listGroupAgencies, createGroupAgency, type GroupAgency } from '../services';
+import { 
+  listAgencyTypes, 
+  listGroupAgencies, 
+  createGroupAgency, 
+  listAgencyClients,
+  type GroupAgency,
+  type AgencyClient 
+} from '../services';
 import { motion } from 'framer-motion';
 import { ChevronLeft, Check, Plus, Loader2 } from 'lucide-react';
 
@@ -16,7 +23,7 @@ type AgencyBlock = {
   client: string;
 };
 // Agency types are fetched from the API; keep a default placeholder option
-const agencyClients = ['Select Client', 'Client 1', 'Client 2', 'Client 3'];
+
 
 const blankAgency = (): AgencyBlock => ({ id: String(Date.now()) + Math.random().toString(36).slice(2, 6), name: '', type: '', client: '' });
 
@@ -45,7 +52,10 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
     groupAgencies: true,
     agencyTypes: true,
     createGroup: false,
+    agencyClients: true,
   });
+  
+  const [agencyClients, setAgencyClients] = useState<AgencyClient[]>([]);
 
   // Agency types fetched from API for the Agency Type dropdown
   const [agencyTypes, setAgencyTypes] = useState<string[]>(['Select Type']);
@@ -81,6 +91,21 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
       } finally {
         if (mounted) {
           setIsLoading(prev => ({ ...prev, groupAgencies: false }));
+        }
+      }
+    })();
+
+    // Load agency clients (brands)
+    (async () => {
+      try {
+        const items = await listAgencyClients();
+        if (!mounted) return;
+        setAgencyClients(items.filter(item => item.status !== "0")); // Only active clients
+      } catch (err) {
+        console.error('Failed to load agency clients:', err);
+      } finally {
+        if (mounted) {
+          setIsLoading(prev => ({ ...prev, agencyClients: false }));
         }
       }
     })();
@@ -391,20 +416,30 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
                   <div>
                     <label className="block text-sm text-[var(--text-secondary)] mb-1">Agency Client</label>
                     <div className="flex items-center">
-                      <select
-                        value={a.client}
-                        onChange={(e) => updateAgency(a.id, 'client', e.target.value)}
-                        className="flex-1 px-3 py-2 text-sm sm:text-base border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                      >
-                        <option value="">Select Brand</option>
-                        {agencyClients.filter(c => c !== 'Select Client').map(c => (
-                          <option key={c} value={c}>{c}</option>
-                        ))}
-                      </select>
+                      <div className="relative flex-1">
+                        <select
+                          value={a.client}
+                          onChange={(e) => updateAgency(a.id, 'client', e.target.value)}
+                          className="w-full px-3 py-2 text-sm sm:text-base border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                          disabled={isLoading.agencyClients}
+                        >
+                          <option value="">
+                            {isLoading.agencyClients ? 'Loading clients...' : 'Select Brand'}
+                          </option>
+                          {!isLoading.agencyClients && agencyClients.map(client => (
+                            <option key={client.id} value={client.id.toString()}>{client.name}</option>
+                          ))}
+                        </select>
+                        {isLoading.agencyClients && (
+                          <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                            <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                          </div>
+                        )}
+                      </div>
 
                       {a.client ? (
                         <div className="ml-3 w-9 h-9 rounded-full bg-[#EEF2FF] flex items-center justify-center text-sm font-semibold text-[var(--text-primary)]">
-                          {getInitials(a.client)}
+                          {getInitials(agencyClients.find(c => c.id.toString() === a.client)?.name || '')}
                         </div>
                       ) : null}
                     </div>

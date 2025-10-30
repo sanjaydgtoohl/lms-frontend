@@ -22,6 +22,17 @@ export type GroupAgency = {
   deleted_at?: string | null;
 };
 
+export type AgencyClient = {
+  id: number | string;
+  name: string;
+  slug?: string | null;
+  description?: string | null;
+  status?: string | number;
+  created_at?: string | null;
+  updated_at?: string | null;
+  deleted_at?: string | null;
+};
+
 type ApiEnvelope<T> = {
   success?: boolean;
   message?: string;
@@ -37,6 +48,13 @@ const ENDPOINTS = {
     CREATE: '/agency-groups',
     UPDATE: (id: string | number) => `/agency-groups/${id}`,
     DELETE: (id: string | number) => `/agency-groups/${id}`,
+  },
+  AGENCY_CLIENTS: {
+    LIST: '/brands', // Assuming clients are brands in your API
+    DETAIL: (id: string | number) => `/brands/${id}`,
+    CREATE: '/brands',
+    UPDATE: (id: string | number) => `/brands/${id}`,
+    DELETE: (id: string | number) => `/brands/${id}`,
   },
 } as const;
 
@@ -134,6 +152,59 @@ export async function updateGroupAgency(id: string | number, payload: Partial<Gr
 
 export async function deleteGroupAgency(id: string | number): Promise<void> {
   const res = await fetch(`${API_BASE_URL}${ENDPOINTS.GROUP_AGENCIES.DELETE(id)}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+  await handleResponse<unknown>(res);
+}
+
+// Agency Client (Brand) API Functions
+export async function listAgencyClients(): Promise<AgencyClient[]> {
+  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.AGENCY_CLIENTS.LIST}`, {
+    method: 'GET',
+    headers: authHeaders(),
+  });
+  const items = await handleResponse<AgencyClient[]>(res);
+  return items.map((it: any) => ({
+    id: it.id ?? it._id ?? String(it.slug || ''),
+    name: it.name ?? it.title ?? '',
+    slug: it.slug ?? null,
+    description: it.description ?? null,
+    status: it.status ?? null,
+    created_at: it.created_at ?? null,
+    updated_at: it.updated_at ?? null,
+    deleted_at: it.deleted_at ?? null,
+  }));
+}
+
+export async function getAgencyClient(id: string | number): Promise<AgencyClient> {
+  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.AGENCY_CLIENTS.DETAIL(id)}`, {
+    method: 'GET',
+    headers: authHeaders(),
+  });
+  return handleResponse<AgencyClient>(res);
+}
+
+export async function createAgencyClient(payload: Partial<AgencyClient>): Promise<AgencyClient> {
+  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.AGENCY_CLIENTS.CREATE}`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  });
+  return handleResponse<AgencyClient>(res);
+}
+
+export async function updateAgencyClient(id: string | number, payload: Partial<AgencyClient>): Promise<AgencyClient> {
+  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.AGENCY_CLIENTS.UPDATE(id)}`, {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  });
+  return handleResponse<AgencyClient>(res);
+}
+
+export async function deleteAgencyClient(id: string | number): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.AGENCY_CLIENTS.DELETE(id)}`, {
     method: 'DELETE',
     headers: authHeaders(),
   });
