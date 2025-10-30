@@ -233,7 +233,7 @@ const DepartmentMaster: React.FC = () => {
       ) : viewItem ? (
         <MasterView title={`View Department ${viewItem.id}`} item={viewItem} onClose={() => navigate(ROUTES.DEPARTMENT_MASTER)} />
       ) : editItem ? (
-        <MasterEdit title={`Edit Department ${editItem.id}`} item={editItem} onClose={() => navigate(ROUTES.DEPARTMENT_MASTER)} onSave={handleSaveEditedDepartment} />
+  <MasterEdit title={`Edit Department ${editItem.id}`} item={editItem} onClose={() => navigate(ROUTES.DEPARTMENT_MASTER)} onSave={handleSaveEditedDepartment} hideSource nameLabel="Department" />
       ) : (
         <>
           {/* Desktop Table View */}

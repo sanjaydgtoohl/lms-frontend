@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../constants';
+import { useUiStore } from '../store/ui';
 
 export type Industry = {
   id: number | string;
@@ -37,6 +38,7 @@ async function handleResponse<T>(res: Response): Promise<T> {
   const json = await res.json().catch(() => null);
   if (!res.ok) {
     const message = (json && (json.message || json.error)) || 'Request failed';
+    try { useUiStore.getState().pushError(message); } catch {}
     throw new Error(message);
   }
   if (json && typeof json === 'object' && 'data' in json) {

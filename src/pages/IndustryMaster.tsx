@@ -142,7 +142,7 @@ const IndustryMaster: React.FC = () => {
       ) : viewItem ? (
         <MasterView title={`View Industry ${viewItem.id}`} item={viewItem} onClose={() => navigate(ROUTES.INDUSTRY_MASTER)} />
       ) : editItem ? (
-        <MasterEdit title={`Edit Industry ${editItem.id}`} item={editItem} onClose={() => navigate(ROUTES.INDUSTRY_MASTER)} onSave={handleSaveEditedIndustry} />
+  <MasterEdit title={`Edit Industry ${editItem.id}`} item={editItem} onClose={() => navigate(ROUTES.INDUSTRY_MASTER)} onSave={handleSaveEditedIndustry} hideSource nameLabel="Industry" />
       ) : (
         <>
           {/* Desktop Table View */}

@@ -241,7 +241,7 @@ const DesignationMaster: React.FC = () => {
       ) : viewItem ? (
         <MasterView title={`View Designation ${viewItem.id}`} item={viewItem} onClose={() => navigate(ROUTES.DESIGNATION_MASTER)} />
       ) : editItem ? (
-        <MasterEdit title={`Edit Designation ${editItem.id}`} item={editItem} onClose={() => navigate(ROUTES.DESIGNATION_MASTER)} onSave={handleSaveEditedDesignation} />
+  <MasterEdit title={`Edit Designation ${editItem.id}`} item={editItem} onClose={() => navigate(ROUTES.DESIGNATION_MASTER)} onSave={handleSaveEditedDesignation} hideSource nameLabel="Designation" />
       ) : (
         <>
           {/* Desktop Table View */}

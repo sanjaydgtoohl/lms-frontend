@@ -44,6 +44,7 @@ const CreateSourceForm: React.FC<Props> = ({ onClose }) => {
     e.preventDefault();
     const next: Record<string, string> = {};
     if (!source) next.source = 'Please select Source';
+    if (!subSource || subSource.trim() === '') next.subSource = 'Please enter Sub-Source';
     setErrors(next);
     if (Object.keys(next).length > 0) return;
     try {
@@ -105,10 +106,11 @@ const CreateSourceForm: React.FC<Props> = ({ onClose }) => {
             <label className="block text-sm text-[var(--text-secondary)] mb-1">Sub-Source</label>
             <input
               value={subSource}
-              onChange={(e) => setSubSource(e.target.value)}
+              onChange={(e) => { setSubSource(e.target.value); setErrors(prev => ({ ...prev, subSource: '' })); }}
               placeholder="Enter Sub-Source"
               className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
             />
+            {errors.subSource && <div className="text-xs text-red-500 mt-1">{errors.subSource}</div>}
           </div>
 
           <div className="flex items-center justify-end">
