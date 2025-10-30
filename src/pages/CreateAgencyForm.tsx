@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { listAgencyTypes, listGroupAgencies, createGroupAgency, type GroupAgency } from '../services';
 import { motion } from 'framer-motion';
-import { ChevronLeft, Check, Plus } from 'lucide-react';
+import { ChevronLeft, Check, Plus, Loader2 } from 'lucide-react';
 
 type Props = {
   onClose: () => void;
@@ -14,9 +15,7 @@ type AgencyBlock = {
   type: string;
   client: string;
 };
-
-const sampleExistingGroups = ['Group A', 'Group B', 'Group C'];
-const agencyTypes = ['Select Type', 'Online', 'Offline', 'Both'];
+// Agency types are fetched from the API; keep a default placeholder option
 const agencyClients = ['Select Client', 'Client 1', 'Client 2', 'Client 3'];
 
 const blankAgency = (): AgencyBlock => ({ id: String(Date.now()) + Math.random().toString(36).slice(2, 6), name: '', type: '', client: '' });
@@ -41,9 +40,66 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
   const [groupMode, setGroupMode] = useState<'existing' | 'new' | 'direct'>('direct');
 
   const [agencies, setAgencies] = useState<AgencyBlock[]>([]);
+  const [groupAgencies, setGroupAgencies] = useState<GroupAgency[]>([]);
+  const [isLoading, setIsLoading] = useState({
+    groupAgencies: true,
+    agencyTypes: true,
+    createGroup: false,
+  });
+
+  // Agency types fetched from API for the Agency Type dropdown
+  const [agencyTypes, setAgencyTypes] = useState<string[]>(['Select Type']);
+  
+  // Fetch both agency types and group agencies on mount
+  useEffect(() => {
+    let mounted = true;
+    
+    // Load agency types
+    (async () => {
+      try {
+        const items = await listAgencyTypes();
+        if (!mounted) return;
+        const names = items.map(i => i.name || String(i.id));
+        setAgencyTypes(['Select Type', ...names]);
+      } catch (err) {
+        console.error('Failed to load agency types', err);
+      } finally {
+        if (mounted) {
+          setIsLoading(prev => ({ ...prev, agencyTypes: false }));
+        }
+      }
+    })();
+    
+    // Load group agencies
+    (async () => {
+      try {
+        const items = await listGroupAgencies();
+        if (!mounted) return;
+        setGroupAgencies(items);
+      } catch (err) {
+        console.error('Failed to load group agencies', err);
+      } finally {
+        if (mounted) {
+          setIsLoading(prev => ({ ...prev, groupAgencies: false }));
+        }
+      }
+    })();
+    
+    return () => { mounted = false; };
+  }, []);
 
   // Determine visibility of agency form block per requirements
-  const agencyBlockVisible = groupMode === 'direct' || (groupMode === 'existing' && !!existingGroup) || (groupMode === 'new' && groupConfirmed);
+  const agencyBlockVisible = groupMode === 'direct' || 
+    (groupMode === 'existing' && groupConfirmed) || 
+    (groupMode === 'new' && groupConfirmed);
+  
+  // Debug log for visibility state
+  console.log('Form visibility state:', {
+    groupMode,
+    existingGroup,
+    groupConfirmed,
+    agencyBlockVisible
+  });
 
   useEffect(() => {
     // When becoming visible, ensure at least one agency block present
@@ -53,21 +109,46 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
   }, [agencyBlockVisible]);
 
   const handleSelectExisting = (val: string) => {
-    setExistingGroup(val);
+    console.log('Selected value:', val);
+    console.log('Current group agencies:', groupAgencies);
+    
     if (val) {
-      setGroupConfirmed(true);
+      // First set the mode
       setGroupMode('existing');
+      
+      // Then find and set the group
+      const selectedGroup = groupAgencies.find(g => g.id.toString() === val);
+      console.log('Found group:', selectedGroup);
+      
+      if (selectedGroup) {
+        setExistingGroup(val);
+        setGroupConfirmed(true);
+      }
     } else {
+      setExistingGroup('');
+      setGroupMode('existing');
       setGroupConfirmed(false);
     }
   };
 
-  const handleConfirmNewGroup = () => {
-    if (!newGroupInput.trim()) return;
-    setExistingGroup(newGroupInput.trim());
-    setGroupConfirmed(true);
-    setNewGroupInput('');
-    setGroupMode('new');
+  const handleConfirmNewGroup = async () => {
+    const groupName = newGroupInput.trim();
+    if (!groupName) return;
+    
+    setIsLoading(prev => ({ ...prev, createGroup: true }));
+    try {
+      const newGroup = await createGroupAgency({ name: groupName });
+      setGroupAgencies(prev => [...prev, newGroup]);
+      setExistingGroup(newGroup.id.toString());
+      setGroupConfirmed(true);
+      setNewGroupInput('');
+      setGroupMode('existing'); // Switch to existing mode since we're using the newly created group
+    } catch (err) {
+      console.error('Failed to create group agency:', err);
+      // Error shown via UI store from the service
+    } finally {
+      setIsLoading(prev => ({ ...prev, createGroup: false }));
+    }
   };
 
   const handleBypass = () => {
@@ -178,16 +259,26 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
             {groupMode === 'existing' && (
               <div>
                 <label className="block text-sm text-[var(--text-secondary)] mb-1">Choose a Group Agency</label>
-                <select
-                  value={existingGroup}
-                  onChange={(e) => handleSelectExisting(e.target.value)}
-                  className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                >
-                  <option value="">PleaseChoose A Group Agency</option>
-                  {sampleExistingGroups.map(g => (
-                    <option key={g} value={g}>{g}</option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    value={existingGroup}
+                    onChange={(e) => handleSelectExisting(e.target.value)}
+                    className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                    disabled={isLoading.groupAgencies}
+                  >
+                    <option value="">Select a Group Agency</option>
+                    {!isLoading.groupAgencies && groupAgencies
+                      .filter(g => g.status !== "0") // Only show active groups
+                      .map(g => (
+                        <option key={g.id} value={g.id.toString()}>{g.name}</option>
+                      ))
+                    }</select>
+                  {isLoading.groupAgencies && (
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                      <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -210,7 +301,11 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
                       title="Confirm new group"
                       className="px-3 py-2 bg-green-100 rounded-lg text-green-700"
                     >
-                      <Check className="w-4 h-4" />
+                      {isLoading.createGroup ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Check className="w-4 h-4" />
+                      )}
                     </button>
                   ) : null}
                 </div>
@@ -218,7 +313,17 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
             )}
 
             {agencyBlockVisible && (
-              <div className="text-sm text-[var(--text-secondary)] md:col-span-2">Group selected: <span className="font-medium text-[var(--text-primary)]">{groupMode === 'direct' ? 'Direct' : existingGroup}</span></div>
+              <div className="text-sm text-[var(--text-secondary)] md:col-span-2">
+                Group selected: <span className="font-medium text-[var(--text-primary)]">
+                  {groupMode === 'direct' ? 'Direct' : (
+                    groupMode === 'existing' && existingGroup ? (
+                      groupAgencies.find(g => g.id.toString() === existingGroup)?.name || 'Loading...'
+                    ) : (
+                      groupMode === 'new' ? newGroupInput : ''
+                    )
+                  )}
+                </span>
+              </div>
             )}
           </div>
         </div>
