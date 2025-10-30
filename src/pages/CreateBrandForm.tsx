@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft } from 'lucide-react';
 
@@ -9,19 +9,35 @@ type Props = {
 };
 
 type CitySelectProps = {
-  state: string;
+  state: string; // could be state code or id depending on app
   value: string;
   onChange: (val: string) => void;
 };
 
-const stateToCities: Record<string, string[]> = {
-  RJ: ['Jaipur', 'Jodhpur', 'Udaipur'],
-  MH: ['Pune', 'Mumbai', 'Nagpur'],
-  KA: ['Bengaluru', 'Mysore', 'Mangalore'],
-};
-
 const CitySelect: React.FC<CitySelectProps> = ({ state, value, onChange }) => {
-  const cities = stateToCities[state] || [];
+  const [cities, setCities] = useState<{ id: string | number; name: string }[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    setLoading(true);
+
+    // If the state prop looks like a numeric id, pass it as state_id; otherwise fetch all cities.
+    const numericState = state && String(state).match(/^\d+$/) ? Number(state) : undefined;
+
+    import('../services/CreateBrandForm')
+      .then((mod) => {
+        return mod.listCities(numericState ? { state_id: numericState } : undefined);
+      })
+      .then((data) => {
+        if (!mounted) return;
+        setCities((data || []).map((c: any) => ({ id: c.id, name: c.name })));
+      })
+      .catch(() => { /* ui store handles show error */ })
+      .finally(() => { if (mounted) setLoading(false); });
+
+    return () => { mounted = false; };
+  }, [state]);
 
   return (
     <select
@@ -30,15 +46,18 @@ const CitySelect: React.FC<CitySelectProps> = ({ state, value, onChange }) => {
       onChange={(e) => onChange(e.target.value)}
       className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
     >
-      <option value="">{cities.length ? 'Select City' : 'Select State first'}</option>
+      <option value="">{loading ? 'Loading cities...' : cities.length ? 'Select City' : 'Select State first'}</option>
       {cities.map((c) => (
-        <option key={c} value={c}>{c}</option>
+        <option key={String(c.id)} value={String(c.id)}>{c.name}</option>
       ))}
     </select>
   );
 };
 
 const countries = ['Please Select Country', 'India', 'United States', 'United Kingdom'];
+
+import { listZones, listStates } from '../services/CreateBrandForm';
+import type { Zone, State } from '../services/CreateBrandForm';
 
 const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
   const [form, setForm] = useState({
@@ -55,6 +74,8 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [zones, setZones] = useState<Zone[]>([]);
+  const [states, setStates] = useState<State[]>([]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -78,6 +99,23 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
     if (onSave) onSave(form);
     onClose();
   };
+
+  useEffect(() => {
+    let mounted = true;
+    listZones()
+      .then((data) => {
+        if (!mounted) return;
+        setZones(data || []);
+      })
+        .catch(() => {
+          // service already pushes UI errors via useUiStore; nothing to do here
+        });
+    // load states for State dropdown
+    listStates()
+      .then((data) => { if (!mounted) return; setStates(data || []); })
+      .catch(() => { /* ui store handles error */ });
+    return () => { mounted = false; };
+  }, []);
 
   const formContent = (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -187,9 +225,9 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
             className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
           >
             <option value="">Select State</option>
-            <option value="RJ">RJ</option>
-            <option value="MH">MH</option>
-            <option value="KA">KA</option>
+            {states.map((s) => (
+              <option key={String(s.id)} value={String(s.id)}>{s.name}</option>
+            ))}
           </select>
         </div>
 
@@ -207,8 +245,9 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
             className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
           >
             <option value="">Select Zone</option>
-            <option value="West">West</option>
-            <option value="East">East</option>
+            {zones.map((z) => (
+              <option key={z.id} value={String(z.id)}>{z.name}</option>
+            ))}
           </select>
         </div>
       </div>
