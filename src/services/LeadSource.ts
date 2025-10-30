@@ -55,7 +55,7 @@ export async function listLeadSources(): Promise<LeadSourceItem[]> {
   return items.map((it, idx) => {
     const anyIt = it as any;
     const id = anyIt.id ?? `LS${String(idx + 1).padStart(3, '0')}`;
-    const source = anyIt.lead_source?.name ?? '';
+    const source = anyIt.lead_source ?? '';
     const subSource = anyIt.name ?? '';
     const dateTime = anyIt.created_at ?? '';
     return {

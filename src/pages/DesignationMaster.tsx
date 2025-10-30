@@ -125,7 +125,7 @@ const DesignationMaster: React.FC = () => {
     // create on server then refresh list
     (async () => {
       try {
-        await createDesignation({ title: data.name });
+        await createDesignation({ name: data.name });
         await refresh();
         setCurrentPage(1);
       } catch (e: any) {
@@ -215,7 +215,7 @@ const DesignationMaster: React.FC = () => {
   const handleSaveEditedDesignation = (updated: Record<string, any>) => {
     (async () => {
       try {
-        await updateDesignation(updated.id, { title: updated.name });
+        await updateDesignation(updated.id, { name: updated.name });
         setDesignations(prev => prev.map(d => (d.id === updated.id ? { ...d, name: updated.name } as Designation : d)));
       } catch (e: any) {
         alert(e?.message || 'Failed to update');
