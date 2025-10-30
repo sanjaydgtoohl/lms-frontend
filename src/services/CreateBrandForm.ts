@@ -20,6 +20,10 @@ type ApiEnvelope<T> = {
 const ENDPOINTS = {
   LIST: '/regions', // API returns regions (used as Zone dropdown)
   DETAIL: (id: string | number) => `/regions/${id}`,
+  BRAND_TYPES: {
+    LIST: '/brand-types',
+    DETAIL: (id: string | number) => `/brand-types/${id}`,
+  },
   CITIES: {
     LIST: '/cities',
     DETAIL: (id: string | number) => `/cities/${id}`,
@@ -27,6 +31,10 @@ const ENDPOINTS = {
   STATES: {
     LIST: '/states/all',
     DETAIL: (id: string | number) => `/states/${id}`,
+  },
+  COUNTRIES: {
+    LIST: '/countries',
+    DETAIL: (id: string | number) => `/countries/${id}`,
   },
 } as const;
 
@@ -181,7 +189,95 @@ export async function getState(id: string | number): Promise<State> {
   return handleResponse<State>(res);
 }
 
+// --- Country API (used by Country dropdown) ---
+export type Country = {
+  id: number | string;
+  name: string;
+  code?: string | null;
+  slug?: string | null;
+  status?: string | number;
+  created_at?: string | null;
+  updated_at?: string | null;
+  deleted_at?: string | null;
+};
+
+const countryCache: Record<string, Country[]> = {};
+
+export async function listCountries(): Promise<Country[]> {
+  const cacheKey = 'all_countries';
+  if (countryCache[cacheKey]) return countryCache[cacheKey];
+
+  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.COUNTRIES.LIST}`, {
+    method: 'GET',
+    headers: authHeaders(),
+  });
+  const items = await handleResponse<Country[]>(res);
+  const normalized = (items || []).map((it: any) => ({
+    id: it.id ?? it._id ?? String(it.slug || ''),
+    name: it.name ?? it.title ?? it.label ?? '',
+    code: it.code ?? null,
+    slug: it.slug ?? null,
+    status: it.status ?? null,
+    created_at: it.created_at ?? null,
+    updated_at: it.updated_at ?? null,
+    deleted_at: it.deleted_at ?? null,
+  }));
+
+  countryCache[cacheKey] = normalized;
+  return normalized;
+}
+
+export async function getCountry(id: string | number): Promise<Country> {
+  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.COUNTRIES.DETAIL(id)}`, {
+    method: 'GET',
+    headers: authHeaders(),
+  });
+  return handleResponse<Country>(res);
+}
+
+// --- Brand Types API (used by Brand Type dropdown) ---
+export type BrandType = {
+  id: number | string;
+  name: string;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+const brandTypeCache: Record<string, BrandType[]> = {};
+
+export async function listBrandTypes(): Promise<BrandType[]> {
+  const cacheKey = 'all_brand_types';
+  if (brandTypeCache[cacheKey]) return brandTypeCache[cacheKey];
+
+  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.BRAND_TYPES.LIST}`, {
+    method: 'GET',
+    headers: authHeaders(),
+  });
+  const items = await handleResponse<BrandType[]>(res);
+  const normalized = (items || []).map((it: any) => ({
+    id: it.id ?? it._id ?? String(it.name || ''),
+    name: it.name ?? it.title ?? it.label ?? '',
+    created_at: it.created_at ?? null,
+    updated_at: it.updated_at ?? null,
+  }));
+
+  brandTypeCache[cacheKey] = normalized;
+  return normalized;
+}
+
+export async function getBrandType(id: string | number): Promise<BrandType> {
+  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.BRAND_TYPES.DETAIL(id)}`, {
+    method: 'GET',
+    headers: authHeaders(),
+  });
+  return handleResponse<BrandType>(res);
+}
+
 export default {
   listZones,
   getZone,
+  listCountries,
+  getCountry,
+  listBrandTypes,
+  getBrandType,
 };

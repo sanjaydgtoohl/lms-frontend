@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, ChevronLeft } from 'lucide-react';
 import ActionMenu from '../components/ui/ActionMenu';
 import Pagination from '../components/ui/Pagination';
 import { motion } from 'framer-motion';
@@ -7,6 +6,7 @@ import MasterView from '../components/ui/MasterView';
 import MasterEdit from '../components/ui/MasterEdit';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants';
+import { MasterHeader, MasterFormHeader } from '../components/ui';
 import {
   listDesignations,
   deleteDesignation,
@@ -56,43 +56,34 @@ const CreateDesignationForm: React.FC<{
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 8 }}
       transition={{ duration: 0.22 }}
-      className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden"
+      className="space-y-6"
     >
-      <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-[var(--text-primary)]">Create Designation</h3>
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex items-center space-x-2 text-[var(--text-secondary)] hover:text-black"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          <span className="text-sm">Back</span>
-        </button>
-      </div>
+      <MasterFormHeader onBack={onClose} title="Create Designation" />
+      <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
+        <div className="p-6 bg-[#F9FAFB]">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-sm text-[var(--text-secondary)] mb-1">Designation Name *</label>
+              <input
+                name="designationName"
+                value={name}
+                onChange={(e) => { setName(e.target.value); setError(''); }}
+                className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                placeholder="Enter designation name"
+              />
+              {error && <div className="text-xs text-red-500 mt-1">{error}</div>}
+            </div>
 
-      <div className="p-6 bg-[#F9FAFB]">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm text-[var(--text-secondary)] mb-1">Designation Name *</label>
-            <input
-              name="designationName"
-              value={name}
-              onChange={(e) => { setName(e.target.value); setError(''); }}
-              className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-              placeholder="Enter designation name"
-            />
-            {error && <div className="text-xs text-red-500 mt-1">{error}</div>}
-          </div>
-
-          <div className="flex items-center justify-end">
-            <button
-              type="submit"
-              className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white hover:bg-[#066a6d] shadow-sm"
-            >
-              Save Designation
-            </button>
-          </div>
-        </form>
+            <div className="flex items-center justify-end">
+              <button
+                type="submit"
+                className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white hover:bg-[#066a6d] shadow-sm"
+              >
+                Save Designation
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </motion.div>
   );
@@ -245,18 +236,15 @@ const DesignationMaster: React.FC = () => {
       ) : (
         <>
           {/* Desktop Table View */}
+          <MasterHeader
+            onCreateClick={handleCreateDesignation}
+            createButtonLabel="Create Designation"
+          />
           <div className="hidden lg:block">
             <div className="bg-white rounded-2xl shadow-md border border-[var(--border-color)] overflow-hidden">
               {/* Table Header */}
-              <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)] flex justify-between items-center">
+              <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)]">
                 <h2 className="text-lg font-semibold text-[var(--text-primary)]">Designation Master</h2>
-                <button
-                  onClick={handleCreateDesignation}
-                  className="flex items-center space-x-2 px-4 py-2 bg-green-100 hover:bg-green-200 text-black text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Create Designation</span>
-                </button>
               </div>
               
               {/* Table */}
@@ -312,16 +300,7 @@ const DesignationMaster: React.FC = () => {
           {/* Mobile Card View */}
           <div className="lg:hidden space-y-4">
             <div className="bg-white rounded-2xl shadow-md border border-[var(--border-color)] p-4">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold text-[var(--text-primary)]">Designation Master</h2>
-                <button
-                  onClick={handleCreateDesignation}
-                  className="flex items-center space-x-2 px-3 py-2 bg-green-100 hover:bg-green-200 text-black text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Create</span>
-                </button>
-              </div>
+              <h2 className="text-lg font-semibold text-[var(--text-primary)]">Designation Master</h2>
             </div>
             
             {currentData.map((item, index) => (

@@ -100,7 +100,7 @@ const MainContent = <T extends LeadSource | Agency>({
   };
 
   return (
-    <div className="flex-1 p-6 w-full">
+    <div className="flex-1 w-full">
       {/* Desktop Table View */}
       <div className="hidden lg:block">
         <div className="bg-white rounded-xl shadow-sm border border-[var(--border-color)] overflow-hidden">

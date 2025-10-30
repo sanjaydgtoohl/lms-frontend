@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Plus } from 'lucide-react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import ActionMenu from '../components/ui/ActionMenu';
 import Pagination from '../components/ui/Pagination';
 import CreateSourceForm from './CreateSourceForm';
 import MasterView from '../components/ui/MasterView';
 import MasterEdit from '../components/ui/MasterEdit';
+import { MasterHeader } from '../components/ui';
 import { listLeadSources, deleteLeadSubSource, updateLeadSubSource, type LeadSourceItem } from '../services/LeadSource';
 import { fetchLeadSources } from '../services/CreateSourceForm';
 import { ROUTES } from '../constants';
@@ -156,12 +156,15 @@ const LeadSource: React.FC = () => {
         <MasterEdit title={`Edit Lead Source ${editItem.id}`} item={editItem} onClose={() => navigate(ROUTES.SOURCE_MASTER)} onSave={handleSaveEdit} />
       ) : (
         <>
+          <MasterHeader
+            onCreateClick={handleCreate}
+            createButtonLabel="Create Source"
+          />
           {/* Desktop Table View */}
           <div className="hidden lg:block">
             <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-              <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)] flex justify-between items-center">
+              <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)]">
                 <h2 className="text-lg font-semibold text-[var(--text-primary)]">Lead Sources</h2>
-                <button onClick={handleCreate} className="flex items-center space-x-2 px-4 py-2 bg-green-100 hover:bg-green-200 text-black text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"><Plus className="w-4 h-4" /><span>Create Source</span></button>
               </div>
 
               {error && (
@@ -208,10 +211,7 @@ const LeadSource: React.FC = () => {
           {/* Mobile Card View */}
           <div className="lg:hidden space-y-4">
             <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] p-4">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold text-[var(--text-primary)]">Lead Sources</h2>
-                <button onClick={handleCreate} className="flex items-center space-x-2 px-3 py-2 bg-green-100 hover:bg-green-200 text-black text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"><Plus className="w-4 h-4" /><span>Create</span></button>
-              </div>
+              <h2 className="text-lg font-semibold text-[var(--text-primary)]">Lead Sources</h2>
             </div>
 
             {currentData.map((item, index) => (

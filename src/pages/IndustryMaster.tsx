@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Plus } from 'lucide-react';
 import ActionMenu from '../components/ui/ActionMenu';
 import CreateIndustryForm from './CreateIndustryForm';
 import MasterView from '../components/ui/MasterView';
@@ -7,6 +6,7 @@ import MasterEdit from '../components/ui/MasterEdit';
 import Pagination from '../components/ui/Pagination';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants';
+import { MasterHeader } from '../components/ui';
 import { listIndustries, deleteIndustry, updateIndustry, type Industry as ApiIndustry } from '../services/IndustryMaster';
 
 interface Industry {
@@ -145,12 +145,15 @@ const IndustryMaster: React.FC = () => {
   <MasterEdit title={`Edit Industry ${editItem.id}`} item={editItem} onClose={() => navigate(ROUTES.INDUSTRY_MASTER)} onSave={handleSaveEditedIndustry} hideSource nameLabel="Industry" />
       ) : (
         <>
+          <MasterHeader
+            onCreateClick={handleCreateIndustry}
+            createButtonLabel="Create Industry"
+          />
           {/* Desktop Table View */}
           <div className="hidden lg:block">
             <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-              <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)] flex justify-between items-center">
+              <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)]">
                 <h2 className="text-lg font-semibold text-[var(--text-primary)]">Industry Master</h2>
-                <button onClick={handleCreateIndustry} className="flex items-center space-x-2 px-4 py-2 bg-green-100 hover:bg-green-200 text-black text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"><Plus className="w-4 h-4" /><span>Create Industry</span></button>
               </div>
 
               {error && (
@@ -195,10 +198,7 @@ const IndustryMaster: React.FC = () => {
           {/* Mobile Card View */}
           <div className="lg:hidden space-y-4">
             <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] p-4">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold text-[var(--text-primary)]">Industry Master</h2>
-                <button onClick={handleCreateIndustry} className="flex items-center space-x-2 px-3 py-2 bg-green-100 hover:bg-green-200 text-black text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"><Plus className="w-4 h-4" /><span>Create</span></button>
-              </div>
+              <h2 className="text-lg font-semibold text-[var(--text-primary)]">Industry Master</h2>
             </div>
 
             {currentData.map((item, index) => (

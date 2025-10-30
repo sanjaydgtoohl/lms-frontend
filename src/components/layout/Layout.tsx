@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -36,10 +37,17 @@ const Layout: React.FC = () => {
         {/* Header */}
         <Header />
 
-        {/* Breadcrumb directly below sticky Header */}
-        <div className="bg-transparent px-6 py-3">
-          <Breadcrumb />
-        </div>
+        {/* Breadcrumb directly below sticky Header — hide for master pages because they render their own header (MasterHeader) */}
+        {(() => {
+          const location = useLocation();
+          // If the route is under /master (e.g. /master/brand) the pages render their own MasterHeader with breadcrumb + create button.
+          const shouldShowBreadcrumb = !location.pathname.startsWith('/master');
+          return shouldShowBreadcrumb ? (
+            <div className="bg-transparent px-6" style={{ paddingTop: '21.5px', paddingBottom: '0px', paddingLeft:'41px' }}>
+              <Breadcrumb />
+            </div>
+          ) : null;
+        })()}
 
         {/* Main Content */}
         <main className="flex-1 overflow-auto w-full overflow-x-hidden" style={{ paddingLeft: '20px', paddingRight: '20px' }}>

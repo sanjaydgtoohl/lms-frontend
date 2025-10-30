@@ -8,7 +8,8 @@ import {
   type AgencyClient 
 } from '../services';
 import { motion } from 'framer-motion';
-import { ChevronLeft, Check, Plus, Loader2 } from 'lucide-react';
+import { Check, Plus, Loader2 } from 'lucide-react';
+import { MasterFormHeader } from '../components/ui';
 
 type Props = {
   onClose: () => void;
@@ -222,23 +223,11 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 8 }}
       transition={{ duration: 0.22 }}
-      className="flex-1 overflow-auto w-full overflow-x-hidden" style={{ padding: '10px' }}
+      className="flex-1 overflow-auto w-full overflow-x-hidden"
     >
-      <div className="px-2 sm:px-5">
-        {/* Outer purple-ish panel to match mockup depth */}
-     
-          <div className="w-full bg-white rounded-lg sm:rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-            <div className="bg-gray-50 px-5 py-4 border-b border-[var(--border-color)] flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-[var(--text-primary)]">Create Agency</h3>
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex items-center space-x-2 text-[var(--text-secondary)] hover:text-black"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              <span className="text-sm">Back</span>
-            </button>
-          </div>
+      <div className="space-y-6 p-6">
+        <MasterFormHeader onBack={onClose} title="Create Agency" />
+        <div className="w-full bg-white rounded-lg sm:rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
 
             <div className="p-3 sm:p-6 bg-[#F9FAFB] space-y-4 sm:space-y-6">
         {/* Top: Group selection / creation / bypass using radio options */}

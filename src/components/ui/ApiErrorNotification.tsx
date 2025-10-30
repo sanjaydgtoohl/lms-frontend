@@ -17,7 +17,8 @@ const ApiErrorNotification: React.FC = () => {
       <button
         type="button"
         aria-label="API Error Notification"
-        className="relative"
+        className="api-notification-button bg-transparent"
+        style={{ backgroundColor: 'transparent' }}
         onClick={() => setOpen((v) => !v)}
       >
         <Bell className={iconClass + ' w-6 h-6'} />

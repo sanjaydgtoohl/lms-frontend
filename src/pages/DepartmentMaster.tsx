@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, Plus } from 'lucide-react';
 import ActionMenu from '../components/ui/ActionMenu';
 import { motion } from 'framer-motion';
-import Button from '../components/ui/Button';
 import MasterView from '../components/ui/MasterView';
 import MasterEdit from '../components/ui/MasterEdit';
 import Pagination from '../components/ui/Pagination';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants';
+import { MasterHeader, MasterFormHeader } from '../components/ui';
 import {
   listDepartments,
   createDepartment,
@@ -57,43 +56,34 @@ const CreateDepartmentForm: React.FC<{
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 8 }}
       transition={{ duration: 0.22 }}
-      className="w-full bg-white rounded-xl shadow-sm border border-[var(--border-color)] overflow-hidden"
+      className="space-y-6"
     >
-      <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-[var(--text-primary)]">Create Department</h3>
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex items-center space-x-2 text-[var(--text-secondary)] hover:text-black"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          <span className="text-sm">Back</span>
-        </button>
-      </div>
+      <MasterFormHeader onBack={onClose} title="Create Department" />
+      <div className="w-full bg-white rounded-xl shadow-sm border border-[var(--border-color)] overflow-hidden">
+        <div className="p-6 bg-[#F9FAFB]">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-sm text-[var(--text-secondary)] mb-1">Department Name *</label>
+              <input
+                name="departmentName"
+                value={name}
+                onChange={(e) => { setName(e.target.value); setError(''); }}
+                className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                placeholder="Enter department name"
+              />
+              {error && <div className="text-xs text-red-500 mt-1">{error}</div>}
+            </div>
 
-      <div className="p-6 bg-[#F9FAFB]">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm text-[var(--text-secondary)] mb-1">Department Name *</label>
-            <input
-              name="departmentName"
-              value={name}
-              onChange={(e) => { setName(e.target.value); setError(''); }}
-              className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-              placeholder="Enter department name"
-            />
-            {error && <div className="text-xs text-red-500 mt-1">{error}</div>}
-          </div>
-
-          <div className="flex items-center justify-end">
-            <button
-              type="submit"
-              className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white hover:bg-[#066a6d] shadow-sm"
-            >
-              Save Department
-            </button>
-          </div>
-        </form>
+            <div className="flex items-center justify-end">
+              <button
+                type="submit"
+                className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white hover:bg-[#066a6d] shadow-sm"
+              >
+                Save Department
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </motion.div>
   );
@@ -236,25 +226,16 @@ const DepartmentMaster: React.FC = () => {
   <MasterEdit title={`Edit Department ${editItem.id}`} item={editItem} onClose={() => navigate(ROUTES.DEPARTMENT_MASTER)} onSave={handleSaveEditedDepartment} hideSource nameLabel="Department" />
       ) : (
         <>
+          <MasterHeader
+            onCreateClick={handleCreateDepartment}
+            createButtonLabel="Create Department"
+          />
           {/* Desktop Table View */}
           <div className="hidden lg:block">
             <div className="bg-white rounded-xl shadow-sm border border-[var(--border-color)] overflow-hidden">
               {/* Table Header */}
               <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)]">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-lg font-semibold text-[var(--text-primary)]">Department Master</h2>
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="master"
-                      size="sm"
-                      onClick={handleCreateDepartment}
-                      className="flex items-center space-x-2"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>Create Department</span>
-                    </Button>
-                  </div>
-                </div>
+                <h2 className="text-lg font-semibold text-[var(--text-primary)]">Department Master</h2>
               </div>
 
               {/* Table */}
@@ -310,20 +291,7 @@ const DepartmentMaster: React.FC = () => {
           {/* Mobile Card View */}
           <div className="lg:hidden space-y-4">
             <div className="bg-white rounded-xl shadow-sm border border-[var(--border-color)] p-4">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold text-[var(--text-primary)]">Department Master</h2>
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={handleCreateDepartment}
-                    className="flex items-center space-x-2"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Create Department</span>
-                  </Button>
-                </div>
-              </div>
+              <h2 className="text-lg font-semibold text-[var(--text-primary)]">Department Master</h2>
             </div>
 
             {currentData.map((item, index) => (

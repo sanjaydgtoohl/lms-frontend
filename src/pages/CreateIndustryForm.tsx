@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft } from 'lucide-react';
+import { MasterFormHeader } from '../components/ui';
 import { createIndustry } from '../services/IndustryMaster';
 
 type Props = {
@@ -46,44 +46,35 @@ const CreateIndustryForm: React.FC<Props> = ({ onClose, onSave }) => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 8 }}
       transition={{ duration: 0.22 }}
-      className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden"
+      className="space-y-6"
     >
-      <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-[var(--text-primary)]">Create Industry</h3>
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex items-center space-x-2 text-[var(--text-secondary)] hover:text-black"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          <span className="text-sm">Back</span>
-        </button>
-      </div>
+      <MasterFormHeader onBack={onClose} title="Create Industry" />
+      <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
+        <div className="p-6 bg-[#F9FAFB]">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-sm text-[var(--text-secondary)] mb-1">Industry Name *</label>
+              <input
+                name="industryName"
+                value={name}
+                onChange={(e) => { setName(e.target.value); setError(''); }}
+                className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                placeholder="Enter industry name"
+              />
+              {error && <div className="text-xs text-red-500 mt-1">{error}</div>}
+            </div>
 
-      <div className="p-6 bg-[#F9FAFB]">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm text-[var(--text-secondary)] mb-1">Industry Name *</label>
-            <input
-              name="industryName"
-              value={name}
-              onChange={(e) => { setName(e.target.value); setError(''); }}
-              className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-              placeholder="Enter industry name"
-            />
-            {error && <div className="text-xs text-red-500 mt-1">{error}</div>}
-          </div>
-
-          <div className="flex items-center justify-end">
-            <button
-              type="submit"
-              className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white hover:bg-[#066a6d] shadow-sm disabled:opacity-60"
-              disabled={saving}
-            >
-              {saving ? 'Saving...' : 'Save Industry'}
-            </button>
-          </div>
-        </form>
+            <div className="flex items-center justify-end">
+              <button
+                type="submit"
+                className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white hover:bg-[#066a6d] shadow-sm disabled:opacity-60"
+                disabled={saving}
+              >
+                {saving ? 'Saving...' : 'Save Industry'}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </motion.div>
   );
