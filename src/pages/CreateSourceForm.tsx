@@ -93,7 +93,7 @@ const CreateSourceForm: React.FC<Props> = ({ onClose }) => {
             </div>
 
             <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">Sub-Source</label>
+              <label className="block text-sm text-[var(--text-secondary)] mb-1">Sub-Source <span className="text-red-500">*</span></label>
               <input
                 value={subSource}
                 onChange={(e) => { setSubSource(e.target.value); setErrors(prev => ({ ...prev, subSource: '' })); }}

@@ -11,6 +11,7 @@ interface AuthStore extends AuthState {
   refreshToken: () => Promise<void>;
   updateUser: (user: User) => void;
   setLoading: (loading: boolean) => void;
+  refreshTokenValue: string | null;
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -18,6 +19,7 @@ export const useAuthStore = create<AuthStore>()(
     (set, get) => ({
       user: null,
       token: null,
+      refreshTokenValue: null,
       isAuthenticated: false,
       isLoading: false,
 
@@ -28,6 +30,7 @@ export const useAuthStore = create<AuthStore>()(
           set({
             user: null, // User data not returned in login response
             token: response.token,
+            refreshTokenValue: response.refreshToken,
             isAuthenticated: true,
             isLoading: false,
           });
@@ -69,10 +72,16 @@ export const useAuthStore = create<AuthStore>()(
 
       refreshToken: async () => {
         try {
-          const response = await apiClient.refreshToken();
+          const currentToken = get().refreshTokenValue;
+          if (!currentToken) {
+            throw new Error('No refresh token available');
+          }
+          
+          const response = await apiClient.refreshToken(currentToken);
           set({
             user: null, // User data not returned in refresh response
             token: response.token,
+            refreshTokenValue: response.refreshToken,
             isAuthenticated: true,
           });
         } catch (error) {

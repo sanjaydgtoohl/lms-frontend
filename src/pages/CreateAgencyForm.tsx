@@ -250,7 +250,21 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
                 type="radio"
                 name="groupMode"
                 checked={groupMode === 'existing'}
-                onChange={() => setGroupMode('existing')}
+                onChange={() => {
+                  // When user selects 'existing', show the existing-group selector
+                  // and reveal the agency blocks immediately. If there's at least
+                  // one active group available, auto-select it.
+                  setGroupMode('existing');
+                  const firstActive = groupAgencies.find(g => g.status !== "0");
+                  if (firstActive) {
+                    setExistingGroup(firstActive.id.toString());
+                    setGroupConfirmed(true);
+                  } else {
+                    // No groups yet — still reveal the agency block so user can proceed
+                    setExistingGroup('');
+                    setGroupConfirmed(true);
+                  }
+                }}
                 className="form-radio"
               />
               <span className="text-sm font-medium">Select Existing Group Agency</span>

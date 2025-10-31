@@ -1,7 +1,56 @@
+import { jwtDecode } from "jwt-decode";
 import { useAuthStore } from '../store/auth';
 
-export const handleTokenExpiration = () => {
-  const { logout } = useAuthStore.getState();
-  logout();
-  window.location.href = '/login';
+interface JWTPayload {
+  exp?: number;
+  iat?: number;
+}
+
+export const isTokenExpired = (token: string | null | undefined): boolean => {
+  if (!token || typeof token !== 'string') {
+    // Optionally log or handle the missing/invalid token
+    console.error('Token validation error: Invalid token specified, must be a string');
+    return true;
+  }
+
+  try {
+    const decoded = jwtDecode<JWTPayload>(token);
+    if (!decoded.exp) return true;
+
+    // Get current time in seconds
+    const currentTime = Math.floor(Date.now() / 1000);
+
+    // Add a 60-second buffer to handle any clock skew
+    return decoded.exp <= currentTime + 60;
+  } catch (error) {
+    console.error('Token validation error:', error);
+    return true;
+  }
+};
+
+export const handleTokenExpiration = async () => {
+  const authStore = useAuthStore.getState();
+  const { token, refreshTokenValue, logout, refreshToken } = authStore;
+
+  if (isTokenExpired(token)) {
+    try {
+      if (refreshTokenValue && !isTokenExpired(refreshTokenValue)) {
+        await refreshToken();
+      } else {
+        // If refresh token is also expired or doesn't exist, logout
+        await logout();
+        window.location.href = '/login';
+      }
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      await logout();
+      window.location.href = '/login';
+    }
+  }
+};
+
+export const setupTokenExpirationCheck = () => {
+  // Check token every minute
+  const interval = setInterval(handleTokenExpiration, 60000);
+  return () => clearInterval(interval);
 };

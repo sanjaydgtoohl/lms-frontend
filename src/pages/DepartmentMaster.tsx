@@ -95,8 +95,8 @@ const DepartmentMaster: React.FC = () => {
 
   // Store departments in state fetched from API
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [_loading, setLoading] = useState(false);
+  const [_error, setError] = useState<string | null>(null);
 
   const [showCreate, setShowCreate] = useState(false);
   const navigate = useNavigate();
