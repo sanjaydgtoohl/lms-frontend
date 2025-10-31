@@ -66,11 +66,31 @@ function App() {
           <Route path="courses" element={<Courses />} />
           <Route path="profile" element={<Profile />} />
           <Route path="lead-source" element={<LeadSource />} />
+          {/* Master routes (support direct create/view/edit paths) */}
           <Route path="master/brand" element={<BrandMaster />} />
+          <Route path="master/brand/create" element={<BrandMaster />} />
+          <Route path="master/brand/:id" element={<BrandMaster />} />
+          <Route path="master/brand/:id/edit" element={<BrandMaster />} />
+
           <Route path="master/agency" element={<AgencyMaster />} />
+          <Route path="master/agency/create" element={<AgencyMaster />} />
+          <Route path="master/agency/:id" element={<AgencyMaster />} />
+          <Route path="master/agency/:id/edit" element={<AgencyMaster />} />
+
           <Route path="master/industry" element={<IndustryMaster />} />
+          <Route path="master/industry/create" element={<IndustryMaster />} />
+          <Route path="master/industry/:id" element={<IndustryMaster />} />
+          <Route path="master/industry/:id/edit" element={<IndustryMaster />} />
+
           <Route path="master/designation" element={<DesignationMaster />} />
+          <Route path="master/designation/create" element={<DesignationMaster />} />
+          <Route path="master/designation/:id" element={<DesignationMaster />} />
+          <Route path="master/designation/:id/edit" element={<DesignationMaster />} />
+
           <Route path="master/department" element={<DepartmentMaster />} />
+          <Route path="master/department/create" element={<DepartmentMaster />} />
+          <Route path="master/department/:id" element={<DepartmentMaster />} />
+          <Route path="master/department/:id/edit" element={<DepartmentMaster />} />
         </Route>
         
         {/* 404 Route */}

@@ -56,8 +56,34 @@ class LoginService {
       const data: LoginApiResponse | LoginErrorResponse = await response.json();
 
       if (!response.ok || !data.success) {
-        const errorData = data as LoginErrorResponse;
-        throw new Error(errorData.message || 'Login failed');
+        const errorData = data as LoginErrorResponse & { errors?: any };
+        // Try to extract any detailed errors returned by the API
+        const rawDetails = (data as any).errors || (data as any).details || null;
+        let detailsStr = '';
+
+        if (rawDetails) {
+          if (typeof rawDetails === 'string') {
+            detailsStr = rawDetails;
+          } else if (Array.isArray(rawDetails)) {
+            detailsStr = rawDetails.join('; ');
+          } else if (typeof rawDetails === 'object') {
+            // flatten object values (arrays or strings) into a single string
+            detailsStr = Object.values(rawDetails)
+              .flatMap((v: any) => (Array.isArray(v) ? v : [v]))
+              .join('; ');
+          } else {
+            detailsStr = String(rawDetails);
+          }
+        }
+
+        const fullMessage = detailsStr
+          ? `${errorData.message}${detailsStr ? `: ${detailsStr}` : ''}`
+          : (errorData.message || 'Login failed');
+
+        const err = new Error(fullMessage);
+        // attach raw response for callers who may need it
+        (err as any).responseData = data;
+        throw err;
       }
 
       const successData = data as LoginApiResponse;

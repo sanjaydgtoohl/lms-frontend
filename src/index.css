@@ -8,7 +8,6 @@
 
   /* LMS Color Palette */
   --primary: #007B83;
-  --accent: #E6F7F1;
   --background: #FAFAFA;
   --text-primary: #1E293B;
   --text-secondary: #64748B;
@@ -203,6 +202,52 @@ body {
   min-height: 100vh;
 }
 
+/* Bell button: only the inner SVG icon should show active/click feedback.
+   The outer button remains transparent and borderless. */
+/* Notification button styles */
+.notification-btn {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: #F5F7FA;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.notification-btn:hover {
+  background: #edf0f4;
+}
+
+.notification-btn:focus {
+  outline: none;
+}
+
+.notification-icon {
+  position: relative;
+  color: #FE5C73;
+  transition: color 0.2s ease;
+}
+
+.notification-btn:hover .notification-icon {
+  color: #D44C64;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  background: #FF597B;
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
@@ -236,6 +281,23 @@ button:focus-visible {
     color: #747bff;
   }
   button {
-    background-color: #f9f9f9;
+    background-color: #D4EEF6;
+  }
+}
+
+@layer utilities {
+  .shadow-sm {
+    --tw-shadow: 0 0 #0000; /* neutralize the variable */
+    box-shadow: none !important; /* ensure no shadow is applied */
+  }
+  .bg-gray-200 {
+    background-color: #B1B1B1;
+  }
+}
+
+@layer utilities {
+  button.text-white,
+  .btn.text-white {
+    color: var(--text-primary) !important;
   }
 }

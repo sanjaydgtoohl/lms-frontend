@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import Breadcrumb from '../ui/Breadcrumb';
 
 const Layout: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const location = useLocation();
 
   // Handle responsive sidebar
   useEffect(() => {
@@ -26,42 +26,23 @@ const Layout: React.FC = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
 
-  // Get page title from current route
-  const getPageTitle = () => {
-    const path = location.pathname;
-    const titleMap: { [key: string]: string } = {
-      '/dashboard': 'Dashboard',
-      '/lead-source': 'Lead Source',
-      '/lead-management': 'Lead Management',
-      '/master/brand': 'Brand Master',
-      '/master/agency': 'Agency Master',
-      '/master/department': 'Department Master',
-      '/master/designation': 'Designation Master',
-      '/master/industry': 'Industry Master',
-      '/brief': 'Brief',
-      '/miss-campaign': 'Miss Campaign',
-      '/campaign-management': 'Campaign Management',
-      '/finance': 'Finance',
-      '/user-management': 'User Management',
-      '/settings': 'Settings',
-    };
-    return titleMap[path] || 'Dashboard';
-  };
-
   return (
     <div className="min-h-screen bg-[var(--background)] flex">
       {/* Sidebar */}
       <Sidebar isCollapsed={sidebarCollapsed} onToggle={toggleSidebar} />
       
-      {/* Main Content Area */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'} w-full`}>
+  {/* Main Content Area (use padding to account for fixed Sidebar so total page width stays within viewport) */}
+  <div className={`flex-1 flex flex-col min-h-0 transition-all duration-300 ${sidebarCollapsed ? 'pl-16' : 'pl-64'} w-full`}>
         {/* Header */}
-        <Header 
-          pageTitle={getPageTitle()} 
-        />
-        
+        <Header />
+
+        {/* Breadcrumb directly below sticky Header */}
+        <div className="bg-transparent px-6 py-3">
+          <Breadcrumb />
+        </div>
+
         {/* Main Content */}
-        <main className="flex-1 overflow-hidden w-full">
+        <main className="flex-1 overflow-auto w-full overflow-x-hidden" style={{ paddingLeft: '20px', paddingRight: '20px' }}>
           <Outlet />
         </main>
       </div>

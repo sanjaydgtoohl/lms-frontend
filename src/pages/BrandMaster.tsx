@@ -1,5 +1,12 @@
-import React, { useState } from 'react';
-import { Edit, Plus, ChevronLeft, ChevronRight, User } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import CreateBrandForm from './CreateBrandForm';
+import { Plus } from 'lucide-react';
+import ActionMenu from '../components/ui/ActionMenu';
+import MasterView from '../components/ui/MasterView';
+import MasterEdit from '../components/ui/MasterEdit';
+import Pagination from '../components/ui/Pagination';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { ROUTES } from '../constants';
 
 interface Brand {
   id: string;
@@ -20,8 +27,8 @@ const BrandMaster: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Sample data as requested
-  const brands: Brand[] = [
+  // Sample data as requested (stored in state so new items can be added)
+  const [brands, setBrands] = useState<Brand[]>([
     { 
       id: '#CMPR01', 
       name: 'Nike', 
@@ -37,7 +44,7 @@ const BrandMaster: React.FC = () => {
       dateTime: '02-07-2025 22:23' 
     },
     { 
-      id: '#CMPR01', 
+      id: '#CMPR02', 
       name: 'Puma', 
       agencyName: 'Agency 1', 
       brandType: 'Local', 
@@ -51,7 +58,7 @@ const BrandMaster: React.FC = () => {
       dateTime: '02-07-2025 22:21' 
     },
     { 
-      id: '#CMPR01', 
+      id: '#CMPR03', 
       name: 'Apple', 
       agencyName: 'Direct', 
       brandType: 'Local', 
@@ -65,7 +72,7 @@ const BrandMaster: React.FC = () => {
       dateTime: '02-07-2025 22:23' 
     },
     { 
-      id: '#CMPR01', 
+      id: '#CMPR04', 
       name: 'Pepsi', 
       agencyName: 'Agency 2', 
       brandType: 'Regional', 
@@ -79,7 +86,7 @@ const BrandMaster: React.FC = () => {
       dateTime: '02-07-2025 22:23' 
     },
     { 
-      id: '#CMPR01', 
+      id: '#CMPR05', 
       name: 'Coca Cola', 
       agencyName: 'Agency 2', 
       brandType: 'Regional', 
@@ -92,98 +99,133 @@ const BrandMaster: React.FC = () => {
       pinCode: '328001', 
       dateTime: '02-07-2025 22:23' 
     },
-  ];
+  ]);
 
-  const totalPages = Math.ceil(brands.length / itemsPerPage);
+  // totalPages calculated but not used directly
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentData = brands.slice(startIndex, endIndex);
 
+  const navigate = useNavigate();
+  const params = useParams();
+  const location = useLocation();
+
   const handleEdit = (id: string) => {
-    console.log('Edit brand:', id);
+    // navigate to edit route
+    navigate(`${ROUTES.BRAND_MASTER}/${encodeURIComponent(id)}/edit`);
   };
 
   const handleView = (id: string) => {
-    console.log('View brand:', id);
+    navigate(`${ROUTES.BRAND_MASTER}/${encodeURIComponent(id)}`);
+  };
+
+  const handleDelete = (id: string) => {
+    console.log('Delete brand:', id);
   };
 
   const handleCreateBrand = () => {
-    console.log('Create new brand');
+    navigate(`${ROUTES.BRAND_MASTER}/create`);
+  };
+
+  const [showCreate, setShowCreate] = useState(false);
+
+  const formatDateTime = (d: Date) => {
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    const hh = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    return `${dd}-${mm}-${yyyy} ${hh}:${min}`;
+  };
+
+  const handleSaveBrand = (data: any) => {
+    const newBrand: Brand = {
+      id: `#CMPR${Math.floor(Math.random() * 90000) + 10000}`,
+      name: data.brandName || 'Untitled',
+      agencyName: data.agency || 'Direct',
+      brandType: data.brandType || '',
+      contactPerson: '0',
+      industry: data.industry || '',
+      country: data.country || '',
+      state: data.state || '',
+      city: data.city || '',
+      zone: data.zone || '',
+      pinCode: data.postalCode || '',
+      dateTime: formatDateTime(new Date()),
+    };
+
+    // Add new brand to top of list and reset to first page so user sees it
+    setBrands(prev => [newBrand, ...prev]);
+    setCurrentPage(1);
+  };
+
+  // edit/view state and handlers
+  const [viewItem, setViewItem] = useState<Brand | null>(null);
+  const [editItem, setEditItem] = useState<Brand | null>(null);
+
+  // Sync view/edit/create state from the current URL
+  useEffect(() => {
+    const rawId = params.id;
+    const id = rawId ? decodeURIComponent(rawId) : undefined;
+
+    if (location.pathname.endsWith('/create')) {
+      setShowCreate(true);
+      setViewItem(null);
+      setEditItem(null);
+      return;
+    }
+
+    if (location.pathname.endsWith('/edit') && id) {
+      const found = brands.find(b => b.id === id) || null;
+      setEditItem(found);
+      setViewItem(null);
+      setShowCreate(false);
+      return;
+    }
+
+    if (id) {
+      const found = brands.find(b => b.id === id) || null;
+      setViewItem(found);
+      setShowCreate(false);
+      setEditItem(null);
+      return;
+    }
+
+    // default listing state
+    setShowCreate(false);
+    setViewItem(null);
+    setEditItem(null);
+  }, [location.pathname, params.id, brands]);
+
+  const handleSaveEditedBrand = (updated: Record<string, any>) => {
+    setBrands(prev => prev.map(b => (b.id === updated.id ? { ...b, ...updated } as Brand : b)));
   };
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
 
-  const renderPagination = () => {
-    const pages = [];
-    const maxVisiblePages = 5;
-    
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-    
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
 
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(
-        <button
-          key={i}
-          onClick={() => handlePageChange(i)}
-          className={`
-            px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200
-            ${i === currentPage
-              ? 'bg-[var(--primary)] text-white'
-              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)]'
-            }
-          `}
-        >
-          {i}
-        </button>
-      );
-    }
-
-    return (
-      <div className="flex items-center justify-between mt-6">
-        <div className="text-sm text-[var(--text-secondary)]">
-          Showing {startIndex + 1} to {Math.min(endIndex, brands.length)} of {brands.length} entries
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          
-          {pages}
-          
-          <button
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-    );
-  };
 
   return (
-    <div className="flex-1 p-6 w-full max-w-full overflow-hidden">
+  <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
+      {showCreate ? (
+        <CreateBrandForm inline onClose={() => navigate(ROUTES.BRAND_MASTER)} onSave={handleSaveBrand} />
+      ) : viewItem ? (
+        <MasterView title={`View Brand ${viewItem.id}`} item={viewItem} onClose={() => navigate(ROUTES.BRAND_MASTER)} />
+      ) : editItem ? (
+        <MasterEdit title={`Edit Brand ${editItem.id}`} item={editItem} onClose={() => navigate(ROUTES.BRAND_MASTER)} onSave={handleSaveEditedBrand} />
+      ) : (
+        <>
       {/* Desktop Table View */}
       <div className="hidden lg:block">
         <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
           {/* Table Header */}
-          <div className="bg-[var(--accent)] px-6 py-4 border-b border-[var(--border-color)] flex justify-between items-center">
+          <div className="bg-gray-50 px-6 py-4 flex justify-between items-center">
             <h2 className="text-lg font-semibold text-[var(--text-primary)]">Brand Master</h2>
             <button
               onClick={handleCreateBrand}
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+              className="flex items-center space-x-2 px-4 py-2 bg-green-100 hover:bg-green-200 text-black text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
             >
               <Plus className="w-4 h-4" />
               <span>Create Brand</span>
@@ -191,7 +233,7 @@ const BrandMaster: React.FC = () => {
           </div>
           
           {/* Table */}
-          <div className="overflow-x-auto max-w-full">
+          <div className="overflow-x-auto max-w-full w-full">
             <table className="w-full min-w-[1200px]">
               <thead className="bg-gray-50">
                 <tr>
@@ -238,7 +280,7 @@ const BrandMaster: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-[var(--border-color)]">
                 {currentData.map((item, index) => (
-                  <tr 
+              <tr 
                     key={item.id + item.name + index}
                     className="hover:bg-[var(--hover-bg)] transition-colors duration-200"
                   >
@@ -278,24 +320,14 @@ const BrandMaster: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-secondary)]">
                       {item.dateTime}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => handleEdit(item.id)}
-                          className="p-2 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] rounded-lg transition-all duration-200"
-                          title="Edit Brand"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleView(item.id)}
-                          className="p-2 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] rounded-lg transition-all duration-200"
-                          title="View Brand"
-                        >
-                          <User className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <ActionMenu
+                            isLast={index >= currentData.length - 2}
+                            onEdit={() => handleEdit(item.id)}
+                            onView={() => handleView(item.id)}
+                            onDelete={() => handleDelete(item.id)}
+                          />
+                        </td>
                   </tr>
                 ))}
               </tbody>
@@ -311,7 +343,7 @@ const BrandMaster: React.FC = () => {
             <h2 className="text-lg font-semibold text-[var(--text-primary)]">Brand Master</h2>
             <button
               onClick={handleCreateBrand}
-              className="flex items-center space-x-2 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+              className="flex items-center space-x-2 px-3 py-2 bg-green-100 hover:bg-green-200 text-black text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
             >
               <Plus className="w-4 h-4" />
               <span>Create</span>
@@ -320,28 +352,17 @@ const BrandMaster: React.FC = () => {
         </div>
         
         {currentData.map((item, index) => (
-          <div 
+            <div 
             key={item.id + item.name + index}
             className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] p-4 hover:shadow-md transition-all duration-200"
           >
             <div className="flex justify-between items-start mb-3">
               <div className="text-sm font-medium text-[var(--text-primary)]">{item.id}</div>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => handleEdit(item.id)}
-                  className="p-2 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] rounded-lg transition-all duration-200"
-                  title="Edit Brand"
-                >
-                  <Edit className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => handleView(item.id)}
-                  className="p-2 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] rounded-lg transition-all duration-200"
-                  title="View Brand"
-                >
-                  <User className="w-4 h-4" />
-                </button>
-              </div>
+              <ActionMenu
+                onEdit={() => handleEdit(item.id)}
+                onView={() => handleView(item.id)}
+                onDelete={() => handleDelete(item.id)}
+              />
             </div>
             
             <div className="space-y-2">
@@ -373,9 +394,15 @@ const BrandMaster: React.FC = () => {
           </div>
         ))}
       </div>
-
-      {/* Pagination */}
-      {renderPagination()}
+          {/* Pagination */}
+          <Pagination
+            currentPage={currentPage}
+            totalItems={brands.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={handlePageChange}
+          />
+        </>
+      )}
     </div>
   );
 };

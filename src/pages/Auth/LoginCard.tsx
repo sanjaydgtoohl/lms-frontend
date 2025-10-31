@@ -1,8 +1,10 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Button, Input } from '../../components/ui';
+import { Button, Input, NotificationPopup } from '../../components/ui';
+import { useState } from 'react';
 import { useAuthStore } from '../../store/auth';
+import { useUiStore } from '../../store/ui';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -13,6 +15,9 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginCard() {
   const { login, isLoading } = useAuthStore();
+  const showNotification = useUiStore((s) => s.showNotification);
+  const notification = useUiStore((s) => s.notification);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   const {
     register,
@@ -25,13 +30,26 @@ export default function LoginCard() {
   const onSubmit = async (data: LoginFormData) => {
     try {
       await login(data.email, data.password);
-    } catch (error) {
-      console.error('Login failed:', error);
+      // Clear any previous inline login error on success
+      setLoginError(null);
+    } catch (error: any) {
+      // Hide global notification popup and show inline message instead
+      useUiStore.getState().hideNotification();
+      setLoginError(error?.message || 'Login failed. Please check your credentials.');
     }
   };
 
   return (
     <div className="fixed inset-0 w-full h-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-zinc-950 via-black to-zinc-900">
+      {/* Error Popup */}
+      <NotificationPopup
+        isOpen={notification.isOpen}
+        onClose={() => useUiStore.getState().hideNotification()}
+        message={notification.message}
+        type={notification.type}
+        title={notification.title}
+      />
+      
       {/* ✨ Full-screen animated background effects */}
       <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-transparent to-orange-600/10" />
       <div className="absolute w-[800px] h-[800px] bg-orange-500/20 rounded-full blur-[300px] top-[-200px] left-[-200px] animate-pulse" />
@@ -48,19 +66,29 @@ export default function LoginCard() {
                       transition-all duration-300 ease-out">
         
         {/* Header - Compact & Elegant */}
-        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-center text-white mb-3 sm:mb-4">
-          <span className="inline-flex items-center justify-center gap-3">
-            <span className="relative inline-block text-white tracking-wide after:content-[''] after:absolute after:left-1/2 after:-translate-x-1/2 after:-bottom-1 after:h-[3px] sm:after:h-1 after:w-2/3 after:rounded-full after:bg-orange-500">
+        <h2 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold text-center text-white mb-3 sm:mb-4 whitespace-nowrap">
+          <span className="inline-flex items-center justify-center gap-1 sm:gap-3">
+            <span className="relative inline-flex items-center text-white tracking-wide after:content-[''] after:absolute after:left-1/2 after:-translate-x-1/2 after:-bottom-1 after:h-[3px] sm:after:h-1 after:w-2/3 after:rounded-full after:bg-orange-500">
               DGT
-              <span className="inline-block align-middle leading-none scale-y-125 text-[1.40em] relative -top-3.5 bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 bg-clip-text text-transparent">∞</span>
+              <span className="inline-block align-middle leading-none scale-y-125 text-[1.40em] relative -top-1 bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 bg-clip-text text-transparent">∞</span>
               HL
             </span>
-            <span className="align-middle leading-none relative -top-2 bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent font-extrabold tracking-wide drop-shadow-[0_0_14px_rgba(255,255,255,0.35)]">LMS</span>
+            <span className="align-middle leading-none relative -top-0.6 bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent font-extrabold tracking-wide drop-shadow-[0_0_14px_rgba(255,255,255,0.35)]">LMS</span>
           </span>
         </h2>
-        <p className="text-zinc-400 text-sm sm:text-base lg:text-lg mb-6 sm:mb-8 text-center">
+        <p className="text-zinc-400 text-sm sm:text-base lg:text-lg mb-2 sm:mb-3 text-center">
           BUILT BY MOBIYOUNG
         </p>
+
+        {/* Inline server error (shown instead of popup for login failures) */}
+        {loginError && (
+          <div className="w-full text-center mb-4">
+            <div className="inline-block bg-red-900/60 text-red-100 px-3 py-2 rounded-md text-sm sm:text-base">
+              <strong className="mr-1">Login Error:</strong>
+              <span>{loginError}</span>
+            </div>
+          </div>
+        )}
 
          {/* Form - Clean & Simple */}
          <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-sm sm:max-w-md space-y-4 sm:space-y-5">

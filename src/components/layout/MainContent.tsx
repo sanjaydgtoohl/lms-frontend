@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { Edit, ChevronLeft, ChevronRight } from 'lucide-react';
+import Pagination from '../ui/Pagination';
+import ActionMenu from '../ui/ActionMenu';
 
-interface LeadSource {
+export interface LeadSource {
   id: string;
   source: string;
   subSource: string;
   dateTime: string;
 }
 
-interface Agency {
+export interface Agency {
   id: string;
   agencyGroup: string;
   agencyName: string;
@@ -17,13 +18,21 @@ interface Agency {
   dateTime: string;
 }
 
-interface MainContentProps {
+interface MainContentProps<T extends LeadSource | Agency> {
   title?: string;
   headerActions?: React.ReactNode;
   dataType?: 'leadSource' | 'agency';
+  onView?: (item: T) => void;
+  onEdit?: (item: T) => void;
 }
 
-const MainContent: React.FC<MainContentProps> = ({ title = "Lead Sources", headerActions, dataType = 'leadSource' }) => {
+const MainContent = <T extends LeadSource | Agency>({ 
+  title = "Lead Sources", 
+  headerActions, 
+  dataType = 'leadSource', 
+  onView, 
+  onEdit 
+}: MainContentProps<T>) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -49,14 +58,30 @@ const MainContent: React.FC<MainContentProps> = ({ title = "Lead Sources", heade
     { id: '#CMPR01', agencyGroup: 'Group 2', agencyName: 'Agency 5', agencyType: 'Both', contactPerson: '6', dateTime: '02-07-2025 22:23' },
   ];
 
-  const currentDataArray = dataType === 'agency' ? agencies : leadSources;
-  const totalPages = Math.ceil(currentDataArray.length / itemsPerPage);
+  const currentDataArray: T[] = (dataType === 'agency' ? agencies : leadSources) as T[];
+  // totalPages not used directly (pagination component uses totalItems)
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentData = currentDataArray.slice(startIndex, endIndex);
 
   const handleEdit = (id: string) => {
-    console.log(`Edit ${dataType === 'agency' ? 'agency' : 'lead source'}:`, id);
+    const item = currentDataArray.find(i => i.id === id);
+    if (item && onEdit) {
+      // Type is already T since we cast currentDataArray as T[]
+      onEdit(item);
+    }
+  };
+
+  const handleView = (id: string) => {
+    const item = currentDataArray.find(i => i.id === id);
+    if (item && onView) {
+      // Type is already T since we cast currentDataArray as T[]
+      onView(item);
+    }
+  };
+
+  const handleDelete = (id: string) => {
+    console.log(`Delete ${dataType === 'agency' ? 'agency' : 'lead source'}:`, id);
   };
 
   const handlePageChange = (page: number) => {
@@ -64,60 +89,13 @@ const MainContent: React.FC<MainContentProps> = ({ title = "Lead Sources", heade
   };
 
   const renderPagination = () => {
-    const pages = [];
-    const maxVisiblePages = 5;
-    
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-    
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(
-        <button
-          key={i}
-          onClick={() => handlePageChange(i)}
-          className={`
-            px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200
-            ${i === currentPage
-              ? 'bg-[var(--primary)] text-white'
-              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)]'
-            }
-          `}
-        >
-          {i}
-        </button>
-      );
-    }
-
     return (
-      <div className="flex items-center justify-between mt-6">
-        <div className="text-sm text-[var(--text-secondary)]">
-          Showing {startIndex + 1} to {Math.min(endIndex, currentDataArray.length)} of {currentDataArray.length} entries
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          
-          {pages}
-          
-          <button
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+      <Pagination
+        currentPage={currentPage}
+        totalItems={currentDataArray.length}
+        itemsPerPage={itemsPerPage}
+        onPageChange={handlePageChange}
+      />
     );
   };
 
@@ -127,7 +105,7 @@ const MainContent: React.FC<MainContentProps> = ({ title = "Lead Sources", heade
       <div className="hidden lg:block">
         <div className="bg-white rounded-xl shadow-sm border border-[var(--border-color)] overflow-hidden">
           {/* Table Header */}
-          <div className="bg-[var(--accent)] px-6 py-4 border-b border-[var(--border-color)]">
+          <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)]">
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-semibold text-[var(--text-primary)]">{title}</h2>
               {headerActions && (
@@ -139,7 +117,7 @@ const MainContent: React.FC<MainContentProps> = ({ title = "Lead Sources", heade
           </div>
           
           {/* Table */}
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto w-full max-w-full">
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
@@ -189,7 +167,7 @@ const MainContent: React.FC<MainContentProps> = ({ title = "Lead Sources", heade
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border-color)]">
-                {currentData.map((item) => (
+                {currentData.map((item, index) => (
                   <tr 
                     key={item.id} 
                     className="hover:bg-[var(--hover-bg)] transition-colors duration-200"
@@ -215,12 +193,12 @@ const MainContent: React.FC<MainContentProps> = ({ title = "Lead Sources", heade
                           {(item as Agency).dateTime}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <button
-                            onClick={() => handleEdit(item.id)}
-                            className="p-2 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] rounded-lg transition-all duration-200"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
+                          <ActionMenu
+                            isLast={index >= currentData.length - 2}
+                            onEdit={() => handleEdit(item.id)}
+                            onView={() => handleView(item.id)}
+                            onDelete={() => handleDelete(item.id)}
+                          />
                         </td>
                       </>
                     ) : (
@@ -238,12 +216,11 @@ const MainContent: React.FC<MainContentProps> = ({ title = "Lead Sources", heade
                           {item.dateTime}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <button
-                            onClick={() => handleEdit(item.id)}
-                            className="p-2 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] rounded-lg transition-all duration-200"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
+                          <ActionMenu
+                            onEdit={() => handleEdit(item.id)}
+                            onView={() => handleView(item.id)}
+                            onDelete={() => handleDelete(item.id)}
+                          />
                         </td>
                       </>
                     )}
@@ -268,19 +245,19 @@ const MainContent: React.FC<MainContentProps> = ({ title = "Lead Sources", heade
           </div>
         </div>
         
-        {currentData.map((item) => (
+  {currentData.map((item, index) => (
           <div 
             key={item.id}
             className="bg-white rounded-xl shadow-sm border border-[var(--border-color)] p-4 hover:shadow-md transition-all duration-200"
           >
             <div className="flex justify-between items-start mb-3">
               <div className="text-sm font-medium text-[var(--text-primary)]">{item.id}</div>
-              <button
-                onClick={() => handleEdit(item.id)}
-                className="p-2 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--accent)] rounded-lg transition-all duration-200"
-              >
-                <Edit className="w-4 h-4" />
-              </button>
+              <ActionMenu
+                isLast={index >= currentData.length - 2}
+                onEdit={() => handleEdit(item.id)}
+                onView={() => handleView(item.id)}
+                onDelete={() => handleDelete(item.id)}
+              />
             </div>
             
             <div className="space-y-2">
