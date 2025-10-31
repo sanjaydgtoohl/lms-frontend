@@ -1,4 +1,4 @@
-import { API_BASE_URL, API_ENDPOINTS } from '../constants';
+import { API_BASE_URL, API_ENDPOINTS, STORAGE_KEYS } from '../constants';
 import type { LoginCredentials } from '../types';
 
 // API Response structure based on the actual API
@@ -11,6 +11,7 @@ export interface LoginApiResponse {
   };
   data: {
     token: string;
+    refresh_token: string;
     token_type: string;
     expires_in: number;
   };
@@ -29,9 +30,77 @@ export interface LoginErrorResponse {
 
 class LoginService {
   private baseURL: string;
+  // In browsers setTimeout returns a number
+  private refreshTokenTimeout: number | null = null;
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
+  }
+
+  /**
+   * Start refresh token timer
+   */
+  private startRefreshTokenTimer(expiresIn: number) {
+    // Clear any existing timer
+    if (this.refreshTokenTimeout) {
+      clearTimeout(this.refreshTokenTimeout);
+    }
+
+    // Set timer to refresh token 1 minute before expiry
+    const timeout = Math.max(30, expiresIn - 60) * 1000; // avoid negative/very small
+    this.refreshTokenTimeout = window.setTimeout(() => this.refreshToken(), timeout);
+  }
+
+  /**
+   * Stop refresh token timer
+   */
+  private stopRefreshTokenTimer() {
+    if (this.refreshTokenTimeout) {
+      clearTimeout(this.refreshTokenTimeout);
+      this.refreshTokenTimeout = null;
+    }
+  }
+
+  /**
+   * Refresh the access token using refresh token
+   */
+  async refreshToken(): Promise<boolean> {
+    try {
+      const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+      if (!refreshToken) {
+        return false;
+      }
+
+      const response = await fetch(`${this.baseURL}${API_ENDPOINTS.AUTH.REFRESH}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        this.clearTokens();
+        return false;
+      }
+
+      // Store new tokens
+      localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, data.data.token);
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, data.data.refresh_token);
+      localStorage.setItem('token_type', data.data.token_type);
+      localStorage.setItem('expires_in', data.data.expires_in.toString());
+
+      // Start the refresh timer for the new token
+      this.startRefreshTokenTimer(data.data.expires_in);
+
+      return true;
+    } catch (error) {
+      console.error('Refresh token error:', error);
+      this.clearTokens();
+      return false;
+    }
   }
 
   /**
@@ -90,9 +159,16 @@ class LoginService {
       
       // Store token in localStorage
       if (successData.data.token) {
-        localStorage.setItem('auth_token', successData.data.token);
+        // Store tokens and start refresh timer
+        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, successData.data.token);
+        if (successData.data.refresh_token) {
+          localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, successData.data.refresh_token);
+        }
         localStorage.setItem('token_type', successData.data.token_type);
         localStorage.setItem('expires_in', successData.data.expires_in.toString());
+
+        // Start refresh timer
+        this.startRefreshTokenTimer(successData.data.expires_in);
       }
 
       return successData.data;

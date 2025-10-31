@@ -1,6 +1,15 @@
 import React, { useEffect, useState } from 'react';
+import { 
+  listAgencyTypes, 
+  listGroupAgencies, 
+  createGroupAgency, 
+  listAgencyClients,
+  type GroupAgency,
+  type AgencyClient 
+} from '../services';
 import { motion } from 'framer-motion';
-import { ChevronLeft, Check, Plus } from 'lucide-react';
+import { Check, Plus, Loader2 } from 'lucide-react';
+import { MasterFormHeader } from '../components/ui';
 
 type Props = {
   onClose: () => void;
@@ -14,25 +23,109 @@ type AgencyBlock = {
   type: string;
   client: string;
 };
+// Agency types are fetched from the API; keep a default placeholder option
 
-const sampleExistingGroups = ['Group A', 'Group B', 'Group C'];
-const agencyTypes = ['Select Type', 'Online', 'Offline', 'Both'];
-const agencyClients = ['Select Client', 'Client 1', 'Client 2', 'Client 3'];
 
 const blankAgency = (): AgencyBlock => ({ id: String(Date.now()) + Math.random().toString(36).slice(2, 6), name: '', type: '', client: '' });
+
+// Small helper to show client initials in a round avatar when client selected
+const getInitials = (name: string) => {
+  if (!name) return '';
+  return name
+    .split(' ')
+    .map(s => s[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+};
 
 const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
   const [existingGroup, setExistingGroup] = useState('');
   const [newGroupInput, setNewGroupInput] = useState('');
   const [groupConfirmed, setGroupConfirmed] = useState(false);
-  const [bypassGroup, setBypassGroup] = useState(false);
-  // groupMode: 'existing' | 'new'
-  const [groupMode, setGroupMode] = useState<'existing' | 'new'>('existing');
+  // groupMode: 'existing' | 'new' | 'direct'
+  // Default to 'direct' so the Direct option is selected on first render
+  const [groupMode, setGroupMode] = useState<'existing' | 'new' | 'direct'>('direct');
 
   const [agencies, setAgencies] = useState<AgencyBlock[]>([]);
+  const [groupAgencies, setGroupAgencies] = useState<GroupAgency[]>([]);
+  const [isLoading, setIsLoading] = useState({
+    groupAgencies: true,
+    agencyTypes: true,
+    createGroup: false,
+    agencyClients: true,
+  });
+  
+  const [agencyClients, setAgencyClients] = useState<AgencyClient[]>([]);
+
+  // Agency types fetched from API for the Agency Type dropdown
+  const [agencyTypes, setAgencyTypes] = useState<string[]>(['Select Type']);
+  
+  // Fetch both agency types and group agencies on mount
+  useEffect(() => {
+    let mounted = true;
+    
+    // Load agency types
+    (async () => {
+      try {
+        const items = await listAgencyTypes();
+        if (!mounted) return;
+        const names = items.map(i => i.name || String(i.id));
+        setAgencyTypes(['Select Type', ...names]);
+      } catch (err) {
+        console.error('Failed to load agency types', err);
+      } finally {
+        if (mounted) {
+          setIsLoading(prev => ({ ...prev, agencyTypes: false }));
+        }
+      }
+    })();
+    
+    // Load group agencies
+    (async () => {
+      try {
+        const items = await listGroupAgencies();
+        if (!mounted) return;
+        setGroupAgencies(items);
+      } catch (err) {
+        console.error('Failed to load group agencies', err);
+      } finally {
+        if (mounted) {
+          setIsLoading(prev => ({ ...prev, groupAgencies: false }));
+        }
+      }
+    })();
+
+    // Load agency clients (brands)
+    (async () => {
+      try {
+        const items = await listAgencyClients();
+        if (!mounted) return;
+        setAgencyClients(items.filter(item => item.status !== "0")); // Only active clients
+      } catch (err) {
+        console.error('Failed to load agency clients:', err);
+      } finally {
+        if (mounted) {
+          setIsLoading(prev => ({ ...prev, agencyClients: false }));
+        }
+      }
+    })();
+    
+    return () => { mounted = false; };
+  }, []);
 
   // Determine visibility of agency form block per requirements
-  const agencyBlockVisible = bypassGroup || (groupMode === 'existing' && !!existingGroup) || (groupMode === 'new' && groupConfirmed);
+  const agencyBlockVisible = groupMode === 'direct' || 
+    (groupMode === 'existing' && groupConfirmed) || 
+    (groupMode === 'new' && groupConfirmed);
+  
+  // Debug log for visibility state
+  console.log('Form visibility state:', {
+    groupMode,
+    existingGroup,
+    groupConfirmed,
+    agencyBlockVisible
+  });
 
   useEffect(() => {
     // When becoming visible, ensure at least one agency block present
@@ -42,25 +135,50 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
   }, [agencyBlockVisible]);
 
   const handleSelectExisting = (val: string) => {
-    setExistingGroup(val);
+    console.log('Selected value:', val);
+    console.log('Current group agencies:', groupAgencies);
+    
     if (val) {
-      setGroupConfirmed(true);
-      setBypassGroup(false);
+      // First set the mode
+      setGroupMode('existing');
+      
+      // Then find and set the group
+      const selectedGroup = groupAgencies.find(g => g.id.toString() === val);
+      console.log('Found group:', selectedGroup);
+      
+      if (selectedGroup) {
+        setExistingGroup(val);
+        setGroupConfirmed(true);
+      }
     } else {
+      setExistingGroup('');
+      setGroupMode('existing');
       setGroupConfirmed(false);
     }
   };
 
-  const handleConfirmNewGroup = () => {
-    if (!newGroupInput.trim()) return;
-    setExistingGroup(newGroupInput.trim());
-    setGroupConfirmed(true);
-    setNewGroupInput('');
-    setBypassGroup(false);
+  const handleConfirmNewGroup = async () => {
+    const groupName = newGroupInput.trim();
+    if (!groupName) return;
+    
+    setIsLoading(prev => ({ ...prev, createGroup: true }));
+    try {
+      const newGroup = await createGroupAgency({ name: groupName });
+      setGroupAgencies(prev => [...prev, newGroup]);
+      setExistingGroup(newGroup.id.toString());
+      setGroupConfirmed(true);
+      setNewGroupInput('');
+      setGroupMode('existing'); // Switch to existing mode since we're using the newly created group
+    } catch (err) {
+      console.error('Failed to create group agency:', err);
+      // Error shown via UI store from the service
+    } finally {
+      setIsLoading(prev => ({ ...prev, createGroup: false }));
+    }
   };
 
   const handleBypass = () => {
-    setBypassGroup(true);
+    setGroupMode('direct');
     setExistingGroup('');
     setGroupConfirmed(false);
   };
@@ -90,8 +208,8 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
     }
 
     const payload = {
-      group: bypassGroup ? null : existingGroup || null,
-      bypassGroup,
+      group: groupMode === 'direct' ? null : existingGroup || null,
+      bypassGroup: groupMode === 'direct',
       agencies: cleaned,
     };
 
@@ -105,27 +223,29 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 8 }}
       transition={{ duration: 0.22 }}
-      className="flex-1 overflow-auto w-full overflow-x-hidden" style={{ paddingLeft: '20px', paddingRight: '20px', paddingTop : '10px' }}
+      className="flex-1 overflow-auto w-full overflow-x-hidden"
     >
-      <div className="px-5">
-        <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-          <div className="bg-gray-50 px-5 py-4 border-b border-[var(--border-color)] flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-[var(--text-primary)]">Create Agency</h3>
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex items-center space-x-2 text-[var(--text-secondary)] hover:text-black"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              <span className="text-sm">Back</span>
-            </button>
-          </div>
+      <div className="space-y-6 p-6">
+        <MasterFormHeader onBack={onClose} title="Create Agency" />
+        <div className="w-full bg-white rounded-lg sm:rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
 
-          <div className="p-5 bg-[#F9FAFB] space-y-5">
+            <div className="p-3 sm:p-6 bg-[#F9FAFB] space-y-4 sm:space-y-6">
         {/* Top: Group selection / creation / bypass using radio options */}
-        <div className="space-y-5">
-          <div className="flex items-center space-x-5">
-            <label className="inline-flex items-center space-x-2">
+        <div className="space-y-4">
+          <div className="px-4 sm:px-6 py-3 sm:py-4 rounded-lg border border-[var(--border-color)] flex flex-col sm:grid sm:grid-cols-3 sm:gap-6 items-start sm:items-center space-y-2 sm:space-y-0">
+            {/* Place Direct first and default to direct on initial load */}
+            <label className="inline-flex items-center space-x-2 w-full">
+              <input
+                type="radio"
+                name="groupMode"
+                checked={groupMode === 'direct'}
+                onChange={() => handleBypass()}
+                className="form-radio"
+              />
+              <span className="text-sm font-medium">Direct Agency</span>
+            </label>
+
+            <label className="inline-flex items-center space-x-2 w-full">
               <input
                 type="radio"
                 name="groupMode"
@@ -136,7 +256,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
               <span className="text-sm font-medium">Select Existing Group Agency</span>
             </label>
 
-            <label className="inline-flex items-center space-x-2">
+            <label className="inline-flex items-center space-x-2 w-full">
               <input
                 type="radio"
                 name="groupMode"
@@ -146,14 +266,6 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
               />
               <span className="text-sm font-medium">Create New Group Agency</span>
             </label>
-
-            <button
-              type="button"
-              onClick={handleBypass}
-              className={`ml-auto px-3 py-2 rounded-lg ${bypassGroup ? 'bg-green-100 text-black' : 'bg-white text-[var(--text-secondary)] border border-[var(--border-color)]'}`}
-            >
-              Create Direct Agency
-            </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -161,16 +273,26 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
             {groupMode === 'existing' && (
               <div>
                 <label className="block text-sm text-[var(--text-secondary)] mb-1">Choose a Group Agency</label>
-                <select
-                  value={existingGroup}
-                  onChange={(e) => handleSelectExisting(e.target.value)}
-                  className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                >
-                  <option value="">Choose a Group Agency</option>
-                  {sampleExistingGroups.map(g => (
-                    <option key={g} value={g}>{g}</option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    value={existingGroup}
+                    onChange={(e) => handleSelectExisting(e.target.value)}
+                    className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                    disabled={isLoading.groupAgencies}
+                  >
+                    <option value="">Select a Group Agency</option>
+                    {!isLoading.groupAgencies && groupAgencies
+                      .filter(g => g.status !== "0") // Only show active groups
+                      .map(g => (
+                        <option key={g.id} value={g.id.toString()}>{g.name}</option>
+                      ))
+                    }</select>
+                  {isLoading.groupAgencies && (
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                      <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -193,7 +315,11 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
                       title="Confirm new group"
                       className="px-3 py-2 bg-green-100 rounded-lg text-green-700"
                     >
-                      <Check className="w-4 h-4" />
+                      {isLoading.createGroup ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Check className="w-4 h-4" />
+                      )}
                     </button>
                   ) : null}
                 </div>
@@ -201,7 +327,17 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
             )}
 
             {agencyBlockVisible && (
-              <div className="text-sm text-[var(--text-secondary)] md:col-span-2">Group selected: <span className="font-medium text-[var(--text-primary)]">{bypassGroup ? 'Direct' : existingGroup}</span></div>
+              <div className="text-sm text-[var(--text-secondary)] md:col-span-2">
+                Group selected: <span className="font-medium text-[var(--text-primary)]">
+                  {groupMode === 'direct' ? 'Direct' : (
+                    groupMode === 'existing' && existingGroup ? (
+                      groupAgencies.find(g => g.id.toString() === existingGroup)?.name || 'Loading...'
+                    ) : (
+                      groupMode === 'new' ? newGroupInput : ''
+                    )
+                  )}
+                </span>
+              </div>
             )}
           </div>
         </div>
@@ -209,8 +345,8 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
         {/* Agency blocks: hidden by default until group selected/created or bypass */}
         {agencyBlockVisible && (
           <div className="space-y-5">
-            {/* + Add Agency button above core details as requested */}
-            <div>
+            {/* Agency list header with Add Agency button aligned right */}
+            <div className="flex items-center justify-end">
               <button
                 type="button"
                 onClick={addAgency}
@@ -222,10 +358,10 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
             </div>
 
             {agencies.map((a, idx) => (
-              <div key={a.id} className="p-5 border border-[var(--border-color)] rounded-lg bg-white">
-                <div className="flex justify-between items-center mb-5">
+              <div key={a.id} className="p-3 sm:p-5 border border-[var(--border-color)] rounded-lg bg-white">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3 sm:mb-5 space-y-2 sm:space-y-0">
                   <div className="text-sm font-medium">Agency {idx + 1}</div>
-                  <div className="flex items-center space-x-5">
+                  <div className="flex items-center space-x-3 sm:space-x-5">
                     <button
                       type="button"
                       onClick={() => updateAgency(a.id, 'name', '')}
@@ -241,13 +377,13 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-5">
                   <div>
-                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Agency Name *</label>
+                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Agency Name <span className="text-red-500">*</span></label>
                     <input
                       value={a.name}
                       onChange={(e) => updateAgency(a.id, 'name', e.target.value)}
-                      className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                      className="w-full px-3 py-2 text-sm sm:text-base border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
                       placeholder="Enter Agency Name"
                     />
                   </div>
@@ -257,7 +393,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
                     <select
                       value={a.type}
                       onChange={(e) => updateAgency(a.id, 'type', e.target.value)}
-                      className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                      className="w-full px-3 py-2 text-sm sm:text-base border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
                     >
                       <option value="">Select Agency Type</option>
                       {agencyTypes.filter(t => t !== 'Select Type').map(t => (
@@ -268,16 +404,34 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
 
                   <div>
                     <label className="block text-sm text-[var(--text-secondary)] mb-1">Agency Client</label>
-                    <select
-                      value={a.client}
-                      onChange={(e) => updateAgency(a.id, 'client', e.target.value)}
-                      className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                    >
-                      <option value="">Select Brand</option>
-                      {agencyClients.filter(c => c !== 'Select Client').map(c => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </select>
+                    <div className="flex items-center">
+                      <div className="relative flex-1">
+                        <select
+                          value={a.client}
+                          onChange={(e) => updateAgency(a.id, 'client', e.target.value)}
+                          className="w-full px-3 py-2 text-sm sm:text-base border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                          disabled={isLoading.agencyClients}
+                        >
+                          <option value="">
+                            {isLoading.agencyClients ? 'Loading clients...' : 'Select Brand'}
+                          </option>
+                          {!isLoading.agencyClients && agencyClients.map(client => (
+                            <option key={client.id} value={client.id.toString()}>{client.name}</option>
+                          ))}
+                        </select>
+                        {isLoading.agencyClients && (
+                          <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                            <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                          </div>
+                        )}
+                      </div>
+
+                      {a.client ? (
+                        <div className="ml-3 w-9 h-9 rounded-full bg-[#EEF2FF] flex items-center justify-center text-sm font-semibold text-[var(--text-primary)]">
+                          {getInitials(agencyClients.find(c => c.id.toString() === a.client)?.name || '')}
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -295,7 +449,8 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
         </div>
           </div>
         </div>
-      </div>
+      
+    </div>
     </motion.div>
   );
 };

@@ -91,6 +91,11 @@ function App() {
           <Route path="master/department/create" element={<DepartmentMaster />} />
           <Route path="master/department/:id" element={<DepartmentMaster />} />
           <Route path="master/department/:id/edit" element={<DepartmentMaster />} />
+
+          <Route path="master/source" element={<LeadSource />} />
+          <Route path="master/source/create" element={<LeadSource />} />
+          <Route path="master/source/:id" element={<LeadSource />} />
+          <Route path="master/source/:id/edit" element={<LeadSource />} />
         </Route>
         
         {/* 404 Route */}

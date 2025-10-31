@@ -1,13 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, Plus } from 'lucide-react';
 import ActionMenu from '../components/ui/ActionMenu';
 import { motion } from 'framer-motion';
-import Button from '../components/ui/Button';
 import MasterView from '../components/ui/MasterView';
 import MasterEdit from '../components/ui/MasterEdit';
 import Pagination from '../components/ui/Pagination';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants';
+import { MasterHeader, MasterFormHeader } from '../components/ui';
+import {
+  listDepartments,
+  createDepartment,
+  updateDepartment,
+  deleteDepartment,
+  type Department as ApiDepartment,
+} from '../services/DepartmentMaster';
 
 interface Department {
   id: string;
@@ -50,43 +56,34 @@ const CreateDepartmentForm: React.FC<{
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 8 }}
       transition={{ duration: 0.22 }}
-      className="w-full bg-white rounded-xl shadow-sm border border-[var(--border-color)] overflow-hidden"
+      className="space-y-6"
     >
-      <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-[var(--text-primary)]">Create Department</h3>
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex items-center space-x-2 text-[var(--text-secondary)] hover:text-black"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          <span className="text-sm">Back</span>
-        </button>
-      </div>
+      <MasterFormHeader onBack={onClose} title="Create Department" />
+      <div className="w-full bg-white rounded-xl shadow-sm border border-[var(--border-color)] overflow-hidden">
+        <div className="p-6 bg-[#F9FAFB]">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-sm text-[var(--text-secondary)] mb-1">Department Name <span className="text-red-500">*</span></label>
+              <input
+                name="departmentName"
+                value={name}
+                onChange={(e) => { setName(e.target.value); setError(''); }}
+                className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                placeholder="Enter department name"
+              />
+              {error && <div className="text-xs text-red-500 mt-1">{error}</div>}
+            </div>
 
-      <div className="p-6 bg-[#F9FAFB]">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm text-[var(--text-secondary)] mb-1">Department Name *</label>
-            <input
-              name="departmentName"
-              value={name}
-              onChange={(e) => { setName(e.target.value); setError(''); }}
-              className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-              placeholder="Enter department name"
-            />
-            {error && <div className="text-xs text-red-500 mt-1">{error}</div>}
-          </div>
-
-          <div className="flex items-center justify-end">
-            <button
-              type="submit"
-              className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white hover:bg-[#066a6d] shadow-sm"
-            >
-              Save Department
-            </button>
-          </div>
-        </form>
+            <div className="flex items-center justify-end">
+              <button
+                type="submit"
+                className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white hover:bg-[#066a6d] shadow-sm"
+              >
+                Save Department
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </motion.div>
   );
@@ -96,14 +93,10 @@ const DepartmentMaster: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // store departments in state so we can add new ones
-  const [departments, setDepartments] = useState<Department[]>([
-    { id: '#CMPR01', name: 'Department 1', dateTime: '02-07-2025 22:23' },
-    { id: '#CMPR02', name: 'Department 2', dateTime: '02-07-2025 22:23' },
-    { id: '#CMPR03', name: 'Department 3', dateTime: '02-07-2025 22:23' },
-    { id: '#CMPR04', name: 'Department 4', dateTime: '02-07-2025 22:23' },
-    { id: '#CMPR05', name: 'Department 5', dateTime: '02-07-2025 22:23' },
-  ]);
+  // Store departments in state fetched from API
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [showCreate, setShowCreate] = useState(false);
   const navigate = useNavigate();
@@ -120,14 +113,16 @@ const DepartmentMaster: React.FC = () => {
   };
 
   const handleSaveDepartment = (data: any) => {
-    const newDept: Department = {
-      id: `#CMPR${Math.floor(Math.random() * 90000) + 10000}`,
-      name: data.name || 'Untitled',
-      dateTime: data.dateTime || new Date().toLocaleString(),
-    };
-
-    setDepartments(prev => [newDept, ...prev]);
-    setCurrentPage(1);
+    // Create on server then refresh list
+    (async () => {
+      try {
+        await createDepartment({ name: data.name });
+        await refresh();
+        setCurrentPage(1);
+      } catch (e: any) {
+        alert(e?.message || 'Failed to create department');
+      }
+    })();
   };
 
   const handleEdit = (id: string) => {
@@ -138,8 +133,15 @@ const DepartmentMaster: React.FC = () => {
     navigate(`${ROUTES.DEPARTMENT_MASTER}/${encodeURIComponent(id)}`);
   };
 
-  const handleDelete = (id: string) => {
-    console.log('Delete department:', id);
+  const handleDelete = async (id: string) => {
+    const confirm = window.confirm('Delete this department?');
+    if (!confirm) return;
+    try {
+      await deleteDepartment(id);
+      setDepartments(prev => prev.filter(d => d.id !== id));
+    } catch (e: any) {
+      alert(e?.message || 'Failed to delete');
+    }
   };
 
   const handlePageChange = (page: number) => {
@@ -148,6 +150,26 @@ const DepartmentMaster: React.FC = () => {
 
   const [viewItem, setViewItem] = useState<Department | null>(null);
   const [editItem, setEditItem] = useState<Department | null>(null);
+
+  const refresh = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await listDepartments();
+      const mapped: Department[] = (data as ApiDepartment[]).map((it) => ({
+        id: String(it.id),
+        name: it.name,
+        dateTime: it.created_at || '',
+      }));
+      setDepartments(mapped);
+    } catch (e: any) {
+      setError(e?.message || 'Failed to load departments');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { refresh(); }, []);
 
   useEffect(() => {
     const rawId = params.id;
@@ -182,7 +204,14 @@ const DepartmentMaster: React.FC = () => {
   }, [location.pathname, params.id, departments]);
 
   const handleSaveEditedDepartment = (updated: Record<string, any>) => {
-    setDepartments(prev => prev.map(d => (d.id === updated.id ? { ...d, ...updated } as Department : d)));
+    (async () => {
+      try {
+        await updateDepartment(updated.id, { name: updated.name });
+        setDepartments(prev => prev.map(d => (d.id === updated.id ? { ...d, name: updated.name } as Department : d)));
+      } catch (e: any) {
+        alert(e?.message || 'Failed to update');
+      }
+    })();
   };
 
 
@@ -194,28 +223,19 @@ const DepartmentMaster: React.FC = () => {
       ) : viewItem ? (
         <MasterView title={`View Department ${viewItem.id}`} item={viewItem} onClose={() => navigate(ROUTES.DEPARTMENT_MASTER)} />
       ) : editItem ? (
-        <MasterEdit title={`Edit Department ${editItem.id}`} item={editItem} onClose={() => navigate(ROUTES.DEPARTMENT_MASTER)} onSave={handleSaveEditedDepartment} />
+  <MasterEdit title={`Edit Department ${editItem.id}`} item={editItem} onClose={() => navigate(ROUTES.DEPARTMENT_MASTER)} onSave={handleSaveEditedDepartment} hideSource nameLabel="Department" />
       ) : (
         <>
+          <MasterHeader
+            onCreateClick={handleCreateDepartment}
+            createButtonLabel="Create Department"
+          />
           {/* Desktop Table View */}
           <div className="hidden lg:block">
             <div className="bg-white rounded-xl shadow-sm border border-[var(--border-color)] overflow-hidden">
               {/* Table Header */}
               <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)]">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-lg font-semibold text-[var(--text-primary)]">Department Master</h2>
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="master"
-                      size="sm"
-                      onClick={handleCreateDepartment}
-                      className="flex items-center space-x-2"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>Create Department</span>
-                    </Button>
-                  </div>
-                </div>
+                <h2 className="text-lg font-semibold text-[var(--text-primary)]">Department Master</h2>
               </div>
 
               {/* Table */}
@@ -271,20 +291,7 @@ const DepartmentMaster: React.FC = () => {
           {/* Mobile Card View */}
           <div className="lg:hidden space-y-4">
             <div className="bg-white rounded-xl shadow-sm border border-[var(--border-color)] p-4">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold text-[var(--text-primary)]">Department Master</h2>
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={handleCreateDepartment}
-                    className="flex items-center space-x-2"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Create Department</span>
-                  </Button>
-                </div>
-              </div>
+              <h2 className="text-lg font-semibold text-[var(--text-primary)]">Department Master</h2>
             </div>
 
             {currentData.map((item, index) => (

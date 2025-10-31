@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import MainContent from '../components/layout/MainContent';
-import Button from '../components/ui/Button';
-import { Plus } from 'lucide-react';
+
 import CreateAgencyForm from './CreateAgencyForm';
 import MasterView from '../components/ui/MasterView';
 import MasterEdit from '../components/ui/MasterEdit';
@@ -9,6 +8,7 @@ import type { Agency } from '../components/layout/MainContent';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants';
 import { getItem } from '../data/masterData';
+import { MasterHeader } from '../components/ui';
 
 const AgencyMaster: React.FC = () => {
   const [showCreate, setShowCreate] = useState(false);
@@ -79,20 +79,10 @@ const AgencyMaster: React.FC = () => {
     setEditItem(null);
   }, [location.pathname, params.id]);
 
-  const headerActions = (
-    <Button
-      variant="master"
-      size="sm"
-      onClick={handleCreateAgency}
-      className="flex items-center space-x-2"
-    >
-      <Plus className="w-4 h-4" />
-      <span>Create Agency</span>
-    </Button>
-  );
+
 
   return (
-    <>
+    <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
       {showCreate ? (
         <CreateAgencyForm inline onClose={() => navigate(ROUTES.AGENCY_MASTER)} onSave={handleSaveAgency} />
       ) : viewItem ? (
@@ -100,15 +90,20 @@ const AgencyMaster: React.FC = () => {
       ) : editItem ? (
         <MasterEdit title={`Edit Agency ${editItem.id}`} item={editItem} onClose={() => navigate(ROUTES.AGENCY_MASTER)} onSave={handleSaveEdit} />
       ) : (
-        <MainContent<Agency>
-          title="Agency Master" 
-          headerActions={headerActions} 
-          dataType="agency" 
-          onView={handleView}
-          onEdit={handleEdit}
-        />
+        <>
+          <MasterHeader
+            onCreateClick={handleCreateAgency}
+            createButtonLabel="Create Agency"
+          />
+          <MainContent<Agency>
+            title="Agency Master" 
+            dataType="agency" 
+            onView={handleView}
+            onEdit={handleEdit}
+          />
+        </>
       )}
-    </>
+    </div>
   );
 };
 

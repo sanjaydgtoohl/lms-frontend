@@ -11,11 +11,62 @@ import { loginService } from './Login';
 class ApiClient {
   private baseURL: string;
   private token: string | null = null;
+  private refreshTokenValue: string | null = null;
+  private isRefreshing = false;
+  private refreshPromise: Promise<AuthResponse> | null = null;
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
     this.token = localStorage.getItem('auth_token');
+    this.refreshTokenValue = localStorage.getItem('refresh_token');
   }
+
+  private async handleTokenRefresh() {
+    if (!this.refreshTokenValue) {
+      throw new Error('No refresh token available');
+    }
+
+    try {
+      const response = await fetch(`${this.baseURL}${API_ENDPOINTS.AUTH.REFRESH}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refresh_token: this.refreshTokenValue }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error('Token refresh failed');
+      }
+
+      // Save new tokens
+      this.setToken(data.data.token);
+      if (data.data.refresh_token) this.setRefreshToken(data.data.refresh_token);
+
+      // Return full auth data so callers can use additional fields
+      return {
+        token: data.data.token,
+        refresh_token: data.data.refresh_token || this.refreshTokenValue,
+        token_type: data.data.token_type,
+        expires_in: data.data.expires_in,
+      } as unknown as AuthResponse;
+    } catch (error) {
+      // Use centralized handler to clear auth store and redirect to login
+      try {
+        const authUtils = await import('../utils/auth');
+        authUtils.handleTokenExpiration();
+      } catch (e) {
+        // Fallback: clear local tokens and redirect
+        this.clearToken();
+        window.location.href = '/login';
+      }
+      throw error;
+    }
+  }
+
+  // NOTE: removed unused refreshTokenIfNeeded helper - refresh is handled inline in `request`
 
   private async request<T>(
     endpoint: string,
@@ -23,28 +74,62 @@ class ApiClient {
   ): Promise<ApiResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
     
-    const config: RequestInit = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(this.token && { Authorization: `Bearer ${this.token}` }),
-        ...options.headers,
-      },
-      ...options,
-    };
+    const makeRequest = async (token: string | null) => {
+      const config: RequestInit = {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+          ...options.headers,
+        },
+        ...options,
+      };
 
-    try {
-      const response = await fetch(url, config);
-      const data = await response.json();
+  console.debug('[api] making request', endpoint, { hasToken: !!token });
+  const response = await fetch(url, config);
+  const data = await response.json();
 
       if (!response.ok || !data.success) {
+        if (response.status === 401 || data?.message?.toLowerCase().includes('token expired') || data?.message?.toLowerCase().includes('invalid token')) {
+          throw new Error('Token expired');
+        }
         throw new Error(data.message || 'An error occurred');
       }
 
       return data;
+    };
+
+    try {
+      return await makeRequest(this.token);
     } catch (error) {
-      console.error('API Error:', error);
+      if (error instanceof Error && error.message === 'Token expired' && this.refreshTokenValue) {
+        // Try to refresh the token
+        console.debug('[api] token expired, attempting refresh');
+        try {
+          const refreshed = await this.handleTokenRefresh();
+          console.debug('[api] token refreshed, retrying original request');
+          return await makeRequest(refreshed.token);
+        } catch (refreshError) {
+          console.warn('[api] refresh failed, expiring session', refreshError);
+          try {
+            const authUtils = await import('../utils/auth');
+            authUtils.handleTokenExpiration();
+          } catch (e) {
+            this.clearToken();
+            window.location.href = '/login';
+          }
+          throw refreshError;
+        }
+      }
       throw error;
     }
+  }
+
+  // Public refresh method used by stores/components when needed
+  async refreshToken(): Promise<AuthResponse> {
+    console.debug('[api] explicit refreshToken() called');
+    const data = await this.handleTokenRefresh();
+    console.debug('[api] explicit refreshToken() result', { token: !!data?.token });
+    return data as AuthResponse;
   }
 
   // Auth Methods
@@ -54,6 +139,9 @@ class ApiClient {
     
     if (response.token) {
       this.setToken(response.token);
+      if (response.refresh_token) {
+        this.setRefreshToken(response.refresh_token);
+      }
     }
 
     return response;
@@ -85,22 +173,7 @@ class ApiClient {
     }
   }
 
-  async refreshToken(): Promise<AuthResponse> {
-    const refreshToken = localStorage.getItem('refresh_token');
-    const response = await this.request<AuthResponse>(
-      API_ENDPOINTS.AUTH.REFRESH,
-      {
-        method: 'POST',
-        body: JSON.stringify({ refreshToken }),
-      }
-    );
 
-    if (response.data.token) {
-      this.setToken(response.data.token);
-    }
-
-    return response.data;
-  }
 
   async getProfile(): Promise<User> {
     const response = await this.request<User>(API_ENDPOINTS.AUTH.PROFILE);
@@ -152,14 +225,20 @@ class ApiClient {
     localStorage.setItem('auth_token', token);
   }
 
+  setRefreshToken(token: string): void {
+    this.refreshTokenValue = token;
+    localStorage.setItem('refresh_token', token);
+  }
+
   clearToken(): void {
     this.token = null;
+    this.refreshTokenValue = null;
     localStorage.removeItem('auth_token');
     localStorage.removeItem('refresh_token');
   }
 
   isAuthenticated(): boolean {
-    return !!this.token;
+    return !!this.token && !!this.refreshTokenValue;
   }
 }
 

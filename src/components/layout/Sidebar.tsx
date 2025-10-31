@@ -75,7 +75,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
         { name: "Department Master", path: "/master/department", icon: GraduationCap },
         { name: "Designation Master", path: "/master/designation", icon: Users },
         { name: "Industry Master", path: "/master/industry", icon: Radio },
-        { name: "Lead Source", path: "/lead-source", icon: Search },
+        { name: "Lead Source", path: "/master/source", icon: Search },
       ],
     },
     { name: "Lead Management", path: "/lead-management", icon: Users },

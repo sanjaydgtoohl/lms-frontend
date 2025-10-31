@@ -15,7 +15,6 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginCard() {
   const { login, isLoading } = useAuthStore();
-  const showNotification = useUiStore((s) => s.showNotification);
   const notification = useUiStore((s) => s.notification);
   const [loginError, setLoginError] = useState<string | null>(null);
 
@@ -84,7 +83,7 @@ export default function LoginCard() {
         {loginError && (
           <div className="w-full text-center mb-4">
             <div className="inline-block bg-red-900/60 text-red-100 px-3 py-2 rounded-md text-sm sm:text-base">
-              <strong className="mr-1">Login Error:</strong>
+              {/* <strong className="mr-1">Login Error:</strong> */}
               <span>{loginError}</span>
             </div>
           </div>

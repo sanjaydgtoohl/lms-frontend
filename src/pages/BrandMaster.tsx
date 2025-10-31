@@ -7,6 +7,7 @@ import MasterEdit from '../components/ui/MasterEdit';
 import Pagination from '../components/ui/Pagination';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants';
+import MasterHeader from '../components/ui/MasterHeader';
 
 interface Brand {
   id: string;
@@ -217,19 +218,17 @@ const BrandMaster: React.FC = () => {
         <MasterEdit title={`Edit Brand ${editItem.id}`} item={editItem} onClose={() => navigate(ROUTES.BRAND_MASTER)} onSave={handleSaveEditedBrand} />
       ) : (
         <>
+      <MasterHeader
+        onCreateClick={handleCreateBrand}
+        createButtonLabel="Create Brand"
+      />
+      
       {/* Desktop Table View */}
       <div className="hidden lg:block">
         <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
           {/* Table Header */}
-          <div className="bg-gray-50 px-6 py-4 flex justify-between items-center">
+          <div className="bg-gray-50 px-6 py-4">
             <h2 className="text-lg font-semibold text-[var(--text-primary)]">Brand Master</h2>
-            <button
-              onClick={handleCreateBrand}
-              className="flex items-center space-x-2 px-4 py-2 bg-green-100 hover:bg-green-200 text-black text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Create Brand</span>
-            </button>
           </div>
           
           {/* Table */}
@@ -339,16 +338,7 @@ const BrandMaster: React.FC = () => {
       {/* Mobile Card View */}
       <div className="lg:hidden space-y-4">
         <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] p-4">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-[var(--text-primary)]">Brand Master</h2>
-            <button
-              onClick={handleCreateBrand}
-              className="flex items-center space-x-2 px-3 py-2 bg-green-100 hover:bg-green-200 text-black text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Create</span>
-            </button>
-          </div>
+          <h2 className="text-lg font-semibold text-[var(--text-primary)]">Brand Master</h2>
         </div>
         
         {currentData.map((item, index) => (
