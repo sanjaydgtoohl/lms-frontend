@@ -63,7 +63,7 @@ const CreateDesignationForm: React.FC<{
         <div className="p-6 bg-[#F9FAFB]">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">Designation Name *</label>
+              <label className="block text-sm text-[var(--text-secondary)] mb-1">Designation Name <span className="text-red-500">*</span></label>
               <input
                 name="designationName"
                 value={name}

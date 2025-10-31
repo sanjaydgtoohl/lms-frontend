@@ -76,7 +76,7 @@ const CreateSourceForm: React.FC<Props> = ({ onClose }) => {
         <div className="p-6 bg-[#F9FAFB]">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">Source Name *</label>
+              <label className="block text-sm text-[var(--text-secondary)] mb-1">Source Name <span className="text-red-500">*</span></label>
               <select
                 value={source}
                 onChange={(e) => { setSource(e.target.value); setErrors(prev => ({ ...prev, source: '' })); }}

@@ -122,7 +122,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm text-[var(--text-secondary)] mb-1">Brand Name *</label>
+          <label className="block text-sm text-[var(--text-secondary)] mb-1">Brand Name <span className="text-red-500">*</span></label>
           <input
             name="brandName"
             value={form.brandName}
@@ -134,7 +134,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
         </div>
 
         <div>
-          <label className="block text-sm text-[var(--text-secondary)] mb-1">Brand Type *</label>
+          <label className="block text-sm text-[var(--text-secondary)] mb-1">Brand Type <span className="text-red-500">*</span></label>
           <select
             name="brandType"
             value={form.brandType}
@@ -176,7 +176,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
         </div>
 
         <div>
-          <label className="block text-sm text-[var(--text-secondary)] mb-1">Industry *</label>
+          <label className="block text-sm text-[var(--text-secondary)] mb-1">Industry <span className="text-red-500">*</span></label>
           <select
             name="industry"
             value={form.industry}
@@ -192,7 +192,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
         </div>
 
         <div>
-          <label className="block text-sm text-[var(--text-secondary)] mb-1">Country *</label>
+          <label className="block text-sm text-[var(--text-secondary)] mb-1">Country <span className="text-red-500">*</span></label>
           <select
             name="country"
             value={form.country}

@@ -379,7 +379,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-5">
                   <div>
-                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Agency Name *</label>
+                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Agency Name <span className="text-red-500">*</span></label>
                     <input
                       value={a.name}
                       onChange={(e) => updateAgency(a.id, 'name', e.target.value)}
