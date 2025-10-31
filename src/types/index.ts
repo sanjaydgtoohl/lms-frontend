@@ -72,9 +72,13 @@ export interface Lesson {
 
 // API Response Types
 export interface ApiResponse<T> {
-  data: T;
-  message: string;
   success: boolean;
+  message: string;
+  meta: {
+    timestamp: string;
+    status_code: number;
+  };
+  data: T;
 }
 
 export interface PaginatedResponse<T> {

@@ -3,7 +3,12 @@ import type { LoginCredentials } from '../types';
 
 // API Response structure based on the actual API
 export interface LoginApiResponse {
-  status_code: number;
+  success: boolean;
+  message: string;
+  meta: {
+    timestamp: string;
+    status_code: number;
+  };
   data: {
     token: string;
     token_type: string;
@@ -13,8 +18,12 @@ export interface LoginApiResponse {
 
 // Error response structure
 export interface LoginErrorResponse {
-  status_code: number;
+  success: boolean;
   message: string;
+  meta: {
+    timestamp: string;
+    status_code: number;
+  };
   details?: any;
 }
 
@@ -29,6 +38,7 @@ class LoginService {
    * Authenticate user with email and password
    * @param credentials - User login credentials
    * @returns Promise with login response data
+   * 
    */
   async login(credentials: LoginCredentials): Promise<LoginApiResponse['data']> {
     try {
@@ -45,7 +55,7 @@ class LoginService {
 
       const data: LoginApiResponse | LoginErrorResponse = await response.json();
 
-      if (!response.ok) {
+      if (!response.ok || !data.success) {
         const errorData = data as LoginErrorResponse;
         throw new Error(errorData.message || 'Login failed');
       }
