@@ -83,19 +83,27 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
 
   const validate = () => {
     const next: Record<string, string> = {};
-    if (!form.brandName.trim()) next.brandName = 'Brand Name is required';
-    if (!form.brandType) next.brandType = 'Brand Type is required';
-    if (!form.industry) next.industry = 'Please select an Industry';
-    if (!form.country || form.country === 'Please Select Country') next.country = 'Please select a Country';
+    if (!form.brandName.trim()) next.brandName = 'Brand Name Is Required';
+    if (!form.brandType) next.brandType = 'Brand Type Is Required';
+    if (!form.industry) next.industry = 'Please Select An Industry';
+    if (!form.country || form.country === 'Please Select Country') next.country = 'Please Select A Country';
     setErrors(next);
     return Object.keys(next).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    if (onSave) onSave(form);
+    try {
+      const res: any = onSave ? (onSave as any)(form) : null;
+      if (res && typeof res.then === 'function') {
+        await res;
+      }
+    } catch (err) {
+      // parent will handle errors if needed
+    }
     onClose();
+    window.location.reload();
   };
 
   useEffect(() => {
@@ -128,7 +136,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
             value={form.brandName}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-            placeholder="Enter brand name"
+            placeholder="Please Enter Brand Name"
           />
           {errors.brandName && <div className="text-xs text-red-500 mt-1">{errors.brandName}</div>}
         </div>
@@ -141,7 +149,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
             onChange={handleChange}
             className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
           >
-            <option value="">Select Brand Type</option>
+            <option value="">Please Select Brand Type</option>
             {brandTypes.map((type) => (
               <option key={String(type.id)} value={String(type.id)}>{type.name}</option>
             ))}
@@ -168,7 +176,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
             onChange={handleChange}
             className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
           >
-            <option value="">Select Agency (optional)</option>
+            <option value="">Please Select Agency (optional)</option>
             <option value="Agency 1">Agency 1</option>
             <option value="Agency 2">Agency 2</option>
             <option value="Agency 3">Agency 3</option>
@@ -183,7 +191,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
             onChange={handleChange}
             className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
           >
-            <option value="">Select Industry</option>
+            <option value="">Please Select Industry</option>
             <option value="Industry 1">Industry 1</option>
             <option value="Industry 2">Industry 2</option>
             <option value="Industry 3">Industry 3</option>
@@ -214,7 +222,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
             value={form.postalCode}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-            placeholder="Postal / Zip code"
+            placeholder="Please Enter Postal Code"
           />
         </div>
 
@@ -226,7 +234,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
             onChange={handleChange}
             className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
           >
-            <option value="">Select State</option>
+            <option value="">Please Select State</option>
             {states.map((s) => (
               <option key={String(s.id)} value={String(s.id)}>{s.name}</option>
             ))}
@@ -246,7 +254,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
             onChange={handleChange}
             className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
           >
-            <option value="">Select Zone</option>
+            <option value="">Please Select Zone</option>
             {zones.map((z) => (
               <option key={z.id} value={String(z.id)}>{z.name}</option>
             ))}
@@ -259,7 +267,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
           type="submit"
           className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white hover:bg-[#066a6d] shadow-sm"
         >
-          Save Brand
+          Save
         </button>
       </div>
     </form>

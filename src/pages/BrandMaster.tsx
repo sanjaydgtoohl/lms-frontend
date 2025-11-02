@@ -215,7 +215,7 @@ const BrandMaster: React.FC = () => {
       ) : viewItem ? (
         <MasterView title={`View Brand ${viewItem.id}`} item={viewItem} onClose={() => navigate(ROUTES.BRAND_MASTER)} />
       ) : editItem ? (
-        <MasterEdit title={`Edit Brand ${editItem.id}`} item={editItem} onClose={() => navigate(ROUTES.BRAND_MASTER)} onSave={handleSaveEditedBrand} />
+        <MasterEdit item={editItem} onClose={() => navigate(ROUTES.BRAND_MASTER)} onSave={handleSaveEditedBrand} />
       ) : (
         <>
       <MasterHeader
@@ -236,43 +236,43 @@ const BrandMaster: React.FC = () => {
             <table className="w-full min-w-[1200px]">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider whitespace-nowrap">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
                     Brand ID
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider whitespace-nowrap">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
                     Brand Name
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider whitespace-nowrap">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
                     Agency Name
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider whitespace-nowrap">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
                     Brand Type
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider whitespace-nowrap">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
                     Contact Person
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider whitespace-nowrap">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
                     Industry
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider whitespace-nowrap">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
                     Country
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider whitespace-nowrap">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
                     State
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider whitespace-nowrap">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
                     City
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider whitespace-nowrap">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
                     Zone
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider whitespace-nowrap">
-                    PinCode
+                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
+                    Pin Code
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider whitespace-nowrap">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
                     Date & Time
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider whitespace-nowrap">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
                     Action
                   </th>
                 </tr>

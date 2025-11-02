@@ -38,16 +38,20 @@ const CreateDesignationForm: React.FC<{
     return `${dd}-${mm}-${yyyy} ${hh}:${min}`;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
       setError('Designation Name is required');
       return;
     }
-    if (onSave) {
-      onSave({ name, dateTime: formatDateTime(new Date()) });
+    try {
+      const res: any = onSave ? (onSave as any)({ name, dateTime: formatDateTime(new Date()) }) : null;
+      if (res && typeof res.then === 'function') await res;
+    } catch (err) {
+      // parent handles errors
     }
     onClose();
+    window.location.reload();
   };
 
   return (
@@ -69,7 +73,7 @@ const CreateDesignationForm: React.FC<{
                 value={name}
                 onChange={(e) => { setName(e.target.value); setError(''); }}
                 className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                placeholder="Enter designation name"
+                placeholder="Please Enter Designation Name"
               />
               {error && <div className="text-xs text-red-500 mt-1">{error}</div>}
             </div>
@@ -79,7 +83,7 @@ const CreateDesignationForm: React.FC<{
                 type="submit"
                 className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white hover:bg-[#066a6d] shadow-sm"
               >
-                Save Designation
+                Save
               </button>
             </div>
           </form>
@@ -232,7 +236,7 @@ const DesignationMaster: React.FC = () => {
       ) : viewItem ? (
         <MasterView title={`View Designation ${viewItem.id}`} item={viewItem} onClose={() => navigate(ROUTES.DESIGNATION_MASTER)} />
       ) : editItem ? (
-  <MasterEdit title={`Edit Designation ${editItem.id}`} item={editItem} onClose={() => navigate(ROUTES.DESIGNATION_MASTER)} onSave={handleSaveEditedDesignation} hideSource nameLabel="Designation" />
+  <MasterEdit item={editItem} onClose={() => navigate(ROUTES.DESIGNATION_MASTER)} onSave={handleSaveEditedDesignation} hideSource nameLabel="Designation" />
       ) : (
         <>
           {/* Desktop Table View */}
@@ -252,16 +256,16 @@ const DesignationMaster: React.FC = () => {
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">
                         Designation ID
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">
                         Designation Name
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">
                         Date & Time
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">
                         Action
                       </th>
                     </tr>

@@ -12,14 +12,14 @@ const MasterFormHeader: React.FC<MasterFormHeaderProps> = ({
   title
 }) => {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 p-4 bg-white rounded-2xl shadow-sm border border-[var(--border-color)]">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
       <Breadcrumb />
       <button
         onClick={onBack}
         className="flex items-center space-x-2 text-[var(--text-secondary)] hover:text-black"
       >
         <ChevronLeft className="w-4 h-4" />
-        <span className="text-sm">Back</span>
+        <span className="text-sm">Go Back</span>
       </button>
     </div>
   );

@@ -59,7 +59,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
   const [agencyClients, setAgencyClients] = useState<AgencyClient[]>([]);
 
   // Agency types fetched from API for the Agency Type dropdown
-  const [agencyTypes, setAgencyTypes] = useState<string[]>(['Select Type']);
+  const [agencyTypes, setAgencyTypes] = useState<string[]>(['Please Select Type']);
   
   // Fetch both agency types and group agencies on mount
   useEffect(() => {
@@ -71,7 +71,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
         const items = await listAgencyTypes();
         if (!mounted) return;
         const names = items.map(i => i.name || String(i.id));
-        setAgencyTypes(['Select Type', ...names]);
+        setAgencyTypes(['Please Select Type', ...names]);
       } catch (err) {
         console.error('Failed to load agency types', err);
       } finally {
@@ -193,7 +193,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
     setAgencies(prev => prev.filter(a => a.id !== id));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // Basic validation: require at least one agency name
     if (!agencyBlockVisible) {
@@ -203,7 +203,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
     const cleaned = agencies.map(a => ({ name: a.name.trim(), type: a.type, client: a.client }));
     if (cleaned.length === 0 || cleaned.some(a => !a.name)) {
       // simple validation: every agency must have a name
-      alert('Please provide Agency Name for each agency block before saving.');
+      alert('Please Provide Agency Name For Each Agency Block');
       return;
     }
 
@@ -213,8 +213,16 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
       agencies: cleaned,
     };
 
-    if (onSave) onSave(payload);
+    try {
+      const res: any = onSave ? (onSave as any)(payload) : null;
+      if (res && typeof res.then === 'function') {
+        await res;
+      }
+    } catch (err) {
+      // swallow - parent will show errors if any
+    }
     onClose();
+    window.location.reload();
   };
 
   return (
@@ -294,7 +302,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
                     className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
                     disabled={isLoading.groupAgencies}
                   >
-                    <option value="">Select a Group Agency</option>
+                    <option value="">Please Select Group Agency</option>
                     {!isLoading.groupAgencies && groupAgencies
                       .filter(g => g.status !== "0") // Only show active groups
                       .map(g => (
@@ -318,7 +326,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
                   <input
                     value={newGroupInput}
                     onChange={(e) => setNewGroupInput(e.target.value)}
-                    placeholder="Enter Group Agency Name"
+                    placeholder="Please Enter Group Agency Name"
                     className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
                   />
                   {/* Confirm icon appears when input has value */}
@@ -398,7 +406,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
                       value={a.name}
                       onChange={(e) => updateAgency(a.id, 'name', e.target.value)}
                       className="w-full px-3 py-2 text-sm sm:text-base border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                      placeholder="Enter Agency Name"
+                      placeholder="Please Enter Agency Name"
                     />
                   </div>
 
@@ -409,8 +417,8 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
                       onChange={(e) => updateAgency(a.id, 'type', e.target.value)}
                       className="w-full px-3 py-2 text-sm sm:text-base border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
                     >
-                      <option value="">Select Agency Type</option>
-                      {agencyTypes.filter(t => t !== 'Select Type').map(t => (
+                      <option value="">Please Select Agency Type</option>
+                      {agencyTypes.filter(t => t !== 'Please Select Type').map(t => (
                         <option key={t} value={t}>{t}</option>
                       ))}
                     </select>
@@ -427,7 +435,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
                           disabled={isLoading.agencyClients}
                         >
                           <option value="">
-                            {isLoading.agencyClients ? 'Loading clients...' : 'Select Brand'}
+                            {isLoading.agencyClients ? 'Loading clients...' : 'Please Select Brand'}
                           </option>
                           {!isLoading.agencyClients && agencyClients.map(client => (
                             <option key={client.id} value={client.id.toString()}>{client.name}</option>

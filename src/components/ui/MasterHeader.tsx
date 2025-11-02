@@ -9,10 +9,10 @@ interface MasterHeaderProps {
 
 const MasterHeader: React.FC<MasterHeaderProps> = ({ 
   onCreateClick, 
-  createButtonLabel = 'Create'
+  createButtonLabel = 'Create New'
 }) => {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 p-4 bg-white rounded-2xl shadow-sm border border-[var(--border-color)]">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
       <Breadcrumb />
       <button
         onClick={onCreateClick}

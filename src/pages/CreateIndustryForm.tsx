@@ -25,14 +25,15 @@ const CreateIndustryForm: React.FC<Props> = ({ onClose, onSave }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      setError('Industry Name is required');
+      setError('Industry Name Is Required');
       return;
     }
     try {
       setSaving(true);
       await createIndustry({ name });
-      if (onSave) onSave({ name, dateTime: formatDateTime(new Date()) });
-      onClose();
+  if (onSave) (onSave as any)({ name, dateTime: formatDateTime(new Date()) });
+  onClose();
+  window.location.reload();
     } catch (err: any) {
       setError(err?.message || 'Failed to create industry');
     } finally {
@@ -59,7 +60,7 @@ const CreateIndustryForm: React.FC<Props> = ({ onClose, onSave }) => {
                 value={name}
                 onChange={(e) => { setName(e.target.value); setError(''); }}
                 className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                placeholder="Enter industry name"
+                placeholder="Please Enter Industry Name"
               />
               {error && <div className="text-xs text-red-500 mt-1">{error}</div>}
             </div>
@@ -70,7 +71,7 @@ const CreateIndustryForm: React.FC<Props> = ({ onClose, onSave }) => {
                 className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white hover:bg-[#066a6d] shadow-sm disabled:opacity-60"
                 disabled={saving}
               >
-                {saving ? 'Saving...' : 'Save Industry'}
+                {saving ? 'Saving...' : 'Save'}
               </button>
             </div>
           </form>

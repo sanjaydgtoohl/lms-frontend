@@ -153,7 +153,7 @@ const LeadSource: React.FC = () => {
       ) : viewItem ? (
         <MasterView title={`View Lead Source ${viewItem.id}`} item={viewItem} onClose={() => navigate(ROUTES.SOURCE_MASTER)} />
       ) : editItem ? (
-        <MasterEdit title={`Edit Lead Source ${editItem.id}`} item={editItem} onClose={() => navigate(ROUTES.SOURCE_MASTER)} onSave={handleSaveEdit} />
+        <MasterEdit item={editItem} onClose={() => navigate(ROUTES.SOURCE_MASTER)} onSave={handleSaveEdit} />
       ) : (
         <>
           <MasterHeader
@@ -177,11 +177,11 @@ const LeadSource: React.FC = () => {
                   <table className="w-full">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">Source ID</th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">Source</th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">Sub-Source</th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">Date & Time</th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">Action</th>
+                        <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Source ID</th>
+                        <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Source</th>
+                        <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Sub-Source</th>
+                        <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Date & Time</th>
+                        <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[var(--border-color)]">
