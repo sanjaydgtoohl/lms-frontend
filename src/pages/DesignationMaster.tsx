@@ -4,6 +4,7 @@ import Pagination from '../components/ui/Pagination';
 import { motion } from 'framer-motion';
 import MasterView from '../components/ui/MasterView';
 import MasterEdit from '../components/ui/MasterEdit';
+import { Loader2 } from 'lucide-react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants';
 import { MasterHeader, MasterFormHeader, NotificationPopup } from '../components/ui';
@@ -121,12 +122,13 @@ const CreateDesignationForm: React.FC<{
 const DesignationMaster: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);
+  const [showDeleteToast, setShowDeleteToast] = useState(false);
   const itemsPerPage = 10;
 
   // Store designations in state fetched from API
   const [designations, setDesignations] = useState<Designation[]>([]);
-  const [, setLoading] = useState(false);
-  const [, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // totalPages calculated but not used directly
   const [searchQuery, setSearchQuery] = useState('');
@@ -176,6 +178,8 @@ const DesignationMaster: React.FC = () => {
     try {
       await deleteDesignation(id);
       setDesignations(prev => prev.filter(d => d.id !== id));
+      setShowDeleteToast(true);
+      setTimeout(() => setShowDeleteToast(false), 3000);
     } catch (e: any) {
       alert(e?.message || 'Failed to delete');
     }
@@ -266,6 +270,18 @@ const DesignationMaster: React.FC = () => {
 
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
+      <NotificationPopup
+        isOpen={showDeleteToast}
+        onClose={() => setShowDeleteToast(false)}
+        message="Designation deleted successfully"
+        type="success"
+        customStyle={{
+          bg: 'bg-gradient-to-r from-red-50 to-red-100',
+          border: 'border-l-4 border-red-500',
+          text: 'text-red-800',
+          icon: 'text-red-500'
+        }}
+      />
       {showCreate ? (
         <CreateDesignationForm onClose={() => navigate(ROUTES.DESIGNATION_MASTER)} onSave={handleSaveDesignation} />
       ) : viewItem ? (
@@ -290,6 +306,11 @@ const DesignationMaster: React.FC = () => {
                   </div>
               
               {/* Table */}
+              {loading ? (
+                <div className="px-6 py-12 flex items-center justify-center">
+                  <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+                </div>
+              ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50">
@@ -326,6 +347,7 @@ const DesignationMaster: React.FC = () => {
                   </tbody>
                 </table>
               </div>
+              )}
             </div>
           </div>
 
@@ -334,8 +356,13 @@ const DesignationMaster: React.FC = () => {
             <div className="bg-white rounded-2xl shadow-md border border-[var(--border-color)] p-4">
               <h2 className="text-lg font-semibold text-[var(--text-primary)]">Designation Master</h2>
             </div>
-            
-            {currentData.map((item, index) => (
+            {loading ? (
+              <div className="px-4 py-12 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+              </div>
+            ) : (
+              <>
+                {currentData.map((item, index) => (
                 <div 
                 key={item.id + item.name}
                 className="bg-white rounded-2xl shadow-md border border-[var(--border-color)] p-4 hover:shadow-lg transition-all duration-200"
@@ -364,7 +391,9 @@ const DesignationMaster: React.FC = () => {
                   </div>
                 </div>
               </div>
-            ))}
+                ))}
+              </>
+            )}
           </div>
 
           {/* Pagination */}

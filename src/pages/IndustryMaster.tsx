@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import ActionMenu from '../components/ui/ActionMenu';
+import { Loader2 } from 'lucide-react';
 import CreateIndustryForm from './CreateIndustryForm';
 import MasterView from '../components/ui/MasterView';
 import MasterEdit from '../components/ui/MasterEdit';
 import Pagination from '../components/ui/Pagination';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants';
-import { MasterHeader } from '../components/ui';
+import { MasterHeader, NotificationPopup } from '../components/ui';
 import SearchBar from '../components/ui/SearchBar';
 import { listIndustries, deleteIndustry, updateIndustry, type Industry as ApiIndustry } from '../services/IndustryMaster';
 
@@ -19,6 +20,7 @@ interface Industry {
 const IndustryMaster: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);
+  const [showDeleteToast, setShowDeleteToast] = useState(false);
   const itemsPerPage = 10;
 
   const [industries, setIndustries] = useState<Industry[]>([]);
@@ -58,6 +60,8 @@ const IndustryMaster: React.FC = () => {
     try {
       await deleteIndustry(id);
       setIndustries(prev => prev.filter(i => i.id !== id));
+      setShowDeleteToast(true);
+      setTimeout(() => setShowDeleteToast(false), 3000);
     } catch (e: any) {
       alert(e?.message || 'Failed to delete');
     }
@@ -143,6 +147,18 @@ const IndustryMaster: React.FC = () => {
 
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
+      <NotificationPopup
+        isOpen={showDeleteToast}
+        onClose={() => setShowDeleteToast(false)}
+        message="Industry deleted successfully"
+        type="success"
+        customStyle={{
+          bg: 'bg-gradient-to-r from-red-50 to-red-100',
+          border: 'border-l-4 border-red-500',
+          text: 'text-red-800',
+          icon: 'text-red-500'
+        }}
+      />
       {showCreate ? (
         <CreateIndustryForm onClose={() => navigate(ROUTES.INDUSTRY_MASTER)} onSave={handleSaveIndustry} />
       ) : viewItem ? (
@@ -169,7 +185,9 @@ const IndustryMaster: React.FC = () => {
                 <div className="px-6 py-3 text-sm text-red-600 bg-red-50 border-b border-[var(--border-color)]">{error}</div>
               )}
               {loading ? (
-                <div className="px-6 py-6 text-sm text-[var(--text-secondary)]">Loading...</div>
+                <div className="px-6 py-12 flex items-center justify-center">
+                  <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+                </div>
               ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -210,8 +228,14 @@ const IndustryMaster: React.FC = () => {
               <h2 className="text-lg font-semibold text-[var(--text-primary)]">Industry Master</h2>
             </div>
 
-            {currentData.map((item, index) => (
-              <div key={item.id + item.name} className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] p-4 hover:shadow-md transition-all duration-200">
+            {loading ? (
+              <div className="px-4 py-12 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+              </div>
+            ) : (
+              <>
+                {currentData.map((item, index) => (
+                <div key={item.id + item.name} className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] p-4 hover:shadow-md transition-all duration-200">
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex gap-2">
                     <span className="text-sm text-[var(--text-secondary)]">Sr. No.:</span>
@@ -236,7 +260,9 @@ const IndustryMaster: React.FC = () => {
                   </div>
                 </div>
               </div>
-            ))}
+                ))}
+              </>
+            )}
           </div>
 
           {/* Pagination */}

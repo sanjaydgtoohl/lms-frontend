@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import ActionMenu from '../components/ui/ActionMenu';
+import { Loader2 } from 'lucide-react';
 import Pagination from '../components/ui/Pagination';
 import CreateSourceForm from './CreateSourceForm';
 import MasterView from '../components/ui/MasterView';
@@ -22,6 +23,7 @@ const LeadSource: React.FC = () => {
   const [viewItem, setViewItem] = useState<LeadSourceItem | null>(null);
   const [editItem, setEditItem] = useState<LeadSourceItem | null>(null);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [showDeleteToast, setShowDeleteToast] = useState(false);
   // track deletion in-flight if needed (not used currently)
 
   useEffect(() => {
@@ -123,6 +125,9 @@ const LeadSource: React.FC = () => {
       await deleteLeadSubSource(item.id);
       // remove locally, then optionally refresh
       setItems(prev => prev.filter(i => i.id !== item.id));
+      // show delete success toast
+      setShowDeleteToast(true);
+      setTimeout(() => setShowDeleteToast(false), 3000);
       // await refreshList(); // keep commented for performance; enable if needed
     } catch (e: any) {
       alert(e?.message || 'Failed to delete');
@@ -172,6 +177,18 @@ const LeadSource: React.FC = () => {
         message="Source updated successfully"
         type="success"
       />
+      <NotificationPopup
+        isOpen={showDeleteToast}
+        onClose={() => setShowDeleteToast(false)}
+        message="Source deleted successfully"
+        type="success"
+        customStyle={{
+          bg: 'bg-gradient-to-r from-red-50 to-red-100',
+          border: 'border-l-4 border-red-500',
+          text: 'text-red-800',
+          icon: 'text-red-500'
+        }}
+      />
       {showCreate ? (
         <CreateSourceForm inline onClose={() => navigate(ROUTES.SOURCE_MASTER)} onSave={handleSaveSource} />
       ) : viewItem ? (
@@ -198,7 +215,9 @@ const LeadSource: React.FC = () => {
                 <div className="px-6 py-3 text-sm text-red-600 bg-red-50 border-b border-[var(--border-color)]">{error}</div>
               )}
               {loading ? (
-                <div className="px-6 py-6 text-sm text-[var(--text-secondary)]">Loading...</div>
+                <div className="px-6 py-12 flex items-center justify-center">
+                  <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+                </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full">
@@ -240,38 +259,43 @@ const LeadSource: React.FC = () => {
             <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] p-4">
               <h2 className="text-lg font-semibold text-[var(--text-primary)]">Lead Sources</h2>
             </div>
-
-            {currentData.map((item, index) => (
-              <div key={item.id} className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] p-4 hover:shadow-md transition-all duration-200">
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex gap-2">
-                    <span className="text-sm text-[var(--text-secondary)]">Sr. No.:</span>
-                    <span className="text-sm font-medium text-[var(--text-primary)]">{startIndex + index + 1}</span>
-                  </div>
-                  <ActionMenu
-                    isLast={index === currentData.length - 1}
-                    onEdit={() => handleEdit(item)}
-                    onView={() => handleView(item)}
-                    onDelete={() => handleDelete(item)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-[var(--text-secondary)]">Source:</span>
-                    <span className="text-sm font-medium text-[var(--text-primary)]">{item.source}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-[var(--text-secondary)]">Sub-Source:</span>
-                    <span className="text-sm font-medium text-[var(--text-primary)]">{item.subSource || '-'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-[var(--text-secondary)]">Date & Time:</span>
-                    <span className="text-sm text-[var(--text-secondary)]">{item.dateTime || '-'}</span>
-                  </div>
-                </div>
+            {loading ? (
+              <div className="px-4 py-12 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
               </div>
-            ))}
+            ) : (
+              currentData.map((item, index) => (
+                <div key={item.id} className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] p-4 hover:shadow-md transition-all duration-200">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex gap-2">
+                      <span className="text-sm text-[var(--text-secondary)]">Sr. No.:</span>
+                      <span className="text-sm font-medium text-[var(--text-primary)]">{startIndex + index + 1}</span>
+                    </div>
+                    <ActionMenu
+                      isLast={index === currentData.length - 1}
+                      onEdit={() => handleEdit(item)}
+                      onView={() => handleView(item)}
+                      onDelete={() => handleDelete(item)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-[var(--text-secondary)]">Source:</span>
+                      <span className="text-sm font-medium text-[var(--text-primary)]">{item.source}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-[var(--text-secondary)]">Sub-Source:</span>
+                      <span className="text-sm font-medium text-[var(--text-primary)]">{item.subSource || '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-[var(--text-secondary)]">Date & Time:</span>
+                      <span className="text-sm text-[var(--text-secondary)]">{item.dateTime || '-'}</span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
 
           {/* Pagination */}

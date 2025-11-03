@@ -38,7 +38,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuthStore();
-  const [expandedItems, setExpandedItems] = useState<string[]>(["master-data"]);
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [showMobilePopup, setShowMobilePopup] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
 
