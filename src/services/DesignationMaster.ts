@@ -39,7 +39,10 @@ async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
     const message = (json && (json.message || json.error)) || 'Request failed';
     try { useUiStore.getState().pushError(message); } catch {}
-    throw new Error(message);
+    const err: any = new Error(message);
+    // attach parsed response for callers to inspect validation details
+    err.responseData = json;
+    throw err;
   }
   if (json && typeof json === 'object' && 'data' in json) {
     return (json as ApiEnvelope<T>).data;

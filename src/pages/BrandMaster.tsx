@@ -3,11 +3,11 @@ import CreateBrandForm from './CreateBrandForm';
 import { Plus } from 'lucide-react';
 import ActionMenu from '../components/ui/ActionMenu';
 import MasterView from '../components/ui/MasterView';
-import MasterEdit from '../components/ui/MasterEdit';
 import Pagination from '../components/ui/Pagination';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants';
 import MasterHeader from '../components/ui/MasterHeader';
+import SearchBar from '../components/ui/SearchBar';
 
 interface Brand {
   id: string;
@@ -102,10 +102,20 @@ const BrandMaster: React.FC = () => {
     },
   ]);
 
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // apply search filtering: instant, case-insensitive, trimmed
+  // Use startsWith so typing the first letter matches names that begin with the query
+  const filteredBrands = brands.filter((brand) => {
+    if (!searchQuery) return true;
+    const q = String(searchQuery).trim().toLowerCase();
+    return (brand.name || '').toLowerCase().startsWith(q);
+  });
+
   // totalPages calculated but not used directly
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentData = brands.slice(startIndex, endIndex);
+  const currentData = filteredBrands.slice(startIndex, endIndex);
 
   const navigate = useNavigate();
   const params = useParams();
@@ -213,9 +223,18 @@ const BrandMaster: React.FC = () => {
       {showCreate ? (
         <CreateBrandForm inline onClose={() => navigate(ROUTES.BRAND_MASTER)} onSave={handleSaveBrand} />
       ) : viewItem ? (
-        <MasterView title={`View Brand ${viewItem.id}`} item={viewItem} onClose={() => navigate(ROUTES.BRAND_MASTER)} />
+  <MasterView item={viewItem} onClose={() => navigate(ROUTES.BRAND_MASTER)} />
       ) : editItem ? (
-        <MasterEdit item={editItem} onClose={() => navigate(ROUTES.BRAND_MASTER)} onSave={handleSaveEditedBrand} />
+        <CreateBrandForm
+          inline
+          mode="edit"
+          initialData={editItem}
+          onClose={() => navigate(ROUTES.BRAND_MASTER)}
+          onSave={(data: any) => {
+            // ensure id preserved
+            handleSaveEditedBrand({ ...(data as Record<string, any>) });
+          }}
+        />
       ) : (
         <>
       <MasterHeader
@@ -227,8 +246,9 @@ const BrandMaster: React.FC = () => {
       <div className="hidden lg:block">
         <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
           {/* Table Header */}
-          <div className="bg-gray-50 px-6 py-4">
+          <div className="bg-gray-50 px-6 py-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-[var(--text-primary)]">Brand Master</h2>
+            <SearchBar delay={0} onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
           </div>
           
           {/* Table */}
@@ -237,7 +257,7 @@ const BrandMaster: React.FC = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
-                    Brand ID
+                    Sr. No.
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
                     Brand Name
@@ -284,7 +304,7 @@ const BrandMaster: React.FC = () => {
                     className="hover:bg-[var(--hover-bg)] transition-colors duration-200"
                   >
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[var(--text-primary)]">
-                      {item.id}
+                      {startIndex + index + 1}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-primary)]">
                       {item.name}
@@ -347,7 +367,7 @@ const BrandMaster: React.FC = () => {
             className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] p-4 hover:shadow-md transition-all duration-200"
           >
             <div className="flex justify-between items-start mb-3">
-              <div className="text-sm font-medium text-[var(--text-primary)]">{item.id}</div>
+              <div className="text-sm font-medium text-[var(--text-primary)]">S. No {startIndex + index + 1}</div>
               <ActionMenu
                 onEdit={() => handleEdit(item.id)}
                 onView={() => handleView(item.id)}

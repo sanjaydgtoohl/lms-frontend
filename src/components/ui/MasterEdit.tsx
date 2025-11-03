@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ChevronLeft } from 'lucide-react';
 import Breadcrumb from './Breadcrumb';
 import { fetchLeadSources, type LeadSource } from '../../services/CreateSourceForm';
+import NotificationPopup from './NotificationPopup';
 
 type Props = {
   item: Record<string, any> | null;
@@ -18,6 +19,7 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
   const [options, setOptions] = useState<LeadSource[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   if (!item) return null;
 
@@ -84,6 +86,11 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
         if (res && typeof res.then === 'function') {
           await res;
         }
+
+        // Show a success toast for 5 seconds, then close and reload.
+        setShowSuccessToast(true);
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        setShowSuccessToast(false);
       } catch (err) {
         // swallow - parent will show errors where appropriate
       }
@@ -107,6 +114,13 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
           <span className="text-sm">Go Back</span>
         </button>
       </div>
+
+      <NotificationPopup
+        isOpen={showSuccessToast}
+        onClose={() => setShowSuccessToast(false)}
+        message="Updated successfully"
+        type="success"
+      />
 
       <motion.form
         onSubmit={handleSubmit}

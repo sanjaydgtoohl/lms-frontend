@@ -23,9 +23,46 @@ export const debounce = <T extends (...args: any[]) => any>(
   func: T,
   wait: number
 ): ((...args: Parameters<T>) => void) => {
-  let timeout: number;
+  let timeout: any;
   return (...args: Parameters<T>) => {
     clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);
   };
 };
+
+// --- Search helpers (support exact field matching with syntax `field:term`) ---
+export type FieldQuery = { field: string; term: string } | null;
+
+const normalizeKey = (s: string) => String(s || '').toLowerCase().replace(/\s+/g, '');
+
+export function parseFieldQuery(q: string): FieldQuery {
+  if (!q) return null;
+  const idx = q.indexOf(':') >= 0 ? q.indexOf(':') : q.indexOf('=');
+  if (idx === -1) return null;
+  const field = q.slice(0, idx).trim();
+  const term = q.slice(idx + 1).trim();
+  if (!field) return null;
+  return { field: field.toLowerCase(), term };
+}
+
+// item: record, q: raw query string, fields?: list of keys to search when not using field query
+export function matchesQuery(item: Record<string, any>, q: string, fields?: string[]): boolean {
+  if (!q) return true;
+  const raw = String(q).trim();
+  if (!raw) return true;
+  const parsed = parseFieldQuery(raw);
+  if (parsed) {
+    const wantKeyNorm = parsed.field.replace(/\s+/g, '');
+    const foundKey = Object.keys(item).find(k => normalizeKey(k) === wantKeyNorm || k.toLowerCase() === parsed.field);
+    if (!foundKey) return false;
+    const val = item[foundKey];
+    const left = String(val ?? '').trim().toLowerCase();
+    const right = String(parsed.term ?? '').trim().toLowerCase();
+    return left === right; // exact match
+  }
+
+  const qLower = raw.toLowerCase();
+  const keys = fields && fields.length ? fields : Object.keys(item);
+  return keys.some(k => String(item[k] ?? '').toLowerCase().includes(qLower));
+}
+

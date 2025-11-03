@@ -144,25 +144,25 @@ const MainContent = <T extends LeadSource | Agency>({
                 <tr>
                   {dataType === 'agency' ? (
                     <>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
                         Sr. No.
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
                         Agency Group
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
                         Agency Name
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
                         Agency Type
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
                         Contact Person
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
                         Date & Time
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
                         Action
                       </th>
                     </>
@@ -266,7 +266,7 @@ const MainContent = <T extends LeadSource | Agency>({
           </div>
         </div>
         
-  {currentData.map((item, index) => (
+        {currentData.map((item, index) => (
           <div 
             key={item.id}
             className="bg-white rounded-xl shadow-sm border border-[var(--border-color)] p-4 hover:shadow-md transition-all duration-200"

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { MasterFormHeader } from '../components/ui';
+import { MasterFormHeader, NotificationPopup } from '../components/ui';
 import { listZones, listStates, listCountries, listBrandTypes } from '../services/CreateBrandForm';
 import type { Zone, State, Country, BrandType } from '../services/CreateBrandForm';
 
@@ -8,6 +8,8 @@ type Props = {
   onClose: () => void;
   onSave?: (data: any) => void;
   inline?: boolean;
+  initialData?: Record<string, any>;
+  mode?: 'create' | 'edit';
 };
 
 type CitySelectProps = {
@@ -55,7 +57,7 @@ const CitySelect: React.FC<CitySelectProps> = ({ state, value, onChange }) => {
   );
 };
 
-const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
+const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode = 'create' }) => {
   const [form, setForm] = useState({
     brandName: '',
     brandType: '',
@@ -68,6 +70,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
     city: '',
     zone: '',
   });
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [zones, setZones] = useState<Zone[]>([]);
@@ -95,18 +98,42 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
     e.preventDefault();
     if (!validate()) return;
     try {
-      const res: any = onSave ? (onSave as any)(form) : null;
+      const payload = { ...form } as Record<string, any>;
+      // preserve id when editing if present on initialData
+      if (initialData && initialData.id) payload.id = initialData.id;
+      const res: any = onSave ? (onSave as any)(payload) : null;
       if (res && typeof res.then === 'function') {
         await res;
       }
+      setShowSuccessToast(true);
+      setTimeout(() => {
+        setShowSuccessToast(false);
+        onClose();
+        window.location.reload();
+      }, 5000);
     } catch (err) {
       // parent will handle errors if needed
     }
-    onClose();
-    window.location.reload();
   };
 
   useEffect(() => {
+    // If initialData provided (edit mode) prefill the form
+    if (initialData) {
+      setForm(prev => ({
+        ...prev,
+        brandName: initialData.brandName ?? initialData.name ?? prev.brandName,
+        brandType: initialData.brandType ?? String(initialData.brandType ?? '') ?? prev.brandType,
+        website: initialData.website ?? prev.website,
+        agency: initialData.agency ?? initialData.agencyName ?? prev.agency,
+        industry: initialData.industry ?? prev.industry,
+        country: initialData.country ?? prev.country,
+        postalCode: initialData.postalCode ?? initialData.pinCode ?? prev.postalCode,
+        state: initialData.state ?? prev.state,
+        city: initialData.city ?? prev.city,
+        zone: initialData.zone ?? prev.zone,
+      }));
+    }
+
     let mounted = true;
     Promise.all([
       listZones(),
@@ -267,7 +294,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
           type="submit"
           className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white hover:bg-[#066a6d] shadow-sm"
         >
-          Save
+          {mode === 'edit' ? 'Update' : 'Save'}
         </button>
       </div>
     </form>
@@ -281,7 +308,13 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
       transition={{ duration: 0.22 }}
       className="space-y-6"
     >
-      <MasterFormHeader onBack={onClose} title="Create Brand" />
+      <MasterFormHeader onBack={onClose} title={mode === 'edit' ? 'Edit Brand' : 'Create Brand'} />
+      <NotificationPopup
+        isOpen={showSuccessToast}
+        onClose={() => setShowSuccessToast(false)}
+        message={mode === 'edit' ? 'Brand updated successfully' : 'Brand created successfully'}
+        type="success"
+      />
       <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
         <div className="p-6 bg-[#F9FAFB]">
           {formContent}

@@ -6,7 +6,8 @@ import MasterView from '../components/ui/MasterView';
 import MasterEdit from '../components/ui/MasterEdit';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants';
-import { MasterHeader, MasterFormHeader } from '../components/ui';
+import { MasterHeader, MasterFormHeader, NotificationPopup } from '../components/ui';
+import SearchBar from '../components/ui/SearchBar';
 import {
   listDesignations,
   deleteDesignation,
@@ -28,6 +29,7 @@ const CreateDesignationForm: React.FC<{
 }> = ({ onClose, onSave }) => {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   const formatDateTime = (d: Date) => {
     const dd = String(d.getDate()).padStart(2, '0');
@@ -47,11 +49,28 @@ const CreateDesignationForm: React.FC<{
     try {
       const res: any = onSave ? (onSave as any)({ name, dateTime: formatDateTime(new Date()) }) : null;
       if (res && typeof res.then === 'function') await res;
+      setShowSuccessToast(true);
+      setTimeout(() => {
+        setShowSuccessToast(false);
+        onClose();
+        window.location.reload();
+      }, 5000);
     } catch (err) {
-      // parent handles errors
+      // show server validation messages when available
+      const e: any = err;
+      if (e && e.responseData) {
+        // try common shapes: errors, details, message
+        const resp = e.responseData;
+        const details = resp.errors || resp.details || resp.data || resp;
+        try {
+          setError(typeof details === 'string' ? details : JSON.stringify(details));
+        } catch (_) {
+          setError(resp.message || 'Validation failed');
+        }
+      } else {
+        setError((err as any)?.message || 'Failed to create designation');
+      }
     }
-    onClose();
-    window.location.reload();
   };
 
   return (
@@ -63,6 +82,12 @@ const CreateDesignationForm: React.FC<{
       className="space-y-6"
     >
       <MasterFormHeader onBack={onClose} title="Create Designation" />
+      <NotificationPopup
+        isOpen={showSuccessToast}
+        onClose={() => setShowSuccessToast(false)}
+        message="Designation created successfully"
+        type="success"
+      />
       <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
         <div className="p-6 bg-[#F9FAFB]">
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -100,13 +125,19 @@ const DesignationMaster: React.FC = () => {
 
   // Store designations in state fetched from API
   const [designations, setDesignations] = useState<Designation[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [, setLoading] = useState(false);
+  const [, setError] = useState<string | null>(null);
+
+  // totalPages calculated but not used directly
+  const [searchQuery, setSearchQuery] = useState('');
 
   // totalPages calculated but not used directly
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentData = designations.slice(startIndex, endIndex);
+  // instant prefix search (case-insensitive) on designation name
+  const _q_des = String(searchQuery || '').trim().toLowerCase();
+  const filtered = _q_des ? designations.filter(d => (d.name || '').toLowerCase().startsWith(_q_des)) : designations;
+  const currentData = filtered.slice(startIndex, endIndex);
 
   const navigate = useNavigate();
   const params = useParams();
@@ -118,13 +149,15 @@ const DesignationMaster: React.FC = () => {
 
   const handleSaveDesignation = (data: any) => {
     // create on server then refresh list
-    (async () => {
+    return (async () => {
       try {
-        await createDesignation({ name: data.name });
+        // API expects `title` for designation payload (see Postman traces)
+  await createDesignation({ title: data.name } as any);
         await refresh();
         setCurrentPage(1);
       } catch (e: any) {
         alert(e?.message || 'Failed to create designation');
+        throw e;
       }
     })();
   };
@@ -208,12 +241,14 @@ const DesignationMaster: React.FC = () => {
   }, [location.pathname, params.id, designations]);
 
   const handleSaveEditedDesignation = (updated: Record<string, any>) => {
-    (async () => {
+    return (async () => {
       try {
-        await updateDesignation(updated.id, { name: updated.name });
+        // API expects `title` for update payload
+  await updateDesignation(updated.id, { title: updated.name } as any);
         setDesignations(prev => prev.map(d => (d.id === updated.id ? { ...d, name: updated.name } as Designation : d)));
       } catch (e: any) {
         alert(e?.message || 'Failed to update');
+        throw e;
       }
     })();
   };
@@ -247,27 +282,22 @@ const DesignationMaster: React.FC = () => {
           <div className="hidden lg:block">
             <div className="bg-white rounded-2xl shadow-md border border-[var(--border-color)] overflow-hidden">
               {/* Table Header */}
-              <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)]">
-                <h2 className="text-lg font-semibold text-[var(--text-primary)]">Designation Master</h2>
-              </div>
+                  <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)]">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-lg font-semibold text-[var(--text-primary)]">Designation Master</h2>
+                      <SearchBar placeholder="Search Designation" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
+                    </div>
+                  </div>
               
               {/* Table */}
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">
-                        Designation ID
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">
-                        Designation Name
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">
-                        Date & Time
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">
-                        Action
-                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Sr. No.</th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Designation Name</th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Date & Time</th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--border-color)]">
@@ -276,9 +306,7 @@ const DesignationMaster: React.FC = () => {
                         key={item.id + item.name}
                         className="hover:bg-[var(--hover-bg)] transition-colors duration-200"
                       >
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[var(--text-primary)]">
-                          {item.id}
-                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[var(--text-primary)]">{startIndex + index + 1}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-primary)]">
                           {item.name}
                         </td>
@@ -313,7 +341,10 @@ const DesignationMaster: React.FC = () => {
                 className="bg-white rounded-2xl shadow-md border border-[var(--border-color)] p-4 hover:shadow-lg transition-all duration-200"
               >
                 <div className="flex justify-between items-start mb-3">
-                  <div className="text-sm font-medium text-[var(--text-primary)]">{item.id}</div>
+                  <div className="flex gap-2">
+                    <span className="text-sm text-[var(--text-secondary)]">Sr. No.:</span>
+                    <span className="text-sm font-medium text-[var(--text-primary)]">{startIndex + index + 1}</span>
+                  </div>
                   <ActionMenu
                     isLast={index === currentData.length - 1}
                     onEdit={() => handleEdit(item.id)}

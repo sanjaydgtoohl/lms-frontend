@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { MasterFormHeader } from '../components/ui';
+import { MasterFormHeader, NotificationPopup } from '../components/ui';
 import { createLeadSubSource, fetchLeadSources, type LeadSource } from '../services/CreateSourceForm';
 
 type Props = {
@@ -17,6 +17,7 @@ const CreateSourceForm: React.FC<Props> = ({ onClose }) => {
   const [saving, setSaving] = useState(false);
   const [options, setOptions] = useState<LeadSource[]>([]);
   const [loadError, setLoadError] = useState<string>('');
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -54,8 +55,12 @@ const CreateSourceForm: React.FC<Props> = ({ onClose }) => {
         name: subSource,
         status: 1,
       });
-      onClose();
-      window.location.reload();
+      setShowSuccessToast(true);
+      setTimeout(() => {
+        setShowSuccessToast(false);
+        onClose();
+        window.location.reload();
+      }, 5000);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to create sub-source';
       setErrors((prev) => ({ ...prev, form: msg }));
@@ -73,6 +78,12 @@ const CreateSourceForm: React.FC<Props> = ({ onClose }) => {
       className="space-y-6"
     >
       <MasterFormHeader onBack={onClose} title="Create Source" />
+      <NotificationPopup
+        isOpen={showSuccessToast}
+        onClose={() => setShowSuccessToast(false)}
+        message="Source created successfully"
+        type="success"
+      />
       <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
         <div className="p-6 bg-[#F9FAFB]">
           <form onSubmit={handleSubmit} className="space-y-6">

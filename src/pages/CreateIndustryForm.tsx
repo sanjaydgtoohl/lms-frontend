@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { MasterFormHeader } from '../components/ui';
+import { MasterFormHeader, NotificationPopup } from '../components/ui';
 import { createIndustry } from '../services/IndustryMaster';
 
 type Props = {
@@ -12,6 +12,7 @@ const CreateIndustryForm: React.FC<Props> = ({ onClose, onSave }) => {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   const formatDateTime = (d: Date) => {
     const dd = String(d.getDate()).padStart(2, '0');
@@ -31,9 +32,13 @@ const CreateIndustryForm: React.FC<Props> = ({ onClose, onSave }) => {
     try {
       setSaving(true);
       await createIndustry({ name });
-  if (onSave) (onSave as any)({ name, dateTime: formatDateTime(new Date()) });
-  onClose();
-  window.location.reload();
+      if (onSave) (onSave as any)({ name, dateTime: formatDateTime(new Date()) });
+      setShowSuccessToast(true);
+      setTimeout(() => {
+        setShowSuccessToast(false);
+        onClose();
+        window.location.reload();
+      }, 5000);
     } catch (err: any) {
       setError(err?.message || 'Failed to create industry');
     } finally {
@@ -50,6 +55,12 @@ const CreateIndustryForm: React.FC<Props> = ({ onClose, onSave }) => {
       className="space-y-6"
     >
       <MasterFormHeader onBack={onClose} title="Create Industry" />
+      <NotificationPopup
+        isOpen={showSuccessToast}
+        onClose={() => setShowSuccessToast(false)}
+        message="Industry created successfully"
+        type="success"
+      />
       <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
         <div className="p-6 bg-[#F9FAFB]">
           <form onSubmit={handleSubmit} className="space-y-6">

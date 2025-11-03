@@ -5,7 +5,8 @@ import Pagination from '../components/ui/Pagination';
 import CreateSourceForm from './CreateSourceForm';
 import MasterView from '../components/ui/MasterView';
 import MasterEdit from '../components/ui/MasterEdit';
-import { MasterHeader } from '../components/ui';
+import { MasterHeader, NotificationPopup } from '../components/ui';
+import SearchBar from '../components/ui/SearchBar';
 import { listLeadSources, deleteLeadSubSource, updateLeadSubSource, type LeadSourceItem } from '../services/LeadSource';
 import { fetchLeadSources } from '../services/CreateSourceForm';
 import { ROUTES } from '../constants';
@@ -17,8 +18,10 @@ const LeadSource: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [items, setItems] = useState<LeadSourceItem[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [viewItem, setViewItem] = useState<LeadSourceItem | null>(null);
   const [editItem, setEditItem] = useState<LeadSourceItem | null>(null);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
   // track deletion in-flight if needed (not used currently)
 
   useEffect(() => {
@@ -39,9 +42,18 @@ const LeadSource: React.FC = () => {
     return () => { isMounted = false; };
   }, []);
 
+  const _q_ls = String(searchQuery || '').trim().toLowerCase();
+  const filtered = _q_ls
+    ? items.filter((it) => (
+        (String(it.id || '').toLowerCase().startsWith(_q_ls)) ||
+        (String(it.source || '').toLowerCase().startsWith(_q_ls)) ||
+        (String(it.subSource || '').toLowerCase().startsWith(_q_ls))
+      ))
+    : items;
+
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentData = items.slice(startIndex, endIndex);
+  const currentData = filtered.slice(startIndex, endIndex);
 
   const navigate = useNavigate();
   const params = useParams();
@@ -89,9 +101,15 @@ const LeadSource: React.FC = () => {
         status: 1,
       });
       setItems(prev => prev.map(i => (i.id === updated.id ? { ...i, subSource: name, source: leadSourceName } : i)));
+      // Show success toast then navigate back to listing after a short delay
+      setShowSuccessToast(true);
+      setTimeout(() => {
+        setShowSuccessToast(false);
+        navigate(ROUTES.SOURCE_MASTER);
+      }, 5000);
     } catch (e: any) {
       alert(e?.message || 'Failed to update');
-    } finally {
+      // preserve previous behavior of returning to listing on error
       navigate(ROUTES.SOURCE_MASTER);
     }
   };
@@ -148,6 +166,12 @@ const LeadSource: React.FC = () => {
 
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
+      <NotificationPopup
+        isOpen={showSuccessToast}
+        onClose={() => setShowSuccessToast(false)}
+        message="Source updated successfully"
+        type="success"
+      />
       {showCreate ? (
         <CreateSourceForm inline onClose={() => navigate(ROUTES.SOURCE_MASTER)} onSave={handleSaveSource} />
       ) : viewItem ? (
@@ -164,7 +188,10 @@ const LeadSource: React.FC = () => {
           <div className="hidden lg:block">
             <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
               <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)]">
-                <h2 className="text-lg font-semibold text-[var(--text-primary)]">Lead Sources</h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-[var(--text-primary)]">Lead Sources</h2>
+                      <SearchBar placeholder="Search Lead Source" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
+                </div>
               </div>
 
               {error && (
@@ -177,7 +204,7 @@ const LeadSource: React.FC = () => {
                   <table className="w-full">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Source ID</th>
+                        <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Sr. No.</th>
                         <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Source</th>
                         <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Sub-Source</th>
                         <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Date & Time</th>
@@ -187,7 +214,7 @@ const LeadSource: React.FC = () => {
                     <tbody className="divide-y divide-[var(--border-color)]">
                       {currentData.map((item, index) => (
                         <tr key={item.id + (item.subSource || '') + index} className="hover:bg-[var(--hover-bg)] transition-colors duration-200">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[var(--text-primary)]">{item.id}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[var(--text-primary)]">{startIndex + index + 1}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-primary)]">{item.source}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-primary)]">{item.subSource || '-'}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-secondary)]">{item.dateTime || '-'}</td>
@@ -217,7 +244,10 @@ const LeadSource: React.FC = () => {
             {currentData.map((item, index) => (
               <div key={item.id} className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] p-4 hover:shadow-md transition-all duration-200">
                 <div className="flex justify-between items-start mb-3">
-                  <div className="text-sm font-medium text-[var(--text-primary)]">{item.id}</div>
+                  <div className="flex gap-2">
+                    <span className="text-sm text-[var(--text-secondary)]">Sr. No.:</span>
+                    <span className="text-sm font-medium text-[var(--text-primary)]">{startIndex + index + 1}</span>
+                  </div>
                   <ActionMenu
                     isLast={index === currentData.length - 1}
                     onEdit={() => handleEdit(item)}

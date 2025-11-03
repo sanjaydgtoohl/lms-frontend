@@ -7,6 +7,7 @@ import Pagination from '../components/ui/Pagination';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants';
 import { MasterHeader } from '../components/ui';
+import SearchBar from '../components/ui/SearchBar';
 import { listIndustries, deleteIndustry, updateIndustry, type Industry as ApiIndustry } from '../services/IndustryMaster';
 
 interface Industry {
@@ -23,11 +24,16 @@ const IndustryMaster: React.FC = () => {
   const [industries, setIndustries] = useState<Industry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // apply instant prefix search (case-insensitive) on industry name
+  const _q_ind = String(searchQuery || '').trim().toLowerCase();
+  const filtered = _q_ind ? industries.filter(i => (i.name || '').toLowerCase().startsWith(_q_ind)) : industries;
 
   // totalPages calculated but not used directly
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentData = industries.slice(startIndex, endIndex);
+  const currentData = filtered.slice(startIndex, endIndex);
 
   const navigate = useNavigate();
   const params = useParams();
@@ -153,7 +159,10 @@ const IndustryMaster: React.FC = () => {
           <div className="hidden lg:block">
             <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
               <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)]">
-                <h2 className="text-lg font-semibold text-[var(--text-primary)]">Industry Master</h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-[var(--text-primary)]">Industry Master</h2>
+                  <SearchBar placeholder="Search Industry" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
+                </div>
               </div>
 
               {error && (
@@ -166,7 +175,7 @@ const IndustryMaster: React.FC = () => {
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Industry ID</th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Sr. No.</th>
                       <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Industry Name</th>
                       <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Date & Time</th>
                       <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Action</th>
@@ -175,7 +184,7 @@ const IndustryMaster: React.FC = () => {
                   <tbody className="divide-y divide-[var(--border-color)]">
                     {currentData.map((item, index) => (
                       <tr key={item.id + item.name + index} className="hover:bg-[var(--hover-bg)] transition-colors duration-200">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[var(--text-primary)]">{item.id}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[var(--text-primary)]">{startIndex + index + 1}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-primary)]">{item.name}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-secondary)]">{item.dateTime}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -204,7 +213,10 @@ const IndustryMaster: React.FC = () => {
             {currentData.map((item, index) => (
               <div key={item.id + item.name} className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] p-4 hover:shadow-md transition-all duration-200">
                 <div className="flex justify-between items-start mb-3">
-                  <div className="text-sm font-medium text-[var(--text-primary)]">{item.id}</div>
+                  <div className="flex gap-2">
+                    <span className="text-sm text-[var(--text-secondary)]">Sr. No.:</span>
+                    <span className="text-sm font-medium text-[var(--text-primary)]">{startIndex + index + 1}</span>
+                  </div>
                   <ActionMenu
                     isLast={index === currentData.length - 1}
                     onEdit={() => handleEdit(item.id)}

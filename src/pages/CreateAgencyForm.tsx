@@ -9,7 +9,7 @@ import {
 } from '../services';
 import { motion } from 'framer-motion';
 import { Check, Plus, Loader2 } from 'lucide-react';
-import { MasterFormHeader } from '../components/ui';
+import { MasterFormHeader, NotificationPopup } from '../components/ui';
 
 type Props = {
   onClose: () => void;
@@ -43,6 +43,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
   const [existingGroup, setExistingGroup] = useState('');
   const [newGroupInput, setNewGroupInput] = useState('');
   const [groupConfirmed, setGroupConfirmed] = useState(false);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
   // groupMode: 'existing' | 'new' | 'direct'
   // Default to 'direct' so the Direct option is selected on first render
   const [groupMode, setGroupMode] = useState<'existing' | 'new' | 'direct'>('direct');
@@ -218,11 +219,15 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
       if (res && typeof res.then === 'function') {
         await res;
       }
+      setShowSuccessToast(true);
+      setTimeout(() => {
+        setShowSuccessToast(false);
+        onClose();
+        window.location.reload();
+      }, 5000);
     } catch (err) {
       // swallow - parent will show errors if any
     }
-    onClose();
-    window.location.reload();
   };
 
   return (
@@ -233,6 +238,12 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
       transition={{ duration: 0.22 }}
       className="flex-1 overflow-auto w-full overflow-x-hidden"
     >
+      <NotificationPopup
+        isOpen={showSuccessToast}
+        onClose={() => setShowSuccessToast(false)}
+        message="Agency created successfully"
+        type="success"
+      />
       <div className="space-y-6 p-6">
         <MasterFormHeader onBack={onClose} title="Create Agency" />
         <div className="w-full bg-white rounded-lg sm:rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">

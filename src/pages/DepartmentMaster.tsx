@@ -6,7 +6,8 @@ import MasterEdit from '../components/ui/MasterEdit';
 import Pagination from '../components/ui/Pagination';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants';
-import { MasterHeader, MasterFormHeader } from '../components/ui';
+import { MasterHeader, MasterFormHeader, NotificationPopup } from '../components/ui';
+import SearchBar from '../components/ui/SearchBar';
 import {
   listDepartments,
   createDepartment,
@@ -28,6 +29,7 @@ const CreateDepartmentForm: React.FC<{
 }> = ({ onClose, onSave }) => {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   const formatDateTime = (d: Date) => {
     const dd = String(d.getDate()).padStart(2, '0');
@@ -47,11 +49,15 @@ const CreateDepartmentForm: React.FC<{
     try {
       const res: any = onSave ? (onSave as any)({ name, dateTime: formatDateTime(new Date()) }) : null;
       if (res && typeof res.then === 'function') await res;
+      setShowSuccessToast(true);
+      setTimeout(() => {
+        setShowSuccessToast(false);
+        onClose();
+        window.location.reload();
+      }, 5000);
     } catch (err) {
       // parent handles errors
     }
-    onClose();
-    window.location.reload();
   };
 
   return (
@@ -63,6 +69,12 @@ const CreateDepartmentForm: React.FC<{
       className="space-y-6"
     >
       <MasterFormHeader onBack={onClose} title="Create Department" />
+      <NotificationPopup
+        isOpen={showSuccessToast}
+        onClose={() => setShowSuccessToast(false)}
+        message="Department created successfully"
+        type="success"
+      />
       <div className="w-full bg-white rounded-xl shadow-sm border border-[var(--border-color)] overflow-hidden">
         <div className="p-6 bg-[#F9FAFB]">
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -101,16 +113,21 @@ const DepartmentMaster: React.FC = () => {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [_loading, setLoading] = useState(false);
   const [_error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [showCreate, setShowCreate] = useState(false);
   const navigate = useNavigate();
   const params = useParams();
   const location = useLocation();
 
+  // apply instant prefix search (case-insensitive) on department name
+  const _q_dept = String(searchQuery || '').trim().toLowerCase();
+  const filtered = _q_dept ? departments.filter(d => (d.name || '').toLowerCase().startsWith(_q_dept)) : departments;
+
   // totalPages calculated but not used directly
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentData = departments.slice(startIndex, endIndex);
+  const currentData = filtered.slice(startIndex, endIndex);
 
   const handleCreateDepartment = () => {
     navigate(`${ROUTES.DEPARTMENT_MASTER}/create`);
@@ -239,7 +256,10 @@ const DepartmentMaster: React.FC = () => {
             <div className="bg-white rounded-xl shadow-sm border border-[var(--border-color)] overflow-hidden">
               {/* Table Header */}
               <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)]">
-                <h2 className="text-lg font-semibold text-[var(--text-primary)]">Department Master</h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-[var(--text-primary)]">Department Master</h2>
+                  <SearchBar placeholder="Search Department" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
+                </div>
               </div>
 
               {/* Table */}
@@ -247,18 +267,10 @@ const DepartmentMaster: React.FC = () => {
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">
-                        Department ID
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">
-                        Department Name
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">
-                        Date & Time
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">
-                        Action
-                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Sr. No.</th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Department Name</th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Date & Time</th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--border-color)]">
@@ -267,9 +279,7 @@ const DepartmentMaster: React.FC = () => {
                         key={`${item.id}-${index}`} 
                         className="hover:bg-[var(--hover-bg)] transition-colors duration-200"
                       >
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[var(--text-primary)]">
-                          {item.id}
-                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[var(--text-primary)]">{startIndex + index + 1}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-primary)]">
                           {item.name}
                         </td>
@@ -304,7 +314,10 @@ const DepartmentMaster: React.FC = () => {
                 className="bg-white rounded-xl shadow-sm border border-[var(--border-color)] p-4 hover:shadow-md transition-all duration-200"
               >
                 <div className="flex justify-between items-start mb-3">
-                  <div className="text-sm font-medium text-[var(--text-primary)]">{item.id}</div>
+                  <div className="flex gap-2">
+                    <span className="text-sm text-[var(--text-secondary)]">Sr. No.:</span>
+                    <span className="text-sm font-medium text-[var(--text-primary)]">{startIndex + index + 1}</span>
+                  </div>
                   <ActionMenu
                     isLast={index >= currentData.length - 2}
                     onEdit={() => handleEdit(item.id)}
