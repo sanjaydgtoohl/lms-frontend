@@ -255,8 +255,8 @@ const DepartmentMaster: React.FC = () => {
 			/>
 			{showCreate ? (
 				<CreateDepartmentForm onClose={() => navigate(ROUTES.DEPARTMENT_MASTER)} onSave={handleSaveDepartment} />
-			) : viewItem ? (
-				<MasterView title={`View Department ${viewItem.id}`} item={viewItem} onClose={() => navigate(ROUTES.DEPARTMENT_MASTER)} />
+					) : viewItem ? (
+						<MasterView item={viewItem} onClose={() => navigate(ROUTES.DEPARTMENT_MASTER)} />
 			) : editItem ? (
 	<MasterEdit item={editItem} onClose={() => navigate(ROUTES.DEPARTMENT_MASTER)} onSave={handleSaveEditedDepartment} hideSource nameLabel="Department" />
 			) : (

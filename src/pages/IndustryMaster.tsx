@@ -162,7 +162,7 @@ const IndustryMaster: React.FC = () => {
       {showCreate ? (
         <CreateIndustryForm onClose={() => navigate(ROUTES.INDUSTRY_MASTER)} onSave={handleSaveIndustry} />
       ) : viewItem ? (
-        <MasterView title={`View Industry ${viewItem.id}`} item={viewItem} onClose={() => navigate(ROUTES.INDUSTRY_MASTER)} />
+        <MasterView item={viewItem} onClose={() => navigate(ROUTES.INDUSTRY_MASTER)} />
       ) : editItem ? (
   <MasterEdit item={editItem} onClose={() => navigate(ROUTES.INDUSTRY_MASTER)} onSave={handleSaveEditedIndustry} hideSource nameLabel="Industry" />
       ) : (

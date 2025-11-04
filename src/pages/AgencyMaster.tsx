@@ -86,7 +86,7 @@ const AgencyMaster: React.FC = () => {
       {showCreate ? (
         <CreateAgencyForm inline onClose={() => navigate(ROUTES.AGENCY_MASTER)} onSave={handleSaveAgency} />
       ) : viewItem ? (
-        <MasterView title={`View Agency ${viewItem.id}`} item={viewItem} onClose={() => navigate(ROUTES.AGENCY_MASTER)} />
+  <MasterView item={viewItem} onClose={() => navigate(ROUTES.AGENCY_MASTER)} />
       ) : editItem ? (
         <MasterEdit item={editItem} onClose={() => navigate(ROUTES.AGENCY_MASTER)} onSave={handleSaveEdit} />
       ) : (
