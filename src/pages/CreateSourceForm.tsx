@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { Loader2 } from 'lucide-react';
 import { MasterFormHeader, NotificationPopup } from '../components/ui';
 import { createLeadSubSource, fetchLeadSources, type LeadSource } from '../services/CreateSourceForm';
 
@@ -89,17 +90,26 @@ const CreateSourceForm: React.FC<Props> = ({ onClose }) => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm text-[var(--text-secondary)] mb-1">Source Name <span className="text-red-500">*</span></label>
-              <select
-                value={source}
-                onChange={(e) => { setSource(e.target.value); setErrors(prev => ({ ...prev, source: '' })); }}
-                className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                disabled={loading}
-              >
-                <option value="">{loading ? 'Loading...' : 'Please Select Source Name'}</option>
-                {!loading && options.map(opt => (
-                  <option key={String(opt.id)} value={String(opt.id)}>{opt.name}</option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  value={source}
+                  onChange={(e) => { setSource(e.target.value); setErrors(prev => ({ ...prev, source: '' })); }}
+                  className="w-full appearance-none px-3 pr-8 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                  disabled={loading}
+                >
+                  <option value="">{loading ? 'Loading...' : 'Please Select Source Name'}</option>
+                  {!loading && options.map(opt => (
+                    <option key={String(opt.id)} value={String(opt.id)}>{opt.name}</option>
+                  ))}
+                </select>
+                {loading ? (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                  </div>
+                ) : (
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+                )}
+              </div>
               {errors.source && <div className="text-xs text-red-500 mt-1">{errors.source}</div>}
               {loadError && <div className="text-xs text-red-500 mt-1">{loadError}</div>}
             </div>

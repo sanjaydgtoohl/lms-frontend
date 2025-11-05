@@ -1,233 +1,106 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  listAgencyTypes, 
-  listGroupAgencies, 
-  createGroupAgency, 
-  listAgencyClients,
-  type GroupAgency,
-  type AgencyClient 
-} from '../services';
+import { listAgencyTypes, listAgencyClients } from '../services';
 import { motion } from 'framer-motion';
-import { Check, Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 import { MasterFormHeader, NotificationPopup } from '../components/ui';
-
-type Props = {
-  onClose: () => void;
-  onSave?: (data: any) => void;
-  inline?: boolean;
-};
-
-type AgencyBlock = {
-  id: string;
-  name: string;
-  type: string;
-  client: string;
-};
-// Agency types are fetched from the API; keep a default placeholder option
-
-
-const blankAgency = (): AgencyBlock => ({ id: String(Date.now()) + Math.random().toString(36).slice(2, 6), name: '', type: '', client: '' });
-
-// Small helper to show client initials in a round avatar when client selected
-const getInitials = (name: string) => {
-  if (!name) return '';
-  return name
-    .split(' ')
-    .map(s => s[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
-};
-
 const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
-  const [existingGroup, setExistingGroup] = useState('');
-  const [newGroupInput, setNewGroupInput] = useState('');
-  const [groupConfirmed, setGroupConfirmed] = useState(false);
+  const [parent, setParent] = useState<ParentAgency>({ name: '', type: '', client: '' });
+  const [children, setChildren] = useState<ChildAgency[]>([]);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
-  // groupMode: 'existing' | 'new' | 'direct'
-  // Default to 'direct' so the Direct option is selected on first render
-  const [groupMode, setGroupMode] = useState<'existing' | 'new' | 'direct'>('direct');
 
-  const [agencies, setAgencies] = useState<AgencyBlock[]>([]);
-  const [groupAgencies, setGroupAgencies] = useState<GroupAgency[]>([]);
-  const [isLoading, setIsLoading] = useState({
-    groupAgencies: true,
-    agencyTypes: true,
-    createGroup: false,
-    agencyClients: true,
-  });
-  
-  const [agencyClients, setAgencyClients] = useState<AgencyClient[]>([]);
+  const [agencyTypes, setAgencyTypes] = useState<string[]>([]);
+  const [agencyClients, setAgencyClients] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState({ agencyTypes: true, agencyClients: true });
 
-  // Agency types fetched from API for the Agency Type dropdown
-  const [agencyTypes, setAgencyTypes] = useState<string[]>(['Please Select Type']);
-  
-  // Fetch both agency types and group agencies on mount
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
   useEffect(() => {
     let mounted = true;
-    
-    // Load agency types
     (async () => {
       try {
         const items = await listAgencyTypes();
         if (!mounted) return;
-        const names = items.map(i => i.name || String(i.id));
-        setAgencyTypes(['Please Select Type', ...names]);
+        const names = items.map((i: any) => i.name || String(i.id));
+        setAgencyTypes(names);
       } catch (err) {
         console.error('Failed to load agency types', err);
       } finally {
-        if (mounted) {
-          setIsLoading(prev => ({ ...prev, agencyTypes: false }));
-        }
-      }
-    })();
-    
-    // Load group agencies
-    (async () => {
-      try {
-        const items = await listGroupAgencies();
-        if (!mounted) return;
-        setGroupAgencies(items);
-      } catch (err) {
-        console.error('Failed to load group agencies', err);
-      } finally {
-        if (mounted) {
-          setIsLoading(prev => ({ ...prev, groupAgencies: false }));
-        }
+        if (mounted) setIsLoading(prev => ({ ...prev, agencyTypes: false }));
       }
     })();
 
-    // Load agency clients (brands)
     (async () => {
       try {
         const items = await listAgencyClients();
         if (!mounted) return;
-        setAgencyClients(items.filter(item => item.status !== "0")); // Only active clients
+        setAgencyClients(items.filter((i: any) => i.status !== '0'));
       } catch (err) {
         console.error('Failed to load agency clients:', err);
       } finally {
-        if (mounted) {
-          setIsLoading(prev => ({ ...prev, agencyClients: false }));
-        }
+        if (mounted) setIsLoading(prev => ({ ...prev, agencyClients: false }));
       }
     })();
-    
+
     return () => { mounted = false; };
   }, []);
 
-  // Determine visibility of agency form block per requirements
-  const agencyBlockVisible = groupMode === 'direct' || 
-    (groupMode === 'existing' && groupConfirmed) || 
-    (groupMode === 'new' && groupConfirmed);
-  
-  // Debug log for visibility state
-  console.log('Form visibility state:', {
-    groupMode,
-    existingGroup,
-    groupConfirmed,
-    agencyBlockVisible
-  });
+  const openConfirm = () => setConfirmModalOpen(true);
+  const closeConfirm = () => setConfirmModalOpen(false);
 
-  useEffect(() => {
-    // When becoming visible, ensure at least one agency block present
-    if (agencyBlockVisible && agencies.length === 0) {
-      setAgencies([blankAgency()]);
+  const handleAddChild = () => setChildren(prev => [...prev, blankChild()]);
+  const handleUpdateChild = (id: string, key: keyof ChildAgency, value: string) => {
+    setChildren(prev => prev.map(c => c.id === id ? { ...c, [key]: value } : c));
+  };
+  const handleRemoveChild = (id: string) => setChildren(prev => prev.filter(c => c.id !== id));
+
+  const validate = (): { ok: boolean; message?: string } => {
+    if (!parent.name.trim()) return { ok: false, message: 'Parent agency name is required' };
+    for (const c of children) {
+      if (!c.name.trim()) return { ok: false, message: 'All child agencies must have a name' };
     }
-  }, [agencyBlockVisible]);
-
-  const handleSelectExisting = (val: string) => {
-    console.log('Selected value:', val);
-    console.log('Current group agencies:', groupAgencies);
-    
-    if (val) {
-      // First set the mode
-      setGroupMode('existing');
-      
-      // Then find and set the group
-      const selectedGroup = groupAgencies.find(g => g.id.toString() === val);
-      console.log('Found group:', selectedGroup);
-      
-      if (selectedGroup) {
-        setExistingGroup(val);
-        setGroupConfirmed(true);
-      }
-    } else {
-      setExistingGroup('');
-      setGroupMode('existing');
-      setGroupConfirmed(false);
-    }
+    return { ok: true };
   };
 
-  const handleConfirmNewGroup = async () => {
-    const groupName = newGroupInput.trim();
-    if (!groupName) return;
-    
-    setIsLoading(prev => ({ ...prev, createGroup: true }));
-    try {
-      const newGroup = await createGroupAgency({ name: groupName });
-      setGroupAgencies(prev => [...prev, newGroup]);
-      setExistingGroup(newGroup.id.toString());
-      setGroupConfirmed(true);
-      setNewGroupInput('');
-      setGroupMode('existing'); // Switch to existing mode since we're using the newly created group
-    } catch (err) {
-      console.error('Failed to create group agency:', err);
-      // Error shown via UI store from the service
-    } finally {
-      setIsLoading(prev => ({ ...prev, createGroup: false }));
-    }
-  };
-
-  const handleBypass = () => {
-    setGroupMode('direct');
-    setExistingGroup('');
-    setGroupConfirmed(false);
-  };
-
-  const addAgency = () => setAgencies(prev => [...prev, blankAgency()]);
-
-  const updateAgency = (id: string, key: keyof AgencyBlock, value: string) => {
-    setAgencies(prev => prev.map(a => (a.id === id ? { ...a, [key]: value } : a)));
-  };
-
-  const removeAgency = (id: string) => {
-    setAgencies(prev => prev.filter(a => a.id !== id));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    // Basic validation: require at least one agency name
-    if (!agencyBlockVisible) {
-      // Shouldn't be able to submit, but guard
-      return;
-    }
-    const cleaned = agencies.map(a => ({ name: a.name.trim(), type: a.type, client: a.client }));
-    if (cleaned.length === 0 || cleaned.some(a => !a.name)) {
-      // simple validation: every agency must have a name
-      alert('Please Provide Agency Name For Each Agency Block');
+  const submitAll = async () => {
+    const v = validate();
+    if (!v.ok) {
+      alert(v.message || 'Validation failed');
       return;
     }
 
     const payload = {
-      group: groupMode === 'direct' ? null : existingGroup || null,
-      bypassGroup: groupMode === 'direct',
-      agencies: cleaned,
+      parent: { ...parent, name: parent.name.trim() },
+      children: children.map(c => ({ name: c.name.trim(), type: c.type, client: c.client })),
     };
 
     try {
+      setSubmitting(true);
       const res: any = onSave ? (onSave as any)(payload) : null;
-      if (res && typeof res.then === 'function') {
-        await res;
-      }
+      if (res && typeof res.then === 'function') await res;
       setShowSuccessToast(true);
       setTimeout(() => {
         setShowSuccessToast(false);
         onClose();
         window.location.reload();
-      }, 5000);
+      }, 2000);
     } catch (err) {
-      // swallow - parent will show errors if any
+      console.error('Submit failed', err);
+    } finally {
+      setSubmitting(false);
     }
+  };
+
+  // User chose No in confirm modal — immediately submit parent only
+  const handleConfirmNo = async () => {
+    closeConfirm();
+    await submitAll();
+  };
+
+  // User chose Yes — close modal and show child section (at least one)
+  const handleConfirmYes = () => {
+    closeConfirm();
+    if (children.length === 0) handleAddChild();
   };
 
   return (
@@ -244,246 +117,147 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
         message="Agency created successfully"
         type="success"
       />
+
       <div className="space-y-6 p-6">
-        <MasterFormHeader onBack={onClose} title="Create Agency" />
+        <MasterFormHeader onBack={onClose} title="Create Group Agency" />
+
         <div className="w-full bg-white rounded-lg sm:rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-
-            <div className="p-3 sm:p-6 bg-[#F9FAFB] space-y-4 sm:space-y-6">
-        {/* Top: Group selection / creation / bypass using radio options */}
-        <div className="space-y-4">
-          <div className="px-4 sm:px-6 py-3 sm:py-4 rounded-lg border border-[var(--border-color)] flex flex-col sm:grid sm:grid-cols-3 sm:gap-6 items-start sm:items-center space-y-2 sm:space-y-0">
-            {/* Place Direct first and default to direct on initial load */}
-            <label className="inline-flex items-center space-x-2 w-full">
-              <input
-                type="radio"
-                name="groupMode"
-                checked={groupMode === 'direct'}
-                onChange={() => handleBypass()}
-                className="form-radio"
-              />
-              <span className="text-sm font-medium">Direct Agency</span>
-            </label>
-
-            <label className="inline-flex items-center space-x-2 w-full">
-              <input
-                type="radio"
-                name="groupMode"
-                checked={groupMode === 'existing'}
-                onChange={() => {
-                  // When user selects 'existing', show the existing-group selector
-                  // and reveal the agency blocks immediately. If there's at least
-                  // one active group available, auto-select it.
-                  setGroupMode('existing');
-                  const firstActive = groupAgencies.find(g => g.status !== "0");
-                  if (firstActive) {
-                    setExistingGroup(firstActive.id.toString());
-                    setGroupConfirmed(true);
-                  } else {
-                    // No groups yet — still reveal the agency block so user can proceed
-                    setExistingGroup('');
-                    setGroupConfirmed(true);
-                  }
-                }}
-                className="form-radio"
-              />
-              <span className="text-sm font-medium">Select Existing Group Agency</span>
-            </label>
-
-            <label className="inline-flex items-center space-x-2 w-full">
-              <input
-                type="radio"
-                name="groupMode"
-                checked={groupMode === 'new'}
-                onChange={() => setGroupMode('new')}
-                className="form-radio"
-              />
-              <span className="text-sm font-medium">Create New Group Agency</span>
-            </label>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Existing group input */}
-            {groupMode === 'existing' && (
-              <div>
-                <label className="block text-sm text-[var(--text-secondary)] mb-1">Choose a Group Agency</label>
-                <div className="relative">
-                  <select
-                    value={existingGroup}
-                    onChange={(e) => handleSelectExisting(e.target.value)}
-                    className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                    disabled={isLoading.groupAgencies}
-                  >
-                    <option value="">Please Select Group Agency</option>
-                    {!isLoading.groupAgencies && groupAgencies
-                      .filter(g => g.status !== "0") // Only show active groups
-                      .map(g => (
-                        <option key={g.id} value={g.id.toString()}>{g.name}</option>
-                      ))
-                    }</select>
-                  {isLoading.groupAgencies && (
-                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                      <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* New group input */}
-            {groupMode === 'new' && (
-              <div>
-                <label className="block text-sm text-[var(--text-secondary)] mb-1">Enter Group Agency Name</label>
-                <div className="flex items-center space-x-2">
+          <div className="p-4 sm:p-6 bg-[#F9FAFB] space-y-6">
+            <div className="space-y-3">
+              <div className="text-sm text-[var(--text-secondary)]">Group Agency Details</div>
+              <div className="flex flex-col gap-4">
+                <div>
+                  <label className="block text-sm text-[var(--text-secondary)] mb-1">Agency Name <span className="text-red-500">*</span></label>
                   <input
-                    value={newGroupInput}
-                    onChange={(e) => setNewGroupInput(e.target.value)}
-                    placeholder="Please Enter Group Agency Name"
-                    className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                    value={parent.name}
+                    onChange={e => setParent(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Please Enter Agency Name"
+                    className="w-full px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
                   />
-                  {/* Confirm icon appears when input has value */}
-                  {newGroupInput.trim() ? (
-                    <button
-                      type="button"
-                      onClick={handleConfirmNewGroup}
-                      title="Confirm new group"
-                      className="px-3 py-2 bg-green-100 rounded-lg text-green-700"
-                    >
-                      {isLoading.createGroup ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Check className="w-4 h-4" />
-                      )}
-                    </button>
-                  ) : null}
-                </div>
-              </div>
-            )}
-
-            {agencyBlockVisible && (
-              <div className="text-sm text-[var(--text-secondary)] md:col-span-2">
-                Group selected: <span className="font-medium text-[var(--text-primary)]">
-                  {groupMode === 'direct' ? 'Direct' : (
-                    groupMode === 'existing' && existingGroup ? (
-                      groupAgencies.find(g => g.id.toString() === existingGroup)?.name || 'Loading...'
-                    ) : (
-                      groupMode === 'new' ? newGroupInput : ''
-                    )
-                  )}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Agency blocks: hidden by default until group selected/created or bypass */}
-        {agencyBlockVisible && (
-          <div className="space-y-5">
-            {/* Agency list header with Add Agency button aligned right */}
-            <div className="flex items-center justify-end">
-              <button
-                type="button"
-                onClick={addAgency}
-                className="inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-green-100 text-black"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Add Agency</span>
-              </button>
-            </div>
-
-            {agencies.map((a, idx) => (
-              <div key={a.id} className="p-3 sm:p-5 border border-[var(--border-color)] rounded-lg bg-white">
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3 sm:mb-5 space-y-2 sm:space-y-0">
-                  <div className="text-sm font-medium">Agency {idx + 1}</div>
-                  <div className="flex items-center space-x-3 sm:space-x-5">
-                    <button
-                      type="button"
-                      onClick={() => updateAgency(a.id, 'name', '')}
-                      className="text-xs text-[var(--text-secondary)]"
-                    >Clear</button>
-                    {agencies.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeAgency(a.id)}
-                        className="text-xs text-red-500"
-                      >Remove</button>
-                    )}
-                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-5">
-                  <div>
-                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Agency Name <span className="text-red-500">*</span></label>
-                    <input
-                      value={a.name}
-                      onChange={(e) => updateAgency(a.id, 'name', e.target.value)}
-                      className="w-full px-3 py-2 text-sm sm:text-base border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                      placeholder="Please Enter Agency Name"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Agency Type</label>
+                <div>
+                  <label className="block text-sm text-[var(--text-secondary)] mb-1">Agency Type</label>
+                  <div className="relative">
                     <select
-                      value={a.type}
-                      onChange={(e) => updateAgency(a.id, 'type', e.target.value)}
-                      className="w-full px-3 py-2 text-sm sm:text-base border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                      value={parent.type}
+                      onChange={e => setParent(prev => ({ ...prev, type: e.target.value }))}
+                      className="w-full appearance-none px-3 pr-8 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
                     >
                       <option value="">Please Select Agency Type</option>
-                      {agencyTypes.filter(t => t !== 'Please Select Type').map(t => (
+                      {agencyTypes.map((t: string) => (
                         <option key={t} value={t}>{t}</option>
                       ))}
                     </select>
+                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
                   </div>
+                </div>
 
-                  <div>
-                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Agency Client</label>
-                    <div className="flex items-center">
-                      <div className="relative flex-1">
-                        <select
-                          value={a.client}
-                          onChange={(e) => updateAgency(a.id, 'client', e.target.value)}
-                          className="w-full px-3 py-2 text-sm sm:text-base border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                          disabled={isLoading.agencyClients}
-                        >
-                          <option value="">
-                            {isLoading.agencyClients ? 'Loading clients...' : 'Please Select Brand'}
-                          </option>
-                          {!isLoading.agencyClients && agencyClients.map(client => (
-                            <option key={client.id} value={client.id.toString()}>{client.name}</option>
-                          ))}
-                        </select>
-                        {isLoading.agencyClients && (
-                          <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                            <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
-                          </div>
-                        )}
+                <div>
+                  <label className="block text-sm text-[var(--text-secondary)] mb-1">Agency Client</label>
+                  <div className="relative">
+                    <select
+                      value={parent.client}
+                      onChange={e => setParent(prev => ({ ...prev, client: e.target.value }))}
+                      className="w-full appearance-none px-3 pr-10 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                      disabled={isLoading.agencyClients}
+                    >
+                      <option value="">{isLoading.agencyClients ? 'Loading clients...' : 'Please Select Brand'}</option>
+                      {!isLoading.agencyClients && agencyClients.map((c: any) => (
+                        <option key={c.id} value={c.id.toString()}>{c.name}</option>
+                      ))}
+                    </select>
+                    {isLoading.agencyClients ? (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
                       </div>
-
-                      {a.client ? (
-                        <div className="ml-3 w-9 h-9 rounded-full bg-[#EEF2FF] flex items-center justify-center text-sm font-semibold text-[var(--text-primary)]">
-                          {getInitials(agencyClients.find(c => c.id.toString() === a.client)?.name || '')}
-                        </div>
-                      ) : null}
-                    </div>
+                    ) : (
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+                    )}
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+            </div>
 
-        <div className="flex items-center justify-end">
-          <button
-            onClick={handleSubmit}
-            className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white hover:bg-[#066a6d] shadow-sm"
-          >
-            Save
-          </button>
-        </div>
+            {children.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-[var(--text-secondary)]">Add Child Agency : {children.length}</div>
+                  <button type="button" onClick={handleAddChild} className="inline-flex items-center space-x-2 px-3 py-1 rounded-lg bg-green-100 text-black">
+                    <Plus className="w-4 h-4" />
+                    <span className="text-sm">Add Child Agency</span>
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {children.map((c, idx) => (
+                    <div key={c.id} className="p-3 border border-[var(--border-color)] rounded-lg bg-white">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="text-sm font-medium">Child Agency {idx + 1}</div>
+                        <button type="button" onClick={() => handleRemoveChild(c.id)} className="text-sm text-red-600">Delete</button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-sm text-[var(--text-secondary)] mb-1">Agency Name <span className="text-red-500">*</span></label>
+                          <input value={c.name} onChange={e => handleUpdateChild(c.id, 'name', e.target.value)} placeholder="Please Enter Agency Name" className="w-full px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)]" />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm text-[var(--text-secondary)] mb-1">Agency Type</label>
+                          <div className="relative">
+                            <select value={c.type} onChange={e => handleUpdateChild(c.id, 'type', e.target.value)} className="w-full appearance-none px-3 pr-8 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)]">
+                              <option value="">Please Select Agency Type</option>
+                              {agencyTypes.map((t: string) => (<option key={t} value={t}>{t}</option>))}
+                            </select>
+                            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm text-[var(--text-secondary)] mb-1">Agency Client</label>
+                          <div className="relative">
+                            <select value={c.client} onChange={e => handleUpdateChild(c.id, 'client', e.target.value)} className="w-full appearance-none px-3 pr-8 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)]" disabled={isLoading.agencyClients}>
+                              <option value="">{isLoading.agencyClients ? 'Loading clients...' : 'Please Select Brand'}</option>
+                              {!isLoading.agencyClients && agencyClients.map((cc: any) => (<option key={cc.id} value={cc.id.toString()}>{cc.name}</option>))}
+                            </select>
+                            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center justify-end">
+              <button
+                type="button"
+                onClick={openConfirm}
+                className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white hover:bg-[#066a6d] shadow-sm"
+                disabled={submitting}
+              >
+                {submitting ? 'Saving...' : 'Save'}
+              </button>
+            </div>
           </div>
         </div>
-      
-    </div>
+      </div>
+
+      {/* Confirmation modal (simple inline implementation) */}
+      {confirmModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={closeConfirm} />
+          <div className="relative bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+            <div className="text-lg font-medium mb-4">Do you want a child agency?</div>
+            <div className="flex justify-end space-x-3">
+              <button onClick={handleConfirmYes} className="px-4 py-2 rounded-lg bg-green-100 text-black">Yes</button>
+              <button onClick={handleConfirmNo} className="px-4 py-2 rounded-lg bg-red-100 text-red-700">No</button>
+            </div>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 };
