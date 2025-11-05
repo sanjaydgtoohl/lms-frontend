@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import ActionMenu from '../components/ui/ActionMenu';
-import { Loader2 } from 'lucide-react';
 import Pagination from '../components/ui/Pagination';
 import CreateSourceForm from './CreateSourceForm';
 import MasterView from '../components/ui/MasterView';
 import MasterEdit from '../components/ui/MasterEdit';
 import { MasterHeader, NotificationPopup } from '../components/ui';
 import SearchBar from '../components/ui/SearchBar';
+import Table, { type Column } from '../components/ui/Table';
 import { listLeadSources, deleteLeadSubSource, updateLeadSubSource, type LeadSourceItem } from '../services/LeadSource';
 import { fetchLeadSources } from '../services/CreateSourceForm';
 import { ROUTES } from '../constants';
@@ -46,7 +45,13 @@ const LeadSource: React.FC = () => {
             ));
           }
           setItems(mapped);
-          setTotalItems(resp.meta?.pagination?.total || mapped.length);
+          // When a search is active we want the footer and pagination to reflect
+          // the filtered result set (client-side). Otherwise use server total if available.
+          if (searchQuery) {
+            setTotalItems(mapped.length);
+          } else {
+            setTotalItems(resp.meta?.pagination?.total || mapped.length);
+          }
         }
       } catch (e: any) {
         if (isMounted) setError(e?.message || 'Failed to load lead sources');
@@ -205,101 +210,33 @@ const LeadSource: React.FC = () => {
             onCreateClick={handleCreate}
             createButtonLabel="Create Source"
           />
-          {/* Desktop Table View */}
-          <div className="hidden lg:block">
-            <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-              <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)]">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-[var(--text-primary)]">Lead Sources</h2>
-                      <SearchBar placeholder="Search Lead Source" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
-                </div>
+          <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
+            <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)]">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-[var(--text-primary)]">Lead Sources</h2>
+                <SearchBar placeholder="Search Lead Source" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
               </div>
-
-              {error && (
-                <div className="px-6 py-3 text-sm text-red-600 bg-red-50 border-b border-[var(--border-color)]">{error}</div>
-              )}
-              {loading ? (
-                <div className="px-6 py-12 flex items-center justify-center">
-                  <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-center">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider">Sr. No.</th>
-                        <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider">Source</th>
-                        <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider">Sub-Source</th>
-                        <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider">Date & Time</th>
-                        <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[var(--border-color)]">
-                      {currentData.map((item, index) => (
-                        <tr key={item.id + (item.subSource || '') + index} className="hover:bg-[var(--hover-bg)] transition-colors duration-200">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[var(--text-primary)]">{startIndex + index + 1}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-primary)]">{item.source}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-primary)]">{item.subSource || '-'}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-secondary)]">{item.dateTime || '-'}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <ActionMenu
-                              isLast={index >= currentData.length - 2}
-                              onEdit={() => handleEdit(item)}
-                              onView={() => handleView(item)}
-                              onDelete={() => handleDelete(item)}
-                            />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
             </div>
-          </div>
 
-          {/* Mobile Card View */}
-          <div className="lg:hidden space-y-4">
-            <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] p-4">
-              <h2 className="text-lg font-semibold text-[var(--text-primary)]">Lead Sources</h2>
-            </div>
-            {loading ? (
-              <div className="px-4 py-12 flex items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
-              </div>
-            ) : (
-              currentData.map((item, index) => (
-                <div key={item.id} className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] p-4 hover:shadow-md transition-all duration-200">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex gap-2">
-                      <span className="text-sm text-[var(--text-secondary)]">Sr. No.:</span>
-                      <span className="text-sm font-medium text-[var(--text-primary)]">{startIndex + index + 1}</span>
-                    </div>
-                    <ActionMenu
-                      isLast={index === currentData.length - 1}
-                      onEdit={() => handleEdit(item)}
-                      onView={() => handleView(item)}
-                      onDelete={() => handleDelete(item)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-[var(--text-secondary)]">Source:</span>
-                      <span className="text-sm font-medium text-[var(--text-primary)]">{item.source}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-[var(--text-secondary)]">Sub-Source:</span>
-                      <span className="text-sm font-medium text-[var(--text-primary)]">{item.subSource || '-'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-[var(--text-secondary)]">Date & Time:</span>
-                      <span className="text-sm text-[var(--text-secondary)]">{item.dateTime || '-'}</span>
-                    </div>
-                  </div>
-                </div>
-              ))
+            {error && (
+              <div className="px-6 py-3 text-sm text-red-600 bg-red-50 border-b border-[var(--border-color)]">{error}</div>
             )}
+
+            <Table
+              data={currentData}
+              startIndex={startIndex}
+              loading={loading}
+              keyExtractor={(it: any, idx: number) => `${it.id}-${idx}`}
+              columns={([
+                { key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },
+                { key: 'source', header: 'Source', render: (it: any) => it.source },
+                { key: 'subSource', header: 'Sub-Source', render: (it: any) => it.subSource || '-' },
+                { key: 'dateTime', header: 'Date & Time', render: (it: any) => it.dateTime || '-' },
+              ] as Column<any>[])}
+              onEdit={(it: any) => handleEdit(it)}
+              onView={(it: any) => handleView(it)}
+              onDelete={(it: any) => handleDelete(it)}
+            />
           </div>
 
           {/* Pagination */}

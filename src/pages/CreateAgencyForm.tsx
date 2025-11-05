@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { listAgencyTypes, listAgencyClients } from '../services';
 import { motion } from 'framer-motion';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, Trash2 } from 'lucide-react';
 import { MasterFormHeader, NotificationPopup } from '../components/ui';
 
 // --- Types used by this form
@@ -219,9 +219,18 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
                 <div className="space-y-3">
                   {children.map((c, idx) => (
                     <div key={c.id} className="p-3 border border-[var(--border-color)] rounded-lg bg-white">
-                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center justify-between mb-3">
                         <div className="text-sm font-medium">Child Agency {idx + 1}</div>
-                        <button type="button" onClick={() => handleRemoveChild(c.id)} className="text-sm text-red-600">Delete</button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveChild(c.id)}
+                          className="text-sm text-red-600 px-3 py-1 rounded-lg flex items-center justify-center"
+                          style={{ backgroundColor: '#F5F0F0' }}
+                          aria-label={`Delete child agency ${idx + 1}`}
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -272,15 +281,28 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
         </div>
       </div>
 
-      {/* Confirmation modal (simple inline implementation) */}
+      {/* Confirmation modal (enhanced design) */}
       {confirmModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/40" onClick={closeConfirm} />
-          <div className="relative bg-white rounded-lg shadow-lg w-full max-w-md p-6">
-            <div className="text-lg font-medium mb-4">Do you want a child agency?</div>
-            <div className="flex justify-end space-x-3">
-              <button onClick={handleConfirmYes} className="px-4 py-2 rounded-lg bg-green-100 text-black">Yes</button>
-              <button onClick={handleConfirmNo} className="px-4 py-2 rounded-lg bg-red-100 text-red-700">No</button>
+          <div className="absolute inset-0 bg-black/10" onClick={closeConfirm} />
+          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-8 transform transition-all">
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">Do you want a child agency?</h3>
+              <p className="text-sm text-gray-500">Choose whether to add a child agency to your group</p>
+            </div>
+            <div className="flex justify-center gap-4">
+              <button 
+                onClick={handleConfirmYes} 
+                className="flex-1 px-6 py-3 rounded-lg bg-green-500 text-white font-medium hover:bg-green-600 transition-colors duration-200"
+              >
+                Yes, Add Child
+              </button>
+              <button 
+                onClick={handleConfirmNo} 
+                className="flex-1 px-6 py-3 rounded-lg bg-gray-100 text-gray-700 font-medium hover:bg-gray-200 transition-colors duration-200"
+              >
+                No, Skip
+              </button>
             </div>
           </div>
         </div>

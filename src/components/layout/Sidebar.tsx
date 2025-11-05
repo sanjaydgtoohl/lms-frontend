@@ -96,7 +96,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
     );
   };
 
-  const isActive = (path: string) => location.pathname === path;
+  // Treat a path as active when the current pathname is exactly the path
+  // or when the pathname is a nested route under that path (e.g.
+  // /master/agency/create should mark /master/agency active).
+  const isActive = (path: string) =>
+    location.pathname === path || location.pathname.startsWith(path + "/");
 
   const isParentActive = (item: NavigationItem) => {
     if (item.path) return isActive(item.path);
@@ -104,6 +108,23 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
       return item.children.some((child) => child.path && isActive(child.path));
     return false;
   };
+
+  // Ensure parent menus (like "Master Data") are expanded when any of their
+  // child routes are active. This makes the menu remain open on refresh when
+  // a master page (e.g. /master/agency) is loaded directly.
+  useEffect(() => {
+    const activeParents = navigationItems
+      .filter((item) => item.children && item.children.some((child) => {
+        if (!child.path) return false;
+        // consider both exact match and nested routes (startsWith)
+        return location.pathname === child.path || location.pathname.startsWith(child.path + "/");
+      }))
+      .map((item) => item.name.toLowerCase().replace(/\s+/g, "-"));
+
+    if (activeParents.length > 0) {
+      setExpandedItems((prev) => Array.from(new Set([...prev, ...activeParents])));
+    }
+  }, [location.pathname]);
 
   const renderNavigationItem = (item: NavigationItem, level = 0) => {
     const hasChildren = item.children && item.children.length > 0;
