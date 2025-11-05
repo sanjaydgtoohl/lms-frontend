@@ -4,22 +4,23 @@ import {
   LayoutGrid,
   ChevronDown,
   ChevronRight,
-  FileText,
-  Users,
-  MessageSquare,
   Globe,
-  Tag,
   DollarSign,
-  UserCog,
   Settings,
   HelpCircle,
   LogOut,
-  Building2,
-  Briefcase,
-  GraduationCap,
   Search,
   Radio,
 } from "lucide-react";
+import File02Icon from "../../assets/icons/File02Icon";
+import AgencyMasterIcon from "../../assets/icons/AgencyMasterIcon";
+import BrandMasterIcon from "../../assets/icons/BrandMasterIcon";
+import DepartmentMasterIcon from "../../assets/icons/DepartmentMasterIcon";
+import DesignationMasterIcon from "../../assets/icons/DesignationMasterIcon";
+import UserManagementIcon from "../../assets/icons/UserManagementIcon";
+import LeadManagementIcon from "../../assets/icons/LeadManagementIcon";
+import BriefIcon from "../../assets/icons/BriefIcon";
+import CampaignManagementIcon from "../../assets/icons/CampaignManagementIcon";
 import { useAuthStore } from "../../store/auth";
 
 interface SidebarProps {
@@ -68,22 +69,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
     { name: "Dashboard", path: "/dashboard", icon: LayoutGrid },
     {
       name: "Master Data",
-      icon: FileText,
+      icon: File02Icon,
       children: [
-        { name: "Brand Master", path: "/master/brand", icon: Building2 },
-        { name: "Agency Master", path: "/master/agency", icon: Briefcase },
-        { name: "Department Master", path: "/master/department", icon: GraduationCap },
-        { name: "Designation Master", path: "/master/designation", icon: Users },
+        { name: "Brand Master", path: "/master/brand", icon: BrandMasterIcon },
+        { name: "Agency Master", path: "/master/agency", icon: AgencyMasterIcon },
+        { name: "Department Master", path: "/master/department", icon: DepartmentMasterIcon },
+        { name: "Designation Master", path: "/master/designation", icon: DesignationMasterIcon },
         { name: "Industry Master", path: "/master/industry", icon: Radio },
         { name: "Lead Source", path: "/master/source", icon: Search },
       ],
     },
-    { name: "Lead Management", path: "/lead-management", icon: Users },
-    { name: "Brief", path: "/brief", icon: MessageSquare },
+    { name: "Lead Management", path: "/lead-management", icon: LeadManagementIcon },
+    { name: "Brief", path: "/brief", icon: BriefIcon },
     { name: "Miss Campaign", path: "/miss-campaign", icon: Globe },
-  { name: "Campaign Management", path: "/campaign-management", icon: Tag },
-  { name: "Finance", path: "/finance", icon: DollarSign },
-    { name: "User Management", path: "/user-management", icon: UserCog },
+    { name: "Campaign Management", path: "/campaign-management", icon: CampaignManagementIcon },
+    { name: "Finance", path: "/finance", icon: DollarSign },
+    { name: "User Management", path: "/user-management", icon: UserManagementIcon },
     { name: "Settings", path: "/settings", icon: Settings },
   ];
 
