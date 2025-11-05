@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { listAgencyTypes, listAgencyClients } from '../services';
 import { motion } from 'framer-motion';
 import { Plus, Loader2, Trash2 } from 'lucide-react';
@@ -32,7 +32,9 @@ const blankChild = (): ChildAgency => ({
 });
 const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
   const [parent, setParent] = useState<ParentAgency>({ name: '', type: '', client: '' });
-  const [children, setChildren] = useState<ChildAgency[]>([blankChild()]);
+  const [children, setChildren] = useState<ChildAgency[]>([]);
+  const childNameRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [lastAddedId, setLastAddedId] = useState<string | null>(null);
   const [parentErrors, setParentErrors] = useState<{ name?: string; type?: string; client?: string }>({});
   const [childErrors, setChildErrors] = useState<Record<string, { name?: string; type?: string; client?: string }>>({});
   const [showSuccessToast, setShowSuccessToast] = useState(false);
@@ -76,15 +78,48 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
 
   // Confirmation modal removed
   // Remove unused modal-related functions
-  const handleAddChild = () => setChildren(prev => [...prev, blankChild()]);
+  const handleAddChild = () => {
+    const nc = blankChild();
+    setChildren(prev => [...prev, nc]);
+    setLastAddedId(nc.id);
+  };
   const handleUpdateChild = (id: string, key: keyof ChildAgency, value: string) => {
     setChildren(prev => prev.map(c => c.id === id ? { ...c, [key]: value } : c));
   };
-  const handleRemoveChild = (id: string) => setChildren(prev => prev.filter(c => c.id !== id));
-  // Always keep at least one child agency open
+  // legacy remove (not used) -- removed to avoid unused variable lint
+  // Remove a child agency (allow zero children so the form can start closed)
   const safeRemoveChild = (id: string) => {
-    setChildren(prev => prev.length > 1 ? prev.filter(c => c.id !== id) : prev);
+    // remove the ref entry to avoid memory leak
+    if (childNameRefs.current[id]) delete childNameRefs.current[id];
+    setChildren(prev => prev.filter(c => c.id !== id));
   };
+
+  // autofocus the newly added child's name input when added
+  useEffect(() => {
+    if (!lastAddedId) return;
+    const tryFocus = () => {
+      const el = childNameRefs.current[lastAddedId!];
+      if (el) {
+        try {
+          el.focus();
+        } catch (e) {
+          // ignore
+        }
+        setLastAddedId(null);
+        return true;
+      }
+      return false;
+    };
+
+    // first immediate attempt
+    if (tryFocus()) return;
+
+    // element may not be mounted yet; try again shortly
+    const t = setTimeout(() => {
+      tryFocus();
+    }, 60);
+    return () => clearTimeout(t);
+  }, [lastAddedId]);
 
   const validate = (): { ok: boolean; message?: string } => {
     let valid = true;
@@ -271,7 +306,6 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
                         className="text-sm px-4 py-2 rounded-lg bg-[#F5F0F0] text-[#D92D20] font-medium flex items-center justify-center hover:bg-[#FFD7D7] transition-colors duration-200"
                         aria-label={`Delete child agency ${idx + 1}`}
                         title="Delete"
-                        disabled={children.length === 1}
                       >
                         <Trash2 className="w-4 h-4 mr-1" /> Delete
                       </button>
@@ -286,7 +320,8 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
                             setChildErrors(prev => ({ ...prev, [c.id]: { ...prev[c.id], name: undefined } }));
                           }}
                           placeholder="Please Enter Agency Name"
-                          className={`w-full px-4 py-2 text-sm border rounded-lg bg-white text-[#344054] focus:outline-none focus:ring-2 focus:ring-[#1570EF] ${childErrors[c.id]?.name ? 'border-red-500' : 'border-[#D0D5DD]'}`}
+                            ref={el => { childNameRefs.current[c.id] = el }}
+                            className={`w-full px-4 py-2 text-sm border rounded-lg bg-white text-[#344054] focus:outline-none focus:ring-2 focus:ring-[#1570EF] ${childErrors[c.id]?.name ? 'border-red-500' : 'border-[#D0D5DD]'}`}
                         />
                         {childErrors[c.id]?.name && (
                           <div className="text-xs text-red-500 mt-1">{childErrors[c.id].name}</div>
