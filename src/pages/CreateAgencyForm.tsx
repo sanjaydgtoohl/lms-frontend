@@ -3,6 +3,33 @@ import { listAgencyTypes, listAgencyClients } from '../services';
 import { motion } from 'framer-motion';
 import { Plus, Loader2 } from 'lucide-react';
 import { MasterFormHeader, NotificationPopup } from '../components/ui';
+
+// --- Types used by this form
+interface ParentAgency {
+  name: string;
+  type: string;
+  client: string;
+}
+
+interface ChildAgency {
+  id: string;
+  name: string;
+  type: string;
+  client: string;
+}
+
+interface Props {
+  onClose: () => void;
+  onSave?: (payload: { parent: ParentAgency; children: Array<{ name: string; type: string; client: string }> }) => Promise<any> | any;
+}
+
+// helper to create a new blank child entry
+const blankChild = (): ChildAgency => ({
+  id: `child-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
+  name: '',
+  type: '',
+  client: '',
+});
 const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
   const [parent, setParent] = useState<ParentAgency>({ name: '', type: '', client: '' });
   const [children, setChildren] = useState<ChildAgency[]>([]);
