@@ -127,19 +127,14 @@ const DesignationMaster: React.FC = () => {
 
   // Store designations in state fetched from API
   const [designations, setDesignations] = useState<Designation[]>([]);
+  const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // totalPages calculated but not used directly
   const [searchQuery, setSearchQuery] = useState('');
 
-  // totalPages calculated but not used directly
+  // Backend pagination data
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  // instant prefix search (case-insensitive) on designation name
-  const _q_des = String(searchQuery || '').trim().toLowerCase();
-  const filtered = _q_des ? designations.filter(d => (d.name || '').toLowerCase().startsWith(_q_des)) : designations;
-  const currentData = filtered.slice(startIndex, endIndex);
+  const currentData = designations;
 
   const navigate = useNavigate();
   const params = useParams();
@@ -192,17 +187,25 @@ const DesignationMaster: React.FC = () => {
   const [viewItem, setViewItem] = useState<Designation | null>(null);
   const [editItem, setEditItem] = useState<Designation | null>(null);
 
-  const refresh = async () => {
+  const refresh = async (page = currentPage, search = searchQuery) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await listDesignations();
-      const mapped: Designation[] = (data as ApiDesignation[]).map((it) => ({
+      const resp = await listDesignations(page, itemsPerPage);
+      let mapped: Designation[] = resp.data.map((it: ApiDesignation) => ({
         id: String(it.id),
         name: it.name,
         dateTime: it.created_at || '',
       }));
+      
+      // If search is present, filter client-side
+      if (search) {
+        const _q_des = String(search).trim().toLowerCase();
+        mapped = mapped.filter(d => (d.name || '').toLowerCase().startsWith(_q_des));
+      }
+      
       setDesignations(mapped);
+      setTotalItems(resp.meta?.pagination?.total || mapped.length);
     } catch (e: any) {
       setError(e?.message || 'Failed to load designations');
     } finally {
@@ -210,7 +213,7 @@ const DesignationMaster: React.FC = () => {
     }
   };
 
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => { refresh(currentPage, searchQuery); }, [currentPage, searchQuery]);
 
   useEffect(() => {
     const rawId = params.id;
@@ -261,7 +264,7 @@ const DesignationMaster: React.FC = () => {
     return (
       <Pagination
         currentPage={currentPage}
-        totalItems={designations.length}
+        totalItems={totalItems}
         itemsPerPage={itemsPerPage}
         onPageChange={handlePageChange}
       />
@@ -301,7 +304,7 @@ const DesignationMaster: React.FC = () => {
                   <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)]">
                     <div className="flex items-center justify-between">
                       <h2 className="text-lg font-semibold text-[var(--text-primary)]">Designation Master</h2>
-                      <SearchBar placeholder="Search Designation" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
+                      <SearchBar placeholder="Search Designation" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); refresh(1, q); }} />
                     </div>
                   </div>
               

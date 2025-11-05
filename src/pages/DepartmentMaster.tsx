@@ -113,6 +113,7 @@ const DepartmentMaster: React.FC = () => {
 
 	// Store departments in state fetched from API
 	const [departments, setDepartments] = useState<Department[]>([]);
+	const [totalItems, setTotalItems] = useState(0);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [searchQuery, setSearchQuery] = useState('');
@@ -122,14 +123,9 @@ const DepartmentMaster: React.FC = () => {
 	const params = useParams();
 	const location = useLocation();
 
-	// apply instant prefix search (case-insensitive) on department name
-	const _q_dept = String(searchQuery || '').trim().toLowerCase();
-	const filtered = _q_dept ? departments.filter(d => (d.name || '').toLowerCase().startsWith(_q_dept)) : departments;
-
-	// totalPages calculated but not used directly
+	// Backend pagination - no client-side slicing
 	const startIndex = (currentPage - 1) * itemsPerPage;
-	const endIndex = startIndex + itemsPerPage;
-	const currentData = filtered.slice(startIndex, endIndex);
+	const currentData = departments;
 
 	const handleCreateDepartment = () => {
 		navigate(`${ROUTES.DEPARTMENT_MASTER}/create`);
@@ -176,17 +172,25 @@ const DepartmentMaster: React.FC = () => {
 	const [viewItem, setViewItem] = useState<Department | null>(null);
 	const [editItem, setEditItem] = useState<Department | null>(null);
 
-	const refresh = async () => {
+	const refresh = async (page = currentPage, search = searchQuery) => {
 		setLoading(true);
 		setError(null);
 		try {
-			const data = await listDepartments();
-			const mapped: Department[] = (data as ApiDepartment[]).map((it) => ({
+			const resp = await listDepartments(page, itemsPerPage);
+			let mapped: Department[] = resp.data.map((it: ApiDepartment) => ({
 				id: String(it.id),
 				name: it.name,
 				dateTime: it.created_at || '',
 			}));
+
+			// If search is present, filter client-side
+			if (search) {
+				const _q_dept = String(search).trim().toLowerCase();
+				mapped = mapped.filter(d => (d.name || '').toLowerCase().startsWith(_q_dept));
+			}
+
 			setDepartments(mapped);
+			setTotalItems(resp.meta?.pagination?.total || mapped.length);
 		} catch (e: any) {
 			setError(e?.message || 'Failed to load departments');
 		} finally {
@@ -194,7 +198,7 @@ const DepartmentMaster: React.FC = () => {
 		}
 	};
 
-	useEffect(() => { refresh(); }, []);
+	useEffect(() => { refresh(currentPage, searchQuery); }, [currentPage, searchQuery]);
 
 	useEffect(() => {
 		const rawId = params.id;
@@ -272,7 +276,7 @@ const DepartmentMaster: React.FC = () => {
 							<div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)]">
 								<div className="flex items-center justify-between">
 									<h2 className="text-lg font-semibold text-[var(--text-primary)]">Department Master</h2>
-									<SearchBar placeholder="Search Department" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
+									<SearchBar placeholder="Search Department" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); refresh(1, q); }} />
 								</div>
 							</div>
 
@@ -371,7 +375,7 @@ const DepartmentMaster: React.FC = () => {
 					{/* Pagination */}
 					<Pagination
 						currentPage={currentPage}
-						totalItems={departments.length}
+						totalItems={totalItems}
 						itemsPerPage={itemsPerPage}
 						onPageChange={handlePageChange}
 					/>
