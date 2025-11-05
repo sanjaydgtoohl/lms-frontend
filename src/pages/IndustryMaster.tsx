@@ -24,18 +24,14 @@ const IndustryMaster: React.FC = () => {
   const itemsPerPage = 10;
 
   const [industries, setIndustries] = useState<Industry[]>([]);
+  const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // apply instant prefix search (case-insensitive) on industry name
-  const _q_ind = String(searchQuery || '').trim().toLowerCase();
-  const filtered = _q_ind ? industries.filter(i => (i.name || '').toLowerCase().startsWith(_q_ind)) : industries;
-
-  // totalPages calculated but not used directly
+  // Backend pagination: no client-side filtering for now
+  const currentData = industries;
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentData = filtered.slice(startIndex, endIndex);
 
   const navigate = useNavigate();
   const params = useParams();
@@ -67,22 +63,31 @@ const IndustryMaster: React.FC = () => {
     }
   };
 
-  const handlePageChange = (page: number) => setCurrentPage(page);
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
   const [viewItem, setViewItem] = useState<Industry | null>(null);
   const [editItem, setEditItem] = useState<Industry | null>(null);
 
-  const refresh = async () => {
+  const refresh = async (page = currentPage, search = searchQuery) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await listIndustries();
-      const mapped: Industry[] = (data as ApiIndustry[]).map((it) => ({
+      // For now, search is not sent to backend, only pagination
+      const resp = await listIndustries(page, itemsPerPage);
+      let mapped: Industry[] = (resp.data || []).map((it: ApiIndustry) => ({
         id: String(it.id),
         name: it.name,
         dateTime: it.created_at || '',
       }));
+      // If search is present, filter client-side
+      if (search) {
+        const _q_ind = String(search).trim().toLowerCase();
+        mapped = mapped.filter(i => (i.name || '').toLowerCase().startsWith(_q_ind));
+      }
       setIndustries(mapped);
+      setTotalItems(resp.meta?.pagination?.total || mapped.length);
     } catch (e: any) {
       setError(e?.message || 'Failed to load industries');
     } finally {
@@ -90,7 +95,7 @@ const IndustryMaster: React.FC = () => {
     }
   };
 
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => { refresh(currentPage, searchQuery); }, [currentPage, searchQuery]);
 
   // sync UI with route
   useEffect(() => {
@@ -138,7 +143,7 @@ const IndustryMaster: React.FC = () => {
     return (
       <Pagination
         currentPage={currentPage}
-        totalItems={industries.length}
+        totalItems={totalItems}
         itemsPerPage={itemsPerPage}
         onPageChange={handlePageChange}
       />
@@ -177,7 +182,7 @@ const IndustryMaster: React.FC = () => {
               <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)]">
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-semibold text-[var(--text-primary)]">Industry Master</h2>
-                  <SearchBar placeholder="Search Industry" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
+                  <SearchBar placeholder="Search Industry" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); refresh(1, q); }} />
                 </div>
               </div>
 
@@ -190,13 +195,13 @@ const IndustryMaster: React.FC = () => {
                 </div>
               ) : (
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full text-center">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Sr. No.</th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Industry Name</th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Date & Time</th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Action</th>
+                      <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider">Sr. No.</th>
+                      <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider">Industry Name</th>
+                      <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider">Date & Time</th>
+                      <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--border-color)]">

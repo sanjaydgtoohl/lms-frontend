@@ -139,48 +139,48 @@ const MainContent = <T extends LeadSource | Agency>({
           
           {/* Table */}
           <div className="overflow-x-auto w-full max-w-full">
-            <table className="w-full">
+            <table className="w-full text-center">
               <thead className="bg-gray-50">
                 <tr>
                   {dataType === 'agency' ? (
                     <>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">
+                      <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider">
                         Sr. No.
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">
+                      <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider">
                         Agency Group
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">
+                      <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider">
                         Agency Name
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">
+                      <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider">
                         Agency Type
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">
+                      <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider">
                         Contact Person
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">
+                      <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider">
                         Date & Time
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">
+                      <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider">
                         Action
                       </th>
                     </>
                   ) : (
                     <>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
                         Sr. No.
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
                         Source
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
                         Sub-Source
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
                         Date & Time
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
                         Action
                       </th>
                     </>

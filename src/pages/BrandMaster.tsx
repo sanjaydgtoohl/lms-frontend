@@ -253,46 +253,46 @@ const BrandMaster: React.FC = () => {
           
           {/* Table */}
           <div className="overflow-x-auto max-w-full w-full">
-            <table className="w-full min-w-[1200px]">
+            <table className="w-full min-w-[1200px] text-center">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
+                  <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
                     Sr. No.
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
+                  <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
                     Brand Name
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
+                  <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
                     Agency Name
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
+                  <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
                     Brand Type
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
+                  <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
                     Contact Person
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
+                  <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
                     Industry
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
+                  <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
                     Country
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
+                  <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
                     State
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
+                  <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
                     City
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
+                  <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
                     Zone
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
+                  <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
                     Pin Code
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
+                  <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
                     Date & Time
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
+                  <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap">
                     Action
                   </th>
                 </tr>

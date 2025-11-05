@@ -312,13 +312,13 @@ const DesignationMaster: React.FC = () => {
                 </div>
               ) : (
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full text-center">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Sr. No.</th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Designation Name</th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Date & Time</th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Action</th>
+                      <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider">Sr. No.</th>
+                      <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider">Designation Name</th>
+                      <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider">Date & Time</th>
+                      <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--border-color)]">

@@ -19,6 +19,7 @@ const LeadSource: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [items, setItems] = useState<LeadSourceItem[]>([]);
+  const [totalItems, setTotalItems] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewItem, setViewItem] = useState<LeadSourceItem | null>(null);
   const [editItem, setEditItem] = useState<LeadSourceItem | null>(null);
@@ -32,8 +33,21 @@ const LeadSource: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        const data = await listLeadSources();
-        if (isMounted) setItems(data);
+        const resp = await listLeadSources(currentPage, itemsPerPage);
+        if (isMounted) {
+          let mapped = resp.data;
+          // If search is present, filter client-side (optional)
+          if (searchQuery) {
+            const _q_ls = String(searchQuery).trim().toLowerCase();
+            mapped = mapped.filter((it) => (
+              (String(it.id || '').toLowerCase().startsWith(_q_ls)) ||
+              (String(it.source || '').toLowerCase().startsWith(_q_ls)) ||
+              (String(it.subSource || '').toLowerCase().startsWith(_q_ls))
+            ));
+          }
+          setItems(mapped);
+          setTotalItems(resp.meta?.pagination?.total || mapped.length);
+        }
       } catch (e: any) {
         if (isMounted) setError(e?.message || 'Failed to load lead sources');
       } finally {
@@ -42,20 +56,10 @@ const LeadSource: React.FC = () => {
     };
     fetchData();
     return () => { isMounted = false; };
-  }, []);
-
-  const _q_ls = String(searchQuery || '').trim().toLowerCase();
-  const filtered = _q_ls
-    ? items.filter((it) => (
-        (String(it.id || '').toLowerCase().startsWith(_q_ls)) ||
-        (String(it.source || '').toLowerCase().startsWith(_q_ls)) ||
-        (String(it.subSource || '').toLowerCase().startsWith(_q_ls))
-      ))
-    : items;
+  }, [currentPage, searchQuery]);
 
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentData = filtered.slice(startIndex, endIndex);
+  const currentData = items;
 
   const navigate = useNavigate();
   const params = useParams();
@@ -220,14 +224,14 @@ const LeadSource: React.FC = () => {
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full text-center">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Sr. No.</th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Source</th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Sub-Source</th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Date & Time</th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] tracking-wider">Action</th>
+                        <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider">Sr. No.</th>
+                        <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider">Source</th>
+                        <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider">Sub-Source</th>
+                        <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider">Date & Time</th>
+                        <th className="px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[var(--border-color)]">
@@ -301,7 +305,7 @@ const LeadSource: React.FC = () => {
           {/* Pagination */}
           <Pagination
             currentPage={currentPage}
-            totalItems={items.length}
+            totalItems={totalItems}
             itemsPerPage={itemsPerPage}
             onPageChange={handlePageChange}
           />
