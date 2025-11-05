@@ -5,10 +5,7 @@ import {
   ChevronDown,
   ChevronRight,
   Globe,
-  DollarSign,
   Settings,
-  HelpCircle,
-  LogOut,
   Search,
   Radio,
 } from "lucide-react";
@@ -19,8 +16,11 @@ import DepartmentMasterIcon from "../../assets/icons/DepartmentMasterIcon";
 import DesignationMasterIcon from "../../assets/icons/DesignationMasterIcon";
 import UserManagementIcon from "../../assets/icons/UserManagementIcon";
 import LeadManagementIcon from "../../assets/icons/LeadManagementIcon";
-import BriefIcon from "../../assets/icons/BriefIcon";
 import CampaignManagementIcon from "../../assets/icons/CampaignManagementIcon";
+import FinanceIcon from "../../assets/icons/FinanceIcon";
+import LogoutIcon from "../../assets/icons/LogoutIcon";
+import Brief2Icon from "../../assets/icons/Brief2Icon";
+import HelpIcon from "../../assets/icons/HelpIcon";
 import { useAuthStore } from "../../store/auth";
 
 interface SidebarProps {
@@ -79,11 +79,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
         { name: "Lead Source", path: "/master/source", icon: Search },
       ],
     },
-    { name: "Lead Management", path: "/lead-management", icon: LeadManagementIcon },
-    { name: "Brief", path: "/brief", icon: BriefIcon },
+  { name: "Lead Management", path: "/lead-management", icon: LeadManagementIcon },
+  { name: "Brief", path: "/brief", icon: Brief2Icon },
     { name: "Miss Campaign", path: "/miss-campaign", icon: Globe },
     { name: "Campaign Management", path: "/campaign-management", icon: CampaignManagementIcon },
-    { name: "Finance", path: "/finance", icon: DollarSign },
+  { name: "Finance", path: "/finance", icon: FinanceIcon },
     { name: "User Management", path: "/user-management", icon: UserManagementIcon },
     { name: "Settings", path: "/settings", icon: Settings },
   ];
@@ -249,7 +249,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
             isCollapsed ? "px-2 justify-center" : ""
           }`}
         >
-          <HelpCircle
+          <HelpIcon
             className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)] ${isCollapsed ? "" : "mr-2.5"}`}
           />
           {!isCollapsed && <span className="text-[var(--text-primary)]">Help</span>}
@@ -261,8 +261,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
             isCollapsed ? "px-2 justify-center" : ""
           }`}
         >
-          <LogOut className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-red-600 ${isCollapsed ? "" : "mr-2.5"}`} />
-          {!isCollapsed && <span>Logout</span>}
+          <LogoutIcon className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-red-600 ${isCollapsed ? "" : "mr-2.5"}`} />
+          {!isCollapsed && <span>Log out</span>}
         </div>
       </div>
     </div>
