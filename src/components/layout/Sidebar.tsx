@@ -81,7 +81,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
     },
   { name: "Lead Management", path: "/lead-management", icon: LeadManagementIcon },
   { name: "Brief", path: "/brief", icon: Brief2Icon },
-    { name: "Miss Campaign", path: "/miss-campaign", icon: Globe },
+    {
+      name: "Miss Campaign",
+      icon: Globe,
+      children: [
+        { name: "View", path: "/miss-campaign/view", icon: Globe },
+        { name: "Create", path: "/miss-campaign/create", icon: Globe }
+      ]
+    },
     { name: "Campaign Management", path: "/campaign-management", icon: CampaignManagementIcon },
   { name: "Finance", path: "/finance", icon: FinanceIcon },
     { name: "User Management", path: "/user-management", icon: UserManagementIcon },

@@ -8,6 +8,8 @@
 
   /* LMS Color Palette */
   --primary: #007B83;
+  --btn-bg: #4C98FD;
+  --btn-bg-hover: #3C87E6;
   --background: #FAFAFA;
   --text-primary: #1E293B;
   --text-secondary: #64748B;
@@ -260,12 +262,12 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: var(--btn-bg);
   cursor: pointer;
   transition: border-color 0.25s;
 }
 button:hover {
-  border-color: #646cff;
+  border-color: var(--btn-bg-hover);
 }
 button:focus,
 button:focus-visible {
@@ -281,8 +283,38 @@ button:focus-visible {
     color: #747bff;
   }
   button {
-    background-color: #D4EEF6;
+    background-color: var(--btn-bg);
   }
+}
+
+/* Primary button helper class used by React Button component and utility buttons */
+.btn-primary {
+  background-color: var(--btn-bg) !important;
+  color: #FFFFFF !important; /* force white text */
+  border-color: transparent !important;
+  /* ensure text color does not change on hover/focus */
+  -webkit-text-fill-color: #FFFFFF !important;
+}
+.btn-primary:hover {
+  background-color: var(--btn-bg-hover) !important;
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+}
+
+.btn-primary:focus,
+.btn-primary:active {
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+}
+
+/* Ensure icons inside primary buttons match the white text color
+   Many icon libraries (lucide-react) use stroke/currentColor - this
+   forces svg color and stroke to inherit the text color. */
+.btn-primary svg,
+.btn-primary svg * {
+  color: #FFFFFF !important;
+  fill: currentColor !important;
+  stroke: currentColor !important;
 }
 
 @layer utilities {

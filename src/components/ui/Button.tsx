@@ -15,7 +15,7 @@ const Button: React.FC<ButtonProps & React.ButtonHTMLAttributes<HTMLButtonElemen
   const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
   
   const variantClasses = {
-    primary: 'bg-orange-500 hover:bg-orange-600 text-white focus:ring-orange-500',
+    primary: 'btn-primary text-white focus:ring-2',
     secondary: 'bg-gray-500 hover:bg-gray-600 text-white focus:ring-gray-500',
     outline: 'border border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white focus:ring-orange-500',
     ghost: 'text-orange-500 hover:bg-orange-50 focus:ring-orange-500',

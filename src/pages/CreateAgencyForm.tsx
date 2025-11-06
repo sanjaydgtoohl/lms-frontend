@@ -289,7 +289,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
                 <button
                   type="button"
                   onClick={handleAddChild}
-                  className="inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-[#1570EF] text-white font-medium shadow-sm hover:bg-[#175CD3] transition-colors duration-200"
+                  className="inline-flex items-center space-x-2 px-4 py-2 rounded-lg btn-primary text-white font-medium shadow-sm transition-colors duration-200"
                 >
                   <Plus className="w-4 h-4" />
                   <span className="text-sm">Add Child Agency</span>
@@ -378,7 +378,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
               <button
                 type="button"
                 onClick={submitAll}
-                className="px-6 py-2 rounded-lg bg-[#1570EF] text-white font-semibold shadow-sm hover:bg-[#175CD3] transition-colors duration-200"
+                className="px-6 py-2 rounded-lg btn-primary text-white font-semibold shadow-sm transition-colors duration-200"
                 disabled={submitting}
               >
                 {submitting ? 'Saving...' : 'Save'}

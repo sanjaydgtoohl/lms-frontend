@@ -8,3 +8,4 @@ export { default as BrandMaster } from './BrandMaster';
 export { default as IndustryMaster } from './IndustryMaster';
 export { default as DesignationMaster } from './DesignationMaster';
 export { default as DepartmentMaster } from './DepartmentMaster';
+export { MissCampaignView, MissCampaignCreate } from './MissCampaign';

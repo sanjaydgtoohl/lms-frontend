@@ -108,7 +108,7 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
         </div>
         <button
           onClick={onClose}
-          className="flex items-center space-x-2 text-[var(--text-secondary)] hover:text-black"
+          className="flex items-center space-x-2 btn-primary text-white px-3 py-1 rounded-lg"
         >
           <ChevronLeft className="w-4 h-4" />
           <span className="text-sm">Go Back</span>
@@ -170,7 +170,7 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
 
         <div className="flex items-center justify-end space-x-3 pt-2">
           <button type="button" onClick={onClose} className="px-4 py-2 text-[var(--text-secondary)] hover:text-black">Cancel</button>
-          <button type="submit" className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white hover:bg-[#066a6d] shadow-sm">Update</button>
+          <button type="submit" className="px-4 py-2 rounded-lg btn-primary text-white shadow-sm">Update</button>
         </div>
       </div>
     </motion.form>

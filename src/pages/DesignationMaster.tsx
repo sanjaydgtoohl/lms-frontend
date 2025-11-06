@@ -108,7 +108,7 @@ const CreateDesignationForm: React.FC<{
             <div className="flex items-center justify-end">
               <button
                 type="submit"
-                className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white hover:bg-[#066a6d] shadow-sm"
+                className="px-4 py-2 rounded-lg btn-primary text-white shadow-sm"
               >
                 Save
               </button>

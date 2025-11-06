@@ -13,10 +13,14 @@ const MasterFormHeader: React.FC<MasterFormHeaderProps> = ({
 }) => {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-      <Breadcrumb />
+      <div className="flex items-center gap-3">
+        <Breadcrumb />
+        {/* keep title available for accessibility/screen-readers but don't render visibly to avoid duplication */}
+        <span style={{ display: 'none' }}>{title}</span>
+      </div>
       <button
         onClick={onBack}
-        className="flex items-center space-x-2 text-[var(--text-secondary)] hover:text-black"
+        className="flex items-center space-x-2 btn-primary text-white px-3 py-1 rounded-lg"
       >
         <ChevronLeft className="w-4 h-4" />
         <span className="text-sm">Go Back</span>

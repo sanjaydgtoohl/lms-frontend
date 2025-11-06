@@ -12,6 +12,7 @@ import BrandMaster from './pages/BrandMaster';
 import IndustryMaster from './pages/IndustryMaster';
 import DesignationMaster from './pages/DesignationMaster';
 import DepartmentMaster from './pages/DepartmentMaster';
+import { MissCampaignView, MissCampaignCreate } from './pages/MissCampaign';
 import Layout from './components/layout/Layout';
 import { ROUTES } from './constants';
 
@@ -106,6 +107,12 @@ function App() {
           <Route path="master/source/create" element={<LeadSource />} />
           <Route path="master/source/:id" element={<LeadSource />} />
           <Route path="master/source/:id/edit" element={<LeadSource />} />
+
+          {/* Miss Campaign Routes */}
+          <Route path="miss-campaign/view" element={<MissCampaignView />} />
+          <Route path="miss-campaign/create" element={<MissCampaignCreate />} />
+          <Route path="miss-campaign/view/:id" element={<MissCampaignView />} />
+          <Route path="miss-campaign/view/:id/edit" element={<MissCampaignView />} />
         </Route>
         
         {/* 404 Route */}

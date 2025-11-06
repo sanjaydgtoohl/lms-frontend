@@ -16,7 +16,7 @@ const MasterHeader: React.FC<MasterHeaderProps> = ({
       <Breadcrumb />
       <button
         onClick={onCreateClick}
-        className="flex items-center justify-center space-x-2 px-4 py-2 bg-green-100 hover:bg-green-200 text-black text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md sm:whitespace-nowrap"
+        className="flex items-center justify-center space-x-2 px-4 py-2 btn-primary text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-sm sm:whitespace-nowrap"
       >
         <Plus className="w-4 h-4" />
         <span>{createButtonLabel}</span>

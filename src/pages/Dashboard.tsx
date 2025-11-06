@@ -155,7 +155,7 @@ const Dashboard: React.FC = () => {
                   <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${getPriorityClasses(assignment.priority)} flex-shrink-0`}> 
                     {assignment.priority}
                   </span>
-                  <button className="px-2 py-1 text-xs font-medium bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors flex-shrink-0">
+                  <button className="px-2 py-1 text-xs font-medium btn-primary text-white rounded-full transition-colors flex-shrink-0">
                     Assign
                   </button>
                 </div>

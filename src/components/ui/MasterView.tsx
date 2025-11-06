@@ -21,7 +21,7 @@ const MasterView: React.FC<Props> = ({ title, item, onClose }) => {
         <div className="flex flex-col">
           <Breadcrumb />
         </div>
-        <button onClick={onClose} className="flex items-center space-x-2 text-[var(--text-secondary)] hover:text-black">
+        <button onClick={onClose} className="flex items-center space-x-2 btn-primary text-white px-3 py-1 rounded-lg">
           <ChevronLeft className="w-4 h-4" />
           <span className="text-sm">Go Back</span>
         </button>
