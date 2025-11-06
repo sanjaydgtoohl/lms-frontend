@@ -79,7 +79,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
         { name: "Lead Source", path: "/master/source", icon: Search },
       ],
     },
-  { name: "Lead Management", path: "/lead-management", icon: LeadManagementIcon },
+  {
+    name: "Lead Management",
+    icon: LeadManagementIcon,
+    children: [
+      { name: "All Leads", path: "/lead-management/all-leads", icon: LeadManagementIcon },
+      { name: "Create Lead", path: "/lead-management/create", icon: LeadManagementIcon },
+    ],
+  },
   { name: "Brief", path: "/brief", icon: Brief2Icon },
     {
       name: "Miss Campaign",
@@ -95,12 +102,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
     { name: "Settings", path: "/settings", icon: Settings },
   ];
 
+  // Toggle expansion for a parent item. When expanding a parent,
+  // collapse others so only one parent menu is open at a time.
   const toggleExpanded = (itemName: string) => {
-    setExpandedItems((prev) =>
-      prev.includes(itemName)
-        ? prev.filter((item) => item !== itemName)
-        : [...prev, itemName]
-    );
+    setExpandedItems((prev) => {
+      if (prev.includes(itemName)) {
+        return prev.filter((item) => item !== itemName);
+      }
+      // open only this one (single-open behavior)
+      return [itemName];
+    });
   };
 
   // Treat a path as active when the current pathname is exactly the path
@@ -128,16 +139,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
       }))
       .map((item) => item.name.toLowerCase().replace(/\s+/g, "-"));
 
-    if (activeParents.length > 0) {
-      setExpandedItems((prev) => Array.from(new Set([...prev, ...activeParents])));
-    }
+    // Replace expanded items with the parents active for the current route.
+    // This collapses any open parent menus when navigating to routes that
+    // don't belong to them and avoids a visible "blink" caused by
+    // clearing then immediately re-opening menus.
+    setExpandedItems(activeParents);
   }, [location.pathname]);
 
   const renderNavigationItem = (item: NavigationItem, level = 0) => {
     const hasChildren = item.children && item.children.length > 0;
-    const isExpanded = expandedItems.includes(
-      item.name.toLowerCase().replace(/\s+/g, "-")
-    );
+    const slug = item.name.toLowerCase().replace(/\s+/g, "-");
+    const isExpanded = expandedItems.includes(slug);
     const isItemActive = isParentActive(item);
     const IconComponent = item.icon;
 
@@ -156,7 +168,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
               if (isCollapsed && item.name === "Master Data") {
                 setShowMobilePopup(!showMobilePopup);
               } else {
-                toggleExpanded(item.name.toLowerCase().replace(/\s+/g, "-"));
+                toggleExpanded(slug);
               }
             }
           }}
@@ -210,7 +222,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
                 key={child.name}
                 to={child.path || ""}
                 className="flex items-center px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-green-50"
-                onClick={() => setShowMobilePopup(false)}
+                onClick={() => {
+                  setShowMobilePopup(false);
+                }}
               >
                 {React.createElement(child.icon, {
                   className: "w-4 h-4 mr-2 text-[var(--text-primary)]",

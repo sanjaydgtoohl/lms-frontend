@@ -21,11 +21,36 @@ const Breadcrumb: React.FC = () => {
 
   const parts = pathname.split('/').filter(Boolean);
 
-  const crumbs = parts.map((part, idx) => {
-    const to = '/' + parts.slice(0, idx + 1).join('/');
-    const name = segmentNameMap[part.toLowerCase()] || part.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-    return { name, to };
-  });
+  // Custom mapping for lead management paths
+  const getCrumbs = () => {
+    if (pathname.startsWith('/lead-management')) {
+      const baseCrumbs = [{ name: 'Lead Management', to: '/lead-management' }];
+      
+      if (pathname === '/lead-management/create') {
+        baseCrumbs.push(
+          { name: 'All Leads', to: '/lead-management/all-leads' },
+          { name: 'Create', to: '/lead-management/create' }
+        );
+      } else if (pathname.startsWith('/lead-management/edit/')) {
+        baseCrumbs.push(
+          { name: 'All Leads', to: '/lead-management/all-leads' },
+          { name: 'Edit', to: pathname }
+        );
+      } else {
+        baseCrumbs.push({ name: 'All Leads', to: '/lead-management/all-leads' });
+      }
+      return baseCrumbs;
+    }
+
+    // Default behavior for other paths
+    return parts.map((part, idx) => {
+      const to = '/' + parts.slice(0, idx + 1).join('/');
+      const name = segmentNameMap[part.toLowerCase()] || part.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      return { name, to };
+    });
+  };
+
+  const crumbs = getCrumbs();
 
   // If no path (root), show Dashboard
   if (crumbs.length === 0) {

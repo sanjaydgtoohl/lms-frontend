@@ -7,47 +7,26 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants';
 import MasterHeader from '../components/ui/MasterHeader';
 import SearchBar from '../components/ui/SearchBar';
+import { listBrands, type BrandItem as ServiceBrandItem } from '../services/BrandMaster';
 
-interface Brand {
-  id: string;
-  name: string;
-  agencyName: string;
-  brandType: string;
-  contactPerson: string;
-  industry: string;
-  country: string;
-  state: string;
-  city: string;
-  zone: string;
-  pinCode: string;
-  dateTime: string;
-}
+type Brand = ServiceBrandItem;
 
 const BrandMaster: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const [brands, setBrands] = useState<Brand[]>([
-    { id: '#CMPR01', name: 'Nike', agencyName: 'Agency 1', brandType: 'National', contactPerson: '2', industry: 'Moter', country: 'India', state: 'Maharastra', city: 'Pune', zone: 'West', pinCode: '328001', dateTime: '02-07-2025 22:23' },
-    { id: '#CMPR02', name: 'Puma', agencyName: 'Agency 1', brandType: 'Local', contactPerson: '3', industry: 'Moter', country: 'India', state: 'Maharastra', city: 'Pune', zone: 'West', pinCode: '328001', dateTime: '02-07-2025 22:21' },
-    { id: '#CMPR03', name: 'Apple', agencyName: 'Direct', brandType: 'Local', contactPerson: '5', industry: 'Moter', country: 'India', state: 'Maharastra', city: 'Pune', zone: 'East', pinCode: '328001', dateTime: '02-07-2025 22:23' },
-    { id: '#CMPR04', name: 'Pepsi', agencyName: 'Agency 2', brandType: 'Regional', contactPerson: '3', industry: 'Moter', country: 'India', state: 'Maharastra', city: 'Pune', zone: 'West', pinCode: '328001', dateTime: '02-07-2025 22:23' },
-    { id: '#CMPR05', name: 'Coca Cola', agencyName: 'Agency 2', brandType: 'Regional', contactPerson: '6', industry: 'Moter', country: 'India', state: 'Maharastra', city: 'Pune', zone: 'East', pinCode: '328001', dateTime: '02-07-2025 22:23' },
-  ]);
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [totalItems, setTotalItems] = useState(0);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [viewItem, setViewItem] = useState<Brand | null>(null);
   const [editItem, setEditItem] = useState<Brand | null>(null);
 
-  const filteredBrands = brands.filter(b => {
-    if (!searchQuery) return true;
-    const q = String(searchQuery).trim().toLowerCase();
-    return (b.name || '').toLowerCase().startsWith(q);
-  });
-
+  // We fetch paginated data from the API; currentData is the page currently loaded
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentData = filteredBrands.slice(startIndex, startIndex + itemsPerPage);
+  const currentData = brands;
 
   const navigate = useNavigate();
   const params = useParams();
@@ -59,19 +38,20 @@ const BrandMaster: React.FC = () => {
 
   const handleCreateBrand = () => navigate(`${ROUTES.BRAND_MASTER}/create`);
 
-  const handleSaveBrand = (data: any) => {
+  const handleSaveBrand = (data: Record<string, unknown>) => {
+    const d = data as Record<string, unknown>;
     const newBrand: Brand = {
       id: `#CMPR${Math.floor(Math.random() * 90000) + 10000}`,
-      name: data.brandName || 'Untitled',
-      agencyName: data.agency || 'Direct',
-      brandType: data.brandType || '',
+      name: String(d['brandName'] ?? 'Untitled'),
+      agencyName: String(d['agency'] ?? 'Direct'),
+      brandType: String(d['brandType'] ?? ''),
       contactPerson: '0',
-      industry: data.industry || '',
-      country: data.country || '',
-      state: data.state || '',
-      city: data.city || '',
-      zone: data.zone || '',
-      pinCode: data.postalCode || '',
+      industry: String(d['industry'] ?? ''),
+      country: String(d['country'] ?? ''),
+      state: String(d['state'] ?? ''),
+      city: String(d['city'] ?? ''),
+      zone: String(d['zone'] ?? ''),
+      pinCode: String(d['postalCode'] ?? ''),
       dateTime: new Date().toISOString(),
     };
     setBrands(prev => [newBrand, ...prev]);
@@ -110,8 +90,29 @@ const BrandMaster: React.FC = () => {
     setEditItem(null);
   }, [location.pathname, params.id, brands]);
 
-  const handleSaveEditedBrand = (updated: Record<string, any>) => {
-    setBrands(prev => prev.map(b => (b.id === updated.id ? { ...b, ...updated } as Brand : b)));
+  // Fetch brands from API when page, itemsPerPage or search query changes
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      try {
+        const res = await listBrands(currentPage, itemsPerPage, searchQuery);
+        if (cancelled) return;
+        setBrands(res.data as Brand[]);
+        const total = res.meta?.pagination?.total ?? res.data.length;
+        setTotalItems(total);
+      } catch {
+        // keep existing data on error
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [currentPage, itemsPerPage, searchQuery]);
+
+  const handleSaveEditedBrand = (updated: Partial<Brand>) => {
+    setBrands(prev => prev.map(b => (b.id === updated.id ? { ...b, ...(updated as Partial<Brand>) } as Brand : b)));
   };
 
   const handlePageChange = (page: number) => setCurrentPage(page);
@@ -122,13 +123,13 @@ const BrandMaster: React.FC = () => {
         <CreateBrandForm inline onClose={() => navigate(ROUTES.BRAND_MASTER)} onSave={handleSaveBrand} />
       ) : viewItem ? (
         <MasterView item={viewItem} onClose={() => navigate(ROUTES.BRAND_MASTER)} />
-      ) : editItem ? (
+          ) : editItem ? (
         <CreateBrandForm
           inline
           mode="edit"
           initialData={editItem}
           onClose={() => navigate(ROUTES.BRAND_MASTER)}
-          onSave={(data: any) => handleSaveEditedBrand({ ...(data as Record<string, any>) })}
+          onSave={(data: Record<string, unknown>) => handleSaveEditedBrand(data as Partial<Brand>)}
         />
       ) : (
         <>
@@ -143,7 +144,7 @@ const BrandMaster: React.FC = () => {
             <Table
               data={currentData}
               startIndex={startIndex}
-              loading={false}
+              loading={loading}
               keyExtractor={(it: Brand, idx: number) => `${it.id}-${idx}`}
               columns={([
                 { key: 'sr', header: 'Sr. No.', render: (it: Brand) => String(startIndex + currentData.indexOf(it) + 1) },
@@ -167,7 +168,7 @@ const BrandMaster: React.FC = () => {
 
           <Pagination
             currentPage={currentPage}
-            totalItems={searchQuery ? filteredBrands.length : brands.length}
+            totalItems={totalItems}
             itemsPerPage={itemsPerPage}
             onPageChange={handlePageChange}
           />

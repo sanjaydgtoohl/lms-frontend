@@ -13,26 +13,21 @@ export const MasterCreateHeader: React.FC<MasterCreateHeaderProps> = ({
 }) => {
   return (
     <div>
-      <div className="mb-3">
+      <div className="flex items-center justify-between mb-3">
         <Breadcrumb />
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="flex items-center space-x-2 btn-primary text-white px-3 py-1 rounded-lg"
+          >
+            <ChevronLeft className="w-5 h-5" />
+            <span className="text-sm font-medium">Back</span>
+          </button>
+        )}
       </div>
-
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          {onClose && (
-            <button
-              onClick={onClose}
-              className="flex items-center space-x-2 btn-primary text-white px-3 py-1 rounded-lg"
-            >
-              <ChevronLeft className="w-5 h-5" />
-              <span className="text-sm font-medium">Back</span>
-            </button>
-          )}
-          {title && (
-            <h1 className="text-xl font-semibold text-[var(--text-primary)]">{title}</h1>
-          )}
-        </div>
-      </div>
+      {title && (
+        <h1 className="text-xl font-semibold text-[var(--text-primary)]">{title}</h1>
+      )}
     </div>
   );
 };
