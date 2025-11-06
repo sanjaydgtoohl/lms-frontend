@@ -304,6 +304,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
                         type="button"
                         onClick={() => safeRemoveChild(c.id)}
                         className="text-sm px-4 py-2 rounded-lg bg-[#F5F0F0] text-[#D92D20] font-medium flex items-center justify-center hover:bg-[#FFD7D7] transition-colors duration-200"
+                        style={{ backgroundColor: '#F5F0F0' }}
                         aria-label={`Delete child agency ${idx + 1}`}
                         title="Delete"
                       >

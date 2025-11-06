@@ -18,8 +18,9 @@ type ApiEnvelope<T> = {
 };
 
 const ENDPOINTS = {
-  LIST: '/regions', // API returns regions (used as Zone dropdown)
-  DETAIL: (id: string | number) => `/regions/${id}`,
+  // Zones (previously 'regions')
+  LIST: '/zones',
+  DETAIL: (id: string | number) => `/zones/${id}`,
   BRAND_TYPES: {
     LIST: '/brand-types',
     DETAIL: (id: string | number) => `/brand-types/${id}`,
