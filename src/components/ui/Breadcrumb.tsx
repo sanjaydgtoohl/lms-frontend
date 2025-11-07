@@ -12,7 +12,8 @@ const segmentNameMap: Record<string, string> = {
   'sources': 'Lead Sources',
   'profile': 'My Profile',
   'login': 'Login',
-  'courses': 'Course Management'
+  'courses': 'Course Management',
+  'brief': 'Brief'
 };
 
 const Breadcrumb: React.FC = () => {
@@ -21,28 +22,52 @@ const Breadcrumb: React.FC = () => {
 
   const parts = pathname.split('/').filter(Boolean);
 
-  // Custom mapping for lead management paths
-  const getCrumbs = () => {
-    if (pathname.startsWith('/lead-management')) {
-      const baseCrumbs = [{ name: 'Lead Management', to: '/lead-management' }];
-      
-      if (pathname === '/lead-management/create') {
-        baseCrumbs.push(
-          { name: 'All Leads', to: '/lead-management/all-leads' },
-          { name: 'Create', to: '/lead-management/create' }
-        );
-      } else if (pathname.startsWith('/lead-management/edit/')) {
-        baseCrumbs.push(
-          { name: 'All Leads', to: '/lead-management/all-leads' },
-          { name: 'Edit', to: pathname }
-        );
-      } else {
-        baseCrumbs.push({ name: 'All Leads', to: '/lead-management/all-leads' });
-      }
-      return baseCrumbs;
-    }
+   // Custom mapping for lead management paths
+   const getCrumbs = () => {
+     if (pathname.startsWith('/lead-management')) {
+       const baseCrumbs = [{ name: 'Lead Management', to: '/lead-management' }];
+       
+       if (pathname === '/lead-management/create') {
+         baseCrumbs.push(
+           { name: 'All Leads', to: '/lead-management/all-leads' },
+           { name: 'Create', to: '/lead-management/create' }
+         );
+       } else if (pathname.startsWith('/lead-management/edit/')) {
+         baseCrumbs.push(
+           { name: 'All Leads', to: '/lead-management/all-leads' },
+           { name: 'Edit', to: pathname }
+         );
+       } else {
+         baseCrumbs.push({ name: 'All Leads', to: '/lead-management/all-leads' });
+       }
+       return baseCrumbs;
+     }
 
-    // Default behavior for other paths
+     // Custom mapping for brief routes
+     if (pathname.startsWith('/brief')) {
+       const baseCrumbs = [{ name: 'Brief', to: '/brief' }];
+       
+       // Add Brief Pipeline for the main /brief route (default child)
+       if (pathname === '/brief') {
+         baseCrumbs.push({ name: 'Brief Pipeline', to: '/brief' });
+       } else if (pathname === '/brief/create') {
+         baseCrumbs.push(
+           { name: 'Brief Pipeline', to: '/brief' },
+           { name: 'Create', to: '/brief/create' }
+         );
+       } else if (pathname.includes('/edit')) {
+         baseCrumbs.push(
+           { name: 'Brief Pipeline', to: '/brief' },
+           { name: 'Edit', to: pathname }
+         );
+       } else if (pathname.includes('/view')) {
+         baseCrumbs.push(
+           { name: 'Brief Pipeline', to: '/brief' },
+           { name: 'View', to: pathname }
+         );
+       }
+       return baseCrumbs;
+     }    // Default behavior for other paths
     return parts.map((part, idx) => {
       const to = '/' + parts.slice(0, idx + 1).join('/');
       const name = segmentNameMap[part.toLowerCase()] || part.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());

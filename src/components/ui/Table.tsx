@@ -53,7 +53,7 @@ const Table = <T,>(props: TableProps<T>) => {
           <thead className="bg-gray-50">
             <tr>
               {columns.map(col => (
-                <th key={String(col.key)} className={`px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider ${col.className || ''}`}>
+                <th key={String(col.key)} className={`px-6 py-4 text-center text-xs font-medium text-[var(--text-secondary)] tracking-wider whitespace-nowrap ${col.className || ''}`}>
                   {col.header}
                 </th>
               ))}
@@ -66,7 +66,7 @@ const Table = <T,>(props: TableProps<T>) => {
             {data.map((item, index) => (
               <tr key={keyExtractor ? keyExtractor(item, index) : (String((item as any).id) || String(index))} className="hover:bg-[var(--hover-bg)] transition-colors duration-200">
                 {columns.map(col => (
-                  <td key={col.key} className={`px-6 py-4 whitespace-nowrap text-sm text-[var(--text-primary)] ${col.className || ''}`}>
+                  <td key={col.key} className={`px-6 py-4 align-middle text-sm text-[var(--text-primary)] ${col.className || ''}`}>
                     {col.render ? col.render(item) : ((item as any)[col.key] ?? '-')}
                   </td>
                 ))}
@@ -92,7 +92,7 @@ const Table = <T,>(props: TableProps<T>) => {
           <div key={keyExtractor ? keyExtractor(item, index) : (String((item as any).id) || String(index))} className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] p-4 hover:shadow-md transition-all duration-200">
             <div className="flex justify-between items-start mb-3">
               <div className="flex gap-2">
-                <span className="text-sm text-[var(--text-secondary)]">Sr. No.:</span>
+                <span className="text-sm text-[var(--text-secondary)] whitespace-nowrap">Sr. No.:</span>
                 <span className="text-sm font-medium text-[var(--text-primary)]">{startIndex + index + 1}</span>
               </div>
               <ActionMenu
@@ -106,7 +106,7 @@ const Table = <T,>(props: TableProps<T>) => {
             <div className="space-y-2">
               {columns.map(col => (
                 <div key={col.key} className={`flex justify-between ${col.hideOnMobile ? 'hidden' : ''}`}>
-                  <span className="text-sm text-[var(--text-secondary)]">{col.header}:</span>
+                  <span className="text-sm text-[var(--text-secondary)] whitespace-nowrap">{col.header}:</span>
                   <span className="text-sm font-medium text-[var(--text-primary)]">{col.render ? col.render(item) : ((item as any)[col.key] ?? '-')}</span>
                 </div>
               ))}
