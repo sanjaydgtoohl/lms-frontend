@@ -25,9 +25,12 @@ const Input = forwardRef<HTMLInputElement, InputProps & React.InputHTMLAttribute
   const inputClasses = `${baseClasses} ${stateClasses} ${disabledClasses} ${isPassword ? 'pr-10' : ''}`;
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-1.5">
       {label && (
-        <label className="block text-sm font-medium text-white">
+        <label 
+          htmlFor={name}
+          className="block text-sm font-medium text-gray-700"
+        >
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
         </label>
@@ -35,21 +38,27 @@ const Input = forwardRef<HTMLInputElement, InputProps & React.InputHTMLAttribute
       <div className="relative">
         <input
           ref={ref}
+          id={name}
           type={isPassword && showPassword ? 'text' : type}
           placeholder={placeholder}
           value={value}
           onChange={onChange}
+          onBlur={props.onBlur}
           disabled={disabled}
           required={required}
           name={name}
           className={inputClasses}
+          aria-invalid={error ? 'true' : 'false'}
+          aria-describedby={error ? `${name}-error` : undefined}
           {...props}
         />
         {isPassword && (
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="password-toggle-btn absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 !bg-transparent hover:!bg-transparent active:!bg-transparent !border-0 !outline-none focus:!outline-none !ring-0 focus:!ring-0 focus:!ring-offset-0 !shadow-none appearance-none"
+            className="password-toggle-btn absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1 rounded-r-lg transition-colors"
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            tabIndex={-1}
           >
             {showPassword ? (
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -65,7 +74,16 @@ const Input = forwardRef<HTMLInputElement, InputProps & React.InputHTMLAttribute
         )}
       </div>
       {error && (
-        <p className="text-sm text-red-600">{error}</p>
+        <p 
+          id={name ? `${name}-error` : undefined}
+          className="text-sm text-red-600 flex items-center gap-1"
+          role="alert"
+        >
+          <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
+          {error}
+        </p>
       )}
     </div>
   );

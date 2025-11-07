@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
-import { MasterFormHeader, NotificationPopup } from '../components/ui';
+import { MasterFormHeader } from '../components/ui';
 import { createLeadSubSource, fetchLeadSources, type LeadSource } from '../services/CreateSourceForm';
+import { showSuccess, showError } from '../utils/notifications';
 
 type Props = {
   onClose: () => void;
@@ -18,7 +19,6 @@ const CreateSourceForm: React.FC<Props> = ({ onClose }) => {
   const [saving, setSaving] = useState(false);
   const [options, setOptions] = useState<LeadSource[]>([]);
   const [loadError, setLoadError] = useState<string>('');
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -56,15 +56,11 @@ const CreateSourceForm: React.FC<Props> = ({ onClose }) => {
         name: subSource,
         status: 1,
       });
-      setShowSuccessToast(true);
-      setTimeout(() => {
-        setShowSuccessToast(false);
-        onClose();
-        window.location.reload();
-      }, 5000);
+      showSuccess('Sub-source created successfully');
+      onClose();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to create sub-source';
-      setErrors((prev) => ({ ...prev, form: msg }));
+      showError(msg);
     } finally {
       setSaving(false);
     }
@@ -79,23 +75,23 @@ const CreateSourceForm: React.FC<Props> = ({ onClose }) => {
       className="space-y-6"
     >
       <MasterFormHeader onBack={onClose} title="Create Source" />
-      <NotificationPopup
-        isOpen={showSuccessToast}
-        onClose={() => setShowSuccessToast(false)}
-        message="Source created successfully"
-        type="success"
-      />
       <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
         <div className="p-6 bg-[#F9FAFB]">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">Source Name <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Source Name <span className="text-red-500">*</span>
+              </label>
               <div className="relative">
                 <select
                   value={source}
                   onChange={(e) => { setSource(e.target.value); setErrors(prev => ({ ...prev, source: '' })); }}
-                  className="w-full appearance-none px-3 pr-8 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                  className={`w-full appearance-none px-3 pr-8 py-2 border rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 transition-colors ${
+                    errors.source || loadError ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                  }`}
                   disabled={loading}
+                  aria-invalid={errors.source || loadError ? 'true' : 'false'}
+                  aria-describedby={errors.source || loadError ? 'source-error' : undefined}
                 >
                   <option value="">{loading ? 'Loading...' : 'Please Select Source Name'}</option>
                   {!loading && options.map(opt => (
@@ -110,19 +106,38 @@ const CreateSourceForm: React.FC<Props> = ({ onClose }) => {
                   <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
                 )}
               </div>
-              {errors.source && <div className="text-xs text-red-500 mt-1">{errors.source}</div>}
-              {loadError && <div className="text-xs text-red-500 mt-1">{loadError}</div>}
+              {(errors.source || loadError) && (
+                <div id="source-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.source || loadError}
+                </div>
+              )}
             </div>
 
             <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">Sub Source <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Sub Source <span className="text-red-500">*</span>
+              </label>
               <input
                 value={subSource}
                 onChange={(e) => { setSubSource(e.target.value); setErrors(prev => ({ ...prev, subSource: '' })); }}
                 placeholder="Please Enter Sub Source"
-                className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 transition-colors ${
+                  errors.subSource ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                }`}
+                aria-invalid={errors.subSource ? 'true' : 'false'}
+                aria-describedby={errors.subSource ? 'subSource-error' : undefined}
               />
-              {errors.subSource && <div className="text-xs text-red-500 mt-1">{errors.subSource}</div>}
+              {errors.subSource && (
+                <div id="subSource-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.subSource}
+                </div>
+              )}
             </div>
 
             <div className="flex items-center justify-end">

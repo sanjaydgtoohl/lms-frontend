@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Users, FileCheck, IndianRupee, BarChart3, AlertTriangle, Clock } from 'lucide-react';
+import { Users, FileCheck, BarChart3, AlertTriangle, Clock } from 'lucide-react';
 import Pagination from '../components/ui/Pagination';
+import StatCard from '../components/ui/StatCard';
+import SimpleListCard from '../components/ui/SimpleListCard';
 
 
 interface PendingAssignment {
@@ -67,169 +69,93 @@ const Dashboard: React.FC = () => {
   const currentAlerts = getCurrentPageItems(systemAlerts, alertsPage);
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 bg-gray-50 min-h-screen"> 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Card 1: Total Users */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 transition-transform duration-300 hover:scale-[1.02] overflow-hidden">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center shadow-inner">
-                <Users className="w-6 h-6 text-blue-500" />
-              </div>
-            </div>
-            <div className="ml-4">
-              <h3 className="text-sm font-medium text-gray-500 tracking-wider">Total Users</h3>
-              <p className="text-2xl font-extrabold text-gray-900 mt-0.5">12</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 2: Pending Assignments */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 transition-transform duration-300 hover:scale-[1.02] overflow-hidden">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center shadow-inner">
-                <FileCheck className="w-6 h-6 text-amber-500" />
-              </div>
-            </div>
-            <div className="ml-4">
-              <h3 className="text-sm font-medium text-gray-500 tracking-wider">Pending Assignments</h3>
-              <p className="text-2xl font-extrabold text-gray-900 mt-0.5">3</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 3: Monthly Revenue */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 transition-transform duration-300 hover:scale-[1.02] overflow-hidden">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center shadow-inner">
-                <IndianRupee className="w-6 h-6 text-green-500" />
-              </div>
-            </div>
-            <div className="ml-4">
-              <h3 className="text-sm font-medium text-gray-500 tracking-wider">Monthly Revenue</h3>
-              <p className="text-2xl font-extrabold text-gray-900 mt-0.5">₹2,850,00</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 4: Team Performance */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 transition-transform duration-300 hover:scale-[1.02] overflow-hidden">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center shadow-inner">
-                <BarChart3 className="w-6 h-6 text-purple-500" />
-              </div>
-            </div>
-            <div className="ml-4">
-              <h3 className="text-sm font-medium text-gray-500 tracking-wider">Team Performance</h3>
-              <p className="text-2xl font-extrabold text-gray-900 mt-0.5">92%</p>
-            </div>
-          </div>
-        </div>
+    <div className="p-4 sm:p-6 space-y-6 bg-gray-50 min-h-screen">
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard title="Total Users" value={12} icon={<Users className="w-5 h-5" />} />
+        <StatCard title="Pending Assignments" value={3} icon={<FileCheck className="w-5 h-5" />} />
+        <StatCard title="Team Performance" value={"92%"} icon={<BarChart3 className="w-5 h-5" />} />
+        <StatCard title="Open Alerts" value={systemAlerts.length} icon={<AlertTriangle className="w-5 h-5" />} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Pending Assignments Card */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-100">
-          <div className="px-4 py-3 border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-800">Pending Assignments</h2>
-          </div>
-          <div className="p-4">
-            <div className="space-y-5">
-              {currentAssignments.map((assignment, index) => (
-                <div key={index} className="flex items-center justify-between space-x-4 border-b pb-4 last:border-b-0 last:pb-0">
-                  <div className="flex items-center space-x-3 min-w-0">
-                    {/* Enhanced Initials Avatar */}
-                    <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-white shadow-md ${assignment.priority === 'High' ? 'bg-red-500' : assignment.priority === 'Medium' ? 'bg-amber-500' : 'bg-green-500'}`}>
-                      <span className="text-xs">{assignment.initials}</span>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-base font-semibold text-gray-900 truncate">{assignment.name}</p>
-                      <p className="text-xs text-gray-500 truncate">Assignment Due</p>
-                    </div>
-                  </div>
-                  {/* Priority Tag */}
-                  <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${getPriorityClasses(assignment.priority)} flex-shrink-0`}> 
-                    {assignment.priority}
-                  </span>
-                  <button className="px-2 py-1 text-xs font-medium btn-primary text-white rounded-full transition-colors flex-shrink-0">
-                    Assign
-                  </button>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <SimpleListCard
+          title="Pending Assignments"
+          items={currentAssignments}
+          renderItem={(assignment) => (
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-8 h-8 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center text-xs font-semibold">
+                  {assignment.initials}
                 </div>
-              ))}
-              {pendingAssignments.length > ITEMS_PER_PAGE && (
-                <Pagination
-                  currentPage={assignmentsPage}
-                  totalItems={pendingAssignments.length}
-                  itemsPerPage={ITEMS_PER_PAGE}
-                  onPageChange={setAssignmentsPage}
-                />
-              )}
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{assignment.name}</p>
+                  <p className="text-xs text-gray-500 truncate">Assignment Due</p>
+                </div>
+              </div>
+              <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
+                {assignment.priority}
+              </span>
             </div>
-          </div>
-        </div>
+          )}
+          footer={pendingAssignments.length > ITEMS_PER_PAGE ? (
+            <Pagination
+              currentPage={assignmentsPage}
+              totalItems={pendingAssignments.length}
+              itemsPerPage={ITEMS_PER_PAGE}
+              onPageChange={setAssignmentsPage}
+            />
+          ) : null}
+        />
 
-        {/* System Alerts Card */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-100">
-          <div className="px-4 py-3 border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-800">System Alerts</h2>
-          </div>
-          <div className="p-4">
-            <div className="space-y-5">
-              {currentAlerts.map((alert, index) => (
-                <div key={index} className="flex items-start space-x-3 border-b pb-4 last:border-b-0 last:pb-0">
-                  <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" /> 
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-800 leading-relaxed truncate">{alert.message}</p>
-                    <p className="text-xs text-gray-500 flex items-center mt-1">
-                      <Clock className="w-3.5 h-3.5 inline-block mr-1 text-gray-400" />
-                      {alert.time}
-                    </p>
-                  </div>
-                </div>
-              ))}
-              {systemAlerts.length > ITEMS_PER_PAGE && (
-                <Pagination
-                  currentPage={alertsPage}
-                  totalItems={systemAlerts.length}
-                  itemsPerPage={ITEMS_PER_PAGE}
-                  onPageChange={setAlertsPage}
-                />
-              )}
+        <SimpleListCard
+          title="System Alerts"
+          items={currentAlerts}
+          renderItem={(alert) => (
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-4 h-4 text-gray-500 mt-0.5" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm text-gray-800 truncate">{alert.message}</p>
+                <p className="text-xs text-gray-500 flex items-center mt-1">
+                  <Clock className="w-3.5 h-3.5 mr-1 text-gray-400" />
+                  {alert.time}
+                </p>
+              </div>
             </div>
-          </div>
-        </div>
+          )}
+          footer={systemAlerts.length > ITEMS_PER_PAGE ? (
+            <Pagination
+              currentPage={alertsPage}
+              totalItems={systemAlerts.length}
+              itemsPerPage={ITEMS_PER_PAGE}
+              onPageChange={setAlertsPage}
+            />
+          ) : null}
+        />
       </div>
 
-      {/* Progress Topics Card */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-100">
-        <div className="px-4 py-3 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-800">Progress Topics</h2>
+      {/* Progress */}
+      <div className="bg-white rounded-xl border border-gray-200">
+        <div className="px-4 py-3 border-b border-gray-200">
+          <h2 className="text-sm font-semibold text-gray-800">Progress Topics</h2>
         </div>
-        <div className="p-4">
-          <div className="space-y-6">
-            {/* Progress Bar 1 */}
-            <div>
-              <div className="flex justify-between mb-2">
-                <span className="text-base font-medium text-gray-800">Sales Team Onboarding</span>
-                <span className="text-sm text-blue-600 font-semibold">76% Complete</span>
-              </div>
-              <div className="w-full bg-blue-100 rounded-full h-2">
-                <div className="bg-blue-500 h-2 rounded-full shadow-inner" style={{ width: '76%' }}></div>
-              </div>
+        <div className="p-4 space-y-5">
+          <div>
+            <div className="flex justify-between mb-2">
+              <span className="text-sm font-medium text-gray-800">Sales Team Onboarding</span>
+              <span className="text-xs text-gray-600 font-medium">76% Complete</span>
             </div>
-            {/* Progress Bar 2 */}
-            <div>
-              <div className="flex justify-between mb-2">
-                <span className="text-base font-medium text-gray-800">Campaign Manager Training</span>
-                <span className="text-sm text-blue-600 font-semibold">52% Complete</span>
-              </div>
-              <div className="w-full bg-blue-100 rounded-full h-2">
-                <div className="bg-blue-500 h-2 rounded-full shadow-inner" style={{ width: '52%' }}></div>
-              </div>
+            <div className="w-full bg-gray-100 rounded-full h-2">
+              <div className="bg-gray-600 h-2 rounded-full" style={{ width: '76%' }}></div>
+            </div>
+          </div>
+          <div>
+            <div className="flex justify-between mb-2">
+              <span className="text-sm font-medium text-gray-800">Campaign Manager Training</span>
+              <span className="text-xs text-gray-600 font-medium">52% Complete</span>
+            </div>
+            <div className="w-full bg-gray-100 rounded-full h-2">
+              <div className="bg-gray-600 h-2 rounded-full" style={{ width: '52%' }}></div>
             </div>
           </div>
         </div>

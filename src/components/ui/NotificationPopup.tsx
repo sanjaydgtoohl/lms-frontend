@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import './NotificationPopup.css';
+import { X } from 'lucide-react';
 
 interface NotificationPopupProps {
   isOpen: boolean;
@@ -7,6 +8,7 @@ interface NotificationPopupProps {
   message?: string;
   type?: 'success' | 'error' | 'info';
   title?: string;
+  duration?: number; // Auto-dismiss duration in ms (0 = no auto-dismiss)
   customStyle?: {
     bg?: string;
     border?: string;
@@ -21,8 +23,19 @@ const NotificationPopup: React.FC<NotificationPopupProps> = ({
   message = "", 
   type = "info",
   title = type === 'error' ? 'Error' : type === 'success' ? 'Success' : 'Notification',
+  duration = 5000, // Default 5 seconds
   customStyle
 }) => {
+  // Auto-dismiss functionality
+  useEffect(() => {
+    if (isOpen && duration > 0) {
+      const timer = setTimeout(() => {
+        onClose();
+      }, duration);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, duration, onClose]);
+
   if (!isOpen) return null;
 
   const styles = {
@@ -103,14 +116,13 @@ const NotificationPopup: React.FC<NotificationPopupProps> = ({
               <h3 className={`font-semibold ${mergedStyle.text} text-base`}>{title}</h3>
             </div>
 
-            {/* <button 
+            <button 
               onClick={onClose}
-              className={`${currentStyle.icon} hover:opacity-75 transition-opacity`}
+              className={`${mergedStyle.icon} hover:opacity-75 transition-opacity p-1 rounded-full hover:bg-black/5`}
+              aria-label="Close notification"
             >
-              <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            </button> */}
+              <X className="w-5 h-5" />
+            </button>
           </div>
           
           {/* Message Content */}

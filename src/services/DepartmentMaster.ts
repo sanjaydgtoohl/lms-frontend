@@ -1,5 +1,5 @@
 import { API_BASE_URL } from '../constants';
-import { useUiStore } from '../store/ui';
+import { handleApiError } from '../utils/apiErrorHandler';
 
 export type Department = {
   id: number | string;
@@ -37,10 +37,11 @@ function authHeaders(): HeadersInit {
 async function handleResponse<T>(res: Response): Promise<T> {
   const json = await res.json().catch(() => null);
   if (!res.ok) {
-    const message = (json && (json.message || json.error)) || 'Request failed';
-    // Push error to global UI store
-    try { useUiStore.getState().pushError(message); } catch {}
-    throw new Error(message);
+    const error = new Error((json && (json.message || json.error)) || 'Request failed');
+    (error as any).statusCode = res.status;
+    (error as any).responseData = json;
+    handleApiError(error);
+    throw error;
   }
   if (json && typeof json === 'object' && 'data' in json) {
     return (json as ApiEnvelope<T>).data;
@@ -67,11 +68,13 @@ export async function listDepartments(page = 1, perPage = 10): Promise<Departmen
     method: 'GET',
     headers: authHeaders(),
   });
-  const json = await res.json();
+  const json = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const message = (json && (json.message || json.error)) || 'Request failed';
-    try { useUiStore.getState().pushError(message); } catch {}
-    throw new Error(message);
+    const error = new Error((json && (json.message || json.error)) || 'Request failed');
+    (error as any).statusCode = res.status;
+    (error as any).responseData = json;
+    handleApiError(error);
+    throw error;
   }
   return {
     data: json.data || [],

@@ -86,6 +86,9 @@ class ApiClient {
       return data;
     } catch (error) {
       console.error('API Error:', error);
+      // Use centralized error handler
+      const { handleApiError } = await import('../utils/apiErrorHandler');
+      handleApiError(error, false); // Don't show notification here, let caller handle it
       throw error;
     }
   }

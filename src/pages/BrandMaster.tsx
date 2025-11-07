@@ -133,12 +133,22 @@ const BrandMaster: React.FC = () => {
         />
       ) : (
         <>
-          <MasterHeader onCreateClick={handleCreateBrand} createButtonLabel="Create Brand" />
+          <MasterHeader 
+            onCreateClick={handleCreateBrand} 
+            createButtonLabel="Create Brand"
+            showBreadcrumb={true}
+          />
 
-          <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-            <div className="bg-gray-50 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-[var(--text-primary)]">Brand Master</h2>
-              <SearchBar delay={0} onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">Brand Master</h2>
+              <SearchBar 
+                delay={300} 
+                onSearch={(q: string) => { 
+                  setSearchQuery(q); 
+                  setCurrentPage(1); 
+                }} 
+              />
             </div>
 
             <Table
@@ -148,17 +158,18 @@ const BrandMaster: React.FC = () => {
               keyExtractor={(it: Brand, idx: number) => `${it.id}-${idx}`}
               columns={([
                 { key: 'sr', header: 'Sr. No.', render: (it: Brand) => String(startIndex + currentData.indexOf(it) + 1) },
-                { key: 'name', header: 'Brand Name', render: (it: Brand) => it.name },
-                { key: 'agencyName', header: 'Agency Name', render: (it: Brand) => it.agencyName },
-                { key: 'brandType', header: 'Brand Type', render: (it: Brand) => it.brandType },
-                { key: 'contactPerson', header: 'Contact Person', render: (it: Brand) => it.contactPerson },
-                { key: 'industry', header: 'Industry', render: (it: Brand) => it.industry },
-                { key: 'country', header: 'Country', render: (it: Brand) => it.country },
-                { key: 'state', header: 'State', render: (it: Brand) => it.state },
-                { key: 'city', header: 'City', render: (it: Brand) => it.city },
-                { key: 'zone', header: 'Zone', render: (it: Brand) => it.zone },
-                { key: 'pinCode', header: 'Pin Code', render: (it: Brand) => it.pinCode },
-                { key: 'dateTime', header: 'Date & Time', render: (it: Brand) => it.dateTime },
+                { key: 'id', header: 'ID', render: (it: Brand) => it.id || '-' },
+                { key: 'name', header: 'Brand Name', render: (it: Brand) => it.name || '-' },
+                { key: 'agencyName', header: 'Agency Name', render: (it: Brand) => it.agencyName || '-' },
+                { key: 'brandType', header: 'Brand Type', render: (it: Brand) => it.brandType || '-' },
+                { key: 'contactPerson', header: 'Contact Person', render: (it: Brand) => it.contactPerson || '-' },
+                { key: 'industry', header: 'Industry', render: (it: Brand) => it.industry || '-' },
+                { key: 'country', header: 'Country', render: (it: Brand) => it.country || '-' },
+                { key: 'state', header: 'State', render: (it: Brand) => it.state || '-' },
+                { key: 'city', header: 'City', render: (it: Brand) => it.city || '-' },
+                { key: 'zone', header: 'Zone', render: (it: Brand) => it.zone || '-' },
+                { key: 'pinCode', header: 'Pin Code', render: (it: Brand) => it.pinCode || '-' },
+                { key: 'dateTime', header: 'Date & Time', render: (it: Brand) => it.dateTime ? new Date(it.dateTime).toLocaleString() : '-' },
               ] as Column<Brand>[])}
               onEdit={(it: Brand) => handleEdit(it.id)}
               onView={(it: Brand) => handleView(it.id)}

@@ -94,6 +94,7 @@ const AgencyMaster: React.FC = () => {
           <MasterHeader
             onCreateClick={handleCreateAgency}
             createButtonLabel="Create Agency"
+            showBreadcrumb={true}
           />
           <MainContent<Agency>
             title="Agency Master" 

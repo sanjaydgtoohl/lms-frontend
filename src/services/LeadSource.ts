@@ -1,5 +1,5 @@
 import { API_BASE_URL } from '../constants';
-import { useUiStore } from '../store/ui';
+import { handleApiError } from '../utils/apiErrorHandler';
 
 export interface LeadSourceItem {
   id: string;
@@ -35,9 +35,11 @@ function authHeaders(): HeadersInit {
 async function handleResponse<T>(res: Response): Promise<T> {
   const json = await res.json().catch(() => null);
   if (!res.ok) {
-    const message = (json && (json.message || json.error)) || 'Request failed';
-    try { useUiStore.getState().pushError(message); } catch {}
-    throw new Error(message);
+    const error = new Error((json && (json.message || json.error)) || 'Request failed');
+    (error as any).statusCode = res.status;
+    (error as any).responseData = json;
+    handleApiError(error);
+    throw error;
   }
   // Accept either envelope { success, data } or raw array/object
   if (json && typeof json === 'object' && 'data' in json) {
@@ -66,11 +68,13 @@ export async function listLeadSources(page = 1, perPage = 10): Promise<LeadSourc
     method: 'GET',
     headers: authHeaders(),
   });
-  const json = await res.json();
+  const json = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const message = (json && (json.message || json.error)) || 'Request failed';
-    try { useUiStore.getState().pushError(message); } catch {}
-    throw new Error(message);
+    const error = new Error((json && (json.message || json.error)) || 'Request failed');
+    (error as any).statusCode = res.status;
+    (error as any).responseData = json;
+    handleApiError(error);
+    throw error;
   }
   const items = (json.data || []).map((it: any, idx: number) => {
     const id = it.id ?? `LS${String(idx + 1).padStart(3, '0')}`;

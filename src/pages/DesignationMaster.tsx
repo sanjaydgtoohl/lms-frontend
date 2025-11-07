@@ -17,6 +17,7 @@ import {
   createDesignation,
   type Designation as ApiDesignation,
 } from '../services/DesignationMaster';
+import { showSuccess, showError } from '../utils/notifications';
 
 interface Designation {
   id: string;
@@ -31,7 +32,6 @@ const CreateDesignationForm: React.FC<{
 }> = ({ onClose, onSave }) => {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   const formatDateTime = (d: Date) => {
     const dd = String(d.getDate()).padStart(2, '0');
@@ -51,27 +51,12 @@ const CreateDesignationForm: React.FC<{
     try {
       const res: any = onSave ? (onSave as any)({ name, dateTime: formatDateTime(new Date()) }) : null;
       if (res && typeof res.then === 'function') await res;
-      setShowSuccessToast(true);
-      setTimeout(() => {
-        setShowSuccessToast(false);
-        onClose();
-        window.location.reload();
-      }, 5000);
+      showSuccess('Designation created successfully');
+      onClose();
     } catch (err) {
-      // show server validation messages when available
-      const e: any = err;
-      if (e && e.responseData) {
-        // try common shapes: errors, details, message
-        const resp = e.responseData;
-        const details = resp.errors || resp.details || resp.data || resp;
-        try {
-          setError(typeof details === 'string' ? details : JSON.stringify(details));
-        } catch (_) {
-          setError(resp.message || 'Validation failed');
-        }
-      } else {
-        setError((err as any)?.message || 'Failed to create designation');
-      }
+      const message = (err as any)?.message || 'Failed to create designation';
+      setError(message);
+      showError(message);
     }
   };
 
@@ -84,25 +69,32 @@ const CreateDesignationForm: React.FC<{
       className="space-y-6"
     >
       <MasterFormHeader onBack={onClose} title="Create Designation" />
-      <NotificationPopup
-        isOpen={showSuccessToast}
-        onClose={() => setShowSuccessToast(false)}
-        message="Designation created successfully"
-        type="success"
-      />
       <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
         <div className="p-6 bg-[#F9FAFB]">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">Designation Name <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Designation Name <span className="text-red-500">*</span>
+              </label>
               <input
                 name="designationName"
                 value={name}
                 onChange={(e) => { setName(e.target.value); setError(''); }}
-                className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 transition-colors ${
+                  error ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                }`}
                 placeholder="Please Enter Designation Name"
+                aria-invalid={error ? 'true' : 'false'}
+                aria-describedby={error ? 'designationName-error' : undefined}
               />
-              {error && <div className="text-xs text-red-500 mt-1">{error}</div>}
+              {error && (
+                <div id="designationName-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {error}
+                </div>
+              )}
             </div>
 
             <div className="flex items-center justify-end">
@@ -150,11 +142,12 @@ const DesignationMaster: React.FC = () => {
     return (async () => {
       try {
         // API expects `title` for designation payload (see Postman traces)
-  await createDesignation({ title: data.name } as any);
+	await createDesignation({ title: data.name } as any);
         await refresh();
         setCurrentPage(1);
+        showSuccess('Designation created successfully');
       } catch (e: any) {
-        alert(e?.message || 'Failed to create designation');
+        showError(e?.message || 'Failed to create designation');
         throw e;
       }
     })();
@@ -177,7 +170,7 @@ const DesignationMaster: React.FC = () => {
       setShowDeleteToast(true);
       setTimeout(() => setShowDeleteToast(false), 3000);
     } catch (e: any) {
-      alert(e?.message || 'Failed to delete');
+      showError(e?.message || 'Failed to delete designation');
     }
   };
 
@@ -256,10 +249,11 @@ const DesignationMaster: React.FC = () => {
     return (async () => {
       try {
         // API expects `title` for update payload
-  await updateDesignation(updated.id, { title: updated.name } as any);
+	await updateDesignation(updated.id, { title: updated.name } as any);
         setDesignations(prev => prev.map(d => (d.id === updated.id ? { ...d, name: updated.name } as Designation : d)));
+        showSuccess('Designation updated successfully');
       } catch (e: any) {
-        alert(e?.message || 'Failed to update');
+        showError(e?.message || 'Failed to update designation');
         throw e;
       }
     })();
@@ -298,80 +292,51 @@ const DesignationMaster: React.FC = () => {
   <MasterEdit item={editItem} onClose={() => navigate(ROUTES.DESIGNATION_MASTER)} onSave={handleSaveEditedDesignation} hideSource nameLabel="Designation" />
       ) : (
         <>
-          <MasterHeader onCreateClick={handleCreateDesignation} createButtonLabel="Create Designation" />
-          <div>
-            <div className="bg-white rounded-2xl shadow-md border border-[var(--border-color)] overflow-hidden">
-              <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)]">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-[var(--text-primary)]">Designation Master</h2>
-                  <SearchBar placeholder="Search Designation" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); refresh(1, q); }} />
-                </div>
+          <MasterHeader 
+            onCreateClick={handleCreateDesignation} 
+            createButtonLabel="Create Designation"
+            showBreadcrumb={true}
+          />
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900">Designation Master</h2>
+                <SearchBar 
+                  placeholder="Search Designation" 
+                  delay={300}
+                  onSearch={(q: string) => { 
+                    setSearchQuery(q); 
+                    setCurrentPage(1); 
+                    refresh(1, q); 
+                  }} 
+                />
               </div>
-
-              {error && (
-                <div className="px-6 py-3 text-sm text-red-600 bg-red-50 border-b border-[var(--border-color)]">{error}</div>
-              )}
-
-              <Table
-                data={currentData}
-                startIndex={startIndex}
-                loading={loading}
-                keyExtractor={(it: any, idx: number) => `${it.id}-${idx}`}
-                columns={([
-                  { key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },
-                  { key: 'name', header: 'Designation Name', render: (it: any) => it.name },
-                  { key: 'dateTime', header: 'Date & Time', render: (it: any) => it.dateTime },
-                ] as Column<any>[]) }
-                onEdit={(it: any) => handleEdit(it.id)}
-                onView={(it: any) => handleView(it.id)}
-                onDelete={(it: any) => handleDelete(it.id)}
-              />
             </div>
-          </div>
 
-          {/* Mobile Card View */}
-          <div className="lg:hidden space-y-4">
-            <div className="bg-white rounded-2xl shadow-md border border-[var(--border-color)] p-4">
-              <h2 className="text-lg font-semibold text-[var(--text-primary)]">Designation Master</h2>
-            </div>
-            {loading ? (
-              <div className="px-4 py-12 flex items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+            {error && (
+              <div className="px-6 py-3 text-sm text-red-600 bg-red-50 border-b border-red-100 flex items-center gap-2">
+                <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {error}
               </div>
-            ) : (
-              <>
-                {currentData.map((item, index) => (
-                <div 
-                key={item.id + item.name}
-                className="bg-white rounded-2xl shadow-md border border-[var(--border-color)] p-4 hover:shadow-lg transition-all duration-200"
-              >
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex gap-2">
-                    <span className="text-sm text-[var(--text-secondary)]">Sr. No.:</span>
-                    <span className="text-sm font-medium text-[var(--text-primary)]">{startIndex + index + 1}</span>
-                  </div>
-                  <ActionMenu
-                    isLast={index === currentData.length - 1}
-                    onEdit={() => handleEdit(item.id)}
-                    onView={() => handleView(item.id)}
-                    onDelete={() => handleDelete(item.id)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-[var(--text-secondary)]">Designation Name:</span>
-                    <span className="text-sm font-medium text-[var(--text-primary)]">{item.name}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-[var(--text-secondary)]">Date & Time:</span>
-                    <span className="text-sm text-[var(--text-secondary)]">{item.dateTime}</span>
-                  </div>
-                </div>
-              </div>
-                ))}
-              </>
             )}
+
+            <Table
+              data={currentData}
+              startIndex={startIndex}
+              loading={loading}
+              keyExtractor={(it: any, idx: number) => `${it.id}-${idx}`}
+              columns={([
+                { key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },
+                { key: 'id', header: 'ID', render: (it: any) => it.id || '-' },
+                { key: 'name', header: 'Designation Name', render: (it: any) => it.name || '-' },
+                { key: 'dateTime', header: 'Date & Time', render: (it: any) => it.dateTime ? new Date(it.dateTime).toLocaleString() : '-' },
+              ] as Column<any>[]) }
+              onEdit={(it: any) => handleEdit(it.id)}
+              onView={(it: any) => handleView(it.id)}
+              onDelete={(it: any) => handleDelete(it.id)}
+            />
           </div>
 
           {/* Pagination */}

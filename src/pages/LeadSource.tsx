@@ -209,17 +209,30 @@ const LeadSource: React.FC = () => {
           <MasterHeader
             onCreateClick={handleCreate}
             createButtonLabel="Create Source"
+            showBreadcrumb={true}
           />
-          <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-            <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)]">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-[var(--text-primary)]">Lead Sources</h2>
-                <SearchBar placeholder="Search Lead Source" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
+                <h2 className="text-lg font-semibold text-gray-900">Lead Sources</h2>
+                <SearchBar 
+                  placeholder="Search Lead Source" 
+                  delay={300}
+                  onSearch={(q: string) => { 
+                    setSearchQuery(q); 
+                    setCurrentPage(1); 
+                  }} 
+                />
               </div>
             </div>
 
             {error && (
-              <div className="px-6 py-3 text-sm text-red-600 bg-red-50 border-b border-[var(--border-color)]">{error}</div>
+              <div className="px-6 py-3 text-sm text-red-600 bg-red-50 border-b border-red-100 flex items-center gap-2">
+                <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {error}
+              </div>
             )}
 
             <Table
@@ -229,9 +242,10 @@ const LeadSource: React.FC = () => {
               keyExtractor={(it: any, idx: number) => `${it.id}-${idx}`}
               columns={([
                 { key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },
-                { key: 'source', header: 'Source', render: (it: any) => it.source },
+                { key: 'id', header: 'ID', render: (it: any) => it.id || '-' },
+                { key: 'source', header: 'Source', render: (it: any) => it.source || '-' },
                 { key: 'subSource', header: 'Sub-Source', render: (it: any) => it.subSource || '-' },
-                { key: 'dateTime', header: 'Date & Time', render: (it: any) => it.dateTime || '-' },
+                { key: 'dateTime', header: 'Date & Time', render: (it: any) => it.dateTime ? new Date(it.dateTime).toLocaleString() : '-' },
               ] as Column<any>[])}
               onEdit={(it: any) => handleEdit(it)}
               onView={(it: any) => handleView(it)}

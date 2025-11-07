@@ -1,5 +1,5 @@
 import { API_BASE_URL } from '../constants';
-import { useUiStore } from '../store/ui';
+import { handleApiError } from '../utils/apiErrorHandler';
 
 export interface BrandItem {
   id: string;
@@ -42,9 +42,11 @@ function authHeaders(): HeadersInit {
 async function handleResponse<T>(res: Response): Promise<T> {
   const json = await res.json().catch(() => null);
   if (!res.ok) {
-    const message = (json && (json.message || json.error)) || 'Request failed';
-    try { useUiStore.getState().pushError(message); } catch (e) { /* ignore */ }
-    throw new Error(message);
+    const error = new Error((json && (json.message || json.error)) || 'Request failed');
+    (error as any).statusCode = res.status;
+    (error as any).responseData = json;
+    handleApiError(error);
+    throw error;
   }
   if (json && typeof json === 'object' && 'data' in json) {
     return (json as ApiEnvelope<T>).data;
@@ -78,9 +80,11 @@ export async function listBrands(page = 1, perPage = 10, search?: string): Promi
   });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const message = (json && (json.message || json.error)) || 'Request failed';
-    try { useUiStore.getState().pushError(message); } catch {}
-    throw new Error(message);
+    const error = new Error((json && (json.message || json.error)) || 'Request failed');
+    (error as any).statusCode = res.status;
+    (error as any).responseData = json;
+    handleApiError(error);
+    throw error;
   }
 
   const items = (json.data || []).map((it: unknown, idx: number) => {

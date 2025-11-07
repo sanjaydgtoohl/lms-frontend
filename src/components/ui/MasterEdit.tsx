@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { ChevronLeft } from 'lucide-react';
 import Breadcrumb from './Breadcrumb';
 import { fetchLeadSources, type LeadSource } from '../../services/CreateSourceForm';
-import NotificationPopup from './NotificationPopup';
+import { showSuccess, showError } from '../../utils/notifications';
 
 type Props = {
   item: Record<string, any> | null;
@@ -19,7 +19,6 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
   const [options, setOptions] = useState<LeadSource[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   if (!item) return null;
 
@@ -86,18 +85,17 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
         if (res && typeof res.then === 'function') {
           await res;
         }
-
-        // Show a success toast for 5 seconds, then close and reload.
-        setShowSuccessToast(true);
-        await new Promise(resolve => setTimeout(resolve, 5000));
-        setShowSuccessToast(false);
+        showSuccess('Record updated successfully');
+        onClose();
+        return;
       } catch (err) {
-        // swallow - parent will show errors where appropriate
+        const message = err instanceof Error ? err.message : 'Failed to update record';
+        setErrors(prev => ({ ...prev, form: message }));
+        showError(message);
+        return;
       }
     }
     onClose();
-    // reload the page after save/update
-    window.location.reload();
   };
 
   return (
@@ -114,13 +112,6 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
           <span className="text-sm">Go Back</span>
         </button>
       </div>
-
-      <NotificationPopup
-        isOpen={showSuccessToast}
-        onClose={() => setShowSuccessToast(false)}
-        message="Updated successfully"
-        type="success"
-      />
 
       <motion.form
         onSubmit={handleSubmit}
@@ -167,6 +158,12 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
             )}
           </div>
         ))}
+
+        {errors.form && (
+          <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+            {errors.form}
+          </div>
+        )}
 
         <div className="flex items-center justify-end space-x-3 pt-2">
           <button type="button" onClick={onClose} className="px-4 py-2 text-[var(--text-secondary)] hover:text-black">Cancel</button>

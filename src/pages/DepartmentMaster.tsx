@@ -16,6 +16,7 @@ import {
 	deleteDepartment,
 	type Department as ApiDepartment,
 } from '../services/DepartmentMaster';
+import { showSuccess, showError } from '../utils/notifications';
 
 interface Department {
 	id: string;
@@ -30,7 +31,6 @@ const CreateDepartmentForm: React.FC<{
 }> = ({ onClose, onSave }) => {
 	const [name, setName] = useState('');
 	const [error, setError] = useState('');
-	const [showSuccessToast, setShowSuccessToast] = useState(false);
 
 	const formatDateTime = (d: Date) => {
 		const dd = String(d.getDate()).padStart(2, '0');
@@ -50,14 +50,10 @@ const CreateDepartmentForm: React.FC<{
 		try {
 			const res: any = onSave ? (onSave as any)({ name, dateTime: formatDateTime(new Date()) }) : null;
 			if (res && typeof res.then === 'function') await res;
-			setShowSuccessToast(true);
-			setTimeout(() => {
-				setShowSuccessToast(false);
-				onClose();
-				window.location.reload();
-			}, 5000);
-		} catch (err) {
-			// parent handles errors
+			showSuccess('Department created successfully');
+			onClose();
+		} catch (err: any) {
+			showError(err?.message || 'Failed to create department');
 		}
 	};
 
@@ -69,27 +65,34 @@ const CreateDepartmentForm: React.FC<{
 			transition={{ duration: 0.22 }}
 			className="space-y-6"
 		>
-			<MasterFormHeader onBack={onClose} title="Create Department" />
-			<NotificationPopup
-				isOpen={showSuccessToast}
-				onClose={() => setShowSuccessToast(false)}
-				message="Department created successfully"
-				type="success"
-			/>
+		<MasterFormHeader onBack={onClose} title="Create Department" />
 			<div className="w-full bg-white rounded-xl shadow-sm border border-[var(--border-color)] overflow-hidden">
 				<div className="p-6 bg-[#F9FAFB]">
 					<form onSubmit={handleSubmit} className="space-y-6">
-						<div>
-							<label className="block text-sm text-[var(--text-secondary)] mb-1">Department Name <span className="text-red-500">*</span></label>
-							<input
-								name="departmentName"
-								value={name}
-								onChange={(e) => { setName(e.target.value); setError(''); }}
-								className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-								placeholder="Please Enter Department Name"
-							/>
-							{error && <div className="text-xs text-red-500 mt-1">{error}</div>}
-						</div>
+					<div>
+						<label className="block text-sm font-medium text-gray-700 mb-1.5">
+							Department Name <span className="text-red-500">*</span>
+						</label>
+						<input
+							name="departmentName"
+							value={name}
+							onChange={(e) => { setName(e.target.value); setError(''); }}
+							className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 transition-colors ${
+								error ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+							}`}
+							placeholder="Please Enter Department Name"
+							aria-invalid={error ? 'true' : 'false'}
+							aria-describedby={error ? 'departmentName-error' : undefined}
+						/>
+						{error && (
+							<div id="departmentName-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+								<svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+									<path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+								</svg>
+								{error}
+							</div>
+						)}
+					</div>
 
 						<div className="flex items-center justify-end">
 							<button
@@ -138,8 +141,9 @@ const DepartmentMaster: React.FC = () => {
 				await createDepartment({ name: data.name });
 				await refresh();
 				setCurrentPage(1);
+				showSuccess('Department created successfully');
 			} catch (e: any) {
-				alert(e?.message || 'Failed to create department');
+				showError(e?.message || 'Failed to create department');
 			}
 		})();
 	};
@@ -241,8 +245,9 @@ const DepartmentMaster: React.FC = () => {
 			try {
 				await updateDepartment(updated.id, { name: updated.name });
 				setDepartments(prev => prev.map(d => (d.id === updated.id ? { ...d, name: updated.name } as Department : d)));
+				showSuccess('Department updated successfully');
 			} catch (e: any) {
-				alert(e?.message || 'Failed to update');
+				showError(e?.message || 'Failed to update department');
 			}
 		})();
 	};
@@ -272,40 +277,50 @@ const DepartmentMaster: React.FC = () => {
 					<MasterHeader
 						onCreateClick={handleCreateDepartment}
 						createButtonLabel="Create Department"
+						showBreadcrumb={true}
 					/>
-					{/* Desktop Table View */}
-					<div className="hidden lg:block">
-						<div className="bg-white rounded-xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-								{/* Table Header */}
-								<div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)]">
-									<div className="flex items-center justify-between">
-										<h2 className="text-lg font-semibold text-[var(--text-primary)]">Department Master</h2>
-										<SearchBar placeholder="Search Department" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); refresh(1, q); }} />
-									</div>
-								</div>
-
-								{error && (
-									<div className="px-6 py-3 text-sm text-red-600 bg-red-50 border-b border-[var(--border-color)]">{error}</div>
-								)}
-
-								<Table
-										data={currentData}
-										startIndex={startIndex}
-										loading={loading}
-										keyExtractor={(it: any, idx: number) => `${it.id}-${idx}`}
-										columns={([
-											{ key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },
-											{ key: 'name', header: 'Department Name', render: (it: any) => it.name },
-											{ key: 'dateTime', header: 'Date & Time', render: (it: any) => it.dateTime },
-										] as Column<any>[])}
-										onEdit={(it: any) => handleEdit(it.id)}
-										onView={(it: any) => handleView(it.id)}
-										onDelete={(it: any) => handleDelete(it.id)}
-									/>
+					<div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+						{/* Table Header */}
+						<div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+							<div className="flex items-center justify-between">
+								<h2 className="text-lg font-semibold text-gray-900">Department Master</h2>
+								<SearchBar 
+									placeholder="Search Department" 
+									delay={300}
+									onSearch={(q: string) => { 
+										setSearchQuery(q); 
+										setCurrentPage(1); 
+										refresh(1, q); 
+									}} 
+								/>
+							</div>
 						</div>
-					</div>
 
-					{/* Mobile handled by Table component - removed duplicate mobile rendering */}
+						{error && (
+							<div className="px-6 py-3 text-sm text-red-600 bg-red-50 border-b border-red-100 flex items-center gap-2">
+								<svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+									<path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+								</svg>
+								{error}
+							</div>
+						)}
+
+						<Table
+							data={currentData}
+							startIndex={startIndex}
+							loading={loading}
+							keyExtractor={(it: any, idx: number) => `${it.id}-${idx}`}
+							columns={([
+								{ key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },
+								{ key: 'id', header: 'ID', render: (it: any) => it.id || '-' },
+								{ key: 'name', header: 'Department Name', render: (it: any) => it.name || '-' },
+								{ key: 'dateTime', header: 'Date & Time', render: (it: any) => it.dateTime ? new Date(it.dateTime).toLocaleString() : '-' },
+							] as Column<any>[])}
+							onEdit={(it: any) => handleEdit(it.id)}
+							onView={(it: any) => handleView(it.id)}
+							onDelete={(it: any) => handleDelete(it.id)}
+						/>
+					</div>
 
 					{/* Pagination */}
 					<Pagination

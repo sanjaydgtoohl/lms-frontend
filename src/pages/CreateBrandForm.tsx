@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { MasterFormHeader, NotificationPopup } from '../components/ui';
+import { MasterFormHeader } from '../components/ui';
 import { listZones, listStates, listCountries, listBrandTypes } from '../services/CreateBrandForm';
 import type { Zone, State, Country, BrandType } from '../services/CreateBrandForm';
 import { fetchIndustries } from '../services/CreateIndustryForm';
 import type { Industry } from '../services/CreateIndustryForm';
+import { showSuccess, showError } from '../utils/notifications';
 
 type Props = {
   onClose: () => void;
@@ -87,8 +88,6 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
     city: '',
     zone: '',
   });
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
-
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [zones, setZones] = useState<Zone[]>([]);
   const [states, setStates] = useState<State[]>([]);
@@ -125,14 +124,10 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
       if (res && typeof res.then === 'function') {
         await res;
       }
-      setShowSuccessToast(true);
-      setTimeout(() => {
-        setShowSuccessToast(false);
-        onClose();
-        window.location.reload();
-      }, 5000);
-    } catch (err) {
-      // parent will handle errors if needed
+      showSuccess(initialData ? 'Brand updated successfully' : 'Brand created successfully');
+      onClose();
+    } catch (err: any) {
+      showError(err?.message || 'Failed to save brand');
     }
   };
 
@@ -442,12 +437,6 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
       className="space-y-6"
     >
       <MasterFormHeader onBack={onClose} title={mode === 'edit' ? 'Edit Brand' : 'Create Brand'} />
-      <NotificationPopup
-        isOpen={showSuccessToast}
-        onClose={() => setShowSuccessToast(false)}
-        message={mode === 'edit' ? 'Brand updated successfully' : 'Brand created successfully'}
-        type="success"
-      />
       <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
         <div className="p-6 bg-[#F9FAFB]">
           {formContent}

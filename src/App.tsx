@@ -16,6 +16,7 @@ import { MissCampaignView, MissCampaignCreate } from './pages/MissCampaign';
 import { AllLeads, CreateLead, EditLead } from './pages/LeadManagement';
 import Layout from './components/layout/Layout';
 import BriefPipeline from './pages/Brief/BriefPipeline';
+import ErrorBoundary from './components/ui/ErrorBoundary';
 import { ROUTES } from './constants';
 
 // Protected Route Component
@@ -51,8 +52,9 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 function App() {
   return (
-    <Router>
-      <Routes>
+    <ErrorBoundary>
+      <Router>
+        <Routes>
         {/* Public Routes */}
         <Route 
           path={ROUTES.LOGIN} 
@@ -132,8 +134,9 @@ function App() {
         
         {/* 404 Route */}
         <Route path="*" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
-      </Routes>
-    </Router>
+        </Routes>
+      </Router>
+    </ErrorBoundary>
   );
 }
 

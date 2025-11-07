@@ -34,6 +34,14 @@ export const useAuthStore = create<AuthStore>()(
             isAuthenticated: true,
             isLoading: false,
           });
+          
+          // Update localStorage
+          if (response.token) {
+            localStorage.setItem('auth_token', response.token);
+          }
+          if (response.refreshToken) {
+            localStorage.setItem('refresh_token', response.refreshToken);
+          }
         } catch (error) {
           set({ isLoading: false });
           throw error;
@@ -60,30 +68,49 @@ export const useAuthStore = create<AuthStore>()(
         set({ isLoading: true });
         try {
           await loginService.logout();
+        } catch (error) {
+          // Even if logout API call fails, clear local state
+          console.error('Logout error:', error);
         } finally {
           set({
             user: null,
             token: null,
+            refreshTokenValue: null,
             isAuthenticated: false,
             isLoading: false,
           });
+          
+          // Clear all auth-related localStorage
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('refresh_token');
+          localStorage.removeItem('token_type');
+          localStorage.removeItem('expires_in');
         }
       },
 
       refreshToken: async () => {
         try {
-          const currentToken = get().refreshTokenValue;
+          const currentToken = get().refreshTokenValue || localStorage.getItem('refresh_token');
           if (!currentToken) {
             throw new Error('No refresh token available');
           }
           
-          const response = await apiClient.refreshToken(currentToken);
+          // apiClient.refreshToken doesn't take parameters, it reads from localStorage
+          const response = await apiClient.refreshToken();
           set({
             user: null, // User data not returned in refresh response
             token: response.token,
             refreshTokenValue: response.refreshToken,
             isAuthenticated: true,
           });
+          
+          // Update localStorage
+          if (response.token) {
+            localStorage.setItem('auth_token', response.token);
+          }
+          if (response.refreshToken) {
+            localStorage.setItem('refresh_token', response.refreshToken);
+          }
         } catch (error) {
           // If refresh fails, logout user
           get().logout();
