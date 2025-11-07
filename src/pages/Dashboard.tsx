@@ -79,7 +79,7 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
             <div className="ml-4">
-              <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Users</h3>
+              <h3 className="text-sm font-medium text-gray-500 tracking-wider">Total Users</h3>
               <p className="text-2xl font-extrabold text-gray-900 mt-0.5">12</p>
             </div>
           </div>
@@ -94,7 +94,7 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
             <div className="ml-4">
-              <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">Pending Assignments</h3>
+              <h3 className="text-sm font-medium text-gray-500 tracking-wider">Pending Assignments</h3>
               <p className="text-2xl font-extrabold text-gray-900 mt-0.5">3</p>
             </div>
           </div>
@@ -109,7 +109,7 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
             <div className="ml-4">
-              <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">Monthly Revenue</h3>
+              <h3 className="text-sm font-medium text-gray-500 tracking-wider">Monthly Revenue</h3>
               <p className="text-2xl font-extrabold text-gray-900 mt-0.5">₹2,850,00</p>
             </div>
           </div>
@@ -124,7 +124,7 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
             <div className="ml-4">
-              <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">Team Performance</h3>
+              <h3 className="text-sm font-medium text-gray-500 tracking-wider">Team Performance</h3>
               <p className="text-2xl font-extrabold text-gray-900 mt-0.5">92%</p>
             </div>
           </div>
@@ -148,7 +148,7 @@ const Dashboard: React.FC = () => {
                     </div>
                     <div className="min-w-0">
                       <p className="text-base font-semibold text-gray-900 truncate">{assignment.name}</p>
-                      <p className="text-xs text-gray-500 truncate">Assignment due</p>
+                      <p className="text-xs text-gray-500 truncate">Assignment Due</p>
                     </div>
                   </div>
                   {/* Priority Tag */}

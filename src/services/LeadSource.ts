@@ -46,18 +46,37 @@ async function handleResponse<T>(res: Response): Promise<T> {
   return json as T;
 }
 
-export async function listLeadSources(): Promise<LeadSourceItem[]> {
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.LIST}`, {
+
+export type LeadSourceListResponse = {
+  data: LeadSourceItem[];
+  meta?: {
+    pagination?: {
+      current_page: number;
+      per_page: number;
+      total: number;
+      last_page: number;
+      from: number;
+      to: number;
+    }
+  }
+};
+
+export async function listLeadSources(page = 1, perPage = 10): Promise<LeadSourceListResponse> {
+  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.LIST}?page=${page}&per_page=${perPage}`, {
     method: 'GET',
     headers: authHeaders(),
   });
-  const items = await handleResponse<LeadSourceItem[]>(res);
-  return items.map((it, idx) => {
-    const anyIt = it as any;
-    const id = anyIt.id ?? `LS${String(idx + 1).padStart(3, '0')}`;
-    const source = anyIt.lead_source ?? '';
-    const subSource = anyIt.name ?? '';
-    const dateTime = anyIt.created_at ?? '';
+  const json = await res.json();
+  if (!res.ok) {
+    const message = (json && (json.message || json.error)) || 'Request failed';
+    try { useUiStore.getState().pushError(message); } catch {}
+    throw new Error(message);
+  }
+  const items = (json.data || []).map((it: any, idx: number) => {
+    const id = it.id ?? `LS${String(idx + 1).padStart(3, '0')}`;
+    const source = it.lead_source ?? '';
+    const subSource = it.name ?? '';
+    const dateTime = it.created_at ?? '';
     return {
       id: String(id),
       source,
@@ -65,6 +84,10 @@ export async function listLeadSources(): Promise<LeadSourceItem[]> {
       dateTime,
     } as LeadSourceItem;
   });
+  return {
+    data: items,
+    meta: json.meta || {},
+  };
 }
 
 export async function getLeadSource(id: string): Promise<LeadSourceItem> {

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import Pagination from '../ui/Pagination';
-import ActionMenu from '../ui/ActionMenu';
+import SearchBar from '../ui/SearchBar';
+import { matchesQuery } from '../../utils';
+import Table, { type Column } from '../ui/Table';
 
 export interface LeadSource {
   id: string;
@@ -35,6 +37,7 @@ const MainContent = <T extends LeadSource | Agency>({
 }: MainContentProps<T>) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Sample data
   const leadSources: LeadSource[] = [
@@ -52,17 +55,28 @@ const MainContent = <T extends LeadSource | Agency>({
 
   const agencies: Agency[] = [
     { id: '#CMPR01', agencyGroup: 'Group 1', agencyName: 'Agency 1', agencyType: 'Offline', contactPerson: '2', dateTime: '02-07-2025 22:23' },
-    { id: '#CMPR01', agencyGroup: 'Group 1', agencyName: 'Agency 2', agencyType: 'Online', contactPerson: '3', dateTime: '02-07-2025 22:23' },
-    { id: '#CMPR01', agencyGroup: 'Group 2', agencyName: 'Agency 3', agencyType: 'Online', contactPerson: '5', dateTime: '02-07-2025 22:23' },
-    { id: '#CMPR01', agencyGroup: 'Group 2', agencyName: 'Agency 4', agencyType: 'Offline', contactPerson: '3', dateTime: '02-07-2025 22:23' },
-    { id: '#CMPR01', agencyGroup: 'Group 2', agencyName: 'Agency 5', agencyType: 'Both', contactPerson: '6', dateTime: '02-07-2025 22:23' },
+    { id: '#CMPR02', agencyGroup: 'Group 1', agencyName: 'Agency 2', agencyType: 'Online', contactPerson: '3', dateTime: '02-07-2025 22:23' },
+    { id: '#CMPR03', agencyGroup: 'Group 2', agencyName: 'Agency 3', agencyType: 'Online', contactPerson: '5', dateTime: '02-07-2025 22:23' },
+    { id: '#CMPR04', agencyGroup: 'Group 2', agencyName: 'Agency 4', agencyType: 'Offline', contactPerson: '3', dateTime: '02-07-2025 22:23' },
+    { id: '#CMPR05', agencyGroup: 'Group 2', agencyName: 'Agency 5', agencyType: 'Both', contactPerson: '6', dateTime: '02-07-2025 22:23' },
   ];
 
   const currentDataArray: T[] = (dataType === 'agency' ? agencies : leadSources) as T[];
+
+  // apply search filtering across common fields
+  const filteredArray = currentDataArray.filter((item) => {
+    // allow exact field matching using syntax `field:term` (exact equality), otherwise contains across common fields
+    const commonFields = ['id', 'agencyName', 'agencyGroup', 'agencyType', 'source', 'subSource'];
+    return matchesQuery(item as any, searchQuery, { 
+      fields: commonFields,
+      useStartsWith: dataType === 'agency'
+    });
+  });
+
   // totalPages not used directly (pagination component uses totalItems)
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentData = currentDataArray.slice(startIndex, endIndex);
+  const currentData = filteredArray.slice(startIndex, endIndex);
 
   const handleEdit = (id: string) => {
     const item = currentDataArray.find(i => i.id === id);
@@ -92,7 +106,7 @@ const MainContent = <T extends LeadSource | Agency>({
     return (
       <Pagination
         currentPage={currentPage}
-        totalItems={currentDataArray.length}
+        totalItems={searchQuery ? filteredArray.length : currentDataArray.length}
         itemsPerPage={itemsPerPage}
         onPageChange={handlePageChange}
       />
@@ -101,13 +115,17 @@ const MainContent = <T extends LeadSource | Agency>({
 
   return (
     <div className="flex-1 w-full">
-      {/* Desktop Table View */}
-      <div className="hidden lg:block">
-        <div className="bg-white rounded-xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-          {/* Table Header */}
-          <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)]">
-            <div className="flex justify-between items-center">
-              <h2 className="text-lg font-semibold text-[var(--text-primary)]">{title}</h2>
+      <div className="bg-white rounded-xl shadow-sm border border-[var(--border-color)] overflow-hidden">
+        {/* Table Header */}
+        <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)]">
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-semibold text-[var(--text-primary)]">{title}</h2>
+            <div className="flex items-center space-x-3">
+              <SearchBar
+                delay={0}
+                placeholder={dataType === 'agency' ? 'Search Agency Group' : 'Search...'}
+                onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }}
+              />
               {headerActions && (
                 <div className="flex items-center space-x-2">
                   {headerActions}
@@ -115,194 +133,34 @@ const MainContent = <T extends LeadSource | Agency>({
               )}
             </div>
           </div>
-          
-          {/* Table */}
-          <div className="overflow-x-auto w-full max-w-full">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  {dataType === 'agency' ? (
-                    <>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
-                        Agency ID
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
-                        Agency Group
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
-                        Agency Name
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
-                        Agency Type
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
-                        Contact Person
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
-                        Date & Time
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
-                        Action
-                      </th>
-                    </>
-                  ) : (
-                    <>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
-                        Source ID
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
-                        Source
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
-                        Sub-Source
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
-                        Date & Time
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
-                        Action
-                      </th>
-                    </>
-                  )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border-color)]">
-                {currentData.map((item, index) => (
-                  <tr 
-                    key={item.id} 
-                    className="hover:bg-[var(--hover-bg)] transition-colors duration-200"
-                  >
-                    {dataType === 'agency' ? (
-                      <>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[var(--text-primary)]">
-                          {(item as Agency).id}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-primary)]">
-                          {(item as Agency).agencyGroup}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-primary)]">
-                          {(item as Agency).agencyName}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-primary)]">
-                          {(item as Agency).agencyType}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-primary)]">
-                          {(item as Agency).contactPerson}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-secondary)]">
-                          {(item as Agency).dateTime}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <ActionMenu
-                            isLast={index >= currentData.length - 2}
-                            onEdit={() => handleEdit(item.id)}
-                            onView={() => handleView(item.id)}
-                            onDelete={() => handleDelete(item.id)}
-                          />
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[var(--text-primary)]">
-                          {item.id}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-primary)]">
-                          {(item as LeadSource).source}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-primary)]">
-                          {(item as LeadSource).subSource}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-secondary)]">
-                          {item.dateTime}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <ActionMenu
-                            onEdit={() => handleEdit(item.id)}
-                            onView={() => handleView(item.id)}
-                            onDelete={() => handleDelete(item.id)}
-                          />
-                        </td>
-                      </>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         </div>
-      </div>
 
-      {/* Mobile Card View */}
-      <div className="lg:hidden space-y-4">
-        <div className="bg-white rounded-xl shadow-sm border border-[var(--border-color)] p-4">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-[var(--text-primary)]">{title}</h2>
-            {headerActions && (
-              <div className="flex items-center space-x-2">
-                {headerActions}
-              </div>
-            )}
-          </div>
-        </div>
-        
-  {currentData.map((item, index) => (
-          <div 
-            key={item.id}
-            className="bg-white rounded-xl shadow-sm border border-[var(--border-color)] p-4 hover:shadow-md transition-all duration-200"
-          >
-            <div className="flex justify-between items-start mb-3">
-              <div className="text-sm font-medium text-[var(--text-primary)]">{item.id}</div>
-              <ActionMenu
-                isLast={index >= currentData.length - 2}
-                onEdit={() => handleEdit(item.id)}
-                onView={() => handleView(item.id)}
-                onDelete={() => handleDelete(item.id)}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              {dataType === 'agency' ? (
-                <>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-[var(--text-secondary)]">Agency Group:</span>
-                    <span className="text-sm font-medium text-[var(--text-primary)]">{(item as Agency).agencyGroup}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-[var(--text-secondary)]">Agency Name:</span>
-                    <span className="text-sm font-medium text-[var(--text-primary)]">{(item as Agency).agencyName}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-[var(--text-secondary)]">Agency Type:</span>
-                    <span className="text-sm font-medium text-[var(--text-primary)]">{(item as Agency).agencyType}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-[var(--text-secondary)]">Contact Person:</span>
-                    <span className="text-sm font-medium text-[var(--text-primary)]">{(item as Agency).contactPerson}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-[var(--text-secondary)]">Date & Time:</span>
-                    <span className="text-sm text-[var(--text-secondary)]">{item.dateTime}</span>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-[var(--text-secondary)]">Source:</span>
-                    <span className="text-sm font-medium text-[var(--text-primary)]">{(item as LeadSource).source}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-[var(--text-secondary)]">Sub-Source:</span>
-                    <span className="text-sm font-medium text-[var(--text-primary)]">{(item as LeadSource).subSource}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-[var(--text-secondary)]">Date & Time:</span>
-                    <span className="text-sm text-[var(--text-secondary)]">{item.dateTime}</span>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        ))}
+        <Table
+          data={currentData}
+          startIndex={startIndex}
+          loading={false}
+          keyExtractor={(it: any, idx: number) => `${it.id}-${idx}`}
+          columns={(
+            (dataType === 'agency'
+              ? [
+                  { key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },
+                  { key: 'agencyGroup', header: 'Agency Group', render: (it: any) => it.agencyGroup },
+                  { key: 'agencyName', header: 'Agency Name', render: (it: any) => it.agencyName },
+                  { key: 'agencyType', header: 'Agency Type', render: (it: any) => it.agencyType },
+                  { key: 'contactPerson', header: 'Contact Person', render: (it: any) => it.contactPerson },
+                  { key: 'dateTime', header: 'Date & Time', render: (it: any) => it.dateTime },
+                ]
+              : [
+                  { key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },
+                  { key: 'source', header: 'Source', render: (it: any) => it.source },
+                  { key: 'subSource', header: 'Sub-Source', render: (it: any) => it.subSource },
+                  { key: 'dateTime', header: 'Date & Time', render: (it: any) => it.dateTime },
+                ]) as Column<any>[]
+          )}
+          onEdit={(it: any) => handleEdit(it.id)}
+          onView={(it: any) => handleView(it.id)}
+          onDelete={(it: any) => handleDelete(it.id)}
+        />
       </div>
 
       {/* Pagination */}

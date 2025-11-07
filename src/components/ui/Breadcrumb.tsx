@@ -3,16 +3,16 @@ import { Link, useLocation } from 'react-router-dom';
 
 const segmentNameMap: Record<string, string> = {
   'dashboard': 'Dashboard',
-  'masters': 'Masters',
-  'agency': 'Agency',
-  'brand': 'Brand',
-  'department': 'Department',
-  'designation': 'Designation',
-  'industry': 'Industry',
-  'sources': 'Sources',
-  'profile': 'Profile',
+  'masters': 'Master Data',
+  'agency': 'Agency Master',
+  'brand': 'Brand Master',
+  'department': 'Department Master',
+  'designation': 'Designation Master',
+  'industry': 'Industry Master',
+  'sources': 'Lead Sources',
+  'profile': 'My Profile',
   'login': 'Login',
-  'courses': 'Courses'
+  'courses': 'Course Management'
 };
 
 const Breadcrumb: React.FC = () => {

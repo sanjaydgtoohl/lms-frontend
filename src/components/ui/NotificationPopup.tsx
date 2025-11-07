@@ -7,6 +7,12 @@ interface NotificationPopupProps {
   message?: string;
   type?: 'success' | 'error' | 'info';
   title?: string;
+  customStyle?: {
+    bg?: string;
+    border?: string;
+    text?: string;
+    icon?: string;
+  };
 }
 
 const NotificationPopup: React.FC<NotificationPopupProps> = ({ 
@@ -14,7 +20,8 @@ const NotificationPopup: React.FC<NotificationPopupProps> = ({
   onClose, 
   message = "", 
   type = "info",
-  title = type === 'error' ? 'Error' : type === 'success' ? 'Success' : 'Notification'
+  title = type === 'error' ? 'Error' : type === 'success' ? 'Success' : 'Notification',
+  customStyle
 }) => {
   if (!isOpen) return null;
 
@@ -44,6 +51,15 @@ const NotificationPopup: React.FC<NotificationPopupProps> = ({
 
   const currentStyle = styles[type];
 
+  // apply custom overrides when provided
+  const mergedStyle = {
+    bg: customStyle?.bg ?? currentStyle.bg,
+    border: customStyle?.border ?? currentStyle.border,
+    text: customStyle?.text ?? currentStyle.text,
+    icon: customStyle?.icon ?? currentStyle.icon,
+    shadow: currentStyle.shadow,
+  };
+
   return (
     <>
       {/* Backdrop */}
@@ -56,16 +72,16 @@ const NotificationPopup: React.FC<NotificationPopupProps> = ({
       <div 
         className={`
           fixed top-4 right-4 w-96 bg-white z-40 
-          ${currentStyle.border}
+          ${mergedStyle.border}
           rounded-lg shadow-lg shadow-black/5 
           transform transition-all duration-300 ease-out
           animate-slideIn
         `}
       >
-        <div className={`relative p-4 ${currentStyle.bg}`}>
+        <div className={`relative p-4 ${mergedStyle.bg}`}>
           <div className="flex items-center space-x-3">
             {/* Icon based on type */}
-            <div className={`${currentStyle.icon}`}>
+            <div className={`${mergedStyle.icon}`}>
               {type === 'error' && (
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -84,7 +100,7 @@ const NotificationPopup: React.FC<NotificationPopupProps> = ({
             </div>
 
             <div className="flex-1">
-              <h3 className={`font-semibold ${currentStyle.text} text-base`}>{title}</h3>
+              <h3 className={`font-semibold ${mergedStyle.text} text-base`}>{title}</h3>
             </div>
 
             {/* <button 
@@ -100,7 +116,7 @@ const NotificationPopup: React.FC<NotificationPopupProps> = ({
           {/* Message Content */}
           {message && (
             <div className="mt-2 ml-9">
-              <p className={`text-sm ${currentStyle.text} opacity-90`}>{message}</p>
+              <p className={`text-sm ${mergedStyle.text} opacity-90`}>{message}</p>
             </div>
           )}
         </div>

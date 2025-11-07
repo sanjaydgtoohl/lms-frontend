@@ -1,6 +1,7 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useAuthStore } from './store/auth';
+import { setupTokenExpirationCheck, handleTokenExpiration } from './utils/auth';
 import LoginCard from './pages/Auth/LoginCard';
 import Dashboard from './pages/Dashboard';
 import Courses from './pages/Courses';
@@ -16,7 +17,16 @@ import { ROUTES } from './constants';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, token } = useAuthStore();
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    if (isAuthenticated && token) {
+      handleTokenExpiration().catch(() => {
+        navigate(ROUTES.LOGIN, { replace: true });
+      });
+    }
+  }, [token, isAuthenticated, navigate]);
   
   if (!isAuthenticated) {
     return <Navigate to={ROUTES.LOGIN} replace />;

@@ -4,22 +4,23 @@ import {
   LayoutGrid,
   ChevronDown,
   ChevronRight,
-  FileText,
-  Users,
-  MessageSquare,
   Globe,
-  Tag,
-  DollarSign,
-  UserCog,
   Settings,
-  HelpCircle,
-  LogOut,
-  Building2,
-  Briefcase,
-  GraduationCap,
   Search,
   Radio,
 } from "lucide-react";
+import File02Icon from "../../assets/icons/File02Icon";
+import AgencyMasterIcon from "../../assets/icons/AgencyMasterIcon";
+import BrandMasterIcon from "../../assets/icons/BrandMasterIcon";
+import DepartmentMasterIcon from "../../assets/icons/DepartmentMasterIcon";
+import DesignationMasterIcon from "../../assets/icons/DesignationMasterIcon";
+import UserManagementIcon from "../../assets/icons/UserManagementIcon";
+import LeadManagementIcon from "../../assets/icons/LeadManagementIcon";
+import CampaignManagementIcon from "../../assets/icons/CampaignManagementIcon";
+import FinanceIcon from "../../assets/icons/FinanceIcon";
+import LogoutIcon from "../../assets/icons/LogoutIcon";
+import Brief2Icon from "../../assets/icons/Brief2Icon";
+import HelpIcon from "../../assets/icons/HelpIcon";
 import { useAuthStore } from "../../store/auth";
 
 interface SidebarProps {
@@ -38,7 +39,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuthStore();
-  const [expandedItems, setExpandedItems] = useState<string[]>(["master-data"]);
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [showMobilePopup, setShowMobilePopup] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
 
@@ -68,22 +69,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
     { name: "Dashboard", path: "/dashboard", icon: LayoutGrid },
     {
       name: "Master Data",
-      icon: FileText,
+      icon: File02Icon,
       children: [
-        { name: "Brand Master", path: "/master/brand", icon: Building2 },
-        { name: "Agency Master", path: "/master/agency", icon: Briefcase },
-        { name: "Department Master", path: "/master/department", icon: GraduationCap },
-        { name: "Designation Master", path: "/master/designation", icon: Users },
+        { name: "Brand Master", path: "/master/brand", icon: BrandMasterIcon },
+        { name: "Agency Master", path: "/master/agency", icon: AgencyMasterIcon },
+        { name: "Department Master", path: "/master/department", icon: DepartmentMasterIcon },
+        { name: "Designation Master", path: "/master/designation", icon: DesignationMasterIcon },
         { name: "Industry Master", path: "/master/industry", icon: Radio },
         { name: "Lead Source", path: "/master/source", icon: Search },
       ],
     },
-    { name: "Lead Management", path: "/lead-management", icon: Users },
-    { name: "Brief", path: "/brief", icon: MessageSquare },
+  { name: "Lead Management", path: "/lead-management", icon: LeadManagementIcon },
+  { name: "Brief", path: "/brief", icon: Brief2Icon },
     { name: "Miss Campaign", path: "/miss-campaign", icon: Globe },
-  { name: "Campaign Management", path: "/campaign-management", icon: Tag },
-  { name: "Finance", path: "/finance", icon: DollarSign },
-    { name: "User Management", path: "/user-management", icon: UserCog },
+    { name: "Campaign Management", path: "/campaign-management", icon: CampaignManagementIcon },
+  { name: "Finance", path: "/finance", icon: FinanceIcon },
+    { name: "User Management", path: "/user-management", icon: UserManagementIcon },
     { name: "Settings", path: "/settings", icon: Settings },
   ];
 
@@ -95,7 +96,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
     );
   };
 
-  const isActive = (path: string) => location.pathname === path;
+  // Treat a path as active when the current pathname is exactly the path
+  // or when the pathname is a nested route under that path (e.g.
+  // /master/agency/create should mark /master/agency active).
+  const isActive = (path: string) =>
+    location.pathname === path || location.pathname.startsWith(path + "/");
 
   const isParentActive = (item: NavigationItem) => {
     if (item.path) return isActive(item.path);
@@ -103,6 +108,23 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
       return item.children.some((child) => child.path && isActive(child.path));
     return false;
   };
+
+  // Ensure parent menus (like "Master Data") are expanded when any of their
+  // child routes are active. This makes the menu remain open on refresh when
+  // a master page (e.g. /master/agency) is loaded directly.
+  useEffect(() => {
+    const activeParents = navigationItems
+      .filter((item) => item.children && item.children.some((child) => {
+        if (!child.path) return false;
+        // consider both exact match and nested routes (startsWith)
+        return location.pathname === child.path || location.pathname.startsWith(child.path + "/");
+      }))
+      .map((item) => item.name.toLowerCase().replace(/\s+/g, "-"));
+
+    if (activeParents.length > 0) {
+      setExpandedItems((prev) => Array.from(new Set([...prev, ...activeParents])));
+    }
+  }, [location.pathname]);
 
   const renderNavigationItem = (item: NavigationItem, level = 0) => {
     const hasChildren = item.children && item.children.length > 0;
@@ -248,7 +270,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
             isCollapsed ? "px-2 justify-center" : ""
           }`}
         >
-          <HelpCircle
+          <HelpIcon
             className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)] ${isCollapsed ? "" : "mr-2.5"}`}
           />
           {!isCollapsed && <span className="text-[var(--text-primary)]">Help</span>}
@@ -260,8 +282,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
             isCollapsed ? "px-2 justify-center" : ""
           }`}
         >
-          <LogOut className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-red-600 ${isCollapsed ? "" : "mr-2.5"}`} />
-          {!isCollapsed && <span>Logout</span>}
+          <LogoutIcon className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-red-600 ${isCollapsed ? "" : "mr-2.5"}`} />
+          {!isCollapsed && <span>Log out</span>}
         </div>
       </div>
     </div>

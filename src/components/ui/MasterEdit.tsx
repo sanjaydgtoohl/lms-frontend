@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft } from 'lucide-react';
+import Breadcrumb from './Breadcrumb';
 import { fetchLeadSources, type LeadSource } from '../../services/CreateSourceForm';
+import NotificationPopup from './NotificationPopup';
 
 type Props = {
-  title?: string;
   item: Record<string, any> | null;
   onClose: () => void;
   onSave?: (updated: Record<string, any>) => void;
@@ -13,11 +14,12 @@ type Props = {
   nameLabel?: string;
 };
 
-const MasterEdit: React.FC<Props> = ({ title = 'Edit', item, onClose, onSave, hideSource = false, nameLabel }) => {
+const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false, nameLabel }) => {
   const [form, setForm] = useState<Record<string, any>>(item || {});
   const [options, setOptions] = useState<LeadSource[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   if (!item) return null;
 
@@ -51,7 +53,7 @@ const MasterEdit: React.FC<Props> = ({ title = 'Edit', item, onClose, onSave, hi
     return () => { mounted = false; };
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Determine sub-source field key if present in the form
@@ -61,7 +63,7 @@ const MasterEdit: React.FC<Props> = ({ title = 'Edit', item, onClose, onSave, hi
     // Validate source if present
     if (Object.prototype.hasOwnProperty.call(form, 'source')) {
       if (!form.source || String(form.source).trim() === '') {
-        setErrors({ ...errors, source: 'Please select Source' });
+        setErrors({ ...errors, source: 'Please Select Source' });
         return;
       }
     }
@@ -71,18 +73,55 @@ const MasterEdit: React.FC<Props> = ({ title = 'Edit', item, onClose, onSave, hi
       const val = form[subKey];
       if (!val || String(val).trim() === '') {
         const fieldMessage = subKey === 'name'
-          ? `Please enter ${nameLabel ?? (hideSource ? 'Industry' : 'Sub-Source')}`
-          : 'Please enter Sub-Source';
+          ? `Please Enter ${nameLabel ?? (hideSource ? 'Industry' : 'Sub Source')}`
+          : 'Please Enter Sub Source';
         setErrors({ ...errors, [subKey]: fieldMessage });
         return;
       }
     }
 
-    if (onSave) onSave(form);
+    if (onSave) {
+      try {
+        const res: any = (onSave as any)(form as Record<string, any>);
+        if (res && typeof res.then === 'function') {
+          await res;
+        }
+
+        // Show a success toast for 5 seconds, then close and reload.
+        setShowSuccessToast(true);
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        setShowSuccessToast(false);
+      } catch (err) {
+        // swallow - parent will show errors where appropriate
+      }
+    }
     onClose();
+    // reload the page after save/update
+    window.location.reload();
   };
 
   return (
+    <>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div className="flex flex-col">
+          <Breadcrumb />
+        </div>
+        <button
+          onClick={onClose}
+          className="flex items-center space-x-2 text-[var(--text-secondary)] hover:text-black"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <span className="text-sm">Go Back</span>
+        </button>
+      </div>
+
+      <NotificationPopup
+        isOpen={showSuccessToast}
+        onClose={() => setShowSuccessToast(false)}
+        message="Updated successfully"
+        type="success"
+      />
+
       <motion.form
         onSubmit={handleSubmit}
         initial={{ opacity: 0, y: 8 }}
@@ -91,18 +130,17 @@ const MasterEdit: React.FC<Props> = ({ title = 'Edit', item, onClose, onSave, hi
         transition={{ duration: 0.18 }}
         className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden"
       >
-        <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-[var(--text-primary)]">{title}</h3>
-          <button onClick={onClose} type="button" className="flex items-center space-x-2 text-[var(--text-secondary)]">
-            <ChevronLeft className="w-4 h-4" />
-            <span className="text-sm">Back</span>
-          </button>
-        </div>
-
-      <div className="p-6 bg-[#F9FAFB] space-y-4">
+        <div className="p-6 bg-[#F9FAFB] space-y-4">
   {Object.entries(form).filter(([k]) => k !== 'id' && k !== 'dateTime' && k !== 'date_time' && !(hideSource && k === 'source')).map(([k]) => (
           <div key={k}>
-            <label className="block text-sm text-[var(--text-secondary)] mb-1">{(k === 'name' && nameLabel) ? nameLabel : k.replace(/([A-Z])/g, ' $1')}</label>
+            <label className="block text-sm text-[var(--text-secondary)] mb-1">
+              {(k === 'name' && nameLabel) 
+                ? nameLabel 
+                : k.replace(/([A-Z])/g, ' $1')
+                  .split(' ')
+                  .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(' ')}
+            </label>
             {k === 'source' ? (
               <>
                 <select
@@ -132,10 +170,11 @@ const MasterEdit: React.FC<Props> = ({ title = 'Edit', item, onClose, onSave, hi
 
         <div className="flex items-center justify-end space-x-3 pt-2">
           <button type="button" onClick={onClose} className="px-4 py-2 text-[var(--text-secondary)] hover:text-black">Cancel</button>
-          <button type="submit" className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white hover:bg-[#066a6d] shadow-sm">Save</button>
+          <button type="submit" className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white hover:bg-[#066a6d] shadow-sm">Update</button>
         </div>
       </div>
     </motion.form>
+    </>
   );
 };
 

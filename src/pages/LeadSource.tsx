@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import ActionMenu from '../components/ui/ActionMenu';
 import Pagination from '../components/ui/Pagination';
 import CreateSourceForm from './CreateSourceForm';
 import MasterView from '../components/ui/MasterView';
 import MasterEdit from '../components/ui/MasterEdit';
-import { MasterHeader } from '../components/ui';
+import { MasterHeader, NotificationPopup } from '../components/ui';
+import SearchBar from '../components/ui/SearchBar';
+import Table, { type Column } from '../components/ui/Table';
 import { listLeadSources, deleteLeadSubSource, updateLeadSubSource, type LeadSourceItem } from '../services/LeadSource';
 import { fetchLeadSources } from '../services/CreateSourceForm';
 import { ROUTES } from '../constants';
@@ -17,8 +18,12 @@ const LeadSource: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [items, setItems] = useState<LeadSourceItem[]>([]);
+  const [totalItems, setTotalItems] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
   const [viewItem, setViewItem] = useState<LeadSourceItem | null>(null);
   const [editItem, setEditItem] = useState<LeadSourceItem | null>(null);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [showDeleteToast, setShowDeleteToast] = useState(false);
   // track deletion in-flight if needed (not used currently)
 
   useEffect(() => {
@@ -27,8 +32,27 @@ const LeadSource: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        const data = await listLeadSources();
-        if (isMounted) setItems(data);
+        const resp = await listLeadSources(currentPage, itemsPerPage);
+        if (isMounted) {
+          let mapped = resp.data;
+          // If search is present, filter client-side (optional)
+          if (searchQuery) {
+            const _q_ls = String(searchQuery).trim().toLowerCase();
+            mapped = mapped.filter((it) => (
+              (String(it.id || '').toLowerCase().startsWith(_q_ls)) ||
+              (String(it.source || '').toLowerCase().startsWith(_q_ls)) ||
+              (String(it.subSource || '').toLowerCase().startsWith(_q_ls))
+            ));
+          }
+          setItems(mapped);
+          // When a search is active we want the footer and pagination to reflect
+          // the filtered result set (client-side). Otherwise use server total if available.
+          if (searchQuery) {
+            setTotalItems(mapped.length);
+          } else {
+            setTotalItems(resp.meta?.pagination?.total || mapped.length);
+          }
+        }
       } catch (e: any) {
         if (isMounted) setError(e?.message || 'Failed to load lead sources');
       } finally {
@@ -37,11 +61,10 @@ const LeadSource: React.FC = () => {
     };
     fetchData();
     return () => { isMounted = false; };
-  }, []);
+  }, [currentPage, searchQuery]);
 
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentData = items.slice(startIndex, endIndex);
+  const currentData = items;
 
   const navigate = useNavigate();
   const params = useParams();
@@ -89,9 +112,15 @@ const LeadSource: React.FC = () => {
         status: 1,
       });
       setItems(prev => prev.map(i => (i.id === updated.id ? { ...i, subSource: name, source: leadSourceName } : i)));
+      // Show success toast then navigate back to listing after a short delay
+      setShowSuccessToast(true);
+      setTimeout(() => {
+        setShowSuccessToast(false);
+        navigate(ROUTES.SOURCE_MASTER);
+      }, 5000);
     } catch (e: any) {
       alert(e?.message || 'Failed to update');
-    } finally {
+      // preserve previous behavior of returning to listing on error
       navigate(ROUTES.SOURCE_MASTER);
     }
   };
@@ -105,6 +134,9 @@ const LeadSource: React.FC = () => {
       await deleteLeadSubSource(item.id);
       // remove locally, then optionally refresh
       setItems(prev => prev.filter(i => i.id !== item.id));
+      // show delete success toast
+      setShowDeleteToast(true);
+      setTimeout(() => setShowDeleteToast(false), 3000);
       // await refreshList(); // keep commented for performance; enable if needed
     } catch (e: any) {
       alert(e?.message || 'Failed to delete');
@@ -148,106 +180,69 @@ const LeadSource: React.FC = () => {
 
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
+      <NotificationPopup
+        isOpen={showSuccessToast}
+        onClose={() => setShowSuccessToast(false)}
+        message="Source updated successfully"
+        type="success"
+      />
+      <NotificationPopup
+        isOpen={showDeleteToast}
+        onClose={() => setShowDeleteToast(false)}
+        message="Source deleted successfully"
+        type="success"
+        customStyle={{
+          bg: 'bg-gradient-to-r from-red-50 to-red-100',
+          border: 'border-l-4 border-red-500',
+          text: 'text-red-800',
+          icon: 'text-red-500'
+        }}
+      />
       {showCreate ? (
         <CreateSourceForm inline onClose={() => navigate(ROUTES.SOURCE_MASTER)} onSave={handleSaveSource} />
       ) : viewItem ? (
-        <MasterView title={`View Lead Source ${viewItem.id}`} item={viewItem} onClose={() => navigate(ROUTES.SOURCE_MASTER)} />
+        <MasterView item={viewItem} onClose={() => navigate(ROUTES.SOURCE_MASTER)} />
       ) : editItem ? (
-        <MasterEdit title={`Edit Lead Source ${editItem.id}`} item={editItem} onClose={() => navigate(ROUTES.SOURCE_MASTER)} onSave={handleSaveEdit} />
+        <MasterEdit item={editItem} onClose={() => navigate(ROUTES.SOURCE_MASTER)} onSave={handleSaveEdit} />
       ) : (
         <>
           <MasterHeader
             onCreateClick={handleCreate}
             createButtonLabel="Create Source"
           />
-          {/* Desktop Table View */}
-          <div className="hidden lg:block">
-            <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-              <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)]">
+          <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
+            <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)]">
+              <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-[var(--text-primary)]">Lead Sources</h2>
+                <SearchBar placeholder="Search Lead Source" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
               </div>
-
-              {error && (
-                <div className="px-6 py-3 text-sm text-red-600 bg-red-50 border-b border-[var(--border-color)]">{error}</div>
-              )}
-              {loading ? (
-                <div className="px-6 py-6 text-sm text-[var(--text-secondary)]">Loading...</div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">Source ID</th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">Source</th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">Sub-Source</th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">Date & Time</th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[var(--border-color)]">
-                      {currentData.map((item, index) => (
-                        <tr key={item.id + (item.subSource || '') + index} className="hover:bg-[var(--hover-bg)] transition-colors duration-200">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[var(--text-primary)]">{item.id}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-primary)]">{item.source}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-primary)]">{item.subSource || '-'}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-secondary)]">{item.dateTime || '-'}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <ActionMenu
-                              isLast={index >= currentData.length - 2}
-                              onEdit={() => handleEdit(item)}
-                              onView={() => handleView(item)}
-                              onDelete={() => handleDelete(item)}
-                            />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Mobile Card View */}
-          <div className="lg:hidden space-y-4">
-            <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] p-4">
-              <h2 className="text-lg font-semibold text-[var(--text-primary)]">Lead Sources</h2>
             </div>
 
-            {currentData.map((item, index) => (
-              <div key={item.id} className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] p-4 hover:shadow-md transition-all duration-200">
-                <div className="flex justify-between items-start mb-3">
-                  <div className="text-sm font-medium text-[var(--text-primary)]">{item.id}</div>
-                  <ActionMenu
-                    isLast={index === currentData.length - 1}
-                    onEdit={() => handleEdit(item)}
-                    onView={() => handleView(item)}
-                    onDelete={() => handleDelete(item)}
-                  />
-                </div>
+            {error && (
+              <div className="px-6 py-3 text-sm text-red-600 bg-red-50 border-b border-[var(--border-color)]">{error}</div>
+            )}
 
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-[var(--text-secondary)]">Source:</span>
-                    <span className="text-sm font-medium text-[var(--text-primary)]">{item.source}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-[var(--text-secondary)]">Sub-Source:</span>
-                    <span className="text-sm font-medium text-[var(--text-primary)]">{item.subSource || '-'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-[var(--text-secondary)]">Date & Time:</span>
-                    <span className="text-sm text-[var(--text-secondary)]">{item.dateTime || '-'}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
+            <Table
+              data={currentData}
+              startIndex={startIndex}
+              loading={loading}
+              keyExtractor={(it: any, idx: number) => `${it.id}-${idx}`}
+              columns={([
+                { key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },
+                { key: 'source', header: 'Source', render: (it: any) => it.source },
+                { key: 'subSource', header: 'Sub-Source', render: (it: any) => it.subSource || '-' },
+                { key: 'dateTime', header: 'Date & Time', render: (it: any) => it.dateTime || '-' },
+              ] as Column<any>[])}
+              onEdit={(it: any) => handleEdit(it)}
+              onView={(it: any) => handleView(it)}
+              onDelete={(it: any) => handleDelete(it)}
+            />
           </div>
 
           {/* Pagination */}
           <Pagination
             currentPage={currentPage}
-            totalItems={items.length}
+            totalItems={totalItems}
             itemsPerPage={itemsPerPage}
             onPageChange={handlePageChange}
           />

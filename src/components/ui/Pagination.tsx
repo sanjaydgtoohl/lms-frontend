@@ -18,6 +18,9 @@ const Pagination: React.FC<PaginationProps> = ({
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
 
+  // If there are no items, don't render the summary or pagination controls.
+  if (!totalItems || totalItems === 0) return null;
+
   const pages: number[] = [];
   const maxVisiblePages = 5;
 

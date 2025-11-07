@@ -18,7 +18,7 @@ export interface LoginCredentials {
 
 export interface AuthResponse {
   token: string;
-  refresh_token: string;
+  refreshToken: string;
   token_type: string;
   expires_in: number;
 }
@@ -26,6 +26,7 @@ export interface AuthResponse {
 export interface AuthState {
   user: User | null;
   token: string | null;
+  refreshTokenValue: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
 }

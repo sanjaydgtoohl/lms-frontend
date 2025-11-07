@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { MasterFormHeader } from '../components/ui';
+import { MasterFormHeader, NotificationPopup } from '../components/ui';
 import { listZones, listStates, listCountries, listBrandTypes } from '../services/CreateBrandForm';
 import type { Zone, State, Country, BrandType } from '../services/CreateBrandForm';
 
@@ -8,6 +8,8 @@ type Props = {
   onClose: () => void;
   onSave?: (data: any) => void;
   inline?: boolean;
+  initialData?: Record<string, any>;
+  mode?: 'create' | 'edit';
 };
 
 type CitySelectProps = {
@@ -41,21 +43,24 @@ const CitySelect: React.FC<CitySelectProps> = ({ state, value, onChange }) => {
   }, [state]);
 
   return (
-    <select
-      name="city"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-    >
-      <option value="">{loading ? 'Loading cities...' : cities.length ? 'Select City' : 'Select State first'}</option>
-      {cities.map((c) => (
-        <option key={String(c.id)} value={String(c.id)}>{c.name}</option>
-      ))}
-    </select>
+    <div className="relative">
+      <select
+        name="city"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full appearance-none px-3 pr-8 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+      >
+        <option value="">{loading ? 'Loading cities...' : cities.length ? 'Select City' : 'Select State first'}</option>
+        {cities.map((c) => (
+          <option key={String(c.id)} value={String(c.id)}>{c.name}</option>
+        ))}
+      </select>
+      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+    </div>
   );
 };
 
-const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
+const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode = 'create' }) => {
   const [form, setForm] = useState({
     brandName: '',
     brandType: '',
@@ -68,6 +73,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
     city: '',
     zone: '',
   });
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [zones, setZones] = useState<Zone[]>([]);
@@ -83,22 +89,54 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
 
   const validate = () => {
     const next: Record<string, string> = {};
-    if (!form.brandName.trim()) next.brandName = 'Brand Name is required';
-    if (!form.brandType) next.brandType = 'Brand Type is required';
-    if (!form.industry) next.industry = 'Please select an Industry';
-    if (!form.country || form.country === 'Please Select Country') next.country = 'Please select a Country';
+    if (!form.brandName.trim()) next.brandName = 'Brand Name Is Required';
+    if (!form.brandType) next.brandType = 'Brand Type Is Required';
+    if (!form.industry) next.industry = 'Please Select An Industry';
+    if (!form.country || form.country === 'Please Select Country') next.country = 'Please Select A Country';
     setErrors(next);
     return Object.keys(next).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    if (onSave) onSave(form);
-    onClose();
+    try {
+      const payload = { ...form } as Record<string, any>;
+      // preserve id when editing if present on initialData
+      if (initialData && initialData.id) payload.id = initialData.id;
+      const res: any = onSave ? (onSave as any)(payload) : null;
+      if (res && typeof res.then === 'function') {
+        await res;
+      }
+      setShowSuccessToast(true);
+      setTimeout(() => {
+        setShowSuccessToast(false);
+        onClose();
+        window.location.reload();
+      }, 5000);
+    } catch (err) {
+      // parent will handle errors if needed
+    }
   };
 
   useEffect(() => {
+    // If initialData provided (edit mode) prefill the form
+    if (initialData) {
+      setForm(prev => ({
+        ...prev,
+        brandName: initialData.brandName ?? initialData.name ?? prev.brandName,
+        brandType: initialData.brandType ?? String(initialData.brandType ?? '') ?? prev.brandType,
+        website: initialData.website ?? prev.website,
+        agency: initialData.agency ?? initialData.agencyName ?? prev.agency,
+        industry: initialData.industry ?? prev.industry,
+        country: initialData.country ?? prev.country,
+        postalCode: initialData.postalCode ?? initialData.pinCode ?? prev.postalCode,
+        state: initialData.state ?? prev.state,
+        city: initialData.city ?? prev.city,
+        zone: initialData.zone ?? prev.zone,
+      }));
+    }
+
     let mounted = true;
     Promise.all([
       listZones(),
@@ -128,24 +166,27 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
             value={form.brandName}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-            placeholder="Enter brand name"
+            placeholder="Please Enter Brand Name"
           />
           {errors.brandName && <div className="text-xs text-red-500 mt-1">{errors.brandName}</div>}
         </div>
 
         <div>
           <label className="block text-sm text-[var(--text-secondary)] mb-1">Brand Type <span className="text-red-500">*</span></label>
-          <select
-            name="brandType"
-            value={form.brandType}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-          >
-            <option value="">Select Brand Type</option>
-            {brandTypes.map((type) => (
-              <option key={String(type.id)} value={String(type.id)}>{type.name}</option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              name="brandType"
+              value={form.brandType}
+              onChange={handleChange}
+              className="w-full appearance-none px-3 pr-8 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+            >
+              <option value="">Please Select Brand Type</option>
+              {brandTypes.map((type) => (
+                <option key={String(type.id)} value={String(type.id)}>{type.name}</option>
+              ))}
+            </select>
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+          </div>
           {errors.brandType && <div className="text-xs text-red-500 mt-1">{errors.brandType}</div>}
         </div>
 
@@ -162,48 +203,57 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
 
         <div>
           <label className="block text-sm text-[var(--text-secondary)] mb-1">Select Existing Agency</label>
-          <select
-            name="agency"
-            value={form.agency}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-          >
-            <option value="">Select Agency (optional)</option>
-            <option value="Agency 1">Agency 1</option>
-            <option value="Agency 2">Agency 2</option>
-            <option value="Agency 3">Agency 3</option>
-          </select>
+          <div className="relative">
+            <select
+              name="agency"
+              value={form.agency}
+              onChange={handleChange}
+              className="w-full appearance-none px-3 pr-8 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+            >
+              <option value="">Please Select Agency (optional)</option>
+              <option value="Agency 1">Agency 1</option>
+              <option value="Agency 2">Agency 2</option>
+              <option value="Agency 3">Agency 3</option>
+            </select>
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+          </div>
         </div>
 
         <div>
           <label className="block text-sm text-[var(--text-secondary)] mb-1">Industry <span className="text-red-500">*</span></label>
-          <select
-            name="industry"
-            value={form.industry}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-          >
-            <option value="">Select Industry</option>
-            <option value="Industry 1">Industry 1</option>
-            <option value="Industry 2">Industry 2</option>
-            <option value="Industry 3">Industry 3</option>
-          </select>
+          <div className="relative">
+            <select
+              name="industry"
+              value={form.industry}
+              onChange={handleChange}
+              className="w-full appearance-none px-3 pr-8 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+            >
+              <option value="">Please Select Industry</option>
+              <option value="Industry 1">Industry 1</option>
+              <option value="Industry 2">Industry 2</option>
+              <option value="Industry 3">Industry 3</option>
+            </select>
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+          </div>
           {errors.industry && <div className="text-xs text-red-500 mt-1">{errors.industry}</div>}
         </div>
 
         <div>
           <label className="block text-sm text-[var(--text-secondary)] mb-1">Country <span className="text-red-500">*</span></label>
-          <select
-            name="country"
-            value={form.country}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-          >
-            <option value="Please Select Country">Please Select Country</option>
-            {countries.map((c) => (
-              <option key={String(c.id)} value={String(c.id)}>{c.name}</option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              name="country"
+              value={form.country}
+              onChange={handleChange}
+              className="w-full appearance-none px-3 pr-8 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+            >
+              <option value="Please Select Country">Please Select Country</option>
+              {countries.map((c) => (
+                <option key={String(c.id)} value={String(c.id)}>{c.name}</option>
+              ))}
+            </select>
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+          </div>
           {errors.country && <div className="text-xs text-red-500 mt-1">{errors.country}</div>}
         </div>
 
@@ -214,23 +264,26 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
             value={form.postalCode}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-            placeholder="Postal / Zip code"
+            placeholder="Please Enter Postal Code"
           />
         </div>
 
         <div>
           <label className="block text-sm text-[var(--text-secondary)] mb-1">State</label>
-          <select
-            name="state"
-            value={form.state}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-          >
-            <option value="">Select State</option>
-            {states.map((s) => (
-              <option key={String(s.id)} value={String(s.id)}>{s.name}</option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              name="state"
+              value={form.state}
+              onChange={handleChange}
+              className="w-full appearance-none px-3 pr-8 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+            >
+              <option value="">Please Select State</option>
+              {states.map((s) => (
+                <option key={String(s.id)} value={String(s.id)}>{s.name}</option>
+              ))}
+            </select>
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+          </div>
         </div>
 
         <div>
@@ -240,17 +293,20 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
 
         <div>
           <label className="block text-sm text-[var(--text-secondary)] mb-1">Zone</label>
-          <select
-            name="zone"
-            value={form.zone}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-          >
-            <option value="">Select Zone</option>
-            {zones.map((z) => (
-              <option key={z.id} value={String(z.id)}>{z.name}</option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              name="zone"
+              value={form.zone}
+              onChange={handleChange}
+              className="w-full appearance-none px-3 pr-8 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+            >
+              <option value="">Please Select Zone</option>
+              {zones.map((z) => (
+                <option key={z.id} value={String(z.id)}>{z.name}</option>
+              ))}
+            </select>
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+          </div>
         </div>
       </div>
 
@@ -259,7 +315,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
           type="submit"
           className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white hover:bg-[#066a6d] shadow-sm"
         >
-          Save Brand
+          {mode === 'edit' ? 'Update' : 'Save'}
         </button>
       </div>
     </form>
@@ -273,7 +329,13 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave }) => {
       transition={{ duration: 0.22 }}
       className="space-y-6"
     >
-      <MasterFormHeader onBack={onClose} title="Create Brand" />
+      <MasterFormHeader onBack={onClose} title={mode === 'edit' ? 'Edit Brand' : 'Create Brand'} />
+      <NotificationPopup
+        isOpen={showSuccessToast}
+        onClose={() => setShowSuccessToast(false)}
+        message={mode === 'edit' ? 'Brand updated successfully' : 'Brand created successfully'}
+        type="success"
+      />
       <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
         <div className="p-6 bg-[#F9FAFB]">
           {formContent}

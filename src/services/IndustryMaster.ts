@@ -47,12 +47,37 @@ async function handleResponse<T>(res: Response): Promise<T> {
   return json as T;
 }
 
-export async function listIndustries(): Promise<Industry[]> {
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.LIST}`, {
+
+export type IndustryListResponse = {
+  data: Industry[];
+  meta?: {
+    pagination?: {
+      current_page: number;
+      per_page: number;
+      total: number;
+      last_page: number;
+      from: number;
+      to: number;
+    }
+  }
+};
+
+export async function listIndustries(page = 1, perPage = 10): Promise<IndustryListResponse> {
+  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.LIST}?page=${page}&per_page=${perPage}`, {
     method: 'GET',
     headers: authHeaders(),
   });
-  return handleResponse<Industry[]>(res);
+  // The backend returns an envelope with meta and data
+  const json = await res.json();
+  if (!res.ok) {
+    const message = (json && (json.message || json.error)) || 'Request failed';
+    try { useUiStore.getState().pushError(message); } catch {}
+    throw new Error(message);
+  }
+  return {
+    data: json.data || [],
+    meta: json.meta || {},
+  };
 }
 
 export async function getIndustry(id: string | number): Promise<Industry> {

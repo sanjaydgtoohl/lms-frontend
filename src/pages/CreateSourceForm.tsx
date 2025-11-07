@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { MasterFormHeader } from '../components/ui';
+import { Loader2 } from 'lucide-react';
+import { MasterFormHeader, NotificationPopup } from '../components/ui';
 import { createLeadSubSource, fetchLeadSources, type LeadSource } from '../services/CreateSourceForm';
 
 type Props = {
@@ -17,6 +18,7 @@ const CreateSourceForm: React.FC<Props> = ({ onClose }) => {
   const [saving, setSaving] = useState(false);
   const [options, setOptions] = useState<LeadSource[]>([]);
   const [loadError, setLoadError] = useState<string>('');
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -43,8 +45,8 @@ const CreateSourceForm: React.FC<Props> = ({ onClose }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const next: Record<string, string> = {};
-    if (!source) next.source = 'Please select Source';
-    if (!subSource || subSource.trim() === '') next.subSource = 'Please enter Sub-Source';
+    if (!source) next.source = 'Please Select Source';
+    if (!subSource || subSource.trim() === '') next.subSource = 'Please Enter Sub Source';
     setErrors(next);
     if (Object.keys(next).length > 0) return;
     try {
@@ -54,7 +56,12 @@ const CreateSourceForm: React.FC<Props> = ({ onClose }) => {
         name: subSource,
         status: 1,
       });
-      onClose();
+      setShowSuccessToast(true);
+      setTimeout(() => {
+        setShowSuccessToast(false);
+        onClose();
+        window.location.reload();
+      }, 5000);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to create sub-source';
       setErrors((prev) => ({ ...prev, form: msg }));
@@ -72,32 +79,47 @@ const CreateSourceForm: React.FC<Props> = ({ onClose }) => {
       className="space-y-6"
     >
       <MasterFormHeader onBack={onClose} title="Create Source" />
+      <NotificationPopup
+        isOpen={showSuccessToast}
+        onClose={() => setShowSuccessToast(false)}
+        message="Source created successfully"
+        type="success"
+      />
       <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
         <div className="p-6 bg-[#F9FAFB]">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm text-[var(--text-secondary)] mb-1">Source Name <span className="text-red-500">*</span></label>
-              <select
-                value={source}
-                onChange={(e) => { setSource(e.target.value); setErrors(prev => ({ ...prev, source: '' })); }}
-                className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                disabled={loading}
-              >
-                <option value="">{loading ? 'Loading...' : 'Select Source Name'}</option>
-                {!loading && options.map(opt => (
-                  <option key={String(opt.id)} value={String(opt.id)}>{opt.name}</option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  value={source}
+                  onChange={(e) => { setSource(e.target.value); setErrors(prev => ({ ...prev, source: '' })); }}
+                  className="w-full appearance-none px-3 pr-8 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                  disabled={loading}
+                >
+                  <option value="">{loading ? 'Loading...' : 'Please Select Source Name'}</option>
+                  {!loading && options.map(opt => (
+                    <option key={String(opt.id)} value={String(opt.id)}>{opt.name}</option>
+                  ))}
+                </select>
+                {loading ? (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                  </div>
+                ) : (
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+                )}
+              </div>
               {errors.source && <div className="text-xs text-red-500 mt-1">{errors.source}</div>}
               {loadError && <div className="text-xs text-red-500 mt-1">{loadError}</div>}
             </div>
 
             <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">Sub-Source</label>
+              <label className="block text-sm text-[var(--text-secondary)] mb-1">Sub Source <span className="text-red-500">*</span></label>
               <input
                 value={subSource}
                 onChange={(e) => { setSubSource(e.target.value); setErrors(prev => ({ ...prev, subSource: '' })); }}
-                placeholder="Enter Sub-Source"
+                placeholder="Please Enter Sub Source"
                 className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
               />
               {errors.subSource && <div className="text-xs text-red-500 mt-1">{errors.subSource}</div>}
@@ -109,7 +131,7 @@ const CreateSourceForm: React.FC<Props> = ({ onClose }) => {
                 className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white hover:bg-[#066a6d] shadow-sm disabled:opacity-60"
                 disabled={saving}
               >
-                {saving ? 'Saving...' : 'Save Source'}
+                {saving ? 'Saving...' : 'Save'}
               </button>
             </div>
           </form>

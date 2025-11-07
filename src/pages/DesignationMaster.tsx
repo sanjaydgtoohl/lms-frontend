@@ -4,9 +4,12 @@ import Pagination from '../components/ui/Pagination';
 import { motion } from 'framer-motion';
 import MasterView from '../components/ui/MasterView';
 import MasterEdit from '../components/ui/MasterEdit';
+import { Loader2 } from 'lucide-react';
+import Table, { type Column } from '../components/ui/Table';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants';
-import { MasterHeader, MasterFormHeader } from '../components/ui';
+import { MasterHeader, MasterFormHeader, NotificationPopup } from '../components/ui';
+import SearchBar from '../components/ui/SearchBar';
 import {
   listDesignations,
   deleteDesignation,
@@ -28,6 +31,7 @@ const CreateDesignationForm: React.FC<{
 }> = ({ onClose, onSave }) => {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   const formatDateTime = (d: Date) => {
     const dd = String(d.getDate()).padStart(2, '0');
@@ -38,16 +42,37 @@ const CreateDesignationForm: React.FC<{
     return `${dd}-${mm}-${yyyy} ${hh}:${min}`;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
       setError('Designation Name is required');
       return;
     }
-    if (onSave) {
-      onSave({ name, dateTime: formatDateTime(new Date()) });
+    try {
+      const res: any = onSave ? (onSave as any)({ name, dateTime: formatDateTime(new Date()) }) : null;
+      if (res && typeof res.then === 'function') await res;
+      setShowSuccessToast(true);
+      setTimeout(() => {
+        setShowSuccessToast(false);
+        onClose();
+        window.location.reload();
+      }, 5000);
+    } catch (err) {
+      // show server validation messages when available
+      const e: any = err;
+      if (e && e.responseData) {
+        // try common shapes: errors, details, message
+        const resp = e.responseData;
+        const details = resp.errors || resp.details || resp.data || resp;
+        try {
+          setError(typeof details === 'string' ? details : JSON.stringify(details));
+        } catch (_) {
+          setError(resp.message || 'Validation failed');
+        }
+      } else {
+        setError((err as any)?.message || 'Failed to create designation');
+      }
     }
-    onClose();
   };
 
   return (
@@ -59,6 +84,12 @@ const CreateDesignationForm: React.FC<{
       className="space-y-6"
     >
       <MasterFormHeader onBack={onClose} title="Create Designation" />
+      <NotificationPopup
+        isOpen={showSuccessToast}
+        onClose={() => setShowSuccessToast(false)}
+        message="Designation created successfully"
+        type="success"
+      />
       <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
         <div className="p-6 bg-[#F9FAFB]">
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -69,7 +100,7 @@ const CreateDesignationForm: React.FC<{
                 value={name}
                 onChange={(e) => { setName(e.target.value); setError(''); }}
                 className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                placeholder="Enter designation name"
+                placeholder="Please Enter Designation Name"
               />
               {error && <div className="text-xs text-red-500 mt-1">{error}</div>}
             </div>
@@ -79,7 +110,7 @@ const CreateDesignationForm: React.FC<{
                 type="submit"
                 className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white hover:bg-[#066a6d] shadow-sm"
               >
-                Save Designation
+                Save
               </button>
             </div>
           </form>
@@ -92,17 +123,19 @@ const CreateDesignationForm: React.FC<{
 const DesignationMaster: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);
+  const [showDeleteToast, setShowDeleteToast] = useState(false);
   const itemsPerPage = 10;
 
   // Store designations in state fetched from API
   const [designations, setDesignations] = useState<Designation[]>([]);
+  const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // totalPages calculated but not used directly
+  // Backend pagination data
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentData = designations.slice(startIndex, endIndex);
+  const currentData = designations;
 
   const navigate = useNavigate();
   const params = useParams();
@@ -114,13 +147,15 @@ const DesignationMaster: React.FC = () => {
 
   const handleSaveDesignation = (data: any) => {
     // create on server then refresh list
-    (async () => {
+    return (async () => {
       try {
-        await createDesignation({ name: data.name });
+        // API expects `title` for designation payload (see Postman traces)
+  await createDesignation({ title: data.name } as any);
         await refresh();
         setCurrentPage(1);
       } catch (e: any) {
         alert(e?.message || 'Failed to create designation');
+        throw e;
       }
     })();
   };
@@ -139,6 +174,8 @@ const DesignationMaster: React.FC = () => {
     try {
       await deleteDesignation(id);
       setDesignations(prev => prev.filter(d => d.id !== id));
+      setShowDeleteToast(true);
+      setTimeout(() => setShowDeleteToast(false), 3000);
     } catch (e: any) {
       alert(e?.message || 'Failed to delete');
     }
@@ -151,16 +188,28 @@ const DesignationMaster: React.FC = () => {
   const [viewItem, setViewItem] = useState<Designation | null>(null);
   const [editItem, setEditItem] = useState<Designation | null>(null);
 
-  const refresh = async () => {
+  const refresh = async (page = currentPage, search = searchQuery) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await listDesignations();
-      const mapped: Designation[] = (data as ApiDesignation[]).map((it) => ({
+      const resp = await listDesignations(page, itemsPerPage);
+      let mapped: Designation[] = resp.data.map((it: ApiDesignation) => ({
         id: String(it.id),
         name: it.name,
         dateTime: it.created_at || '',
       }));
+      
+      // If search is present, filter client-side
+      if (search) {
+        const _q_des = String(search).trim().toLowerCase();
+        mapped = mapped.filter(d => (d.name || '').toLowerCase().startsWith(_q_des));
+        // When searching, set totalItems to filtered length
+        setTotalItems(mapped.length);
+      } else {
+        // When not searching, use server total or full length
+        setTotalItems(resp.meta?.pagination?.total || mapped.length);
+      }
+      
       setDesignations(mapped);
     } catch (e: any) {
       setError(e?.message || 'Failed to load designations');
@@ -169,7 +218,7 @@ const DesignationMaster: React.FC = () => {
     }
   };
 
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => { refresh(currentPage, searchQuery); }, [currentPage, searchQuery]);
 
   useEffect(() => {
     const rawId = params.id;
@@ -204,12 +253,14 @@ const DesignationMaster: React.FC = () => {
   }, [location.pathname, params.id, designations]);
 
   const handleSaveEditedDesignation = (updated: Record<string, any>) => {
-    (async () => {
+    return (async () => {
       try {
-        await updateDesignation(updated.id, { name: updated.name });
+        // API expects `title` for update payload
+  await updateDesignation(updated.id, { title: updated.name } as any);
         setDesignations(prev => prev.map(d => (d.id === updated.id ? { ...d, name: updated.name } as Designation : d)));
       } catch (e: any) {
         alert(e?.message || 'Failed to update');
+        throw e;
       }
     })();
   };
@@ -218,7 +269,7 @@ const DesignationMaster: React.FC = () => {
     return (
       <Pagination
         currentPage={currentPage}
-        totalItems={designations.length}
+        totalItems={totalItems}
         itemsPerPage={itemsPerPage}
         onPageChange={handlePageChange}
       />
@@ -227,73 +278,54 @@ const DesignationMaster: React.FC = () => {
 
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
+      <NotificationPopup
+        isOpen={showDeleteToast}
+        onClose={() => setShowDeleteToast(false)}
+        message="Designation deleted successfully"
+        type="success"
+        customStyle={{
+          bg: 'bg-gradient-to-r from-red-50 to-red-100',
+          border: 'border-l-4 border-red-500',
+          text: 'text-red-800',
+          icon: 'text-red-500'
+        }}
+      />
       {showCreate ? (
         <CreateDesignationForm onClose={() => navigate(ROUTES.DESIGNATION_MASTER)} onSave={handleSaveDesignation} />
       ) : viewItem ? (
-        <MasterView title={`View Designation ${viewItem.id}`} item={viewItem} onClose={() => navigate(ROUTES.DESIGNATION_MASTER)} />
+        <MasterView item={viewItem} onClose={() => navigate(ROUTES.DESIGNATION_MASTER)} />
       ) : editItem ? (
-  <MasterEdit title={`Edit Designation ${editItem.id}`} item={editItem} onClose={() => navigate(ROUTES.DESIGNATION_MASTER)} onSave={handleSaveEditedDesignation} hideSource nameLabel="Designation" />
+  <MasterEdit item={editItem} onClose={() => navigate(ROUTES.DESIGNATION_MASTER)} onSave={handleSaveEditedDesignation} hideSource nameLabel="Designation" />
       ) : (
         <>
-          {/* Desktop Table View */}
-          <MasterHeader
-            onCreateClick={handleCreateDesignation}
-            createButtonLabel="Create Designation"
-          />
-          <div className="hidden lg:block">
+          <MasterHeader onCreateClick={handleCreateDesignation} createButtonLabel="Create Designation" />
+          <div>
             <div className="bg-white rounded-2xl shadow-md border border-[var(--border-color)] overflow-hidden">
-              {/* Table Header */}
               <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)]">
-                <h2 className="text-lg font-semibold text-[var(--text-primary)]">Designation Master</h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-[var(--text-primary)]">Designation Master</h2>
+                  <SearchBar placeholder="Search Designation" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); refresh(1, q); }} />
+                </div>
               </div>
-              
-              {/* Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
-                        Designation ID
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
-                        Designation Name
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
-                        Date & Time
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
-                        Action
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[var(--border-color)]">
-                    {currentData.map((item, index) => (
-                      <tr 
-                        key={item.id + item.name}
-                        className="hover:bg-[var(--hover-bg)] transition-colors duration-200"
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[var(--text-primary)]">
-                          {item.id}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-primary)]">
-                          {item.name}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-secondary)]">
-                          {item.dateTime}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <ActionMenu
-                            isLast={index >= currentData.length - 2}
-                            onEdit={() => handleEdit(item.id)}
-                            onView={() => handleView(item.id)}
-                            onDelete={() => handleDelete(item.id)}
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+
+              {error && (
+                <div className="px-6 py-3 text-sm text-red-600 bg-red-50 border-b border-[var(--border-color)]">{error}</div>
+              )}
+
+              <Table
+                data={currentData}
+                startIndex={startIndex}
+                loading={loading}
+                keyExtractor={(it: any, idx: number) => `${it.id}-${idx}`}
+                columns={([
+                  { key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },
+                  { key: 'name', header: 'Designation Name', render: (it: any) => it.name },
+                  { key: 'dateTime', header: 'Date & Time', render: (it: any) => it.dateTime },
+                ] as Column<any>[]) }
+                onEdit={(it: any) => handleEdit(it.id)}
+                onView={(it: any) => handleView(it.id)}
+                onDelete={(it: any) => handleDelete(it.id)}
+              />
             </div>
           </div>
 
@@ -302,14 +334,22 @@ const DesignationMaster: React.FC = () => {
             <div className="bg-white rounded-2xl shadow-md border border-[var(--border-color)] p-4">
               <h2 className="text-lg font-semibold text-[var(--text-primary)]">Designation Master</h2>
             </div>
-            
-            {currentData.map((item, index) => (
+            {loading ? (
+              <div className="px-4 py-12 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+              </div>
+            ) : (
+              <>
+                {currentData.map((item, index) => (
                 <div 
                 key={item.id + item.name}
                 className="bg-white rounded-2xl shadow-md border border-[var(--border-color)] p-4 hover:shadow-lg transition-all duration-200"
               >
                 <div className="flex justify-between items-start mb-3">
-                  <div className="text-sm font-medium text-[var(--text-primary)]">{item.id}</div>
+                  <div className="flex gap-2">
+                    <span className="text-sm text-[var(--text-secondary)]">Sr. No.:</span>
+                    <span className="text-sm font-medium text-[var(--text-primary)]">{startIndex + index + 1}</span>
+                  </div>
                   <ActionMenu
                     isLast={index === currentData.length - 1}
                     onEdit={() => handleEdit(item.id)}
@@ -329,7 +369,9 @@ const DesignationMaster: React.FC = () => {
                   </div>
                 </div>
               </div>
-            ))}
+                ))}
+              </>
+            )}
           </div>
 
           {/* Pagination */}
