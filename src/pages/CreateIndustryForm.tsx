@@ -79,7 +79,7 @@ const CreateIndustryForm: React.FC<Props> = ({ onClose, onSave }) => {
             <div className="flex items-center justify-end">
               <button
                 type="submit"
-                className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white hover:bg-[#066a6d] shadow-sm disabled:opacity-60"
+                className="px-4 py-2 rounded-lg btn-primary text-white shadow-sm disabled:opacity-60"
                 disabled={saving}
               >
                 {saving ? 'Saving...' : 'Save'}

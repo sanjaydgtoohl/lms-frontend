@@ -40,8 +40,12 @@ const Layout: React.FC = () => {
         {/* Breadcrumb directly below sticky Header — hide for master pages because they render their own header (MasterHeader) */}
         {(() => {
           const location = useLocation();
-          // If the route is under /master (e.g. /master/brand) the pages render their own MasterHeader with breadcrumb + create button.
-          const shouldShowBreadcrumb = !location.pathname.startsWith('/master');
+          // If the route is under /master, /lead-management or specific pages like /miss-campaign
+          // the pages render their own MasterHeader with breadcrumb + create button — hide the top breadcrumb.
+          const shouldShowBreadcrumb = !location.pathname.startsWith('/master')
+            && !location.pathname.startsWith('/miss-campaign')
+            && !location.pathname.startsWith('/lead-management')
+            && !location.pathname.startsWith('/brief');
           return shouldShowBreadcrumb ? (
             <div className="bg-transparent px-6" style={{ paddingTop: '21.5px', paddingBottom: '0px', paddingLeft:'41px' }}>
               <Breadcrumb />

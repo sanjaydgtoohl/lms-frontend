@@ -79,28 +79,63 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
         { name: "Lead Source", path: "/master/source", icon: Search },
       ],
     },
-  { name: "Lead Management", path: "/lead-management", icon: LeadManagementIcon },
-  { name: "Brief", path: "/brief", icon: Brief2Icon },
-    { name: "Miss Campaign", path: "/miss-campaign", icon: Globe },
+  {
+    name: "Lead Management",
+    icon: LeadManagementIcon,
+    children: [
+      { name: "All Leads", path: "/lead-management/all-leads", icon: LeadManagementIcon },
+    ],
+  },
+  {
+    name: "Brief",
+    icon: Brief2Icon,
+    children: [
+      { name: "Brief Pipeline", path: "/brief", icon: Brief2Icon },
+      { name: "Brief Request", path: "/brief/request", icon: Brief2Icon },
+    ],
+  },
+    {
+      name: "Miss Campaign",
+      icon: Globe,
+      children: [
+        { name: "View", path: "/miss-campaign/view", icon: Globe },
+        { name: "Create", path: "/miss-campaign/create", icon: Globe }
+      ]
+    },
     { name: "Campaign Management", path: "/campaign-management", icon: CampaignManagementIcon },
   { name: "Finance", path: "/finance", icon: FinanceIcon },
     { name: "User Management", path: "/user-management", icon: UserManagementIcon },
     { name: "Settings", path: "/settings", icon: Settings },
   ];
 
+  // Toggle expansion for a parent item. When expanding a parent,
+  // collapse others so only one parent menu is open at a time.
   const toggleExpanded = (itemName: string) => {
-    setExpandedItems((prev) =>
-      prev.includes(itemName)
-        ? prev.filter((item) => item !== itemName)
-        : [...prev, itemName]
-    );
+    setExpandedItems((prev) => {
+      if (prev.includes(itemName)) {
+        return prev.filter((item) => item !== itemName);
+      }
+      // open only this one (single-open behavior)
+      return [itemName];
+    });
   };
 
-  // Treat a path as active when the current pathname is exactly the path
-  // or when the pathname is a nested route under that path (e.g.
-  // /master/agency/create should mark /master/agency active).
-  const isActive = (path: string) =>
-    location.pathname === path || location.pathname.startsWith(path + "/");
+  // Route aliases map specific routes to the navigation path that should be
+  // considered active. This lets us treat `/lead-management/create` as if the
+  // user is on `/lead-management/all-leads` so the sidebar highlights the
+  // All Leads item while the Create Lead page is open.
+  const routeAliases: Record<string, string> = {
+    "/lead-management/create": "/lead-management/all-leads",
+  };
+
+  const getEffectivePath = (pathname: string) => routeAliases[pathname] ?? pathname;
+
+  // Treat a path as active when the effective pathname is exactly the path
+  // or when the effective pathname is a nested route under that path.
+  const isActive = (path: string) => {
+    const effective = getEffectivePath(location.pathname);
+    return effective === path || effective.startsWith(path + "/");
+  };
 
   const isParentActive = (item: NavigationItem) => {
     if (item.path) return isActive(item.path);
@@ -113,24 +148,30 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
   // child routes are active. This makes the menu remain open on refresh when
   // a master page (e.g. /master/agency) is loaded directly.
   useEffect(() => {
+    const effectivePath = getEffectivePath(location.pathname);
+
     const activeParents = navigationItems
-      .filter((item) => item.children && item.children.some((child) => {
-        if (!child.path) return false;
-        // consider both exact match and nested routes (startsWith)
-        return location.pathname === child.path || location.pathname.startsWith(child.path + "/");
-      }))
+      .filter((item) =>
+        item.children &&
+        item.children.some((child) => {
+          if (!child.path) return false;
+          // consider both exact match and nested routes (startsWith)
+          return effectivePath === child.path || effectivePath.startsWith(child.path + "/");
+        })
+      )
       .map((item) => item.name.toLowerCase().replace(/\s+/g, "-"));
 
-    if (activeParents.length > 0) {
-      setExpandedItems((prev) => Array.from(new Set([...prev, ...activeParents])));
-    }
+    // Replace expanded items with the parents active for the current route.
+    // This collapses any open parent menus when navigating to routes that
+    // don't belong to them and avoids a visible "blink" caused by
+    // clearing then immediately re-opening menus.
+    setExpandedItems(activeParents);
   }, [location.pathname]);
 
   const renderNavigationItem = (item: NavigationItem, level = 0) => {
     const hasChildren = item.children && item.children.length > 0;
-    const isExpanded = expandedItems.includes(
-      item.name.toLowerCase().replace(/\s+/g, "-")
-    );
+    const slug = item.name.toLowerCase().replace(/\s+/g, "-");
+    const isExpanded = expandedItems.includes(slug);
     const isItemActive = isParentActive(item);
     const IconComponent = item.icon;
 
@@ -149,7 +190,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
               if (isCollapsed && item.name === "Master Data") {
                 setShowMobilePopup(!showMobilePopup);
               } else {
-                toggleExpanded(item.name.toLowerCase().replace(/\s+/g, "-"));
+                toggleExpanded(slug);
               }
             }
           }}
@@ -203,7 +244,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
                 key={child.name}
                 to={child.path || ""}
                 className="flex items-center px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-green-50"
-                onClick={() => setShowMobilePopup(false)}
+                onClick={() => {
+                  setShowMobilePopup(false);
+                }}
               >
                 {React.createElement(child.icon, {
                   className: "w-4 h-4 mr-2 text-[var(--text-primary)]",

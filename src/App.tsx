@@ -12,7 +12,10 @@ import BrandMaster from './pages/BrandMaster';
 import IndustryMaster from './pages/IndustryMaster';
 import DesignationMaster from './pages/DesignationMaster';
 import DepartmentMaster from './pages/DepartmentMaster';
+import { MissCampaignView, MissCampaignCreate } from './pages/MissCampaign';
+import { AllLeads, CreateLead, EditLead } from './pages/LeadManagement';
 import Layout from './components/layout/Layout';
+import BriefPipeline from './pages/Brief/BriefPipeline';
 import { ROUTES } from './constants';
 
 // Protected Route Component
@@ -106,6 +109,25 @@ function App() {
           <Route path="master/source/create" element={<LeadSource />} />
           <Route path="master/source/:id" element={<LeadSource />} />
           <Route path="master/source/:id/edit" element={<LeadSource />} />
+
+          {/* Lead Management Routes */}
+          <Route path="lead-management">
+            <Route index element={<AllLeads />} />
+            <Route path="all-leads" element={<AllLeads />} />
+            <Route path="create" element={<CreateLead />} />
+            <Route path="edit/:id" element={<EditLead />} />
+          </Route>
+
+          {/* Miss Campaign Routes */}
+          <Route path="miss-campaign/view" element={<MissCampaignView />} />
+          <Route path="miss-campaign/create" element={<MissCampaignCreate />} />
+          <Route path="miss-campaign/view/:id" element={<MissCampaignView />} />
+          <Route path="miss-campaign/view/:id/edit" element={<MissCampaignView />} />
+          {/* Brief Pipeline Routes */}
+          <Route path="brief" element={<BriefPipeline />} />
+          <Route path="brief/create" element={<BriefPipeline />} />
+          <Route path="brief/:id" element={<BriefPipeline />} />
+          <Route path="brief/:id/edit" element={<BriefPipeline />} />
         </Route>
         
         {/* 404 Route */}

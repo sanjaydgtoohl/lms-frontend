@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { MasterFormHeader, NotificationPopup } from '../components/ui';
 import { listZones, listStates, listCountries, listBrandTypes } from '../services/CreateBrandForm';
 import type { Zone, State, Country, BrandType } from '../services/CreateBrandForm';
+import { fetchIndustries } from '../services/CreateIndustryForm';
+import type { Industry } from '../services/CreateIndustryForm';
 
 type Props = {
   onClose: () => void;
@@ -16,9 +18,12 @@ type CitySelectProps = {
   state: string;
   value: string;
   onChange: (val: string) => void;
+  // optional: when parent has a preselected city name (from postal API) that may not exist
+  // in the fetched list, provide it so the select can show it as an option.
+  preselectedCityName?: string;
 };
 
-const CitySelect: React.FC<CitySelectProps> = ({ state, value, onChange }) => {
+const CitySelect: React.FC<CitySelectProps> = ({ state, value, onChange, preselectedCityName }) => {
   const [cities, setCities] = useState<{ id: string | number; name: string }[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -34,7 +39,16 @@ const CitySelect: React.FC<CitySelectProps> = ({ state, value, onChange }) => {
       })
       .then((data) => {
         if (!mounted) return;
-        setCities((data || []).map((c: any) => ({ id: c.id, name: c.name })));
+        const normalized = (data || []).map((c: any) => ({ id: c.id, name: c.name }));
+        // If parent provided a preselected city name that's not in the list, inject it so it appears
+        if (preselectedCityName) {
+          const pre = String(preselectedCityName || '').trim();
+          if (pre) {
+            const exists = normalized.find((it: any) => String(it.name).toLowerCase() === pre.toLowerCase());
+            if (!exists) normalized.unshift({ id: pre, name: pre });
+          }
+        }
+        setCities(normalized);
       })
       .catch(() => { /* ui store handles show error */ })
       .finally(() => { if (mounted) setLoading(false); });
@@ -80,6 +94,9 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
   const [states, setStates] = useState<State[]>([]);
   const [countries, setCountries] = useState<Country[]>([]);
   const [brandTypes, setBrandTypes] = useState<BrandType[]>([]);
+  const [industries, setIndustries] = useState<Industry[]>([]);
+  const [postalLoading, setPostalLoading] = useState(false);
+  const [postalError, setPostalError] = useState<string>('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -119,6 +136,78 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
     }
   };
 
+  // Lookup postal pincode and auto-fill country/state/city when possible
+  const lookupPostalCode = async (pincode: string) => {
+    const code = String(pincode || '').trim();
+    if (!/^[0-9]{6}$/.test(code)) {
+      setPostalError('Please enter a valid 6-digit pincode');
+      return;
+    }
+    setPostalError('');
+    setPostalLoading(true);
+    try {
+      const res = await fetch(`https://api.postalpincode.in/pincode/${encodeURIComponent(code)}`);
+      const arr = await res.json();
+      if (!Array.isArray(arr) || arr.length === 0) throw new Error('Invalid response from postal API');
+      const first = arr[0] || {};
+      if (first.Status !== 'Success' || !first.PostOffice || !first.PostOffice.length) {
+        throw new Error(first.Message || 'No data found for this pincode');
+      }
+      const po = first.PostOffice[0];
+      const countryName = po.Country || '';
+      const stateName = po.State || '';
+      const districtOrName = po.District || po.Name || '';
+
+      // Map or inject Country
+      let countryId: string = '';
+      const foundCountry = countries.find(c => String(c.name).toLowerCase() === String(countryName).toLowerCase());
+      if (foundCountry) {
+        countryId = String(foundCountry.id);
+      } else if (countryName) {
+        // inject a temporary country option so it appears in the select
+        const newC = { id: countryName, name: countryName } as Country;
+        setCountries(prev => [newC, ...prev]);
+        countryId = countryName;
+      }
+
+      // Map or inject State
+      let stateId: string = '';
+      const foundState = states.find(s => String(s.name).toLowerCase() === String(stateName).toLowerCase());
+      if (foundState) {
+        stateId = String(foundState.id);
+      } else if (stateName) {
+        const newS = { id: stateName, name: stateName, country_id: countryId } as any as State;
+        setStates(prev => [newS, ...prev]);
+        stateId = stateName;
+      }
+
+      // Try to map City by fetching cities for the state (if any)
+      try {
+        const citiesList = await import('../services/CreateBrandForm').then(m => m.listCities(stateId ? { state_id: stateId } : undefined));
+        const matched = (citiesList || []).find((c: any) => {
+          const nm = String(c.name || '').toLowerCase();
+          return nm === String(districtOrName).toLowerCase() || nm === String(po.Name || '').toLowerCase();
+        });
+        if (matched) {
+          // set country/state/city using mapped ids
+          setForm(prev => ({ ...prev, country: countryId || prev.country, state: stateId || prev.state, city: String(matched.id), postalCode: code }));
+        } else {
+          // no matching city found — set form values and let CitySelect show the preselected city name
+          setForm(prev => ({ ...prev, country: countryId || prev.country, state: stateId || prev.state, city: districtOrName, postalCode: code }));
+        }
+      } catch (e) {
+        // If city lookup fails, still set country/state
+        setForm(prev => ({ ...prev, country: countryId || prev.country, state: stateId || prev.state, postalCode: code }));
+      }
+
+      setPostalError('');
+    } catch (err: any) {
+      setPostalError(err?.message || 'Failed to fetch pincode data');
+    } finally {
+      setPostalLoading(false);
+    }
+  };
+
   useEffect(() => {
     // If initialData provided (edit mode) prefill the form
     if (initialData) {
@@ -151,6 +240,14 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
       setBrandTypes(brandTypesData || []);
     }).catch(() => {
       // Errors are handled by UI store
+    });
+
+    // Fetch industries for the Industry dropdown. Request many per page to get a full list.
+    fetchIndustries(1, 1000).then((resp) => {
+      if (!mounted) return;
+      setIndustries((resp && resp.data) ? resp.data : []);
+    }).catch(() => {
+      // UI store handles showing errors
     });
 
     return () => { mounted = false; };
@@ -229,9 +326,13 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
               className="w-full appearance-none px-3 pr-8 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
             >
               <option value="">Please Select Industry</option>
-              <option value="Industry 1">Industry 1</option>
-              <option value="Industry 2">Industry 2</option>
-              <option value="Industry 3">Industry 3</option>
+              {industries.length ? (
+                industries.map((it) => (
+                  <option key={String(it.id)} value={String(it.id)}>{it.name}</option>
+                ))
+              ) : (
+                <option value="">No industries available</option>
+              )}
             </select>
             <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
           </div>
@@ -262,10 +363,21 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
           <input
             name="postalCode"
             value={form.postalCode}
-            onChange={handleChange}
+            onChange={(e) => {
+              // preserve existing handler behavior
+              handleChange(e as any);
+              const raw = String(e.target.value || '').replace(/\D/g, '');
+              if (raw.length === 6) lookupPostalCode(raw);
+            }}
+            onBlur={() => {
+              const raw = String(form.postalCode || '').trim();
+              if (/^[0-9]{6}$/.test(raw)) lookupPostalCode(raw);
+            }}
             className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
             placeholder="Please Enter Postal Code"
           />
+          {postalLoading && <div className="text-xs text-gray-500 mt-1">Looking up pincode...</div>}
+          {!postalLoading && postalError && <div className="text-xs text-red-500 mt-1">{postalError}</div>}
         </div>
 
         <div>
@@ -288,7 +400,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
 
         <div>
           <label className="block text-sm text-[var(--text-secondary)] mb-1">City</label>
-          <CitySelect state={form.state} value={form.city} onChange={(val) => setForm(prev => ({ ...prev, city: val }))} />
+          <CitySelect state={form.state} value={form.city} preselectedCityName={form.city} onChange={(val) => setForm(prev => ({ ...prev, city: val }))} />
         </div>
 
         <div>
@@ -313,7 +425,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
       <div className="flex items-center justify-end">
         <button
           type="submit"
-          className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white hover:bg-[#066a6d] shadow-sm"
+          className="px-4 py-2 rounded-lg btn-primary text-white shadow-sm"
         >
           {mode === 'edit' ? 'Update' : 'Save'}
         </button>
