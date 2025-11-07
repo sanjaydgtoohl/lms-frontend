@@ -84,7 +84,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
     icon: LeadManagementIcon,
     children: [
       { name: "All Leads", path: "/lead-management/all-leads", icon: LeadManagementIcon },
-      { name: "Create Lead", path: "/lead-management/create", icon: LeadManagementIcon },
     ],
   },
   { name: "Brief", path: "/brief", icon: Brief2Icon },
@@ -114,11 +113,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
     });
   };
 
-  // Treat a path as active when the current pathname is exactly the path
-  // or when the pathname is a nested route under that path (e.g.
-  // /master/agency/create should mark /master/agency active).
-  const isActive = (path: string) =>
-    location.pathname === path || location.pathname.startsWith(path + "/");
+  // Route aliases map specific routes to the navigation path that should be
+  // considered active. This lets us treat `/lead-management/create` as if the
+  // user is on `/lead-management/all-leads` so the sidebar highlights the
+  // All Leads item while the Create Lead page is open.
+  const routeAliases: Record<string, string> = {
+    "/lead-management/create": "/lead-management/all-leads",
+  };
+
+  const getEffectivePath = (pathname: string) => routeAliases[pathname] ?? pathname;
+
+  // Treat a path as active when the effective pathname is exactly the path
+  // or when the effective pathname is a nested route under that path.
+  const isActive = (path: string) => {
+    const effective = getEffectivePath(location.pathname);
+    return effective === path || effective.startsWith(path + "/");
+  };
 
   const isParentActive = (item: NavigationItem) => {
     if (item.path) return isActive(item.path);
@@ -131,12 +141,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
   // child routes are active. This makes the menu remain open on refresh when
   // a master page (e.g. /master/agency) is loaded directly.
   useEffect(() => {
+    const effectivePath = getEffectivePath(location.pathname);
+
     const activeParents = navigationItems
-      .filter((item) => item.children && item.children.some((child) => {
-        if (!child.path) return false;
-        // consider both exact match and nested routes (startsWith)
-        return location.pathname === child.path || location.pathname.startsWith(child.path + "/");
-      }))
+      .filter((item) =>
+        item.children &&
+        item.children.some((child) => {
+          if (!child.path) return false;
+          // consider both exact match and nested routes (startsWith)
+          return effectivePath === child.path || effectivePath.startsWith(child.path + "/");
+        })
+      )
       .map((item) => item.name.toLowerCase().replace(/\s+/g, "-"));
 
     // Replace expanded items with the parents active for the current route.
