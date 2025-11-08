@@ -90,8 +90,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
     name: "Brief",
     icon: Brief2Icon,
     children: [
-      { name: "Brief Pipeline", path: "/brief", icon: Brief2Icon },
-      { name: "Brief Request", path: "/brief/request", icon: Brief2Icon },
+      { name: "Brief Pipeline", path: "/brief/Brief_Pipeline", icon: Brief2Icon },
+      // Create Brief form route
+      { name: "Brief Request", path: "/brief/create", icon: Brief2Icon },
     ],
   },
     {

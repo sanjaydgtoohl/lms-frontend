@@ -1,6 +1,7 @@
 import React from 'react';
 import { Plus, User, LogOut, Settings, UserRound, LifeBuoy, ChevronDown } from 'lucide-react';
 import ApiErrorNotification from '../ui/ApiErrorNotification';
+import { Button } from '../ui';
 import { useAuthStore } from '../../store/auth';
 
 interface HeaderProps {
@@ -38,33 +39,33 @@ const Header: React.FC<HeaderProps> = ({
   return (
   <header className="sticky top-0 z-20 border-b border-gray-200 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70">
       <div className="flex items-center justify-between px-4 sm:px-6 py-3">
-        <div className="flex items-center gap-3">
-          <h1 className="text-base sm:text-lg font-semibold text-gray-900 tracking-wide">Dashboard</h1>
-        </div>
+        {/* Left side intentionally left blank (removed Dashboard title) */}
+        <div />
 
         <div className="flex items-center gap-3 sm:gap-4">
           {/* API Error Notification Icon */}
           <ApiErrorNotification />
           {/* User Menu */}
           <div className="relative" ref={userMenuRef}>
-            <button
+            <Button
+              variant="transparent"
               type="button"
               aria-haspopup="menu"
               aria-expanded={isUserMenuOpen}
               onClick={() => setIsUserMenuOpen((v) => !v)}
-              className="group flex items-center gap-2 px-2 py-1.5 rounded-full hover:bg-[var(--hover-bg)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+              className="group flex items-center gap-2 px-2 py-1.5 rounded-full focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
             >
               <div className="w-8 h-8 bg-[var(--primary)] rounded-full flex items-center justify-center text-white">
                 <User className="w-4 h-4" />
               </div>
               <div className="hidden sm:flex sm:flex-col sm:items-start sm:leading-tight">
-                <span className="text-sm font-medium text-gray-900">
+                <span className="text-sm font-medium text-current">
                   {user ? `${user.firstName} ${user.lastName}` : 'Guest User'}
                 </span>
-                <span className="text-xs text-gray-500">{user?.role ?? 'Member'}</span>
+                <span className="text-xs text-current/70">{user?.role ?? 'Member'}</span>
               </div>
               <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} />
-            </button>
+            </Button>
 
             {isUserMenuOpen && (
               <div
@@ -84,40 +85,44 @@ const Header: React.FC<HeaderProps> = ({
                   </div>
                 </div>
                 <div className="py-1">
-                  <button
+                  <Button
                     role="menuitem"
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-[var(--hover-bg)]"
+                    variant="transparent"
                     onClick={() => setIsUserMenuOpen(false)}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700"
                   >
                     <UserRound className="w-4 h-4 text-gray-500" />
                     Profile
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     role="menuitem"
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-[var(--hover-bg)]"
+                    variant="transparent"
                     onClick={() => setIsUserMenuOpen(false)}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700"
                   >
                     <Settings className="w-4 h-4 text-gray-500" />
                     Settings
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     role="menuitem"
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-[var(--hover-bg)]"
+                    variant="transparent"
                     onClick={() => setIsUserMenuOpen(false)}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700"
                   >
                     <LifeBuoy className="w-4 h-4 text-gray-500" />
                     Support
-                  </button>
+                  </Button>
                 </div>
                 <div className="py-1 border-t border-gray-100">
-                  <button
-                    role="menuitem"
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                    onClick={handleLogout}
-                  >
-                    <LogOut className="w-4 h-4" />
-                    Logout
-                  </button>
+                  <Button
+                      role="menuitem"
+                      variant="transparent"
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Logout
+                    </Button>
                 </div>
               </div>
             )}

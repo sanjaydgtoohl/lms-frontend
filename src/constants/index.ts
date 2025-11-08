@@ -13,7 +13,13 @@ export const ROUTES = {
   // LMS Routes
   LEAD_SOURCE: '/lead-source',
   LEAD_MANAGEMENT: '/lead-management',
-  BRIEF: '/brief',
+  BRIEF: {
+    ROOT: '/brief',
+    PIPELINE: '/brief/Brief_Pipeline',
+    CREATE: '/brief/create',
+    EDIT: (id: string) => `/brief/${id}/edit`,
+    DETAIL: (id: string) => `/brief/${id}`,
+  },
   MISS_CAMPAIGN: {
     ROOT: '/miss-campaign',
     VIEW: '/miss-campaign/view',

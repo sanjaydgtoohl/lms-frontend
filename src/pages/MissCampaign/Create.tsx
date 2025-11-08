@@ -55,7 +55,7 @@ const Create: React.FC<CreateProps> = ({
             {/* Brand Name */}
             <div>
               <label className="block text-sm font-medium mb-2">
-                Brand Name <span className="text-red-500">*</span>
+                Brand Name <span className="text-[#FF0000]">*</span>
               </label>
               <select
                 name="brandName"
@@ -74,7 +74,7 @@ const Create: React.FC<CreateProps> = ({
             {/* Source */}
             <div>
               <label className="block text-sm font-medium mb-2">
-                Source <span className="text-red-500">*</span>
+                Source <span className="text-[#FF0000]">*</span>
               </label>
               <select
                 name="source"
@@ -92,7 +92,7 @@ const Create: React.FC<CreateProps> = ({
             {/* Sub Source */}
             <div>
               <label className="block text-sm font-medium mb-2">
-                Sub Source <span className="text-red-500">*</span>
+                Sub Source <span className="text-[#FF0000]">*</span>
               </label>
               <input
                 type="text"
@@ -108,7 +108,7 @@ const Create: React.FC<CreateProps> = ({
             {/* Product Name */}
             <div>
               <label className="block text-sm font-medium mb-2">
-                Product Name <span className="text-red-500">*</span>
+                Product Name <span className="text-[#FF0000]">*</span>
               </label>
               <input
                 type="text"

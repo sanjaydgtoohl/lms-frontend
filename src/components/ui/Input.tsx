@@ -32,7 +32,7 @@ const Input = forwardRef<HTMLInputElement, InputProps & React.InputHTMLAttribute
           className="block text-sm font-medium text-gray-700"
         >
           {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
+          {required && <span className="text-[#FF0000] ml-1">*</span>}
         </label>
       )}
       <div className="relative">

@@ -20,6 +20,12 @@ const Button: React.FC<ButtonProps & React.ButtonHTMLAttributes<HTMLButtonElemen
     outline: 'border-2 border-blue-500 text-blue-600 hover:bg-blue-500 hover:text-white focus:ring-blue-500 bg-transparent',
     ghost: 'text-blue-600 hover:bg-blue-50 focus:ring-blue-500 bg-transparent',
     master: 'bg-green-500 hover:bg-green-600 text-white focus:ring-green-500 shadow-sm hover:shadow-md',
+    // Transparent variant: only applied when explicitly used. Keeps padding/cursor/radius the same,
+    // makes background fully transparent, removes hover background and shadows, keeps text blue.
+    // Use important utilities to avoid being overridden by caller classes.
+    transparent: '!bg-transparent !hover:bg-transparent !shadow-none !hover:shadow-none !ring-0 !focus:ring-0 text-[var(--primary)]',
+    // Priority variant: base pill/transparent styling. Caller provides border/text color via className
+    priority: '!bg-transparent !hover:bg-transparent !shadow-none !hover:shadow-none !ring-0 rounded-full border',
   };
 
   const sizeClasses = {

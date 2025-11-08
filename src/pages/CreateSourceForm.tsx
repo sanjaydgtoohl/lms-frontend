@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
+import ChevronDropdownIcon from '../components/ui/ChevronDropdownIcon';
 import { MasterFormHeader } from '../components/ui';
 import { createLeadSubSource, fetchLeadSources, type LeadSource } from '../services/CreateSourceForm';
 import { showSuccess, showError } from '../utils/notifications';
@@ -103,7 +104,7 @@ const CreateSourceForm: React.FC<Props> = ({ onClose }) => {
                     <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
                   </div>
                 ) : (
-                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+                  <ChevronDropdownIcon className="absolute right-3 top-1/2 -translate-y-1/2" />
                 )}
               </div>
               {(errors.source || loadError) && (

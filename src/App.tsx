@@ -126,10 +126,12 @@ function App() {
           <Route path="miss-campaign/view/:id" element={<MissCampaignView />} />
           <Route path="miss-campaign/view/:id/edit" element={<MissCampaignView />} />
           {/* Brief Pipeline Routes */}
-          <Route path="brief" element={<BriefPipeline />} />
-          <Route path="brief/create" element={<BriefPipeline />} />
-          <Route path="brief/:id" element={<BriefPipeline />} />
-          <Route path="brief/:id/edit" element={<BriefPipeline />} />
+          <Route path="brief">
+            <Route path="Brief_Pipeline" element={<BriefPipeline />} />
+            <Route path="create" element={<BriefPipeline />} />
+            <Route path=":id" element={<BriefPipeline />} />
+            <Route path=":id/edit" element={<BriefPipeline />} />
+          </Route>
         </Route>
         
         {/* 404 Route */}
