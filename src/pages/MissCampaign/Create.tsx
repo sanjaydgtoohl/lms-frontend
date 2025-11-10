@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { MasterCreateHeader } from '../../components/ui/MasterCreateHeader';
-import { Upload } from 'lucide-react';
+import { Upload, ChevronDown } from 'lucide-react';
 
 interface CreateProps {
   inline?: boolean;
@@ -57,17 +57,20 @@ const Create: React.FC<CreateProps> = ({
               <label className="block text-sm font-medium mb-2">
                 Brand Name <span className="text-[#FF0000]">*</span>
               </label>
-              <select
-                name="brandName"
-                value={formData.brandName}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
-              >
-                <option value="">Please Select Brand Name</option>
-                <option value="brand1">Brand 1</option>
-                <option value="brand2">Brand 2</option>
-              </select>
+              <div className="relative">
+                <select
+                  name="brandName"
+                  value={formData.brandName}
+                  onChange={handleChange}
+                  required
+                  className="w-full appearance-none px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent pr-10"
+                >
+                  <option value="">Please Select Brand Name</option>
+                  <option value="brand1">Brand 1</option>
+                  <option value="brand2">Brand 2</option>
+                </select>
+                <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
               {/* helper removed as requested */}
             </div>
 
@@ -76,33 +79,42 @@ const Create: React.FC<CreateProps> = ({
               <label className="block text-sm font-medium mb-2">
                 Source <span className="text-[#FF0000]">*</span>
               </label>
-              <select
-                name="source"
-                value={formData.source}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
-              >
-                <option value="">Please Select Source</option>
-                <option value="News Paper">News Paper</option>
-                <option value="Social Media">Social Media</option>
-              </select>
+              <div className="relative">
+                <select
+                  name="source"
+                  value={formData.source}
+                  onChange={handleChange}
+                  required
+                  className="w-full appearance-none px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent pr-10"
+                >
+                  <option value="">Please Select Source</option>
+                  <option value="News Paper">News Paper</option>
+                  <option value="Social Media">Social Media</option>
+                </select>
+                <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
             </div>
 
-            {/* Sub Source */}
+            {/* Sub Source (dropdown) */}
             <div>
               <label className="block text-sm font-medium mb-2">
                 Sub Source <span className="text-[#FF0000]">*</span>
               </label>
-              <input
-                type="text"
-                name="subSource"
-                value={formData.subSource}
-                onChange={handleChange}
-                placeholder="Enter Product Name"
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
-              />
+              <div className="relative">
+                <select
+                  name="subSource"
+                  value={formData.subSource}
+                  onChange={handleChange}
+                  required
+                  className="w-full appearance-none px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent pr-10"
+                >
+                  <option value="">Please Select Sub Source</option>
+                  <option value="sub1">Sub Source 1</option>
+                  <option value="sub2">Sub Source 2</option>
+                  <option value="sub3">Sub Source 3</option>
+                </select>
+                <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
             </div>
 
             {/* Product Name */}
@@ -146,15 +158,7 @@ const Create: React.FC<CreateProps> = ({
                   </label>
                 </div>
 
-                {/* Button placed outside the dashed box as requested */}
-                <div className="mt-4">
-                  <label
-                    htmlFor="image-upload"
-                    className="block w-full text-center btn-primary text-white py-2 rounded-lg cursor-pointer transition-colors"
-                  >
-                    UPLOAD IMAGE
-                  </label>
-                </div>
+                {/* note: upload action is handled by the label inside the dashed box above */}
               </div>
             </div>
           </div>

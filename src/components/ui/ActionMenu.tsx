@@ -26,6 +26,12 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, isLas
   const isNearBottom = typeof rowIndex === 'number' && typeof totalRows === 'number' 
     ? (totalRows - rowIndex) <= 3
     : false;
+  // Check if this is the second-last row (force menu above)
+  const isSecondLast = typeof rowIndex === 'number' && typeof totalRows === 'number'
+    ? (totalRows - rowIndex) === 2
+    : false;
+  // Check if this is the second row from the top (force menu below)
+  const isSecondFromTop = typeof rowIndex === 'number' ? rowIndex === 1 : false;
 
   useEffect(() => {
     const checkPosition = (): boolean => {
@@ -44,11 +50,18 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, isLas
       // Detect small/mobile viewport
       const isMobileViewport = typeof window !== 'undefined' ? window.innerWidth <= 640 : false;
       
+  // If this is the second-from-top row, force menu to open below
+  if (isSecondFromTop) return false;
+
+  // If this is the second-last row, always show above so the popup
+  // doesn't get obscured by the viewport/bottom edge.
+  if (isSecondLast) return true;
+
       // For last 3 rows, use more aggressive positioning
       if (isLast || isNearBottom) {
         const aggressiveBuffer = 50;
         // On narrow/mobile viewports, force the menu to open above for the
-        // second-last/last rows so it doesn't get clipped by the bottom of the
+        // last rows so it doesn't get clipped by the bottom of the
         // viewport (common on mobile where height is limited).
         if (isMobileViewport && typeof rowIndex === 'number' && typeof totalRows === 'number' && (totalRows - rowIndex) <= 2) {
           return true;
@@ -86,6 +99,17 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, isLas
       // Immediately check position when menu opens
       const initialCheck = () => {
         if (containerRef.current) {
+          // If second-from-top row, force open below immediately
+          if (isSecondFromTop) {
+            setShowAbove(false);
+            return;
+          }
+
+          // If second-last row, always show above immediately
+          if (isSecondLast) {
+            setShowAbove(true);
+            return;
+          }
           const isMobileViewport = typeof window !== 'undefined' ? window.innerWidth <= 640 : false;
           const rect = containerRef.current.getBoundingClientRect();
           const viewportHeight = window.innerHeight;
@@ -137,7 +161,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, isLas
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isOpen, isLast, rowIndex, totalRows, isNearBottom]);
+  }, [isOpen, isLast, rowIndex, totalRows, isNearBottom, isSecondLast, isSecondFromTop]);
 
   // Runtime check to detect if SVG icon is rendering; show text fallback '⋯' if not
   useEffect(() => {
@@ -171,37 +195,45 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, isLas
 
   const handleToggle = () => {
     if (!isOpen && containerRef.current) {
-      const isMobileViewport = typeof window !== 'undefined' ? window.innerWidth <= 640 : false;
-      // Check position before opening
-      const rect = containerRef.current.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-      const spaceBelow = viewportHeight - rect.bottom;
-      const spaceAbove = rect.top;
-      const estimatedMenuHeight = 140;
-      const buffer = 30;
-      const requiredSpace = estimatedMenuHeight + buffer;
-      
-      // For last 3 rows, be more aggressive - show above if space below is less than menu + large buffer
-      // This ensures menu doesn't get cut off for second last and third last rows
-      if (isLast || isNearBottom) {
-        // For near-bottom rows, use a larger buffer to ensure menu is fully visible
-        const aggressiveBuffer = 50;
-        // On mobile viewports, for the second-last/last rows, force showing above
-        if (isMobileViewport && typeof rowIndex === 'number' && typeof totalRows === 'number' && (totalRows - rowIndex) <= 2) {
-          setShowAbove(true);
+      // If second-from-top row, always open below
+      if (isSecondFromTop) {
+        setShowAbove(false);
+      } else if (isSecondLast) {
+        // If second-last row, always open above
+        setShowAbove(true);
+      } else {
+        const isMobileViewport = typeof window !== 'undefined' ? window.innerWidth <= 640 : false;
+        // Check position before opening
+        const rect = containerRef.current.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const spaceBelow = viewportHeight - rect.bottom;
+        const spaceAbove = rect.top;
+        const estimatedMenuHeight = 140;
+        const buffer = 30;
+        const requiredSpace = estimatedMenuHeight + buffer;
+
+        // For last 3 rows, be more aggressive - show above if space below is less than menu + large buffer
+        // This ensures menu doesn't get cut off for second last and third last rows
+        if (isLast || isNearBottom) {
+          // For near-bottom rows, use a larger buffer to ensure menu is fully visible
+          const aggressiveBuffer = 50;
+          // On mobile viewports, for the second-last/last rows, force showing above
+          if (isMobileViewport && typeof rowIndex === 'number' && typeof totalRows === 'number' && (totalRows - rowIndex) <= 2) {
+            setShowAbove(true);
+          } else {
+            const shouldShowAbove =
+              spaceBelow < (estimatedMenuHeight + aggressiveBuffer) ||
+              (spaceBelow < requiredSpace && spaceAbove >= requiredSpace);
+            setShowAbove(shouldShowAbove);
+          }
         } else {
-          const shouldShowAbove = 
-            spaceBelow < (estimatedMenuHeight + aggressiveBuffer) || 
-            (spaceBelow < requiredSpace && spaceAbove >= requiredSpace);
+          // For other rows, use normal logic
+          const shouldShowAbove = spaceBelow < requiredSpace && spaceAbove >= requiredSpace;
           setShowAbove(shouldShowAbove);
         }
-      } else {
-        // For other rows, use normal logic
-        const shouldShowAbove = 
-          spaceBelow < requiredSpace && spaceAbove >= requiredSpace;
-        setShowAbove(shouldShowAbove);
       }
     }
+
     setIsOpen((v) => !v);
   };
 
