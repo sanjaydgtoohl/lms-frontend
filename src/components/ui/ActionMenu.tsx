@@ -8,6 +8,10 @@ interface ActionMenuProps {
   onDelete?: () => void;
   /** If true, forces the menu to open above the trigger (used for last rows) */
   isLast?: boolean;
+  /** Index of the row (0-based) - helps determine if near bottom */
+  rowIndex?: number;
+  /** Total number of rows - helps determine if near bottom */
+  totalRows?: number;
 }
 
 const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, isLast }) => {
@@ -30,111 +34,165 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, isLas
     };
 
     const checkPosition = () => {
-      // If consumer passed explicit prop, respect it
-      if (typeof isLast === 'boolean') {
-        setShowAbove(isLast);
+      if (!isOpen || !containerRef.current) return;
+
+      // If consumer passed explicit prop, respect it for last row
+      if (typeof isLast === 'boolean' && isLast) {
+        setShowAbove(true);
         return;
       }
 
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        const spaceBelow = window.innerHeight - rect.bottom;
-        // If there is very little space below the element, show above instead
-        setShowAbove(spaceBelow < 150);
+      // Check available space dynamically
+      const rect = containerRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      const menuHeight = 120; // Approximate menu height
+      
+      // Show above if not enough space below but enough space above
+      if (spaceBelow < menuHeight && spaceAbove > menuHeight) {
+        setShowAbove(true);
+      } else if (spaceBelow >= menuHeight) {
+        setShowAbove(false);
+      } else {
+        // If not enough space either way, prefer below (will scroll into view)
+        setShowAbove(false);
       }
     };
 
-    checkPosition();
+    if (isOpen) {
+      checkPosition();
+      window.addEventListener('scroll', checkPosition, true);
+      window.addEventListener('resize', checkPosition);
+    }
+
     document.addEventListener('mousedown', handleClickOutside);
-    window.addEventListener('scroll', checkPosition);
-    window.addEventListener('resize', checkPosition);
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      window.removeEventListener('scroll', checkPosition);
+      window.removeEventListener('scroll', checkPosition, true);
       window.removeEventListener('resize', checkPosition);
     };
   }, [isOpen, isLast]);
 
   return (
-    <div className="relative" ref={containerRef}>
-      <style>{`
-        .action-menu-container .action-btn {
-          background-color: white !important;
-        }
-        .action-menu-container .action-btn:hover {
-          background-color: white !important;
-        }
-      `}</style>
+    <div className="relative inline-flex z-10" ref={containerRef}>
+      {/* Toggle Button */}
+      <button
+        ref={toggleRef}
+        onClick={() => setIsOpen((v) => !v)}
+        className={`
+          inline-flex items-center justify-center 
+          w-8 h-8 rounded-md
+          text-gray-500 hover:text-gray-700 hover:bg-gray-100
+          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1
+          transition-all duration-200 ease-in-out
+          ${isOpen ? 'bg-gray-100 text-gray-700' : ''}
+        `}
+        title="Actions"
+        aria-haspopup="true"
+        aria-expanded={isOpen}
+        aria-label="Open actions menu"
+      >
+        <MoreVertical className="w-4 h-4" />
+      </button>
 
-      <div className="relative action-menu-container">
-        <button
-          ref={toggleRef}
-          onClick={() => setIsOpen((v) => !v)}
-          className="action-btn p-2 text-[var(--text-secondary)] hover:text-blue-500 transition-all duration-200"
-          title="Actions"
-          aria-haspopup="true"
-          aria-expanded={isOpen}
-        >
-          <MoreVertical className="w-4 h-4" />
-        </button>
-
-        <AnimatePresence>
-          {isOpen && (
-            <motion.div
-              ref={menuRef}
-              initial={{ opacity: 0, y: showAbove ? 8 : -8, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: showAbove ? 8 : -8, scale: 0.98 }}
-              transition={{ duration: 0.12 }}
-              role="menu"
-              className={`absolute right-0 ${showAbove ? 'bottom-full mb-2' : 'top-full mt-2'} mr-1 bg-white rounded-md shadow-sm border border-[var(--border-color)] py-1 min-w-[140px] z-50`}
-            >
+      {/* Dropdown Menu - Using portal-like positioning */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            ref={menuRef}
+            initial={{ opacity: 0, y: showAbove ? 8 : -8, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: showAbove ? 8 : -8, scale: 0.95 }}
+            transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
+            role="menu"
+            aria-orientation="vertical"
+            className={`
+              absolute right-0
+              ${showAbove ? 'bottom-full mb-2' : 'top-full mt-2'}
+              bg-white rounded-lg shadow-xl border border-gray-200
+              py-1.5 min-w-[160px]
+              focus:outline-none
+              z-[9999]
+            `}
+            onClick={(e) => e.stopPropagation()}
+          >
               {onEdit && (
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     onEdit();
                     setIsOpen(false);
                   }}
-                  className="action-btn w-full px-3 py-2 text-sm text-[var(--text-primary)] hover:text-blue-500 hover:bg-gray-50 flex items-center space-x-3 rounded-md"
+                  className="
+                    w-full px-4 py-2.5 text-sm font-medium
+                    text-gray-700 hover:text-blue-600 hover:bg-blue-50
+                    flex items-center gap-3
+                    transition-colors duration-150 ease-in-out
+                    first:rounded-t-lg last:rounded-b-lg
+                    focus:outline-none focus:bg-blue-50 focus:text-blue-600
+                  "
                   role="menuitem"
+                  tabIndex={0}
                 >
-                  <Edit className="w-4 h-4" />
+                  <Edit className="w-4 h-4 flex-shrink-0" />
                   <span>Edit</span>
                 </button>
               )}
 
               {onView && (
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     onView();
                     setIsOpen(false);
                   }}
-                  className="action-btn w-full px-3 py-2 text-sm text-[var(--text-primary)] hover:text-blue-500 hover:bg-gray-50 flex items-center space-x-3 rounded-md"
+                  className="
+                    w-full px-4 py-2.5 text-sm font-medium
+                    text-gray-700 hover:text-blue-600 hover:bg-blue-50
+                    flex items-center gap-3
+                    transition-colors duration-150 ease-in-out
+                    first:rounded-t-lg last:rounded-b-lg
+                    focus:outline-none focus:bg-blue-50 focus:text-blue-600
+                  "
                   role="menuitem"
+                  tabIndex={0}
                 >
-                  <Eye className="w-4 h-4" />
+                  <Eye className="w-4 h-4 flex-shrink-0" />
                   <span>View</span>
                 </button>
               )}
 
               {onDelete && (
-                <button
-                  onClick={() => {
-                    onDelete();
-                    setIsOpen(false);
-                  }}
-                  className="action-btn w-full px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-gray-50 flex items-center space-x-3 rounded-md"
-                  role="menuitem"
-                >
-                  <Trash className="w-4 h-4" />
-                  <span>Delete</span>
-                </button>
+                <>
+                  {(onEdit || onView) && (
+                    <div className="my-1 border-t border-gray-200" />
+                  )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete();
+                      setIsOpen(false);
+                    }}
+                    className="
+                      w-full px-4 py-2.5 text-sm font-medium
+                      text-red-600 hover:text-red-700 hover:bg-red-50
+                      flex items-center gap-3
+                      transition-colors duration-150 ease-in-out
+                      first:rounded-t-lg last:rounded-b-lg
+                      focus:outline-none focus:bg-red-50 focus:text-red-700
+                    "
+                    role="menuitem"
+                    tabIndex={0}
+                  >
+                    <Trash className="w-4 h-4 flex-shrink-0" />
+                    <span>Delete</span>
+                  </button>
+                </>
               )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

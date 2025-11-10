@@ -297,10 +297,10 @@ const DesignationMaster: React.FC = () => {
             createButtonLabel="Create Designation"
             showBreadcrumb={true}
           />
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
             <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900">Designation Master</h2>
+                <h2 className="text-base font-semibold text-gray-900">Designation Master</h2>
                 <SearchBar 
                   placeholder="Search Designation" 
                   delay={300}
@@ -322,7 +322,8 @@ const DesignationMaster: React.FC = () => {
               </div>
             )}
 
-            <Table
+            <div className="p-4 overflow-visible">
+              <Table
               data={currentData}
               startIndex={startIndex}
               loading={loading}
@@ -337,6 +338,7 @@ const DesignationMaster: React.FC = () => {
               onView={(it: any) => handleView(it.id)}
               onDelete={(it: any) => handleDelete(it.id)}
             />
+            </div>
           </div>
 
           {/* Pagination */}

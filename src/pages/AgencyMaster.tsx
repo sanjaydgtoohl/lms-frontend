@@ -23,7 +23,7 @@ const AgencyMaster: React.FC = () => {
     navigate(`${ROUTES.AGENCY_MASTER}/create`);
   };
 
-  const handleSaveAgency = (data: any) => {
+  const handleSaveAgency = (data: { parent: { name: string; type: string; client: string }; children: Array<{ name: string; type: string; client: string }> }): void => {
     // For now just log the saved data. Integrate with API/store as needed.
     console.log('Saved agencies payload:', data);
     setShowCreate(false);
@@ -37,7 +37,7 @@ const AgencyMaster: React.FC = () => {
     navigate(`${ROUTES.AGENCY_MASTER}/${encodeURIComponent(item.id)}/edit`);
   };
 
-  const handleSaveEdit = (updated: Record<string, any>) => {
+  const handleSaveEdit = (updated: Record<string, unknown>): void => {
     // Update in API/store as needed
     console.log('Save edited agency:', updated);
     navigate(ROUTES.AGENCY_MASTER);
@@ -84,9 +84,9 @@ const AgencyMaster: React.FC = () => {
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
       {showCreate ? (
-        <CreateAgencyForm inline onClose={() => navigate(ROUTES.AGENCY_MASTER)} onSave={handleSaveAgency} />
+        <CreateAgencyForm onClose={() => navigate(ROUTES.AGENCY_MASTER)} onSave={handleSaveAgency} />
       ) : viewItem ? (
-  <MasterView item={viewItem} onClose={() => navigate(ROUTES.AGENCY_MASTER)} />
+        <MasterView item={viewItem} onClose={() => navigate(ROUTES.AGENCY_MASTER)} />
       ) : editItem ? (
         <MasterEdit item={editItem} onClose={() => navigate(ROUTES.AGENCY_MASTER)} onSave={handleSaveEdit} />
       ) : (

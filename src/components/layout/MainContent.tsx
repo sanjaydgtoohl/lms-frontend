@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Pagination from '../ui/Pagination';
 import SearchBar from '../ui/SearchBar';
-import { matchesQuery } from '../../utils';
+import { matchesQuery } from '../../utils/index.tsx';
 import Table, { type Column } from '../ui/Table';
 
 export interface LeadSource {
@@ -67,7 +67,7 @@ const MainContent = <T extends LeadSource | Agency>({
   const filteredArray = currentDataArray.filter((item) => {
     // allow exact field matching using syntax `field:term` (exact equality), otherwise contains across common fields
     const commonFields = ['id', 'agencyName', 'agencyGroup', 'agencyType', 'source', 'subSource'];
-    return matchesQuery(item as any, searchQuery, { 
+    return matchesQuery(item as unknown as Record<string, unknown>, searchQuery, { 
       fields: commonFields,
       useStartsWith: dataType === 'agency'
     });
@@ -115,14 +115,14 @@ const MainContent = <T extends LeadSource | Agency>({
 
   return (
     <div className="flex-1 w-full">
-      <div className="bg-white rounded-xl shadow-sm border border-[var(--border-color)] overflow-hidden">
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
         {/* Table Header */}
-        <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)]">
+        <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-semibold text-[var(--text-primary)]">{title}</h2>
+            <h2 className="text-base font-semibold text-gray-900">{title}</h2>
             <div className="flex items-center space-x-3">
               <SearchBar
-                delay={0}
+                delay={300}
                 placeholder={dataType === 'agency' ? 'Search Agency Group' : 'Search...'}
                 onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }}
               />
@@ -135,32 +135,40 @@ const MainContent = <T extends LeadSource | Agency>({
           </div>
         </div>
 
-        <Table
+        <div className="p-4 overflow-visible">
+          <Table
           data={currentData}
           startIndex={startIndex}
           loading={false}
-          keyExtractor={(it: any, idx: number) => `${it.id}-${idx}`}
+          keyExtractor={(it: T, idx: number) => `${it.id}-${idx}`}
           columns={(
             (dataType === 'agency'
               ? [
-                  { key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },
-                  { key: 'agencyGroup', header: 'Agency Group', render: (it: any) => it.agencyGroup },
-                  { key: 'agencyName', header: 'Agency Name', render: (it: any) => it.agencyName },
-                  { key: 'agencyType', header: 'Agency Type', render: (it: any) => it.agencyType },
-                  { key: 'contactPerson', header: 'Contact Person', render: (it: any) => it.contactPerson },
-                  { key: 'dateTime', header: 'Date & Time', render: (it: any) => it.dateTime },
+                  { key: 'sr', header: 'Sr. No.', render: (it: T) => {
+                    const idx = currentData.findIndex(item => item.id === it.id);
+                    return String(startIndex + (idx >= 0 ? idx : 0) + 1);
+                  }},
+                  { key: 'agencyGroup', header: 'Agency Group', render: (it: T) => (it as Agency).agencyGroup },
+                  { key: 'agencyName', header: 'Agency Name', render: (it: T) => (it as Agency).agencyName },
+                  { key: 'agencyType', header: 'Agency Type', render: (it: T) => (it as Agency).agencyType },
+                  { key: 'contactPerson', header: 'Contact Person', render: (it: T) => (it as Agency).contactPerson },
+                  { key: 'dateTime', header: 'Date & Time', render: (it: T) => (it as Agency).dateTime },
                 ]
               : [
-                  { key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },
-                  { key: 'source', header: 'Source', render: (it: any) => it.source },
-                  { key: 'subSource', header: 'Sub-Source', render: (it: any) => it.subSource },
-                  { key: 'dateTime', header: 'Date & Time', render: (it: any) => it.dateTime },
-                ]) as Column<any>[]
+                  { key: 'sr', header: 'Sr. No.', render: (it: T) => {
+                    const idx = currentData.findIndex(item => item.id === it.id);
+                    return String(startIndex + (idx >= 0 ? idx : 0) + 1);
+                  }},
+                  { key: 'source', header: 'Source', render: (it: T) => (it as LeadSource).source },
+                  { key: 'subSource', header: 'Sub-Source', render: (it: T) => (it as LeadSource).subSource },
+                  { key: 'dateTime', header: 'Date & Time', render: (it: T) => (it as LeadSource).dateTime },
+                ]) as Column<T>[]
           )}
-          onEdit={(it: any) => handleEdit(it.id)}
-          onView={(it: any) => handleView(it.id)}
-          onDelete={(it: any) => handleDelete(it.id)}
+          onEdit={(it: T) => handleEdit(it.id)}
+          onView={(it: T) => handleView(it.id)}
+          onDelete={(it: T) => handleDelete(it.id)}
         />
+        </div>
       </div>
 
       {/* Pagination */}
