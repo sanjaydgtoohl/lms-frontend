@@ -3,7 +3,7 @@ import { ChevronLeft } from 'lucide-react';
 import Breadcrumb from './Breadcrumb';
 
 interface MasterCreateHeaderProps {
-  title: string;
+  title?: string;
   onClose?: () => void;
 }
 

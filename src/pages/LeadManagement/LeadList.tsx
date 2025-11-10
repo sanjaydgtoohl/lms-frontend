@@ -61,8 +61,20 @@ const callStatusOptions = [
   "DND Requested"
 ];
 
+const statusColors: Record<string, string> = {
+  'Interested': '#22c55e',
+  'Pending': '#f59e0b',
+  'Meeting Scheduled': '#3b82f6',
+  'Meeting Done': '#8b5cf6',
+  'Brief Received': '#06b6d4'
+};
 
-const AllLeads: React.FC = () => {
+interface Props {
+  title: string;
+  filterStatus?: string; // if not provided, show all
+}
+
+const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const itemsPerPage = 10;
@@ -115,10 +127,12 @@ const AllLeads: React.FC = () => {
   const onTooltipLeave = () => {
     hideTooltip();
   };
-  // no external open state needed for call status dropdowns (self-contained)
 
   // Filter leads by search query (local search across a few fields)
   const filteredLeads = leads.filter((l) => {
+    if (filterStatus && filterStatus !== 'All') {
+      if (l.status !== filterStatus) return false;
+    }
     const q = searchQuery.trim().toLowerCase();
     if (!q) return true;
     return (
@@ -138,15 +152,8 @@ const AllLeads: React.FC = () => {
 
   const handleCreateLead = () => navigate(ROUTES.LEAD.CREATE);
   const handleEdit = (id: string) => {
-    // Remove the '#' from the ID before using it in the URL
     const cleanId = id.replace('#', '');
     navigate(ROUTES.LEAD.EDIT(cleanId));
-  };
-  
-  const handleView = (id: string) => {
-    // Remove the '#' from the ID before using it in the URL
-    const cleanId = id.replace('#', '');
-    navigate(ROUTES.LEAD.DETAIL(cleanId));
   };
 
   const handleAssignToChange = (leadId: string, newSalesMan: string) => {
@@ -155,24 +162,22 @@ const AllLeads: React.FC = () => {
         lead.id === leadId ? { ...lead, assignTo: newSalesMan } : lead
       )
     );
-    // Optionally, call API here to persist change
   };
 
   const handleCallStatusChange = (leadId: string, newStatus: string) => {
-    // Update the lead status in state and increment callAttempt when status actually changes
     setLeads((prev) =>
       prev.map((lead) => {
         if (lead.id !== leadId) return lead;
-        if (lead.callStatus === newStatus) return lead; // no change
+        if (lead.callStatus === newStatus) return lead;
         return { ...lead, callStatus: newStatus, callAttempt: (lead.callAttempt ?? 0) + 1 };
       })
     );
-    // Optional: Log the change to verify it's being called
     console.log(`Call status updated for ${leadId} to ${newStatus} — callAttempt incremented`);
-
-    // TODO: Make API call to persist changes
-    // updateLeadCallStatus(leadId, newStatus);
   };
+
+  
+
+  // Status is rendered as a non-clickable pill (same as AllLeads)
 
   const columns = ([
     { key: 'id', header: 'Lead ID', render: (it: Lead) => it.id, className: 'text-left whitespace-nowrap' },
@@ -198,19 +203,12 @@ const AllLeads: React.FC = () => {
     { 
       key: 'status', 
       header: 'Status', 
-      render: (it: Lead) => {
-        const statusColors = {
-          'Interested': '#22c55e',
-          'Pending': '#f59e0b',
-          'Meeting Scheduled': '#3b82f6',
-          'Meeting Done': '#8b5cf6',
-          'Brief Received': '#06b6d4'
-        };
-        return <StatusPill 
-          label={it.status} 
-          color={statusColors[it.status as keyof typeof statusColors] || '#6b7280'} 
-        />;
-      },
+      render: (it: Lead) => (
+        <StatusPill
+          label={it.status}
+          color={statusColors[it.status] || '#6b7280'}
+        />
+      ),
       className: 'whitespace-nowrap'
     },
     {
@@ -227,6 +225,7 @@ const AllLeads: React.FC = () => {
       ),
       className: 'min-w-[160px]',
     },
+    { key: 'followUp', header: 'Follow-Up / Meeting Type', render: (it: Lead) => it.dateTime, className: 'whitespace-nowrap' },
     { key: 'callAttempt', header: 'Call Attempt', render: (it: Lead) => String(it.callAttempt), className: 'whitespace-nowrap' },
     { 
       key: 'comment', 
@@ -264,7 +263,7 @@ const AllLeads: React.FC = () => {
       />
       <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
         <div className="bg-gray-50 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[var(--text-primary)]">All Leads</h2>
+          <h2 className="text-lg font-semibold text-[var(--text-primary)]">{title}</h2>
           <div className="ml-4">
             <SearchBar
               placeholder="Search leads..."
@@ -284,16 +283,17 @@ const AllLeads: React.FC = () => {
           keyExtractor={(it: Lead) => it.id}
           columns={columns}
           onEdit={(it: Lead) => handleEdit(it.id)}
-          onView={(it: Lead) => handleView(it.id)}
         />
       </div>
 
       <Pagination
         currentPage={currentPage}
-        totalItems={leads.length}
+        totalItems={filteredLeads.length}
         itemsPerPage={itemsPerPage}
         onPageChange={(p: number) => setCurrentPage(p)}
       />
+
+      
 
       {/* Tooltip popup for full comment text */}
       {tooltipVisible && (
@@ -315,4 +315,4 @@ const AllLeads: React.FC = () => {
   );
 };
 
-export default AllLeads;
+export default LeadList;

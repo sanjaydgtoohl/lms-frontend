@@ -10,3 +10,4 @@ export { default as MasterForm } from './MasterForm';
 export { default as MasterView } from './MasterView';
 export { default as MasterEdit } from './MasterEdit';
 export { default as SelectField } from './SelectField';
+export { default as StatusPill } from './StatusPill';

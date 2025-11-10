@@ -58,7 +58,7 @@ const SelectField: React.FC<SelectFieldProps> = ({ name, value = '', placeholder
             }, 0);
           }}
           placeholder={placeholder}
-          className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] ${inputClassName ?? 'border border-[var(--border-color)]'}`}
+          className={`w-full px-3 py-2 rounded-[10px] bg-white text-[var(--text-primary)] border border-[#DDE1E7] placeholder-[#9CA3AF] pl-3 ${inputClassName ?? ''}`}
           autoComplete="off"
         />
         <input type="hidden" name={name ? name : undefined} value={value} />

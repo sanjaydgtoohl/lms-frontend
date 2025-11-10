@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { ChevronRight, Home } from 'lucide-react';
 
 export interface BreadcrumbItem {
@@ -42,7 +42,6 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({
   currentPageTitle 
 }) => {
   const location = useLocation();
-  const params = useParams();
   const { pathname } = location;
 
   // If items are provided, use them directly
@@ -141,27 +140,30 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({
         label: 'Lead Management',
         path: '/lead-management',
       });
+      // Determine specific lead-management subpage (all-leads, pending, interested, etc.)
+      const sub = parts[1] || '';
+      const subLabelMap: Record<string, string> = {
+        'all-leads': 'All Leads',
+        'pending': 'Pending',
+        'interested': 'Interested',
+        'meeting-scheduled': 'Meeting Scheduled',
+        'meeting-done': 'Meeting Done',
+      };
 
       if (pathname.includes('/create')) {
-        crumbs.push({
-          label: 'Create',
-          isActive: true,
-        });
+        crumbs.push({ label: 'Create', isActive: true });
       } else if (pathname.includes('/edit/')) {
         const id = pathname.split('/edit/')[1];
-        crumbs.push({
-          label: `ID: ${id}`,
-          path: `/lead-management/all-leads`,
-        });
-        crumbs.push({
-          label: 'Edit',
-          isActive: true,
-        });
-      } else {
-        crumbs.push({
-          label: 'All Leads',
-          isActive: true,
-        });
+        crumbs.push({ label: `ID: ${id}`, path: `/lead-management` });
+        crumbs.push({ label: 'Edit', isActive: true });
+      } else if (sub && subLabelMap[sub]) {
+        crumbs.push({ label: subLabelMap[sub], isActive: true });
+      } else if (parts.length === 1 || sub === 'all-leads' || sub === '') {
+        crumbs.push({ label: 'All Leads', isActive: true });
+      } else if (parts.length > 1 && !subLabelMap[sub]) {
+        // If it's a detail route like /lead-management/:id, show ID as active
+        const id = parts[1];
+        crumbs.push({ label: `ID: ${id}`, isActive: true });
       }
       return crumbs;
     }

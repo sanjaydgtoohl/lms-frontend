@@ -13,6 +13,12 @@ export const ROUTES = {
   // LMS Routes
   LEAD_SOURCE: '/lead-source',
   LEAD_MANAGEMENT: '/lead-management',
+  LEAD: {
+    ROOT: '/lead-management',
+    CREATE: '/lead-management/create',
+    EDIT: (id: string) => `/lead-management/edit/${id}`,
+    DETAIL: (id: string) => `/lead-management/${id}`,
+  },
   BRIEF: {
     ROOT: '/brief',
     PIPELINE: '/brief/Brief_Pipeline',
@@ -38,6 +44,25 @@ export const ROUTES = {
   INDUSTRY_MASTER: '/master/industry',
   SOURCE_MASTER: '/master/source',
 } as const;
+
+export const CALL_STATUS_OPTIONS = [
+  "Busy",
+  "Duplicate",
+  "Fake Lead",
+  "FollowBack",
+  "Invalid Number",
+  "Not Reachable",
+  "Switched Off",
+  "Not Connected",
+  "Connected",
+  "No Response",
+  "Wrong Number",
+  "Call Back Scheduled",
+  "Interested",
+  "Not Interested",
+  "Converted",
+  "DND Requested"
+] as const;
 
 // User Roles
 export const USER_ROLES = {

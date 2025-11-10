@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import CallStatusButton from './CallStatusButton';
 
 interface CallStatusDropdownProps {
   value: string;
@@ -20,19 +21,12 @@ const CallStatusDropdown: React.FC<CallStatusDropdownProps> = ({ value, options,
   }, [open]);
 
   return (
-    <div ref={ref} className="relative inline-block">
-      <span
-        role="button"
-        tabIndex={0}
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen((o) => !o);
-        }}
-        onKeyDown={(e) => e.key === 'Enter' && setOpen((o) => !o)}
-        className="cursor-pointer text-gray-800 hover:underline hover:text-blue-600 transition-colors duration-100"
-      >
-        <span className="truncate">{value}</span>
-      </span>
+    <div ref={ref} className="relative inline-block w-full">
+      <CallStatusButton
+        value={value}
+        onClick={() => setOpen((o) => !o)}
+        isActive={open}
+      />
 
       <AnimatePresence>
         {open && (
