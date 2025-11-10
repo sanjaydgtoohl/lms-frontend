@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MoreVertical, Edit, Eye, Trash } from 'lucide-react';
+import { MoreHorizontal, Edit, Eye, Trash } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface ActionMenuProps {
@@ -20,6 +20,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, isLas
   const menuRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [showIconFallback, setShowIconFallback] = useState(false);
 
   // Check if row is near bottom (last 3 rows)
   const isNearBottom = typeof rowIndex === 'number' && typeof totalRows === 'number' 
@@ -39,16 +40,26 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, isLas
       const estimatedMenuHeight = 140;
       const buffer = 30;
       const requiredSpace = estimatedMenuHeight + buffer;
+
+      // Detect small/mobile viewport
+      const isMobileViewport = typeof window !== 'undefined' ? window.innerWidth <= 640 : false;
       
       // For last 3 rows, use more aggressive positioning
       if (isLast || isNearBottom) {
         const aggressiveBuffer = 50;
+        // On narrow/mobile viewports, force the menu to open above for the
+        // second-last/last rows so it doesn't get clipped by the bottom of the
+        // viewport (common on mobile where height is limited).
+        if (isMobileViewport && typeof rowIndex === 'number' && typeof totalRows === 'number' && (totalRows - rowIndex) <= 2) {
+          return true;
+        }
+
         // Show above if space below is less than menu + aggressive buffer
         // OR if there's not enough space below but enough above
         return spaceBelow < (estimatedMenuHeight + aggressiveBuffer) || 
                (spaceBelow < requiredSpace && spaceAbove >= requiredSpace);
       }
-      
+
       // For other rows, use standard logic
       return spaceBelow < requiredSpace && spaceAbove >= requiredSpace;
     };
@@ -75,6 +86,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, isLas
       // Immediately check position when menu opens
       const initialCheck = () => {
         if (containerRef.current) {
+          const isMobileViewport = typeof window !== 'undefined' ? window.innerWidth <= 640 : false;
           const rect = containerRef.current.getBoundingClientRect();
           const viewportHeight = window.innerHeight;
           const spaceBelow = viewportHeight - rect.bottom;
@@ -85,10 +97,15 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, isLas
           
           if (isLast || isNearBottom) {
             const aggressiveBuffer = 50;
-            const shouldShowAbove = 
-              spaceBelow < (estimatedMenuHeight + aggressiveBuffer) || 
-              (spaceBelow < requiredSpace && spaceAbove >= requiredSpace);
-            setShowAbove(shouldShowAbove);
+            // Force above on mobile for second-last/last rows
+            if (isMobileViewport && typeof rowIndex === 'number' && typeof totalRows === 'number' && (totalRows - rowIndex) <= 2) {
+              setShowAbove(true);
+            } else {
+              const shouldShowAbove = 
+                spaceBelow < (estimatedMenuHeight + aggressiveBuffer) || 
+                (spaceBelow < requiredSpace && spaceAbove >= requiredSpace);
+              setShowAbove(shouldShowAbove);
+            }
           } else {
             const shouldShowAbove = 
               spaceBelow < requiredSpace && spaceAbove >= requiredSpace;
@@ -122,8 +139,39 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, isLas
     };
   }, [isOpen, isLast, rowIndex, totalRows, isNearBottom]);
 
+  // Runtime check to detect if SVG icon is rendering; show text fallback '⋯' if not
+  useEffect(() => {
+    const checkIcon = () => {
+      const btn = toggleRef.current;
+      if (!btn) {
+        setShowIconFallback(true);
+        return;
+      }
+      const svg = btn.querySelector('svg');
+      if (!svg) {
+        setShowIconFallback(true);
+        return;
+      }
+      const style = window.getComputedStyle(svg);
+      const rect = svg.getBoundingClientRect();
+      if (style.display === 'none' || style.visibility === 'hidden' || rect.width === 0 || rect.height === 0) {
+        setShowIconFallback(true);
+      } else {
+        setShowIconFallback(false);
+      }
+    };
+
+    const id = window.setTimeout(checkIcon, 0);
+    window.addEventListener('resize', checkIcon);
+    return () => {
+      clearTimeout(id);
+      window.removeEventListener('resize', checkIcon);
+    };
+  }, []);
+
   const handleToggle = () => {
     if (!isOpen && containerRef.current) {
+      const isMobileViewport = typeof window !== 'undefined' ? window.innerWidth <= 640 : false;
       // Check position before opening
       const rect = containerRef.current.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
@@ -138,10 +186,15 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, isLas
       if (isLast || isNearBottom) {
         // For near-bottom rows, use a larger buffer to ensure menu is fully visible
         const aggressiveBuffer = 50;
-        const shouldShowAbove = 
-          spaceBelow < (estimatedMenuHeight + aggressiveBuffer) || 
-          (spaceBelow < requiredSpace && spaceAbove >= requiredSpace);
-        setShowAbove(shouldShowAbove);
+        // On mobile viewports, for the second-last/last rows, force showing above
+        if (isMobileViewport && typeof rowIndex === 'number' && typeof totalRows === 'number' && (totalRows - rowIndex) <= 2) {
+          setShowAbove(true);
+        } else {
+          const shouldShowAbove = 
+            spaceBelow < (estimatedMenuHeight + aggressiveBuffer) || 
+            (spaceBelow < requiredSpace && spaceAbove >= requiredSpace);
+          setShowAbove(shouldShowAbove);
+        }
       } else {
         // For other rows, use normal logic
         const shouldShowAbove = 
@@ -158,20 +211,25 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, isLas
       <button
         ref={toggleRef}
         onClick={handleToggle}
-        className={`
-          inline-flex items-center justify-center 
-          w-8 h-8 rounded-md
-          text-gray-500 hover:text-gray-700 hover:bg-gray-100
-          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1
-          transition-all duration-200 ease-in-out
-          ${isOpen ? 'bg-gray-100 text-gray-700' : ''}
-        `}
+        // inline styles to prevent external CSS from forcing a blue background or border
+        style={{ backgroundColor: 'transparent', boxShadow: 'none', padding: 0, border: 'none', outline: 'none' }}
+        className={
+          `inline-flex items-center justify-center w-8 h-8 rounded-full
+           hover:bg-gray-100 text-gray-600
+           focus:outline-none
+           transition-all duration-200 ease-in-out`
+        }
         title="Actions"
         aria-haspopup="true"
         aria-expanded={isOpen}
         aria-label="Open actions menu"
       >
-        <MoreVertical className="w-4 h-4" />
+        {/* Render either the SVG icon or a plain text fallback — never both */}
+        {showIconFallback ? (
+          <span aria-hidden className="text-gray-600 text-base leading-none">⋯</span>
+        ) : (
+          <MoreHorizontal size={16} color="#4B5563" strokeWidth={2} />
+        )}
       </button>
 
       {/* Dropdown Menu - Using portal-like positioning */}
@@ -202,14 +260,15 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, isLas
                     onEdit();
                     setIsOpen(false);
                   }}
+                  style={{ backgroundColor: 'white', boxShadow: 'none', outline: 'none' }}
                   className="
-                    w-full px-4 py-2.5 text-sm font-medium
-                    text-gray-700 hover:text-blue-600 hover:bg-blue-50
-                    flex items-center gap-3
-                    transition-colors duration-150 ease-in-out
-                    first:rounded-t-lg last:rounded-b-lg
-                    focus:outline-none focus:bg-blue-50 focus:text-blue-600
-                  "
+                      w-full px-4 py-2.5 text-sm font-medium
+                      text-gray-700 hover:text-gray-700 hover:bg-white
+                      flex items-center gap-3
+                      transition-colors duration-150 ease-in-out
+                      first:rounded-t-lg last:rounded-b-lg
+                      focus:outline-none focus:bg-white focus:text-gray-700
+                    "
                   role="menuitem"
                   tabIndex={0}
                 >
@@ -225,14 +284,15 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, isLas
                     onView();
                     setIsOpen(false);
                   }}
+                  style={{ backgroundColor: 'white', boxShadow: 'none', outline: 'none' }}
                   className="
-                    w-full px-4 py-2.5 text-sm font-medium
-                    text-gray-700 hover:text-blue-600 hover:bg-blue-50
-                    flex items-center gap-3
-                    transition-colors duration-150 ease-in-out
-                    first:rounded-t-lg last:rounded-b-lg
-                    focus:outline-none focus:bg-blue-50 focus:text-blue-600
-                  "
+                      w-full px-4 py-2.5 text-sm font-medium
+                      text-gray-700 hover:text-gray-700 hover:bg-white
+                      flex items-center gap-3
+                      transition-colors duration-150 ease-in-out
+                      first:rounded-t-lg last:rounded-b-lg
+                      focus:outline-none focus:bg-white focus:text-gray-700
+                    "
                   role="menuitem"
                   tabIndex={0}
                 >
@@ -252,14 +312,15 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, isLas
                       onDelete();
                       setIsOpen(false);
                     }}
+                    style={{ backgroundColor: 'white', boxShadow: 'none', outline: 'none' }}
                     className="
-                      w-full px-4 py-2.5 text-sm font-medium
-                      text-red-600 hover:text-red-700 hover:bg-red-50
-                      flex items-center gap-3
-                      transition-colors duration-150 ease-in-out
-                      first:rounded-t-lg last:rounded-b-lg
-                      focus:outline-none focus:bg-red-50 focus:text-red-700
-                    "
+                        w-full px-4 py-2.5 text-sm font-medium
+                        text-red-600 hover:text-red-700 hover:bg-white
+                        flex items-center gap-3
+                        transition-colors duration-150 ease-in-out
+                        first:rounded-t-lg last:rounded-b-lg
+                        focus:outline-none focus:bg-white focus:text-red-700
+                      "
                     role="menuitem"
                     tabIndex={0}
                   >
