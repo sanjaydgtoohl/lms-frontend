@@ -25,10 +25,12 @@ interface TableProps<T> {
   onDelete?: (item: T) => void;
   /** optional render key extractor (defaults to item.id || index) */
   keyExtractor?: (item: T, index: number) => string;
+  /** compact variant with reduced paddings (useful for dense tables) */
+  compact?: boolean;
 }
 
 const Table = <T,>(props: TableProps<T>) => {
-  const { data, columns, startIndex = 0, loading = false, onEdit, onView, onDelete, keyExtractor } = props;
+  const { data, columns, startIndex = 0, loading = false, onEdit, onView, onDelete, keyExtractor, compact = false } = props;
 
   // Always show table structure, even when loading or empty
   const hasData = data && data.length > 0;
@@ -39,10 +41,10 @@ const Table = <T,>(props: TableProps<T>) => {
       {/* Desktop Table View (hidden on small screens) */}
       <div className="hidden lg:block overflow-x-auto">
         <table className="w-full text-center">
-          <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+          <thead className={`sticky top-0 z-10 bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200`}> 
             <tr>
               {columns.map(col => (
-                <th key={String(col.key)} className={`px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider whitespace-nowrap ${col.className || ''}`}>
+                <th key={String(col.key)} className={`${compact ? 'px-4 py-2' : 'px-6 py-4'} text-center text-xs font-semibold text-gray-700 uppercase tracking-wider whitespace-nowrap ${col.className || ''}`}>
                   {col.header}
                 </th>
               ))}
@@ -90,9 +92,9 @@ const Table = <T,>(props: TableProps<T>) => {
                   className="hover:bg-blue-50 transition-colors duration-150 even:bg-gray-50/30"
                 >
                   {columns.map(col => (
-                    <td key={col.key} className={`px-6 py-4 align-middle text-sm text-gray-900 ${col.className || ''}`}>
-                      {col.render ? col.render(item) : ((item as any)[col.key] ?? '-')}
-                    </td>
+                    <td key={col.key} className={`${compact ? 'px-4 py-2' : 'px-6 py-4'} align-middle text-sm text-gray-900 ${col.className || ''}`}>
+                        {col.render ? col.render(item) : ((item as any)[col.key] ?? '-')}
+                      </td>
                   ))}
                   {showActions && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm">

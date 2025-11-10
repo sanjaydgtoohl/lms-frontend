@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { listAgencyTypes, listAgencyClients } from '../services';
 import { motion } from 'framer-motion';
+import ChevronDropdownIcon from '../components/ui/ChevronDropdownIcon';
 import { Plus, Loader2, Trash2 } from 'lucide-react';
 import { MasterFormHeader, NotificationPopup } from '../components/ui';
 
@@ -244,7 +245,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
                         <option key={t} value={t}>{t}</option>
                       ))}
                     </select>
-                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+                    <ChevronDropdownIcon className="absolute right-3 top-1/2 -translate-y-1/2" />
                   </div>
                   {parentErrors.type && (
                     <div className="text-xs text-red-500 mt-1">{parentErrors.type}</div>
@@ -273,7 +274,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
                         <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
                       </div>
                     ) : (
-                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+                      <ChevronDropdownIcon className="absolute right-3 top-1/2 -translate-y-1/2" />
                     )}
                   </div>
                   {parentErrors.client && (
@@ -342,7 +343,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
                             <option value="">Please Select Agency Type</option>
                             {agencyTypes.map((t: string) => (<option key={t} value={t}>{t}</option>))}
                           </select>
-                          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+                          <ChevronDropdownIcon className="absolute right-3 top-1/2 -translate-y-1/2" />
                         </div>
                         {childErrors[c.id]?.type && (
                           <div className="text-xs text-red-500 mt-1">{childErrors[c.id].type}</div>
@@ -363,7 +364,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
                             <option value="">{isLoading.agencyClients ? 'Loading clients...' : 'Please Select Brand'}</option>
                             {!isLoading.agencyClients && agencyClients.map((cc: any) => (<option key={cc.id} value={cc.id.toString()}>{cc.name}</option>))}
                           </select>
-                          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+                          <ChevronDropdownIcon className="absolute right-3 top-1/2 -translate-y-1/2" />
                         </div>
                         {childErrors[c.id]?.client && (
                           <div className="text-xs text-red-500 mt-1">{childErrors[c.id].client}</div>

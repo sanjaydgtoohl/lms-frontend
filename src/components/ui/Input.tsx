@@ -1,7 +1,9 @@
 import React, { useState, forwardRef } from 'react';
 import type { InputProps } from '../../types';
 
-const Input = forwardRef<HTMLInputElement, InputProps & React.InputHTMLAttributes<HTMLInputElement> & any>(({
+const Input = forwardRef<HTMLInputElement, InputProps & React.InputHTMLAttributes<HTMLInputElement> & {
+  rightElement?: React.ReactNode;
+}>(({
   type = 'text',
   placeholder,
   value,
@@ -11,18 +13,20 @@ const Input = forwardRef<HTMLInputElement, InputProps & React.InputHTMLAttribute
   required = false,
   label,
   name,
+  rightElement,
   ...props
 }, ref) => {
   const [showPassword, setShowPassword] = useState(false);
   const isPassword = type === 'password';
 
-  const baseClasses = 'w-full px-3 py-2 border rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent';
+  const baseClasses = 'w-full px-3 py-2 border rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
   const stateClasses = error
     ? 'border-red-500 bg-red-50'
-    : 'border-gray-300 bg-white hover:border-gray-400 focus:border-orange-500';
+    : 'border-[var(--border-color)] bg-white hover:border-[#A7B4FF] focus:shadow-[0_0_0_3px_rgba(66,133,244,0.12)]';
   const disabledClasses = disabled ? 'bg-gray-100 cursor-not-allowed opacity-60' : '';
+  const rightElementClasses = rightElement ? 'pr-10' : '';
 
-  const inputClasses = `${baseClasses} ${stateClasses} ${disabledClasses} ${isPassword ? 'pr-10' : ''}`;
+  const inputClasses = `${baseClasses} ${stateClasses} ${disabledClasses} ${isPassword || rightElement ? 'pr-10' : ''}`;
 
   return (
     <div className="space-y-1.5">
@@ -32,7 +36,7 @@ const Input = forwardRef<HTMLInputElement, InputProps & React.InputHTMLAttribute
           className="block text-sm font-medium text-gray-700"
         >
           {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
+          {required && <span className="text-[#FF0000] ml-1">*</span>}
         </label>
       )}
       <div className="relative">
@@ -52,7 +56,11 @@ const Input = forwardRef<HTMLInputElement, InputProps & React.InputHTMLAttribute
           aria-describedby={error ? `${name}-error` : undefined}
           {...props}
         />
-        {isPassword && (
+        {rightElement ? (
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
+            {rightElement}
+          </div>
+        ) : isPassword && (
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}

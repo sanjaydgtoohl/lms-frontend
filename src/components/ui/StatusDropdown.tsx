@@ -1,14 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import CallStatusButton from './CallStatusButton';
+import Badge from './Badge';
 
-interface CallStatusDropdownProps {
+interface StatusDropdownProps {
   value: string;
   options: string[];
-  onChange: (newStatus: string) => void;
+  onChange: (newValue: string) => void;
 }
 
-const CallStatusDropdown: React.FC<CallStatusDropdownProps> = ({ value, options, onChange }) => {
+const StatusDropdown: React.FC<StatusDropdownProps> = ({ value, options, onChange }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -21,12 +21,10 @@ const CallStatusDropdown: React.FC<CallStatusDropdownProps> = ({ value, options,
   }, [open]);
 
   return (
-    <div ref={ref} className="relative inline-block w-full">
-      <CallStatusButton
-        value={value}
-        onClick={() => setOpen((o) => !o)}
-        isActive={open}
-      />
+    <div ref={ref} className="relative inline-block">
+      <span onClick={() => setOpen((o) => !o)} className="inline-block cursor-pointer">
+        <Badge status={value}>{value}</Badge>
+      </span>
 
       <AnimatePresence>
         {open && (
@@ -51,8 +49,7 @@ const CallStatusDropdown: React.FC<CallStatusDropdownProps> = ({ value, options,
                   className={`px-4 py-2 cursor-pointer transition-all hover:bg-blue-50/60 ${
                     opt === value ? 'bg-blue-50/80 text-blue-700 font-semibold' : 'text-gray-700'
                   }`}
-                  onClick={(e) => {
-                    e.stopPropagation();
+                  onClick={() => {
                     onChange(opt);
                     setOpen(false);
                   }}
@@ -62,9 +59,16 @@ const CallStatusDropdown: React.FC<CallStatusDropdownProps> = ({ value, options,
               ))}
             </ul>
             <style>{`
-              ul::-webkit-scrollbar { width: 6px; }
-              ul::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 4px; }
-              ul::-webkit-scrollbar-track { background: #fff; }
+              ul::-webkit-scrollbar {
+                width: 6px;
+              }
+              ul::-webkit-scrollbar-thumb {
+                background: #e5e7eb;
+                border-radius: 4px;
+              }
+              ul::-webkit-scrollbar-track {
+                background: #fff;
+              }
             `}</style>
           </motion.div>
         )}
@@ -73,4 +77,4 @@ const CallStatusDropdown: React.FC<CallStatusDropdownProps> = ({ value, options,
   );
 };
 
-export default CallStatusDropdown;
+export default StatusDropdown;

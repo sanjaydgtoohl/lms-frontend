@@ -13,7 +13,7 @@ import IndustryMaster from './pages/IndustryMaster';
 import DesignationMaster from './pages/DesignationMaster';
 import DepartmentMaster from './pages/DepartmentMaster';
 import { MissCampaignView, MissCampaignCreate } from './pages/MissCampaign';
-import { AllLeads, CreateLead, EditLead } from './pages/LeadManagement';
+import { AllLeads, CreateLead, EditLead, ViewLead, Pending, Interested, MeetingScheduled, MeetingDone } from './pages/LeadManagement';
 import Layout from './components/layout/Layout';
 import BriefPipeline from './pages/Brief/BriefPipeline';
 import ErrorBoundary from './components/ui/ErrorBoundary';
@@ -116,8 +116,13 @@ function App() {
           <Route path="lead-management">
             <Route index element={<AllLeads />} />
             <Route path="all-leads" element={<AllLeads />} />
+            <Route path="pending" element={<Pending />} />
+            <Route path="interested" element={<Interested />} />
+            <Route path="meeting-scheduled" element={<MeetingScheduled />} />
+            <Route path="meeting-done" element={<MeetingDone />} />
             <Route path="create" element={<CreateLead />} />
             <Route path="edit/:id" element={<EditLead />} />
+            <Route path=":id" element={<ViewLead />} />
           </Route>
 
           {/* Miss Campaign Routes */}
@@ -126,10 +131,12 @@ function App() {
           <Route path="miss-campaign/view/:id" element={<MissCampaignView />} />
           <Route path="miss-campaign/view/:id/edit" element={<MissCampaignView />} />
           {/* Brief Pipeline Routes */}
-          <Route path="brief" element={<BriefPipeline />} />
-          <Route path="brief/create" element={<BriefPipeline />} />
-          <Route path="brief/:id" element={<BriefPipeline />} />
-          <Route path="brief/:id/edit" element={<BriefPipeline />} />
+          <Route path="brief">
+            <Route path="Brief_Pipeline" element={<BriefPipeline />} />
+            <Route path="create" element={<BriefPipeline />} />
+            <Route path=":id" element={<BriefPipeline />} />
+            <Route path=":id/edit" element={<BriefPipeline />} />
+          </Route>
         </Route>
         
         {/* 404 Route */}

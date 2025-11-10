@@ -105,7 +105,7 @@ export interface FormField {
 
 // UI Component Types
 export interface ButtonProps {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'master';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'master' | 'transparent' | 'priority';
   size?: 'sm' | 'md' | 'lg';
   disabled?: boolean;
   loading?: boolean;

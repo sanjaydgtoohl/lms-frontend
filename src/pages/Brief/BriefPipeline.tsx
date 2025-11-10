@@ -8,7 +8,8 @@ import { ROUTES } from '../../constants';
 import MasterHeader from '../../components/ui/MasterHeader';
 import SearchBar from '../../components/ui/SearchBar';
 import { type BriefItem as ServiceBriefItem } from '../../services/BriefPipeline';
-import Badge from '../../components/ui/Badge';
+import StatusDropdown from '../../components/ui/StatusDropdown';
+import AssignDropdown from '../../components/ui/AssignDropdown';
 
 type Brief = ServiceBriefItem;
 
@@ -32,11 +33,11 @@ const BriefPipeline: React.FC = () => {
   const params = useParams();
   const location = useLocation();
 
-  const handleEdit = (id: string) => navigate(`${ROUTES.BRIEF}/${encodeURIComponent(id)}/edit`);
-  const handleView = (id: string) => navigate(`${ROUTES.BRIEF}/${encodeURIComponent(id)}`);
+  const handleEdit = (id: string) => navigate(ROUTES.BRIEF.EDIT(encodeURIComponent(id)));
+  const handleView = (id: string) => navigate(ROUTES.BRIEF.DETAIL(encodeURIComponent(id)));
   const handleDelete = (id: string) => setBriefs(prev => prev.filter(b => b.id !== id));
 
-  const handleCreate = () => navigate(`${ROUTES.BRIEF}/create`);
+  const handleCreate = () => navigate(ROUTES.BRIEF.CREATE);
 
   const handleSaveBrief = (data: Record<string, unknown>) => {
     const d = data as Record<string, unknown>;
@@ -200,6 +201,13 @@ const BriefPipeline: React.FC = () => {
     }, 500);
   }, [searchQuery]);
 
+  // Assign options for briefs (match planners used in dummy data)
+  const planners = ['Planner 1', 'Planner 2', 'Planner 3', 'Planner 4', 'Planner 5', 'Planner 6'];
+
+  const handleAssignToChange = (briefId: string, newPlanner: string) => {
+    setBriefs(prev => prev.map(b => (b.id === briefId ? { ...b, assignTo: newPlanner } as Brief : b)));
+  };
+
   const handleSaveEdited = (updated: Partial<Brief>) => {
     setBriefs(prev => prev.map(b => (b.id === updated.id ? { ...b, ...(updated as Partial<Brief>) } as Brief : b)));
   };
@@ -214,6 +222,9 @@ const BriefPipeline: React.FC = () => {
   const [tooltipPlacement, setTooltipPlacement] = useState<'top' | 'bottom'>('top');
   const hoverTimeout = useRef<number | null>(null);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
+
+  // Status options
+  const STATUS_OPTIONS = ['submission', 'approve', 'negotiation', 'closed', 'not-interested'];
 
   const showTooltip = (e: React.MouseEvent, content: string) => {
     if (hoverTimeout.current) {
@@ -257,23 +268,36 @@ const BriefPipeline: React.FC = () => {
     hideTooltip();
   };
 
+  const handleSelectStatus = (id: string | null, newStatus: string) => {
+    if (!id) return;
+    setBriefs(prev => prev.map(b => (b.id === id ? { ...b, status: newStatus } as Brief : b)));
+  };
+
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
       {showCreate ? (
-        <CreateBriefForm inline onClose={() => navigate(ROUTES.BRIEF)} onSave={handleSaveBrief} />
+        <CreateBriefForm inline onClose={() => navigate(ROUTES.BRIEF.PIPELINE)} onSave={handleSaveBrief} />
       ) : viewItem ? (
-        <MasterView item={viewItem} onClose={() => navigate(ROUTES.BRIEF)} />
+        <MasterView item={viewItem} onClose={() => navigate(ROUTES.BRIEF.PIPELINE)} />
       ) : editItem ? (
         <CreateBriefForm
           inline
           mode="edit"
           initialData={editItem}
-          onClose={() => navigate(ROUTES.BRIEF)}
+          onClose={() => navigate(ROUTES.BRIEF.PIPELINE)}
           onSave={(data: Record<string, unknown>) => handleSaveEdited(data as Partial<Brief>)}
         />
       ) : (
         <>
-          <MasterHeader onCreateClick={handleCreate} createButtonLabel="Create Brief" showBreadcrumb={true} />
+          <MasterHeader
+            onCreateClick={handleCreate}
+            createButtonLabel="Create Brief"
+            showBreadcrumb={true}
+            breadcrumbItems={[
+              { label: 'Brief', path: ROUTES.BRIEF.ROOT },
+              { label: 'Brief Pipeline', isActive: true }
+            ]}
+          />
 
           <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
             <div className="bg-gray-50 px-6 py-4 flex items-center justify-between">
@@ -297,8 +321,24 @@ const BriefPipeline: React.FC = () => {
                 { key: 'priority', header: 'Priority', render: (it: Brief) => it.priority, className: 'whitespace-nowrap overflow-hidden truncate' },
                 { key: 'budget', header: 'Budget', render: (it: Brief) => String(it.budget ?? ''), className: 'whitespace-nowrap overflow-hidden truncate' },
                 { key: 'createdBy', header: 'Created By', render: (it: Brief) => it.createdBy, className: 'whitespace-nowrap overflow-hidden truncate' },
-                { key: 'assignTo', header: 'Assign To', render: (it: Brief) => it.assignTo, className: 'whitespace-nowrap overflow-hidden truncate' },
-                { key: 'status', header: 'Status', render: (it: Brief) => <Badge status={it.status}>{it.status}</Badge>, className: 'whitespace-nowrap overflow-hidden truncate' },
+                { key: 'assignTo', header: 'Assign To', render: (it: Brief) => (
+                  <div className="min-w-[140px]">
+                    <AssignDropdown
+                      value={String(it.assignTo ?? '')}
+                      options={planners}
+                      onChange={(newPlanner: string) => handleAssignToChange(it.id, newPlanner)}
+                    />
+                  </div>
+                ), className: 'min-w-[140px]' },
+                { key: 'status', header: 'Status', render: (it: Brief) => (
+                  <div className="min-w-[140px]">
+                    <StatusDropdown
+                      value={String(it.status ?? '')}
+                      options={STATUS_OPTIONS}
+                      onChange={(newStatus: string) => handleSelectStatus(it.id, newStatus)}
+                    />
+                  </div>
+                ), className: 'min-w-[140px]' },
                 {
                   key: 'briefDetail',
                   header: 'Brief Detail',
@@ -357,6 +397,7 @@ const BriefPipeline: React.FC = () => {
               </div>
             </div>
           )}
+          {/* Status dropdown now uses StatusDropdown component inside table cells */}
         </>
       )}
     </div>

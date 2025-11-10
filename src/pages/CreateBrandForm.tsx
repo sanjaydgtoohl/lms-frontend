@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MasterFormHeader } from '../components/ui';
+import ChevronDropdownIcon from '../components/ui/ChevronDropdownIcon';
 import { listZones, listStates, listCountries, listBrandTypes } from '../services/CreateBrandForm';
 import type { Zone, State, Country, BrandType } from '../services/CreateBrandForm';
 import { fetchIndustries } from '../services/CreateIndustryForm';
@@ -70,7 +71,7 @@ const CitySelect: React.FC<CitySelectProps> = ({ state, value, onChange, presele
           <option key={String(c.id)} value={String(c.id)}>{c.name}</option>
         ))}
       </select>
-      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+      <ChevronDropdownIcon className="absolute right-3 top-1/2 -translate-y-1/2" />
     </div>
   );
 };
@@ -252,7 +253,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm text-[var(--text-secondary)] mb-1">Brand Name <span className="text-red-500">*</span></label>
+          <label className="block text-sm text-[var(--text-secondary)] mb-1">Brand Name <span className="text-[#FF0000]">*</span></label>
           <input
             name="brandName"
             value={form.brandName}
@@ -277,7 +278,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                 <option key={String(type.id)} value={String(type.id)}>{type.name}</option>
               ))}
             </select>
-            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+            <ChevronDropdownIcon className="absolute right-3 top-1/2 -translate-y-1/2" />
           </div>
           {errors.brandType && <div className="text-xs text-red-500 mt-1">{errors.brandType}</div>}
         </div>
@@ -307,12 +308,12 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
               <option value="Agency 2">Agency 2</option>
               <option value="Agency 3">Agency 3</option>
             </select>
-            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+            <ChevronDropdownIcon className="absolute right-3 top-1/2 -translate-y-1/2" />
           </div>
         </div>
 
         <div>
-          <label className="block text-sm text-[var(--text-secondary)] mb-1">Industry <span className="text-red-500">*</span></label>
+          <label className="block text-sm text-[var(--text-secondary)] mb-1">Industry <span className="text-[#FF0000]">*</span></label>
           <div className="relative">
             <select
               name="industry"
@@ -329,13 +330,13 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                 <option value="">No industries available</option>
               )}
             </select>
-            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+            <ChevronDropdownIcon className="absolute right-3 top-1/2 -translate-y-1/2" />
           </div>
           {errors.industry && <div className="text-xs text-red-500 mt-1">{errors.industry}</div>}
         </div>
 
         <div>
-          <label className="block text-sm text-[var(--text-secondary)] mb-1">Country <span className="text-red-500">*</span></label>
+          <label className="block text-sm text-[var(--text-secondary)] mb-1">Country <span className="text-[#FF0000]">*</span></label>
           <div className="relative">
             <select
               name="country"
@@ -348,7 +349,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                 <option key={String(c.id)} value={String(c.id)}>{c.name}</option>
               ))}
             </select>
-            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+            <ChevronDropdownIcon className="absolute right-3 top-1/2 -translate-y-1/2" />
           </div>
           {errors.country && <div className="text-xs text-red-500 mt-1">{errors.country}</div>}
         </div>
@@ -389,7 +390,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                 <option key={String(s.id)} value={String(s.id)}>{s.name}</option>
               ))}
             </select>
-            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+            <ChevronDropdownIcon className="absolute right-3 top-1/2 -translate-y-1/2" />
           </div>
         </div>
 
@@ -412,7 +413,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                 <option key={z.id} value={String(z.id)}>{z.name}</option>
               ))}
             </select>
-            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+            <ChevronDropdownIcon className="absolute right-3 top-1/2 -translate-y-1/2" />
           </div>
         </div>
       </div>

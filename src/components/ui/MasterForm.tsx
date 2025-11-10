@@ -65,7 +65,7 @@ const MasterForm: React.FC<MasterFormProps> = ({
               htmlFor={field.name}
               className="block text-sm font-medium text-[var(--text-primary)]"
             >
-              {field.label} {field.required && <span className="text-red-500">*</span>}
+              {field.label} {field.required && <span className="text-[#FF0000]">*</span>}
             </label>
             {field.type === 'select' ? (
               <select
