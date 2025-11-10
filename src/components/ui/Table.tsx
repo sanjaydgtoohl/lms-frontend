@@ -108,6 +108,8 @@ const Table = <T,>(props: TableProps<T>) => {
                       <div className="flex justify-center">
                         <ActionMenu
                           isLast={index === data.length - 1}
+                          rowIndex={index}
+                          totalRows={data.length}
                           onEdit={() => onEdit?.(item)}
                           onView={() => onView?.(item)}
                           onDelete={() => onDelete?.(item)}
@@ -164,6 +166,8 @@ const Table = <T,>(props: TableProps<T>) => {
                 </div>
                 <ActionMenu
                   isLast={index === data.length - 1}
+                  rowIndex={index}
+                  totalRows={data.length}
                   onEdit={() => onEdit?.(item)}
                   onView={() => onView?.(item)}
                   onDelete={() => onDelete?.(item)}

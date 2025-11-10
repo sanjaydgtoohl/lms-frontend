@@ -14,14 +14,45 @@ interface ActionMenuProps {
   totalRows?: number;
 }
 
-const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, isLast }) => {
+const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, isLast, rowIndex, totalRows }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [showAbove, setShowAbove] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Check if row is near bottom (last 3 rows)
+  const isNearBottom = typeof rowIndex === 'number' && typeof totalRows === 'number' 
+    ? (totalRows - rowIndex) <= 3
+    : false;
+
   useEffect(() => {
+    const checkPosition = (): boolean => {
+      if (!containerRef.current) return false;
+
+      const rect = containerRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const spaceBelow = viewportHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      
+      // Estimate menu height (approximately 140px for 3 items with padding)
+      const estimatedMenuHeight = 140;
+      const buffer = 30;
+      const requiredSpace = estimatedMenuHeight + buffer;
+      
+      // For last 3 rows, use more aggressive positioning
+      if (isLast || isNearBottom) {
+        const aggressiveBuffer = 50;
+        // Show above if space below is less than menu + aggressive buffer
+        // OR if there's not enough space below but enough above
+        return spaceBelow < (estimatedMenuHeight + aggressiveBuffer) || 
+               (spaceBelow < requiredSpace && spaceAbove >= requiredSpace);
+      }
+      
+      // For other rows, use standard logic
+      return spaceBelow < requiredSpace && spaceAbove >= requiredSpace;
+    };
+
     const handleClickOutside = (event: MouseEvent) => {
       if (
         menuRef.current &&
@@ -33,53 +64,100 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, isLas
       }
     };
 
-    const checkPosition = () => {
-      if (!isOpen || !containerRef.current) return;
-
-      // If consumer passed explicit prop, respect it for last row
-      if (typeof isLast === 'boolean' && isLast) {
-        setShowAbove(true);
-        return;
-      }
-
-      // Check available space dynamically
-      const rect = containerRef.current.getBoundingClientRect();
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const spaceAbove = rect.top;
-      const menuHeight = 120; // Approximate menu height
-      
-      // Show above if not enough space below but enough space above
-      if (spaceBelow < menuHeight && spaceAbove > menuHeight) {
-        setShowAbove(true);
-      } else if (spaceBelow >= menuHeight) {
-        setShowAbove(false);
-      } else {
-        // If not enough space either way, prefer below (will scroll into view)
-        setShowAbove(false);
+    const updatePosition = () => {
+      if (isOpen && containerRef.current) {
+        const shouldShowAbove = checkPosition();
+        setShowAbove(shouldShowAbove);
       }
     };
 
     if (isOpen) {
-      checkPosition();
-      window.addEventListener('scroll', checkPosition, true);
-      window.addEventListener('resize', checkPosition);
+      // Immediately check position when menu opens
+      const initialCheck = () => {
+        if (containerRef.current) {
+          const rect = containerRef.current.getBoundingClientRect();
+          const viewportHeight = window.innerHeight;
+          const spaceBelow = viewportHeight - rect.bottom;
+          const spaceAbove = rect.top;
+          const estimatedMenuHeight = 140;
+          const buffer = 30;
+          const requiredSpace = estimatedMenuHeight + buffer;
+          
+          if (isLast || isNearBottom) {
+            const aggressiveBuffer = 50;
+            const shouldShowAbove = 
+              spaceBelow < (estimatedMenuHeight + aggressiveBuffer) || 
+              (spaceBelow < requiredSpace && spaceAbove >= requiredSpace);
+            setShowAbove(shouldShowAbove);
+          } else {
+            const shouldShowAbove = 
+              spaceBelow < requiredSpace && spaceAbove >= requiredSpace;
+            setShowAbove(shouldShowAbove);
+          }
+        }
+      };
+      
+      // Small delay to ensure DOM is ready
+      const timeoutId = setTimeout(initialCheck, 0);
+      
+      // Update position on scroll/resize when menu is open
+      updatePosition();
+      window.addEventListener('scroll', updatePosition, true);
+      window.addEventListener('resize', updatePosition);
+      
+      document.addEventListener('mousedown', handleClickOutside);
+      
+      return () => {
+        clearTimeout(timeoutId);
+        document.removeEventListener('mousedown', handleClickOutside);
+        window.removeEventListener('scroll', updatePosition, true);
+        window.removeEventListener('resize', updatePosition);
+      };
     }
 
     document.addEventListener('mousedown', handleClickOutside);
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      window.removeEventListener('scroll', checkPosition, true);
-      window.removeEventListener('resize', checkPosition);
     };
-  }, [isOpen, isLast]);
+  }, [isOpen, isLast, rowIndex, totalRows, isNearBottom]);
+
+  const handleToggle = () => {
+    if (!isOpen && containerRef.current) {
+      // Check position before opening
+      const rect = containerRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const spaceBelow = viewportHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      const estimatedMenuHeight = 140;
+      const buffer = 30;
+      const requiredSpace = estimatedMenuHeight + buffer;
+      
+      // For last 3 rows, be more aggressive - show above if space below is less than menu + large buffer
+      // This ensures menu doesn't get cut off for second last and third last rows
+      if (isLast || isNearBottom) {
+        // For near-bottom rows, use a larger buffer to ensure menu is fully visible
+        const aggressiveBuffer = 50;
+        const shouldShowAbove = 
+          spaceBelow < (estimatedMenuHeight + aggressiveBuffer) || 
+          (spaceBelow < requiredSpace && spaceAbove >= requiredSpace);
+        setShowAbove(shouldShowAbove);
+      } else {
+        // For other rows, use normal logic
+        const shouldShowAbove = 
+          spaceBelow < requiredSpace && spaceAbove >= requiredSpace;
+        setShowAbove(shouldShowAbove);
+      }
+    }
+    setIsOpen((v) => !v);
+  };
 
   return (
     <div className="relative inline-flex z-10" ref={containerRef}>
       {/* Toggle Button */}
       <button
         ref={toggleRef}
-        onClick={() => setIsOpen((v) => !v)}
+        onClick={handleToggle}
         className={`
           inline-flex items-center justify-center 
           w-8 h-8 rounded-md
