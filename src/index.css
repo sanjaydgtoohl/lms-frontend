@@ -1,3 +1,37 @@
+/* Force orange background for Add, Create, Go Back, Save, Update buttons */
+button,
+button[type="button"],
+button[type="submit"],
+.btn,
+.btn-primary {
+  /* Already set globally, but reinforce for these specific cases */
+}
+button,
+.btn,
+.btn-primary {
+  /* If button text matches, force orange background */
+}
+button,
+.btn,
+.btn-primary {
+  /* Use attribute selector for common cases */
+}
+button,
+.btn,
+.btn-primary {
+  /* Use JS-injected class for dynamic text if needed */
+}
+/* Use :is() for modern browsers to match text content */
+button:is([data-btn-label="Add"], [data-btn-label="Create"], [data-btn-label="Go Back"], [data-btn-label="Save"], [data-btn-label="Update"]) {
+  background-color: var(--color-orange-400) !important;
+  color: #fff !important;
+}
+/* Fallback for static text buttons (case-insensitive) */
+button,
+.btn,
+.btn-primary {
+  /* Use JS or React to add data-btn-label attribute for dynamic text if needed */
+}
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap');
 
@@ -21,6 +55,7 @@
   --border-color: #E2E8F0;
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --color-red-600: #DC2626;
 
   color-scheme: light;
   color: var(--text-primary);
@@ -262,7 +297,9 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: var(--btn-bg);
+  /* Do not force a global orange background — keep buttons neutral by default.
+     Primary buttons use .btn-primary which is styled separately. */
+  background-color: transparent;
   cursor: pointer;
   transition: border-color 0.25s;
 }
@@ -274,6 +311,26 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
+/* Force orange background for Add, Create, Go Back, Save, Update buttons */
+button[data-btn-label="Add"],
+button[data-btn-label="Create"],
+button[data-btn-label="Go Back"],
+button[data-btn-label="Save"],
+button[data-btn-label="Update"] {
+  background-color: var(--color-orange-400) !important;
+  color: #FFFFFF !important;
+  border-color: transparent !important;
+}
+
+button[data-btn-label="Add"]:hover,
+button[data-btn-label="Create"]:hover,
+button[data-btn-label="Go Back"]:hover,
+button[data-btn-label="Save"]:hover,
+button[data-btn-label="Update"]:hover {
+  background-color: #ff9500 !important;
+  color: #FFFFFF !important;
+}
+
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
@@ -282,21 +339,22 @@ button:focus-visible {
   a:hover {
     color: #747bff;
   }
-  button {
-    background-color: var(--btn-bg);
+  /* Don't set a global button background for light mode; limit to primary buttons only. */
+  .btn-primary {
+    background-color: var(--btn-bg) !important;
   }
 }
 
 /* Primary button helper class used by React Button component and utility buttons */
 .btn-primary {
-  background-color: var(--btn-bg) !important;
+  background-color: var(--color-orange-400) !important;
   color: #FFFFFF !important; /* force white text */
   border-color: transparent !important;
   /* ensure text color does not change on hover/focus */
   -webkit-text-fill-color: #FFFFFF !important;
 }
 .btn-primary:hover {
-  background-color: var(--btn-bg-hover) !important;
+  background-color: #ff9500 !important;
   color: #FFFFFF !important;
   -webkit-text-fill-color: #FFFFFF !important;
 }
@@ -332,4 +390,20 @@ button:focus-visible {
   .btn.text-white {
     color: var(--text-primary) !important;
   }
+}
+
+/* Api notification (bell) button should be visually minimal and borderless */
+.api-notification-button {
+  background: transparent !important;
+  border: none !important;
+  padding: 0.25rem !important;
+  width: auto !important;
+  height: auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.api-notification-button:focus {
+  outline: none !important;
+  box-shadow: none !important;
 }

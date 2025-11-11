@@ -36,6 +36,18 @@ export const ROUTES = {
   CAMPAIGN_MANAGEMENT: '/campaign-management',
   FINANCE: '/finance',
   USER_MANAGEMENT: '/user-management',
+  PERMISSION: {
+    ROOT: '/user-management/permission',
+    CREATE: '/user-management/permission/create',
+    EDIT: (id: string) => `/user-management/permission/edit/${id}`,
+    DETAIL: (id: string) => `/user-management/permission/${id}`,
+  },
+  ROLE: {
+    ROOT: '/user-management/role',
+    CREATE: '/user-management/role/create',
+    EDIT: (id: string) => `/user-management/role/edit/${id}`,
+    DETAIL: (id: string) => `/user-management/role/${id}`,
+  },
   // Master Data Routes
   BRAND_MASTER: '/master/brand',
   AGENCY_MASTER: '/master/agency',

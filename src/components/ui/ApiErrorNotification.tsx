@@ -7,10 +7,8 @@ const ApiErrorNotification: React.FC = () => {
   const [open, setOpen] = useState(false);
   const hasErrors = errorList.length > 0;
 
-  // Blinking animation only when errors exist
-  const iconClass = hasErrors
-    ? 'animate-blink text-red-600'
-    : 'text-gray-400';
+  // Icon is red (CSS variable) always; blinking animation will be applied to the badge instead
+  const iconAnimationClass = '';
 
   return (
     <div className="relative inline-block">
@@ -18,12 +16,17 @@ const ApiErrorNotification: React.FC = () => {
         type="button"
         aria-label="API Error Notification"
         className="api-notification-button bg-transparent"
-        style={{ backgroundColor: 'transparent' }}
         onClick={() => setOpen((v) => !v)}
       >
-        <Bell className={iconClass + ' w-6 h-6'} />
+        <Bell className={`w-6 h-6`} style={{ color: 'var(--color-red-600)' }} />
         {hasErrors && (
-          <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1.5 py-0.5 font-bold animate-pulse">
+          <span
+            className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1.5 py-0.5 font-bold animate-blink"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            title={`${errorList.length} API error(s)`}
+          >
             {errorList.length}
           </span>
         )}

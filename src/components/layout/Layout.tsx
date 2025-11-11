@@ -37,7 +37,8 @@ const Layout: React.FC = () => {
   const shouldShowBreadcrumb = !location.pathname.startsWith('/master')
     && !location.pathname.startsWith('/miss-campaign')
     && !location.pathname.startsWith('/lead-management')
-    && !location.pathname.startsWith('/brief');
+    && !location.pathname.startsWith('/brief')
+    && !location.pathname.startsWith('/user-management');
 
   return (
     <>

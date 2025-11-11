@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useAuthStore } from './store/auth';
-import { setupTokenExpirationCheck, handleTokenExpiration } from './utils/auth';
+import { handleTokenExpiration } from './utils/auth';
 import LoginCard from './pages/Auth/LoginCard';
 import Dashboard from './pages/Dashboard';
 import Courses from './pages/Courses';
@@ -14,6 +14,7 @@ import DesignationMaster from './pages/DesignationMaster';
 import DepartmentMaster from './pages/DepartmentMaster';
 import { MissCampaignView, MissCampaignCreate } from './pages/MissCampaign';
 import { AllLeads, CreateLead, EditLead, ViewLead, Pending, Interested, MeetingScheduled, MeetingDone } from './pages/LeadManagement';
+import { AllPermissions, CreatePermission, ViewPermission, AllRoles, CreateRole, ViewRole } from './pages/UserManagement';
 import Layout from './components/layout/Layout';
 import BriefPipeline from './pages/Brief/BriefPipeline';
 import ErrorBoundary from './components/ui/ErrorBoundary';
@@ -136,6 +137,19 @@ function App() {
             <Route path="create" element={<BriefPipeline />} />
             <Route path=":id" element={<BriefPipeline />} />
             <Route path=":id/edit" element={<BriefPipeline />} />
+          </Route>
+
+          {/* User Management Routes */}
+          <Route path="user-management">
+            <Route index element={<AllPermissions />} />
+            <Route path="permission" element={<AllPermissions />} />
+            <Route path="permission/create" element={<CreatePermission />} />
+            <Route path="permission/edit/:id" element={<CreatePermission />} />
+            <Route path="permission/:id" element={<ViewPermission />} />
+            <Route path="role" element={<AllRoles />} />
+            <Route path="role/create" element={<CreateRole />} />
+            <Route path="role/edit/:id" element={<CreateRole />} />
+            <Route path="role/:id" element={<ViewRole />} />
           </Route>
         </Route>
         

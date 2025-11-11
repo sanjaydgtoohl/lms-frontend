@@ -36,12 +36,39 @@ const Button: React.FC<ButtonProps & React.ButtonHTMLAttributes<HTMLButtonElemen
 
   const classes = `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`;
 
+  // Detect if button label matches one of the target texts for orange background
+  let labelText = '';
+  if (typeof children === 'string') {
+    labelText = children.trim();
+  } else if (Array.isArray(children)) {
+    // Handle JSX children (e.g., [icon, span with text])
+    for (const child of children) {
+      if (typeof child === 'string') {
+        labelText = child.trim();
+        break;
+      } else if (child && typeof child === 'object' && 'props' in child && child.props.children) {
+        const childText = typeof child.props.children === 'string' ? child.props.children.trim() : '';
+        if (childText) {
+          labelText = childText;
+          break;
+        }
+      }
+    }
+  } else if (children && typeof children === 'object' && 'props' in children) {
+    // Handle single JSX element child
+    labelText = typeof children.props.children === 'string' ? children.props.children.trim() : '';
+  }
+  
+  const orangeLabels = ['Add', 'Create', 'Go Back', 'Save', 'Update'];
+  const btnLabel = orangeLabels.includes(labelText) ? labelText : undefined;
+
   return (
     <button
       type={type}
       className={classes}
       disabled={disabled || loading}
       onClick={onClick}
+      data-btn-label={btnLabel}
       {...props}
     >
       {loading && (
