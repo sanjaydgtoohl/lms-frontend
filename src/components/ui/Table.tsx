@@ -45,7 +45,7 @@ const Table = <T,>(props: TableProps<T>) => {
               {columns.map(col => (
                 <th
                   key={String(col.key)}
-                  className={`px-6 py-3.5 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-b border-gray-200 ${col.className || ''}`}
+                  className={`px-6 py-3.5 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider border-b border-gray-200 ${col.className || ''}`}
                 >
                   {col.header}
                 </th>
@@ -95,10 +95,10 @@ const Table = <T,>(props: TableProps<T>) => {
                   key={keyExtractor ? keyExtractor(item, index) : (String((item as Record<string, unknown>).id) || String(index))}
                   className="hover:bg-gray-50 transition-colors duration-150"
                 >
-                  {columns.map(col => (
+                    {columns.map(col => (
                     <td
                       key={col.key}
-                      className={`px-6 py-4 whitespace-nowrap text-sm text-gray-900 ${col.className || ''}`}
+                      className={`px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center ${col.className || ''}`}
                     >
                       {col.render ? col.render(item) : String((item as Record<string, unknown>)[col.key] ?? '-')}
                     </td>
@@ -158,8 +158,8 @@ const Table = <T,>(props: TableProps<T>) => {
               key={keyExtractor ? keyExtractor(item, index) : (String((item as Record<string, unknown>).id) || String(index))}
               className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow duration-200"
             >
-              <div className="flex justify-between items-start mb-3 pb-3 border-b border-gray-100">
-                <div className="flex gap-2 items-center">
+              <div className="flex flex-col items-center mb-3 pb-3 border-b border-gray-100">
+                <div className="flex gap-2 items-center mb-2">
                   <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold">
                     {startIndex + index + 1}
                   </span>
@@ -180,12 +180,12 @@ const Table = <T,>(props: TableProps<T>) => {
                   .map(col => (
                     <div
                       key={col.key}
-                      className="flex justify-between items-start gap-3"
+                      className="flex flex-col items-center gap-1 text-center"
                     >
-                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap flex-shrink-0 min-w-[100px]">
-                        {typeof col.header === 'string' ? col.header : col.key}:
+                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                        {typeof col.header === 'string' ? col.header : col.key}
                       </span>
-                      <span className="text-sm font-medium text-gray-900 text-right break-words flex-1">
+                      <span className="text-sm font-medium text-gray-900 break-words">
                         {col.render ? col.render(item) : String((item as Record<string, unknown>)[col.key] ?? '-')}
                       </span>
                     </div>

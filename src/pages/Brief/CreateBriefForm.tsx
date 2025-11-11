@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MasterFormHeader, NotificationPopup, Button, SelectField } from '../../components/ui';
+import ChevronDropdownIcon from '../../components/ui/ChevronDropdownIcon';
 // Dropdown UI uses SelectField component
 
 type Props = {
@@ -208,31 +209,25 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                 </div>
                 <div>
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">Assign To</label>
-                  <select
+                  <SelectField
                     name="assignTo"
+                    placeholder="Please Assign To Planner"
+                    options={['Planner 1', 'Planner 2', 'Planner 3', 'Planner 4', 'Planner 5']}
                     value={form.assignTo}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white"
-                  >
-                    <option value="">Please Assign To Planner</option>
-                    {['Planner 1', 'Planner 2', 'Planner 3', 'Planner 4', 'Planner 5'].map((p) => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
-                  </select>
+                    onChange={(v) => setForm(prev => ({ ...prev, assignTo: v }))}
+                    inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">Brief Status</label>
-                  <select
+                  <SelectField
                     name="status"
+                    placeholder="Select Brief Status"
+                    options={['Not Interested', 'Submission', 'Negotiation', 'Approve', 'Closed']}
                     value={form.status}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white"
-                  >
-                    <option value="">Select Brief Status</option>
-                    {['Not Interested', 'Submission', 'Negotiation', 'Approve', 'Closed'].map((s) => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
+                    onChange={(v) => { setForm(prev => ({ ...prev, status: v })); }}
+                    inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">Mode Of Campaign</label>
@@ -263,23 +258,14 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                 </div>
                 <div>
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">Select Type</label>
-                  {/** Determine options based on selected programmatic mode */}
-                  {(() => {
-                    const typeOptions = form.programmatic === 'Non-Programmatic' ? ['DOOH', 'OOH'] : ['DOOH', 'CTV'];
-                    return (
-                      <select
-                        name="type"
-                        value={form.type}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white"
-                      >
-                        <option value="">Select Type</option>
-                        {typeOptions.map((t) => (
-                          <option key={t} value={t}>{t}</option>
-                        ))}
-                      </select>
-                    );
-                  })()}
+                  <SelectField
+                    name="type"
+                    placeholder="Select Type"
+                    options={form.programmatic === 'Non-Programmatic' ? ['DOOH', 'OOH'] : ['DOOH', 'CTV']}
+                    value={form.type}
+                    onChange={(v) => setForm(prev => ({ ...prev, type: v }))}
+                    inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
+                  />
                 </div>
               </div>
               {/* Right column */}

@@ -89,7 +89,7 @@ const Header: React.FC<HeaderProps> = ({
                     role="menuitem"
                     variant="transparent"
                     onClick={() => setIsUserMenuOpen(false)}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700"
+                    className="w-full flex items-center justify-start gap-2 px-4 py-2 text-sm text-gray-700"
                   >
                     <UserRound className="w-4 h-4 text-gray-500" />
                     Profile
@@ -98,7 +98,7 @@ const Header: React.FC<HeaderProps> = ({
                     role="menuitem"
                     variant="transparent"
                     onClick={() => setIsUserMenuOpen(false)}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700"
+                    className="w-full flex items-center justify-start gap-2 px-4 py-2 text-sm text-gray-700"
                   >
                     <Settings className="w-4 h-4 text-gray-500" />
                     Settings
@@ -107,7 +107,7 @@ const Header: React.FC<HeaderProps> = ({
                     role="menuitem"
                     variant="transparent"
                     onClick={() => setIsUserMenuOpen(false)}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700"
+                    className="w-full flex items-center justify-start gap-2 px-4 py-2 text-sm text-gray-700"
                   >
                     <LifeBuoy className="w-4 h-4 text-gray-500" />
                     Support
@@ -115,14 +115,14 @@ const Header: React.FC<HeaderProps> = ({
                 </div>
                 <div className="py-1 border-t border-gray-100">
                   <Button
-                      role="menuitem"
-                      variant="transparent"
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      Logout
-                    </Button>
+                    role="menuitem"
+                    variant="transparent"
+                    onClick={handleLogout}
+                    className="w-full flex items-center justify-start gap-2 px-4 py-2 text-sm text-red-600"
+                  >
+                    <LogOut className="w-4 h-4 text-red-600" />
+                    Logout
+                  </Button>
                 </div>
               </div>
             )}
