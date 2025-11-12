@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { MasterFormHeader } from '../components/ui';
-import ChevronDropdownIcon from '../components/ui/ChevronDropdownIcon';
+import { MasterFormHeader, SelectField } from '../components/ui';
 import { listZones, listStates, listCountries, listBrandTypes } from '../services/CreateBrandForm';
 import type { Zone, State, Country, BrandType } from '../services/CreateBrandForm';
 import { fetchIndustries } from '../services/CreateIndustryForm';
@@ -59,19 +58,15 @@ const CitySelect: React.FC<CitySelectProps> = ({ state, value, onChange, presele
   }, [state]);
 
   return (
-    <div className="relative">
-      <select
+    <div>
+      <SelectField
         name="city"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full appearance-none px-3 pr-8 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-      >
-        <option value="">{loading ? 'Loading cities...' : cities.length ? 'Select City' : 'Select State first'}</option>
-        {cities.map((c) => (
-          <option key={String(c.id)} value={String(c.id)}>{c.name}</option>
-        ))}
-      </select>
-      <ChevronDropdownIcon className="absolute right-3 top-1/2 -translate-y-1/2" />
+        onChange={(v) => onChange(v)}
+        options={cities.map(c => ({ value: String(c.id), label: c.name }))}
+        placeholder={loading ? 'Loading cities...' : (cities.length ? 'Select City' : 'Select State first')}
+        disabled={loading}
+      />
     </div>
   );
 };
@@ -266,19 +261,14 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
 
         <div>
           <label className="block text-sm text-[var(--text-secondary)] mb-1">Brand Type <span className="text-red-500">*</span></label>
-          <div className="relative">
-            <select
+          <div>
+            <SelectField
               name="brandType"
               value={form.brandType}
-              onChange={handleChange}
-              className="w-full appearance-none px-3 pr-8 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-            >
-              <option value="">Please Select Brand Type</option>
-              {brandTypes.map((type) => (
-                <option key={String(type.id)} value={String(type.id)}>{type.name}</option>
-              ))}
-            </select>
-            <ChevronDropdownIcon className="absolute right-3 top-1/2 -translate-y-1/2" />
+              onChange={(v) => setForm(prev => ({ ...prev, brandType: v }))}
+              options={brandTypes.map(t => ({ value: String(t.id), label: t.name }))}
+              placeholder="Search or select option"
+            />
           </div>
           {errors.brandType && <div className="text-xs text-red-500 mt-1">{errors.brandType}</div>}
         </div>
@@ -296,60 +286,41 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
 
         <div>
           <label className="block text-sm text-[var(--text-secondary)] mb-1">Select Existing Agency</label>
-          <div className="relative">
-            <select
+          <div>
+            <SelectField
               name="agency"
               value={form.agency}
-              onChange={handleChange}
-              className="w-full appearance-none px-3 pr-8 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-            >
-              <option value="">Please Select Agency (optional)</option>
-              <option value="Agency 1">Agency 1</option>
-              <option value="Agency 2">Agency 2</option>
-              <option value="Agency 3">Agency 3</option>
-            </select>
-            <ChevronDropdownIcon className="absolute right-3 top-1/2 -translate-y-1/2" />
+              onChange={(v) => setForm(prev => ({ ...prev, agency: v }))}
+              options={[ 'Agency 1', 'Agency 2', 'Agency 3' ]}
+              placeholder="Search or select option"
+            />
           </div>
         </div>
 
         <div>
           <label className="block text-sm text-[var(--text-secondary)] mb-1">Industry <span className="text-[#FF0000]">*</span></label>
-          <div className="relative">
-            <select
+          <div>
+            <SelectField
               name="industry"
               value={form.industry}
-              onChange={handleChange}
-              className="w-full appearance-none px-3 pr-8 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-            >
-              <option value="">Please Select Industry</option>
-              {industries.length ? (
-                industries.map((it) => (
-                  <option key={String(it.id)} value={String(it.id)}>{it.name}</option>
-                ))
-              ) : (
-                <option value="">No industries available</option>
-              )}
-            </select>
-            <ChevronDropdownIcon className="absolute right-3 top-1/2 -translate-y-1/2" />
+              onChange={(v) => setForm(prev => ({ ...prev, industry: v }))}
+              options={industries.length ? industries.map(it => ({ value: String(it.id), label: it.name })) : []}
+              placeholder={industries.length ? 'Search or select option' : 'No industries available'}
+            />
           </div>
           {errors.industry && <div className="text-xs text-red-500 mt-1">{errors.industry}</div>}
         </div>
 
         <div>
           <label className="block text-sm text-[var(--text-secondary)] mb-1">Country <span className="text-[#FF0000]">*</span></label>
-          <div className="relative">
-            <select
+          <div>
+            <SelectField
               name="country"
               value={form.country}
-              onChange={handleChange}
-              className="w-full appearance-none px-3 pr-8 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-            >
-              <option value="Please Select Country">Please Select Country</option>
-              {countries.map((c) => (
-                <option key={String(c.id)} value={String(c.id)}>{c.name}</option>
-              ))}
-            </select>
-            <ChevronDropdownIcon className="absolute right-3 top-1/2 -translate-y-1/2" />
+              onChange={(v) => setForm(prev => ({ ...prev, country: v }))}
+              options={countries.map(c => ({ value: String(c.id), label: c.name }))}
+              placeholder="Search or select option"
+            />
           </div>
           {errors.country && <div className="text-xs text-red-500 mt-1">{errors.country}</div>}
         </div>
@@ -378,19 +349,14 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
 
         <div>
           <label className="block text-sm text-[var(--text-secondary)] mb-1">State</label>
-          <div className="relative">
-            <select
+          <div>
+            <SelectField
               name="state"
               value={form.state}
-              onChange={handleChange}
-              className="w-full appearance-none px-3 pr-8 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-            >
-              <option value="">Please Select State</option>
-              {states.map((s) => (
-                <option key={String(s.id)} value={String(s.id)}>{s.name}</option>
-              ))}
-            </select>
-            <ChevronDropdownIcon className="absolute right-3 top-1/2 -translate-y-1/2" />
+              onChange={(v) => setForm(prev => ({ ...prev, state: v }))}
+              options={states.map(s => ({ value: String(s.id), label: s.name }))}
+              placeholder="Search or select option"
+            />
           </div>
         </div>
 
@@ -401,19 +367,14 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
 
         <div>
           <label className="block text-sm text-[var(--text-secondary)] mb-1">Zone</label>
-          <div className="relative">
-            <select
+          <div>
+            <SelectField
               name="zone"
               value={form.zone}
-              onChange={handleChange}
-              className="w-full appearance-none px-3 pr-8 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-            >
-              <option value="">Please Select Zone</option>
-              {zones.map((z) => (
-                <option key={z.id} value={String(z.id)}>{z.name}</option>
-              ))}
-            </select>
-            <ChevronDropdownIcon className="absolute right-3 top-1/2 -translate-y-1/2" />
+              onChange={(v) => setForm(prev => ({ ...prev, zone: v }))}
+              options={zones.map(z => ({ value: String(z.id), label: z.name }))}
+              placeholder="Search or select option"
+            />
           </div>
         </div>
       </div>
@@ -431,9 +392,9 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
       transition={{ duration: 0.22 }}
       className="space-y-6"
     >
