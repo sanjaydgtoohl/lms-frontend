@@ -48,6 +48,12 @@ export const ROUTES = {
     EDIT: (id: string) => `/user-management/role/edit/${id}`,
     DETAIL: (id: string) => `/user-management/role/${id}`,
   },
+  USER: {
+    ROOT: '/user-management/user',
+    CREATE: '/user-management/user/create',
+    EDIT: (id: string) => `/user-management/user/edit/${id}`,
+    DETAIL: (id: string) => `/user-management/user/${id}`,
+  },
   // Master Data Routes
   BRAND_MASTER: '/master/brand',
   AGENCY_MASTER: '/master/agency',

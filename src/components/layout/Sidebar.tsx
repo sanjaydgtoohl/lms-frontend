@@ -115,6 +115,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
       children: [
         { name: "Permission", path: "/user-management/permission", icon: UserManagementIcon },
         { name: "Role", path: "/user-management/role", icon: UserManagementIcon },
+        { name: "User", path: "/user-management/user", icon: UserManagementIcon },
       ]
     },
     { name: "Settings", path: "/settings", icon: Settings },
@@ -140,11 +141,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
     "/lead-management/create": "/lead-management/all-leads",
     "/user-management/permission/create": "/user-management/permission",
     "/user-management/role/create": "/user-management/role",
+    "/user-management/user/create": "/user-management/user",
   };
 
   const getEffectivePath = (pathname: string) => {
-    // Handle edit routes with IDs like /user-management/permission/edit/:id and /user-management/role/edit/:id
-    if (pathname.match(/^\/user-management\/(permission|role)\/edit\//)) {
+    // Handle edit routes with IDs like /user-management/permission/edit/:id, /user-management/role/edit/:id, and /user-management/user/edit/:id
+    if (pathname.match(/^\/user-management\/(permission|role|user)\/edit\//)) {
       const match = pathname.match(/^\/user-management\/(\w+)\/edit\//);
       if (match) {
         return `/user-management/${match[1]}`;

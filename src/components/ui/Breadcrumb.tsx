@@ -307,6 +307,40 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({
             isActive: true,
           };
         }
+      } else if (pathname.includes('/user')) {
+        crumbs.push({
+          label: 'User',
+          path: '/user-management/user',
+        });
+
+        if (pathname.includes('/create')) {
+          crumbs.push({
+            label: 'Create',
+            isActive: true,
+          });
+        } else if (pathname.includes('/edit/')) {
+          const id = pathname.split('/edit/')[1];
+          crumbs.push({
+            label: `ID: ${id}`,
+            path: `/user-management/user`,
+          });
+          crumbs.push({
+            label: 'Edit',
+            isActive: true,
+          });
+        } else if (parts.length > 2) {
+          const id = parts[2];
+          crumbs.push({
+            label: `ID: ${id}`,
+            isActive: true,
+          });
+        } else {
+          // Default to User as active
+          crumbs[crumbs.length - 1] = {
+            ...crumbs[crumbs.length - 1],
+            isActive: true,
+          };
+        }
       }
       return crumbs;
     }

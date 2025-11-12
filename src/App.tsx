@@ -14,7 +14,7 @@ import DesignationMaster from './pages/DesignationMaster';
 import DepartmentMaster from './pages/DepartmentMaster';
 import { MissCampaignView, MissCampaignCreate } from './pages/MissCampaign';
 import { AllLeads, CreateLead, EditLead, ViewLead, Pending, Interested, MeetingScheduled, MeetingDone } from './pages/LeadManagement';
-import { AllPermissions, CreatePermission, ViewPermission, AllRoles, CreateRole, ViewRole } from './pages/UserManagement';
+import { AllPermissions, CreatePermission, ViewPermission, AllRoles, CreateRole, ViewRole, AllUsers, CreateUser, ViewUser } from './pages/UserManagement';
 import Layout from './components/layout/Layout';
 import BriefPipeline from './pages/Brief/BriefPipeline';
 import ErrorBoundary from './components/ui/ErrorBoundary';
@@ -150,6 +150,10 @@ function App() {
             <Route path="role/create" element={<CreateRole />} />
             <Route path="role/edit/:id" element={<CreateRole />} />
             <Route path="role/:id" element={<ViewRole />} />
+            <Route path="user" element={<AllUsers />} />
+            <Route path="user/create" element={<CreateUser />} />
+            <Route path="user/edit/:id" element={<CreateUser />} />
+            <Route path="user/:id" element={<ViewUser />} />
           </Route>
         </Route>
         

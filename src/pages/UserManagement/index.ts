@@ -4,3 +4,6 @@ export { default as ViewPermission } from './Permission/ViewPermission';
 export { default as AllRoles } from './Role/AllRoles';
 export { default as CreateRole } from './Role/CreateRole';
 export { default as ViewRole } from './Role/ViewRole';
+export { default as AllUsers } from './User/AllUsers';
+export { default as CreateUser } from './User/CreateUser';
+export { default as ViewUser } from './User/ViewUser';
