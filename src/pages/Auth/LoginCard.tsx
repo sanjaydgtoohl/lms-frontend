@@ -110,7 +110,7 @@ export default function LoginCard() {
           <div>
             <Input
               type="email"
-              placeholder="Please Enter Your Email Address"
+              placeholder="Please enter your email address"
               label="Email Address"
               {...register('email')}
               error={errors.email?.message}
@@ -130,7 +130,7 @@ export default function LoginCard() {
           <div>
             <Input
               type="password"
-              placeholder="Please Enter Your Password"
+              placeholder="Please enter your password"
               label="Password"
               {...register('password')}
               error={errors.password?.message}

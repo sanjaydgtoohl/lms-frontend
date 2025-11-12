@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { listAgencyTypes, listAgencyClients } from '../services';
 import { motion } from 'framer-motion';
-import ChevronDropdownIcon from '../components/ui/ChevronDropdownIcon';
-import { Plus, Loader2, Trash2 } from 'lucide-react';
-import { MasterFormHeader, NotificationPopup } from '../components/ui';
+// ChevronDropdownIcon replaced by unified SelectDropdown; keep import removed
+import { Plus, Trash2 } from 'lucide-react';
+import { MasterFormHeader, NotificationPopup, SelectField } from '../components/ui';
 
 // --- Types used by this form
 interface ParentAgency {
@@ -192,9 +192,9 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
       transition={{ duration: 0.22 }}
       className="flex-1 overflow-auto w-full overflow-x-hidden bg-[#F6F8FB] min-h-screen"
     >
@@ -231,22 +231,14 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
 
                 <div>
                   <label className="block text-sm text-[#667085] mb-1">Agency Type</label>
-                  <div className="relative">
-                    <select
-                      value={parent.type}
-                      onChange={e => {
-                        setParent(prev => ({ ...prev, type: e.target.value }));
-                        setParentErrors(prev => ({ ...prev, type: undefined }));
-                      }}
-                      className={`w-full appearance-none px-4 pr-10 py-2 text-sm border rounded-lg bg-white text-[#344054] focus:outline-none focus:ring-2 focus:ring-[#1570EF] ${parentErrors.type ? 'border-red-500' : 'border-[#D0D5DD]'}`}
-                    >
-                      <option value="">Please Select Agency Type</option>
-                      {agencyTypes.map((t: string) => (
-                        <option key={t} value={t}>{t}</option>
-                      ))}
-                    </select>
-                    <ChevronDropdownIcon className="absolute right-3 top-1/2 -translate-y-1/2" />
-                  </div>
+                  <SelectField
+                    name="parentType"
+                    value={parent.type}
+                    options={agencyTypes}
+                    onChange={(v) => { setParent(prev => ({ ...prev, type: v })); setParentErrors(prev => ({ ...prev, type: undefined })); }}
+                    placeholder="Please Select Agency Type"
+                    inputClassName={parentErrors.type ? 'border-red-500' : 'border-[#D0D5DD]'}
+                  />
                   {parentErrors.type && (
                     <div className="text-xs text-red-500 mt-1">{parentErrors.type}</div>
                   )}
@@ -254,29 +246,15 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
 
                 <div>
                   <label className="block text-sm text-[#667085] mb-1">Agency Client</label>
-                  <div className="relative">
-                    <select
-                      value={parent.client}
-                      onChange={e => {
-                        setParent(prev => ({ ...prev, client: e.target.value }));
-                        setParentErrors(prev => ({ ...prev, client: undefined }));
-                      }}
-                      className={`w-full appearance-none px-4 pr-10 py-2 text-sm border rounded-lg bg-white text-[#344054] focus:outline-none focus:ring-2 focus:ring-[#1570EF] ${parentErrors.client ? 'border-red-500' : 'border-[#D0D5DD]'}`}
-                      disabled={isLoading.agencyClients}
-                    >
-                      <option value="">{isLoading.agencyClients ? 'Loading clients...' : 'Please Select Brand'}</option>
-                      {!isLoading.agencyClients && agencyClients.map((c: any) => (
-                        <option key={c.id} value={c.id.toString()}>{c.name}</option>
-                      ))}
-                    </select>
-                    {isLoading.agencyClients ? (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
-                      </div>
-                    ) : (
-                      <ChevronDropdownIcon className="absolute right-3 top-1/2 -translate-y-1/2" />
-                    )}
-                  </div>
+                  <SelectField
+                    name="parentClient"
+                    value={parent.client}
+                    options={agencyClients.map((c: any) => ({ value: String(c.id), label: c.name }))}
+                    onChange={(v) => { setParent(prev => ({ ...prev, client: v })); setParentErrors(prev => ({ ...prev, client: undefined })); }}
+                    placeholder={isLoading.agencyClients ? 'Loading clients...' : 'Please Select Brand'}
+                    inputClassName={parentErrors.client ? 'border-red-500' : 'border-[#D0D5DD]'}
+                    disabled={isLoading.agencyClients}
+                  />
                   {parentErrors.client && (
                     <div className="text-xs text-red-500 mt-1">{parentErrors.client}</div>
                   )}
@@ -333,41 +311,29 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
                       </div>
                       <div>
                         <label className="block text-sm text-[#667085] mb-1">Agency Type</label>
-                        <div className="relative">
-                          <select
-                            value={c.type}
-                            onChange={e => {
-                              handleUpdateChild(c.id, 'type', e.target.value);
-                              setChildErrors(prev => ({ ...prev, [c.id]: { ...prev[c.id], type: undefined } }));
-                            }}
-                            className={`w-full appearance-none px-4 pr-10 py-2 text-sm border rounded-lg bg-white text-[#344054] focus:outline-none focus:ring-2 focus:ring-[#1570EF] ${childErrors[c.id]?.type ? 'border-red-500' : 'border-[#D0D5DD]'}`}
-                          >
-                            <option value="">Please Select Agency Type</option>
-                            {agencyTypes.map((t: string) => (<option key={t} value={t}>{t}</option>))}
-                          </select>
-                          <ChevronDropdownIcon className="absolute right-3 top-1/2 -translate-y-1/2" />
-                        </div>
+                        <SelectField
+                          name={`child-${c.id}-type`}
+                          value={c.type}
+                          options={agencyTypes}
+                          onChange={(v) => { handleUpdateChild(c.id, 'type', v); setChildErrors(prev => ({ ...prev, [c.id]: { ...prev[c.id], type: undefined } })); }}
+                          placeholder="Please Select Agency Type"
+                          inputClassName={childErrors[c.id]?.type ? 'border-red-500' : 'border-[#D0D5DD]'}
+                        />
                         {childErrors[c.id]?.type && (
                           <div className="text-xs text-red-500 mt-1">{childErrors[c.id].type}</div>
                         )}
                       </div>
                       <div>
                         <label className="block text-sm text-[#667085] mb-1">Agency Client</label>
-                        <div className="relative">
-                          <select
-                            value={c.client}
-                            onChange={e => {
-                              handleUpdateChild(c.id, 'client', e.target.value);
-                              setChildErrors(prev => ({ ...prev, [c.id]: { ...prev[c.id], client: undefined } }));
-                            }}
-                            className={`w-full appearance-none px-4 pr-10 py-2 text-sm border rounded-lg bg-white text-[#344054] focus:outline-none focus:ring-2 focus:ring-[#1570EF] ${childErrors[c.id]?.client ? 'border-red-500' : 'border-[#D0D5DD]'}`}
-                            disabled={isLoading.agencyClients}
-                          >
-                            <option value="">{isLoading.agencyClients ? 'Loading clients...' : 'Please Select Brand'}</option>
-                            {!isLoading.agencyClients && agencyClients.map((cc: any) => (<option key={cc.id} value={cc.id.toString()}>{cc.name}</option>))}
-                          </select>
-                          <ChevronDropdownIcon className="absolute right-3 top-1/2 -translate-y-1/2" />
-                        </div>
+                        <SelectField
+                          name={`child-${c.id}-client`}
+                          value={c.client}
+                          options={agencyClients.map((cc: any) => ({ value: String(cc.id), label: cc.name }))}
+                          onChange={(v) => { handleUpdateChild(c.id, 'client', v); setChildErrors(prev => ({ ...prev, [c.id]: { ...prev[c.id], client: undefined } })); }}
+                          placeholder={isLoading.agencyClients ? 'Loading clients...' : 'Please Select Brand'}
+                          inputClassName={childErrors[c.id]?.client ? 'border-red-500' : 'border-[#D0D5DD]'}
+                          disabled={isLoading.agencyClients}
+                        />
                         {childErrors[c.id]?.client && (
                           <div className="text-xs text-red-500 mt-1">{childErrors[c.id].client}</div>
                         )}
