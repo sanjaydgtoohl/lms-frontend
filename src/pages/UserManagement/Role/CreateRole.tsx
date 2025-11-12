@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
-import { MasterFormHeader, NotificationPopup, SelectField } from '../../../components/ui';
+import { MasterFormHeader, NotificationPopup } from '../../../components/ui';
 import { rolePermissionsData } from '../../../data/rolePermissionsData';
 import type { Permission } from '../../../data/rolePermissionsData';
 import RolePermissionTree from '../../../components/ui/RolePermissionTree';
@@ -11,14 +11,6 @@ type Props = {
   mode?: 'create' | 'edit';
   initialData?: Record<string, any>;
 };
-
-const descriptionOptions = [
-  'Full system access with all permissions and settings control',
-  'Business Development Manager with lead and campaign management access',
-  'Manager with team oversight and reporting access',
-  'Standard user with basic access to assigned features',
-  'Super Administrator with system-wide control and user management access',
-];
 
 interface ModulePermissions {
   [moduleName: string]: {
@@ -179,21 +171,24 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
               )}
             </div>
 
-            {/* Description - Full width Dropdown using SelectField */}
+            {/* Description - Textarea */}
             <div>
               <label className="block text-sm text-[var(--text-secondary)] mb-1">
                 Description <span className="text-[#FF0000]">*</span>
               </label>
-              <SelectField
+              <textarea
                 name="description"
-                placeholder="Please select role description"
-                options={descriptionOptions}
                 value={form.description}
-                onChange={(v) => {
-                  setForm((prev) => ({ ...prev, description: v }));
-                  setErrors((prev) => ({ ...prev, description: '' }));
-                }}
-                inputClassName={errors.description ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-[var(--border-color)] focus:ring-blue-500'}
+                onChange={handleChange}
+                placeholder="Please enter role description"
+                rows={4}
+                className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors resize-none ${
+                  errors.description
+                    ? 'border border-red-500 bg-red-50 focus:ring-red-500'
+                    : 'border border-[var(--border-color)] focus:ring-blue-500'
+                }`}
+                aria-invalid={errors.description ? 'true' : 'false'}
+                aria-describedby={errors.description ? 'description-error' : undefined}
               />
               {errors.description && (
                 <div id="description-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
@@ -209,28 +204,9 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
               )}
             </div>
 
-            {/* Select Parent Permission */}
-            <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
-                Select Parent Permission
-              </label>
-              <SelectField
-                name="parentPermission"
-                placeholder="Please enter description"
-                options={descriptionOptions}
-                value={form.parentPermission}
-                onChange={(v) => {
-                  setForm((prev) => ({ ...prev, parentPermission: v }));
-                }}
-                inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
-              />
-            </div>
-
             {/* Role Permission Section - Tree Style */}
             <div className="mt-8">
-              <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-6">
-                Role Permission
-              </h3>
+              
               <RolePermissionTree
                 modulePermissions={modulePermissions}
                 onToggle={handlePermissionToggle}

@@ -69,7 +69,7 @@ const Dashboard: React.FC = () => {
   const currentAlerts = getCurrentPageItems(systemAlerts, alertsPage);
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 bg-gray-50 min-h-screen">
+    <div className="space-y-6">
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Total Users" value={12} icon={<Users className="w-5 h-5" />} />

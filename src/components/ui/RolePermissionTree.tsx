@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { rolePermissionsData } from '../../data/rolePermissionsData';
 import type { Permission } from '../../data/rolePermissionsData';
-import { FolderIcon, FileIcon, PencilIcon, EyeIcon, Trash2Icon, PlusIcon } from 'lucide-react';
+import { FolderIcon, PencilIcon, EyeIcon, Trash2Icon, PlusIcon, ChevronDown } from 'lucide-react';
+import SearchBar from './SearchBar';
 
 interface ModulePermissions {
   [moduleName: string]: {
@@ -14,6 +15,14 @@ interface Props {
   onToggle: (module: string, submodule: string, perm: keyof Permission) => void;
 }
 
+const permissionLabels: Record<string, string> = {
+  view: 'View',
+  create: 'Create',
+  update: 'Edit',
+  delete: 'Delete',
+  read: 'Read',
+};
+
 const permissionIcons = {
   create: PlusIcon,
   update: PencilIcon,
@@ -23,12 +32,30 @@ const permissionIcons = {
 };
 
 const RolePermissionTree: React.FC<Props> = ({ modulePermissions, onToggle }) => {
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({});
+  const [expandedSubmodules, setExpandedSubmodules] = useState<Record<string, boolean>>({});
   const [search, setSearch] = useState('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const handleExpand = (module: string) => {
-    setExpanded((prev) => ({ ...prev, [module]: !prev[module] }));
+  const handleExpandModule = (module: string) => {
+    setExpandedModules((prev) => ({ ...prev, [module]: !prev[module] }));
   };
+
+  const handleExpandSubmodule = (key: string) => {
+    setExpandedSubmodules((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setExpandedSubmodules({});
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const filterModules = (modules: typeof rolePermissionsData) => {
     if (!search.trim()) return modules;
@@ -47,15 +74,55 @@ const RolePermissionTree: React.FC<Props> = ({ modulePermissions, onToggle }) =>
 
   const filteredModules = filterModules(rolePermissionsData);
 
+  const getSubmoduleKey = (moduleName: string, submoduleName: string) => `${moduleName}::${submoduleName}`;
+
+  // Calculate checkbox state for a submodule group
+  const getSubmoduleCheckboxState = (permissions: Permission) => {
+    const values = Object.values(permissions);
+    const checkedCount = values.filter((v) => v === true).length;
+    const totalCount = values.length;
+
+    if (checkedCount === 0) return 'unchecked';
+    if (checkedCount === totalCount) return 'checked';
+    return 'indeterminate';
+  };
+
+  // Handle submodule group checkbox click
+  const handleSubmoduleGroupCheckboxClick = (
+    module: string,
+    submodule: string,
+    permissions: Permission,
+    event: React.MouseEvent
+  ) => {
+    event.stopPropagation();
+
+    const state = getSubmoduleCheckboxState(permissions);
+    const shouldCheck = state !== 'checked';
+
+    // Toggle all permissions
+    Object.keys(permissions).forEach((permKey) => {
+      const perm = permKey as keyof Permission;
+      const currentState = permissions[perm] as boolean;
+      if (currentState !== shouldCheck) {
+        onToggle(module, submodule, perm);
+      }
+    });
+
+    // Ensure group is expanded
+    const submoduleKey = getSubmoduleKey(module, submodule);
+    if (!expandedSubmodules[submoduleKey]) {
+      setExpandedSubmodules((prev) => ({ ...prev, [submoduleKey]: true }));
+    }
+  };
+
   return (
-    <div className="bg-white rounded-lg border border-[var(--border-color)] p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="search"
-          className="border px-2 py-1 rounded w-48 text-sm"
+    <div className="bg-white rounded-lg border border-[var(--border-color)] p-4" ref={dropdownRef}>
+      <div className="flex items-center justify-between mb-4">
+        <h4 className="text-base font-semibold text-[var(--text-primary)]">Role Permission</h4>
+        <SearchBar
+          delay={300}
+          placeholder="Search Permissions"
+          onSearch={(q: string) => setSearch(q)}
         />
       </div>
       <div className="flex flex-col gap-0">
@@ -63,45 +130,92 @@ const RolePermissionTree: React.FC<Props> = ({ modulePermissions, onToggle }) =>
           module ? (
             <div key={module.name} className="mb-2">
               <div
-                className="flex items-center gap-2 px-2 py-1 bg-gray-100 cursor-pointer border-b border-gray-200 rounded"
-                onClick={() => handleExpand(module.name)}
-                style={{ minHeight: 36 }}
+                className="flex items-center gap-2 px-3 py-2 bg-gray-100 cursor-pointer border-b border-gray-200 rounded hover:bg-gray-150 transition-colors"
+                onClick={() => handleExpandModule(module.name)}
+                style={{ minHeight: 40 }}
               >
-                <FolderIcon className="w-5 h-5 text-gray-500" />
-                <span className="font-semibold text-base">{module.name} <span className="text-xs text-gray-400">({module.submodules.length})</span></span>
-                <span className="ml-auto text-xs text-gray-400">{expanded[module.name] ? '-' : '+'}</span>
+                <FolderIcon className="w-5 h-5 text-gray-500 flex-shrink-0" />
+                <span className="font-semibold text-base text-gray-800">{module.name}</span>
+                <span className="text-xs text-gray-500 ml-2">({module.submodules.length})</span>
+                <span className="ml-auto text-gray-500 transition-transform" style={{ transform: expandedModules[module.name] ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                  <ChevronDown className="w-4 h-4" />
+                </span>
               </div>
-              {expanded[module.name] && (
-                <div className="pl-8 border-l-2 border-gray-200">
-                  {module.submodules.map((submodule, idx) => (
-                    <React.Fragment key={submodule.name}>
-                      <div className="flex items-center gap-2 py-1" style={{ minHeight: 32 }}>
-                        <FileIcon className="w-4 h-4 text-blue-400 mr-1" />
-                        <span className="text-sm text-gray-700 font-medium" style={{ minWidth: 140 }}>{submodule.name}</span>
-                        <div className="flex gap-2 ml-2">
-                          {Object.keys(modulePermissions[module.name][submodule.name]).map((permKey) => {
-                            const perm = permKey as keyof Permission;
-                            const Icon = permissionIcons[perm];
-                            const isActive = modulePermissions[module.name][submodule.name][perm];
-                            return (
-                              <span
-                                key={perm}
-                                className={`cursor-pointer inline-flex items-center justify-center rounded-full border border-gray-200 bg-white ${isActive ? 'shadow border-green-400' : 'border-blue-300'} ${isActive ? '' : 'opacity-60'}`}
-                                style={{ width: 36, height: 36 }}
-                                onClick={() => onToggle(module.name, submodule.name, perm)}
-                                title={perm.charAt(0).toUpperCase() + perm.slice(1)}
-                              >
-                                <Icon className={isActive ? 'text-green-400 w-6 h-6' : 'text-blue-400 w-6 h-6'} />
-                              </span>
-                            );
-                          })}
+              
+              {expandedModules[module.name] && (
+                <div className="pl-4 border-l-2 border-gray-200 bg-gray-50">
+                  {module.submodules.map((submodule) => {
+                    const submoduleKey = getSubmoduleKey(module.name, submodule.name);
+                    const isExpanded = expandedSubmodules[submoduleKey];
+                    const permissions = modulePermissions[module.name]?.[submodule.name] || submodule.permissions;
+                    
+                    return (
+                      <div key={submodule.name} className="py-1">
+                        <div
+                          className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-100 rounded transition-colors"
+                          onClick={() => handleExpandSubmodule(submoduleKey)}
+                          style={{ minHeight: 40 }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={getSubmoduleCheckboxState(permissions) === 'checked'}
+                            ref={(el) => {
+                              if (el && getSubmoduleCheckboxState(permissions) === 'indeterminate') {
+                                el.indeterminate = true;
+                              }
+                            }}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              handleSubmoduleGroupCheckboxClick(module.name, submodule.name, permissions, e as any);
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-4 h-4 rounded border-gray-300 cursor-pointer accent-blue-500 flex-shrink-0"
+                          />
+                          <span className="text-sm font-medium text-gray-700 flex-1">{submodule.name}</span>
+                          <span
+                            className="ml-auto text-gray-500 transition-transform cursor-pointer"
+                            style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                          >
+                            <ChevronDown className="w-4 h-4" />
+                          </span>
                         </div>
+
+                        {isExpanded && (
+                          <div className="ml-8 py-2 border-l-2 border-blue-200">
+                            <div className="space-y-2">
+                              {Object.keys(permissions).map((permKey) => {
+                                const perm = permKey as keyof Permission;
+                                const Icon = permissionIcons[perm];
+                                const isActive = permissions[perm] as boolean;
+                                const label = permissionLabels[perm] || perm.charAt(0).toUpperCase() + perm.slice(1);
+
+                                if (!Icon) return null;
+
+                                return (
+                                  <div
+                                    key={perm}
+                                    className="flex items-center gap-3 px-3 py-1.5 cursor-pointer hover:bg-blue-50 rounded transition-colors group"
+                                    onClick={() => onToggle(module.name, submodule.name, perm)}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={isActive}
+                                      onChange={() => {}}
+                                      className="w-4 h-4 rounded border-gray-300 cursor-pointer accent-blue-500"
+                                    />
+                                    <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-blue-500' : 'text-gray-400'}`} />
+                                    <span className={`text-sm ${isActive ? 'text-gray-800 font-medium' : 'text-gray-600'}`}>
+                                      {label}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      {idx !== module.submodules.length - 1 ? (
-                        <div className="ml-5 border-l border-gray-200" style={{ height: 8 }} />
-                      ) : null}
-                    </React.Fragment>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

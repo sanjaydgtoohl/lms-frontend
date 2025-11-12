@@ -9,24 +9,13 @@ type Props = {
   initialData?: Record<string, any>;
 };
 
-const descriptionOptions = [
-  'Allows viewing user information and profiles',
-  'Allows creating new user accounts',
-  'Allows updating user information',
-  'Allows deleting user accounts',
-  'Allows viewing user profile details',
-  'Allows viewing permission information',
-  'Allows creating new permissions',
-  'Allows updating permissions',
-  'Allows deleting permissions',
-  'Allows viewing role information',
-];
-
 const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => {
   const navigate = useNavigate();
   const [form, setForm] = useState({
-    name: '',
     displayName: '',
+    name: '',
+    url: '',
+    parentPermission: '',
     description: '',
   });
 
@@ -52,8 +41,8 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
     e.preventDefault();
 
     const next: Record<string, string> = {};
-    if (!form.name || form.name.trim() === '') next.name = 'Please Enter Permission Name';
     if (!form.displayName || form.displayName.trim() === '') next.displayName = 'Please Enter Display Name';
+    if (!form.name || form.name.trim() === '') next.name = 'Please Enter Name';
     if (!form.description || form.description.trim() === '') next.description = 'Please Enter Description';
 
     setErrors(next);
@@ -108,97 +97,127 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
       <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
         <div className="p-6 bg-[#F9FAFB]">
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Left column */}
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-[var(--text-secondary)] mb-1">
-                    Permission Name <span className="text-[#FF0000]">*</span>
-                  </label>
-                  <input
-                    name="name"
-                    value={form.name}
-                    onChange={(e) => {
-                      handleChange(e);
-                      setErrors((prev) => ({ ...prev, name: '' }));
-                    }}
-                    placeholder="Please enter permission name"
-                    className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
-                      errors.name
-                        ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                        : 'border border-[var(--border-color)] focus:ring-blue-500'
-                    }`}
-                    aria-invalid={errors.name ? 'true' : 'false'}
-                    aria-describedby={errors.name ? 'name-error' : undefined}
-                  />
-                  {errors.name && (
-                    <div id="name-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
-                      <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path
-                          fillRule="evenodd"
-                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                      {errors.name}
-                    </div>
-                  )}
+            {/* Display Name */}
+            <div>
+              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+                Display Name <span className="text-[#FF0000]">*</span>
+              </label>
+              <input
+                name="displayName"
+                value={form.displayName}
+                onChange={(e) => {
+                  handleChange(e);
+                  setErrors((prev) => ({ ...prev, displayName: '' }));
+                }}
+                placeholder="Please enter display name"
+                className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
+                  errors.displayName
+                    ? 'border border-red-500 bg-red-50 focus:ring-red-500'
+                    : 'border border-[var(--border-color)] focus:ring-blue-500'
+                }`}
+                aria-invalid={errors.displayName ? 'true' : 'false'}
+                aria-describedby={errors.displayName ? 'displayName-error' : undefined}
+              />
+              {errors.displayName && (
+                <div id="displayName-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  {errors.displayName}
                 </div>
-              </div>
-
-              {/* Right column */}
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-[var(--text-secondary)] mb-1">
-                    Display Name <span className="text-[#FF0000]">*</span>
-                  </label>
-                  <input
-                    name="displayName"
-                    value={form.displayName}
-                    onChange={(e) => {
-                      handleChange(e);
-                      setErrors((prev) => ({ ...prev, displayName: '' }));
-                    }}
-                    placeholder="Please enter display name"
-                    className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
-                      errors.displayName
-                        ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                        : 'border border-[var(--border-color)] focus:ring-blue-500'
-                    }`}
-                    aria-invalid={errors.displayName ? 'true' : 'false'}
-                    aria-describedby={errors.displayName ? 'displayName-error' : undefined}
-                  />
-                  {errors.displayName && (
-                    <div id="displayName-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
-                      <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path
-                          fillRule="evenodd"
-                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                      {errors.displayName}
-                    </div>
-                  )}
-                </div>
-              </div>
+              )}
             </div>
 
-            {/* Description - Full width Dropdown using SelectField */}
+            {/* Name (Route Name) */}
+            <div>
+              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+                Name (Route Name) <span className="text-[#FF0000]">*</span>
+              </label>
+              <input
+                name="name"
+                value={form.name}
+                onChange={(e) => {
+                  handleChange(e);
+                  setErrors((prev) => ({ ...prev, name: '' }));
+                }}
+                placeholder="Please enter name"
+                className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
+                  errors.name
+                    ? 'border border-red-500 bg-red-50 focus:ring-red-500'
+                    : 'border border-[var(--border-color)] focus:ring-blue-500'
+                }`}
+                aria-invalid={errors.name ? 'true' : 'false'}
+                aria-describedby={errors.name ? 'name-error' : undefined}
+              />
+              {errors.name && (
+                <div id="name-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  {errors.name}
+                </div>
+              )}
+            </div>
+
+            {/* URL */}
+            <div>
+              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+                URL
+              </label>
+              <input
+                name="url"
+                value={form.url}
+                onChange={handleChange}
+                placeholder="Please enter URL"
+                className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors border border-[var(--border-color)] focus:ring-blue-500`}
+              />
+            </div>
+
+            {/* Select Parent Permission */}
+            <div>
+              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+                Select Parent Permission
+              </label>
+              <SelectField
+                name="parentPermission"
+                placeholder="Please select parent permission"
+                options={[]}
+                value={form.parentPermission}
+                onChange={(v) => {
+                  setForm((prev) => ({ ...prev, parentPermission: v }));
+                  setErrors((prev) => ({ ...prev, parentPermission: '' }));
+                }}
+                searchable
+                inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Description */}
             <div>
               <label className="block text-sm text-[var(--text-secondary)] mb-1">
                 Description <span className="text-[#FF0000]">*</span>
               </label>
-              <SelectField
+              <textarea
                 name="description"
-                placeholder="Please select permission description"
-                options={descriptionOptions}
+                placeholder="Please enter description"
                 value={form.description}
-                onChange={(v) => {
-                  setForm((prev) => ({ ...prev, description: v }));
-                  setErrors((prev) => ({ ...prev, description: '' }));
-                }}
-                inputClassName={errors.description ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-[var(--border-color)] focus:ring-blue-500'}
+                onChange={handleChange}
+                rows={4}
+                className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors resize-none ${
+                  errors.description
+                    ? 'border border-red-500 bg-red-50 focus:ring-red-500'
+                    : 'border border-[var(--border-color)] focus:ring-blue-500'
+                }`}
+                aria-invalid={errors.description ? 'true' : 'false'}
+                aria-describedby={errors.description ? 'description-error' : undefined}
               />
               {errors.description && (
                 <div id="description-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">

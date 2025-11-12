@@ -318,7 +318,7 @@ button[data-btn-label="Go Back"],
 button[data-btn-label="Save"],
 button[data-btn-label="Update"] {
   background-color: var(--color-orange-400) !important;
-  color: #FFFFFF !important;
+  color: #000000 !important;
   border-color: transparent !important;
 }
 
@@ -348,21 +348,21 @@ button[data-btn-label="Update"]:hover {
 /* Primary button helper class used by React Button component and utility buttons */
 .btn-primary {
   background-color: var(--color-orange-400) !important;
-  color: #FFFFFF !important; /* force white text */
+  color: #000000 !important; /* force black text for create/primary buttons */
   border-color: transparent !important;
   /* ensure text color does not change on hover/focus */
-  -webkit-text-fill-color: #FFFFFF !important;
+  -webkit-text-fill-color: #000000 !important;
 }
 .btn-primary:hover {
   background-color: #ff9500 !important;
-  color: #FFFFFF !important;
-  -webkit-text-fill-color: #FFFFFF !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
 }
 
 .btn-primary:focus,
 .btn-primary:active {
-  color: #FFFFFF !important;
-  -webkit-text-fill-color: #FFFFFF !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
 }
 
 /* Ensure icons inside primary buttons match the white text color
@@ -370,9 +370,9 @@ button[data-btn-label="Update"]:hover {
    forces svg color and stroke to inherit the text color. */
 .btn-primary svg,
 .btn-primary svg * {
-  color: #FFFFFF !important;
-  fill: currentColor !important;
-  stroke: currentColor !important;
+  color: #000000 !important;
+  fill: #000000 !important;
+  stroke: #000000 !important;
 }
 
 @layer utilities {
