@@ -26,6 +26,13 @@ interface MainContentProps<T extends LeadSource | Agency> {
   dataType?: 'leadSource' | 'agency';
   onView?: (item: T) => void;
   onEdit?: (item: T) => void;
+  // optional external data/pagination support
+  data?: T[];
+  loading?: boolean;
+  totalItems?: number;
+  currentPage?: number;
+  itemsPerPage?: number;
+  onPageChange?: (page: number) => void;
 }
 
 const MainContent = <T extends LeadSource | Agency>({ 
@@ -33,10 +40,17 @@ const MainContent = <T extends LeadSource | Agency>({
   headerActions, 
   dataType = 'leadSource', 
   onView, 
-  onEdit 
+  onEdit,
+  data: externalData,
+  loading: externalLoading,
+  totalItems: externalTotal,
+  currentPage: externalCurrentPage,
+  itemsPerPage: externalItemsPerPage,
+  onPageChange: externalOnPageChange,
 }: MainContentProps<T>) => {
-  const [currentPage, setCurrentPage] = useState(1);
+  const [internalPage, setInternalPage] = useState(1);
   const itemsPerPage = 10;
+  const currentPage = externalCurrentPage ?? internalPage;
   const [searchQuery, setSearchQuery] = useState('');
 
   // Sample data
@@ -76,7 +90,8 @@ const MainContent = <T extends LeadSource | Agency>({
   // totalPages not used directly (pagination component uses totalItems)
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentData = filteredArray.slice(startIndex, endIndex);
+  const providedData = externalData;
+  const currentData = providedData ? (providedData as T[]).slice(startIndex, endIndex) : filteredArray.slice(startIndex, endIndex);
 
   const handleEdit = (id: string) => {
     const item = currentDataArray.find(i => i.id === id);
@@ -99,15 +114,17 @@ const MainContent = <T extends LeadSource | Agency>({
   };
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    if (externalOnPageChange) return externalOnPageChange(page);
+    setInternalPage(page);
   };
 
   const renderPagination = () => {
+    const total = typeof externalTotal === 'number' ? externalTotal : (searchQuery ? filteredArray.length : currentDataArray.length);
     return (
       <Pagination
         currentPage={currentPage}
-        totalItems={searchQuery ? filteredArray.length : currentDataArray.length}
-        itemsPerPage={itemsPerPage}
+        totalItems={total}
+        itemsPerPage={externalItemsPerPage ?? itemsPerPage}
         onPageChange={handlePageChange}
       />
     );
@@ -124,7 +141,7 @@ const MainContent = <T extends LeadSource | Agency>({
               <SearchBar
                 delay={300}
                 placeholder={dataType === 'agency' ? 'Search Agency Group' : 'Search...'}
-                onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }}
+                onSearch={(q: string) => { setSearchQuery(q); if (externalOnPageChange) externalOnPageChange(1); else setInternalPage(1); }}
               />
               {headerActions && (
                 <div className="flex items-center space-x-2">
@@ -139,7 +156,7 @@ const MainContent = <T extends LeadSource | Agency>({
           <Table
           data={currentData}
           startIndex={startIndex}
-          loading={false}
+          loading={!!externalLoading}
           keyExtractor={(it: T, idx: number) => `${it.id}-${idx}`}
           columns={(
             (dataType === 'agency'

@@ -1,5 +1,5 @@
-import { API_BASE_URL } from '../constants';
 import { useUiStore } from '../store/ui';
+import { apiClient } from '../utils/apiClient';
 
 export type Zone = {
   id: number | string;
@@ -9,12 +9,6 @@ export type Zone = {
   created_at?: string | null;
   updated_at?: string | null;
   deleted_at?: string | null;
-};
-
-type ApiEnvelope<T> = {
-  success?: boolean;
-  message?: string;
-  data: T;
 };
 
 const ENDPOINTS = {
@@ -39,32 +33,17 @@ const ENDPOINTS = {
   },
 } as const;
 
-function authHeaders(): HeadersInit {
-  const token = localStorage.getItem('auth_token');
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
-
-async function handleResponse<T>(res: Response): Promise<T> {
-  const json = await res.json().catch(() => null);
-  if (!res.ok) {
-    const message = (json && (json.message || json.error)) || 'Request failed';
+async function handleResponse<T>(res: any): Promise<T> {
+  if (!res || !res.success) {
+    const message = (res && (res.message || 'Request failed')) || 'Request failed';
     try { useUiStore.getState().pushError(message); } catch {}
     throw new Error(message);
   }
-  if (json && typeof json === 'object' && 'data' in json) {
-    return (json as ApiEnvelope<T>).data;
-  }
-  return json as T;
+  return res.data as T;
 }
 
 export async function listZones(): Promise<Zone[]> {
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.LIST}`, {
-    method: 'GET',
-    headers: authHeaders(),
-  });
+  const res = await apiClient.get<Zone[]>(ENDPOINTS.LIST);
   const items = await handleResponse<Zone[]>(res);
   return (items || []).map((it: any) => ({
     id: it.id ?? it._id ?? String(it.slug || ''),
@@ -78,10 +57,7 @@ export async function listZones(): Promise<Zone[]> {
 }
 
 export async function getZone(id: string | number): Promise<Zone> {
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.DETAIL(id)}`, {
-    method: 'GET',
-    headers: authHeaders(),
-  });
+  const res = await apiClient.get<Zone>(ENDPOINTS.DETAIL(id));
   return handleResponse<Zone>(res);
 }
 
@@ -115,10 +91,7 @@ export async function listCities(params?: { state_id?: string | number; country_
   if (cityCache[cacheKey]) return cityCache[cacheKey];
 
   const qs = buildQuery(params as Record<string, any>);
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.CITIES.LIST}${qs}`, {
-    method: 'GET',
-    headers: authHeaders(),
-  });
+  const res = await apiClient.get<City[]>(ENDPOINTS.CITIES.LIST + qs);
   const items = await handleResponse<City[]>(res);
   const normalized = (items || []).map((it: any) => ({
     id: it.id ?? it._id ?? String(it.slug || ''),
@@ -137,10 +110,7 @@ export async function listCities(params?: { state_id?: string | number; country_
 }
 
 export async function getCity(id: string | number): Promise<City> {
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.CITIES.DETAIL(id)}`, {
-    method: 'GET',
-    headers: authHeaders(),
-  });
+  const res = await apiClient.get<City>(ENDPOINTS.CITIES.DETAIL(id));
   return handleResponse<City>(res);
 }
 
@@ -162,10 +132,7 @@ export async function listStates(): Promise<State[]> {
   const cacheKey = 'all_states';
   if (stateCache[cacheKey]) return stateCache[cacheKey];
 
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.STATES.LIST}`, {
-    method: 'GET',
-    headers: authHeaders(),
-  });
+  const res = await apiClient.get<State[]>(ENDPOINTS.STATES.LIST);
   const items = await handleResponse<State[]>(res);
   const normalized = (items || []).map((it: any) => ({
     id: it.id ?? it._id ?? String(it.slug || ''),
@@ -183,10 +150,7 @@ export async function listStates(): Promise<State[]> {
 }
 
 export async function getState(id: string | number): Promise<State> {
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.STATES.DETAIL(id)}`, {
-    method: 'GET',
-    headers: authHeaders(),
-  });
+  const res = await apiClient.get<State>(ENDPOINTS.STATES.DETAIL(id));
   return handleResponse<State>(res);
 }
 
@@ -208,10 +172,7 @@ export async function listCountries(): Promise<Country[]> {
   const cacheKey = 'all_countries';
   if (countryCache[cacheKey]) return countryCache[cacheKey];
 
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.COUNTRIES.LIST}`, {
-    method: 'GET',
-    headers: authHeaders(),
-  });
+  const res = await apiClient.get<Country[]>(ENDPOINTS.COUNTRIES.LIST);
   const items = await handleResponse<Country[]>(res);
   const normalized = (items || []).map((it: any) => ({
     id: it.id ?? it._id ?? String(it.slug || ''),
@@ -229,10 +190,7 @@ export async function listCountries(): Promise<Country[]> {
 }
 
 export async function getCountry(id: string | number): Promise<Country> {
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.COUNTRIES.DETAIL(id)}`, {
-    method: 'GET',
-    headers: authHeaders(),
-  });
+  const res = await apiClient.get<Country>(ENDPOINTS.COUNTRIES.DETAIL(id));
   return handleResponse<Country>(res);
 }
 
@@ -250,10 +208,7 @@ export async function listBrandTypes(): Promise<BrandType[]> {
   const cacheKey = 'all_brand_types';
   if (brandTypeCache[cacheKey]) return brandTypeCache[cacheKey];
 
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.BRAND_TYPES.LIST}`, {
-    method: 'GET',
-    headers: authHeaders(),
-  });
+  const res = await apiClient.get<BrandType[]>(ENDPOINTS.BRAND_TYPES.LIST);
   const items = await handleResponse<BrandType[]>(res);
   const normalized = (items || []).map((it: any) => ({
     id: it.id ?? it._id ?? String(it.name || ''),
@@ -267,10 +222,7 @@ export async function listBrandTypes(): Promise<BrandType[]> {
 }
 
 export async function getBrandType(id: string | number): Promise<BrandType> {
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.BRAND_TYPES.DETAIL(id)}`, {
-    method: 'GET',
-    headers: authHeaders(),
-  });
+  const res = await apiClient.get<BrandType>(ENDPOINTS.BRAND_TYPES.DETAIL(id));
   return handleResponse<BrandType>(res);
 }
 

@@ -1,5 +1,8 @@
-import { API_BASE_URL, API_ENDPOINTS } from '../constants';
+import { API_ENDPOINTS } from '../constants';
 import type { LoginCredentials } from '../types';
+import { setCookie, deleteCookie, getCookie } from '../utils/cookies';
+import sessionManager from './sessionManager';
+import http from './http';
 
 // API Response structure based on the actual API
 export interface LoginApiResponse {
@@ -29,11 +32,7 @@ export interface LoginErrorResponse {
 }
 
 class LoginService {
-  private baseURL: string;
-
-  constructor(baseURL: string) {
-    this.baseURL = baseURL;
-  }
+  constructor() {}
 
   /**
    * Authenticate user with email and password
@@ -43,20 +42,19 @@ class LoginService {
    */
   async login(credentials: LoginCredentials): Promise<LoginApiResponse['data']> {
     try {
-      const response = await fetch(`${this.baseURL}${API_ENDPOINTS.AUTH.LOGIN}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          email: credentials.email,
-          password: credentials.password,
-        }),
+      // Use axios http instance so cookies and interceptors are applied consistently.
+      const body = new URLSearchParams({
+        email: credentials.email,
+        password: credentials.password,
+      }).toString();
+
+      const response = await http.post(API_ENDPOINTS.AUTH.LOGIN, body, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       });
 
-      const data: LoginApiResponse | LoginErrorResponse = await response.json();
+      const data: LoginApiResponse | LoginErrorResponse = response.data;
 
-      if (!response.ok || !data.success) {
+  if (response.status < 200 || response.status >= 300 || !data.success) {
         const errorData = data as LoginErrorResponse & { errors?: any };
         // Try to extract any detailed errors returned by the API
         const rawDetails = (data as any).errors || (data as any).details || null;
@@ -89,13 +87,22 @@ class LoginService {
 
       const successData = data as LoginApiResponse;
       
-      // Store tokens in localStorage
+      // Store tokens in cookies (note: HttpOnly cookies should be set by server for best security)
+      const now = Date.now();
       if (successData.data.token) {
-        localStorage.setItem('auth_token', successData.data.token);
-        localStorage.setItem('refresh_token', successData.data.refreshToken);
-        localStorage.setItem('token_type', successData.data.token_type);
-        localStorage.setItem('expires_in', successData.data.expires_in.toString());
+        const expiresIn = successData.data.expires_in || 3600;
+        setCookie('auth_token', successData.data.token, { expires: expiresIn, secure: true, sameSite: 'Lax' });
+        setCookie('auth_token_expires', String(now + expiresIn * 1000), { expires: expiresIn, secure: true, sameSite: 'Lax' });
       }
+      if (successData.data.refreshToken) {
+        // API may return refresh expiry; fall back to 7 days
+        const refreshExpiresIn = (successData.data as any).refresh_expires_in || 7 * 24 * 3600;
+        setCookie('refresh_token', successData.data.refreshToken, { expires: refreshExpiresIn, secure: true, sameSite: 'Lax' });
+        setCookie('refresh_token_expires', String(now + refreshExpiresIn * 1000), { expires: refreshExpiresIn, secure: true, sameSite: 'Lax' });
+      }
+
+      // Start session timer based on cookies
+      sessionManager.startSessionFromCookies();
 
       return successData.data;
     } catch (error) {
@@ -109,22 +116,14 @@ class LoginService {
    */
   async logout(): Promise<void> {
     try {
-      const token = localStorage.getItem('auth_token');
-      
-      if (token) {
-        await fetch(`${this.baseURL}${API_ENDPOINTS.AUTH.LOGOUT}`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-      }
+      // Use axios http instance; interceptor will attach auth header if token present
+      await http.post(API_ENDPOINTS.AUTH.LOGOUT);
     } catch (error) {
       console.error('Logout service error:', error);
     } finally {
       // Always clear local storage regardless of API call success
       this.clearTokens();
+      sessionManager.clearSession();
     }
   }
 
@@ -132,27 +131,26 @@ class LoginService {
    * Clear all stored authentication tokens
    */
   clearTokens(): void {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('token_type');
-    localStorage.removeItem('expires_in');
-    localStorage.removeItem('refresh_token');
+    deleteCookie('auth_token');
+    deleteCookie('token_type');
+    deleteCookie('expires_in');
+    deleteCookie('refresh_token');
   }
 
   /**
    * Check if user is authenticated
    */
   isAuthenticated(): boolean {
-    const token = localStorage.getItem('auth_token');
-    const expiresIn = localStorage.getItem('expires_in');
+    const token = this.getToken();
+    const expiresIn = getCookie('auth_token_expires');
     
     if (!token || !expiresIn) {
       return false;
     }
 
-    // Check if token is expired
-    const tokenExpiry = parseInt(expiresIn) * 1000; // Convert to milliseconds
+    // expires cookie stores epoch ms as string
+    const tokenExpiry = parseInt(expiresIn, 10);
     const currentTime = Date.now();
-    
     return currentTime < tokenExpiry;
   }
 
@@ -160,25 +158,33 @@ class LoginService {
    * Get stored token
    */
   getToken(): string | null {
-    return localStorage.getItem('auth_token');
+    // Read token from cookie
+    try {
+      // avoid importing cookie utils in many places; simple accessor below
+      const name = 'auth_token';
+      const match = document.cookie.match(new RegExp('(?:^|; )' + encodeURIComponent(name) + '=([^;]*)'));
+      return match ? decodeURIComponent(match[1]) : null;
+    } catch (e) {
+      return null;
+    }
   }
 
   /**
    * Get token type
    */
   getTokenType(): string | null {
-    return localStorage.getItem('token_type');
+    return getCookie('token_type');
   }
 
   /**
    * Get token expiry time
    */
   getTokenExpiry(): number | null {
-    const expiresIn = localStorage.getItem('expires_in');
-    return expiresIn ? parseInt(expiresIn) : null;
+    const expires = getCookie('auth_token_expires');
+    return expires ? parseInt(expires, 10) : null;
   }
 }
 
 // Create and export a singleton instance
-export const loginService = new LoginService(API_BASE_URL);
+export const loginService = new LoginService();
 export default loginService;

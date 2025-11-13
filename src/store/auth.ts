@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import type { User, AuthState } from '../types';
 import { apiClient } from '../services/api';
 import { loginService } from '../services/Login';
+import sessionManager from '../services/sessionManager';
 
 interface AuthStore extends AuthState {
   login: (email: string, password: string) => Promise<void>;
@@ -34,14 +35,8 @@ export const useAuthStore = create<AuthStore>()(
             isAuthenticated: true,
             isLoading: false,
           });
-          
-          // Update localStorage
-          if (response.token) {
-            localStorage.setItem('auth_token', response.token);
-          }
-          if (response.refreshToken) {
-            localStorage.setItem('refresh_token', response.refreshToken);
-          }
+          // sessionManager will schedule refresh based on cookies set by loginService
+          sessionManager.startSessionFromCookies();
         } catch (error) {
           set({ isLoading: false });
           throw error;
@@ -79,38 +74,21 @@ export const useAuthStore = create<AuthStore>()(
             isAuthenticated: false,
             isLoading: false,
           });
-          
-          // Clear all auth-related localStorage
-          localStorage.removeItem('auth_token');
-          localStorage.removeItem('refresh_token');
-          localStorage.removeItem('token_type');
-          localStorage.removeItem('expires_in');
+          // clear session manager and cookies
+          sessionManager.clearSession();
         }
       },
 
       refreshToken: async () => {
         try {
-          const currentToken = get().refreshTokenValue || localStorage.getItem('refresh_token');
-          if (!currentToken) {
-            throw new Error('No refresh token available');
-          }
-          
-          // apiClient.refreshToken doesn't take parameters, it reads from localStorage
-          const response = await apiClient.refreshToken();
+          // Refresh using sessionManager which reads refresh token from cookie
+          const data = await sessionManager.refreshTokens();
           set({
-            user: null, // User data not returned in refresh response
-            token: response.token,
-            refreshTokenValue: response.refreshToken,
+            user: null,
+            token: data?.token || null,
+            refreshTokenValue: data?.refreshToken || null,
             isAuthenticated: true,
           });
-          
-          // Update localStorage
-          if (response.token) {
-            localStorage.setItem('auth_token', response.token);
-          }
-          if (response.refreshToken) {
-            localStorage.setItem('refresh_token', response.refreshToken);
-          }
         } catch (error) {
           // If refresh fails, logout user
           get().logout();

@@ -1,5 +1,12 @@
 // API Configuration
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+// Note: `import.meta.env` is available in Vite runtime. For tests and Node
+// environments (where import.meta may not be supported by the TS compiler
+// settings), fall back to process.env or a global value. This keeps the
+// constant usable in Jest/unit tests without changing tsconfig.
+const _envBase =
+  ((globalThis as any).VITE_API_BASE_URL as string) ||
+  '/api';
+export const API_BASE_URL = _envBase;
 
 // Routes
 export const ROUTES = {

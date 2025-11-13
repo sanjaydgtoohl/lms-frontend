@@ -1,0 +1,164 @@
+import React, { useEffect, useRef, useState } from 'react';
+import './MultiSelectDropdown.css';
+
+type Option = { value: string; label: string } | string;
+
+type MultiSelectDropdownProps = {
+  name?: string;
+  value?: string[];
+  placeholder?: string;
+  options: Option[];
+  onChange: (vals: string[]) => void;
+  disabled?: boolean;
+  className?: string;
+  inputClassName?: string;
+  multi?: boolean; // whether multiple selection allowed
+  maxVisibleOptions?: number; // how many options visible at once
+};
+
+const normalize = (opt: Option): { value: string; label: string } =>
+  typeof opt === 'string' ? { value: opt, label: opt } : opt;
+
+const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
+  name,
+  value = [],
+  placeholder = 'Search or select option',
+  options,
+  onChange,
+  disabled = false,
+  className = '',
+  inputClassName = '',
+  multi = true,
+  maxVisibleOptions = 3,
+}) => {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  const normalized = options.map(normalize);
+  const filtered = query ? normalized.filter(o => o.label.toLowerCase().includes(query.toLowerCase())) : normalized;
+
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, []);
+
+  useEffect(() => {
+    if (!open) setQuery('');
+  }, [open]);
+
+
+  const toggleSelect = (val: string) => {
+    if (multi) {
+      if (value.includes(val)) {
+        // Deselect if already selected
+        onChange(value.filter(v => v !== val));
+      } else {
+        onChange([...value, val]);
+      }
+    } else {
+      onChange([val]);
+      setOpen(false);
+    }
+  };
+
+  const removeOne = (val: string) => {
+    onChange(value.filter(v => v !== val));
+  };
+
+  const optionHeight = 40; // px approx per option
+  const maxHeight = Math.min(filtered.length, maxVisibleOptions) * optionHeight;
+
+  return (
+    <div ref={ref} className={`relative ${className}`}>
+      <div className="w-full">
+  <div className={`flex items-center flex-wrap gap-2 w-full min-h-[40px] px-3 rounded-[10px] bg-white border border-[#DDE1E7] ${inputClassName} ${disabled ? 'opacity-60' : ''}`} onClick={() => { if (disabled) return; setOpen(prev => !prev); }}>
+          {/* tags */}
+          {value && value.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap">
+              {value.map((v) => {
+                const label = normalized.find(n => String(n.value) === String(v))?.label ?? v;
+                return (
+                  <span key={v} className="msd-tag inline-flex items-center gap-2 px-2 py-1 rounded-md text-xs">
+                    <span className="truncate max-w-[180px]">{label}</span>
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => { e.stopPropagation(); removeOne(v); }}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); removeOne(v); } }}
+                      aria-label={`Remove ${label}`}
+                      className="ml-1 leading-none text-gray-600 hover:text-gray-900 cursor-pointer select-none"
+                    >
+                      ×
+                    </span>
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
+          {/* input for search */}
+          <input
+            name={name}
+            value={open ? query : ''}
+            onChange={(e) => { setQuery(e.target.value); if (!open) setOpen(true); }}
+            onFocus={() => { if (!open) setOpen(true); }}
+            placeholder={value && value.length > 0 ? '' : placeholder}
+            className="flex-1 min-w-[80px] h-10 text-sm bg-transparent placeholder-[#9CA3AF] focus:outline-none"
+            disabled={disabled}
+            autoComplete="off"
+          />
+
+          {/* dropdown arrow */}
+          <div className="ml-2 mr-1 text-gray-400 pointer-events-none">
+            <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 8L10 12L14 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+        </div>
+
+        <input type="hidden" name={name ? name : undefined} value={value.join(',')} />
+      </div>
+
+      <div
+        role="listbox"
+        aria-hidden={!open}
+        className={`absolute z-50 left-0 right-0 mt-2 bg-white border border-[var(--border-color)] rounded-lg shadow-lg transition-all duration-150 ${open ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
+        style={{ maxHeight: `${maxHeight}px`, overflowY: 'auto' }}
+      >
+        <div className="msd-scroll msd-dropdown">
+          {filtered.length === 0 ? (
+            <div className="px-4 py-2 text-gray-500">No matches found</div>
+          ) : (
+            filtered.map((opt) => {
+              const o = normalize(opt);
+              const active = value.includes(String(o.value));
+              return (
+                <div
+                  key={o.value}
+                  role="option"
+                  aria-selected={active}
+                  tabIndex={0}
+                  className={`px-4 py-2 cursor-pointer flex items-center justify-between ${active ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'} hover:bg-blue-50`}
+                  onMouseDown={(e) => { e.preventDefault(); toggleSelect(o.value); }}
+                >
+                  <div>{o.label}</div>
+                  {active && (
+                    <svg className="w-4 h-4 text-blue-600" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M6 10.5L8.3 12.8L14 7.1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default MultiSelectDropdown;
