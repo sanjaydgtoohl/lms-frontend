@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MasterFormHeader, SelectField } from '../components/ui';
-import { listZones, listStates, listCountries, listBrandTypes } from '../services/CreateBrandForm';
+import { listZones, listStates, listCountries, listBrandTypes, listCities } from '../services/CreateBrandForm';
 import type { Zone, State, Country, BrandType } from '../services/CreateBrandForm';
 import { listAgencies } from '../services/AgencyMaster';
 import type { Agency } from '../services/AgencyMaster';
@@ -36,10 +36,7 @@ const CitySelect: React.FC<CitySelectProps> = ({ state, value, onChange, presele
 
     const numericState = state && String(state).match(/^\d+$/) ? Number(state) : undefined;
 
-    import('../services/CreateBrandForm')
-      .then((mod) => {
-        return mod.listCities(numericState ? { state_id: numericState } : undefined);
-      })
+    listCities(numericState ? { state_id: numericState } : undefined)
       .then((data) => {
         if (!mounted) return;
         const normalized = (data || []).map((c: any) => ({ id: c.id, name: c.name }));
@@ -177,7 +174,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
 
       // Try to map City by fetching cities for the state (if any)
       try {
-        const citiesList = await import('../services/CreateBrandForm').then(m => m.listCities(stateId ? { state_id: stateId } : undefined));
+        const citiesList = await listCities(stateId ? { state_id: stateId } : undefined);
         const matched = (citiesList || []).find((c: any) => {
           const nm = String(c.name || '').toLowerCase();
           return nm === String(districtOrName).toLowerCase() || nm === String(po.Name || '').toLowerCase();

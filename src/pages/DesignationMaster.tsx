@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import ActionMenu from '../components/ui/ActionMenu';
 import Pagination from '../components/ui/Pagination';
 import { motion } from 'framer-motion';
 import MasterView from '../components/ui/MasterView';
 import MasterEdit from '../components/ui/MasterEdit';
-import { Loader2 } from 'lucide-react';
 import Table, { type Column } from '../components/ui/Table';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants';

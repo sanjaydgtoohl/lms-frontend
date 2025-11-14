@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
+<<<<<<< HEAD
 import { useNavigate } from 'react-router-dom';
+=======
+>>>>>>> 6ddf0790c24623c26bb5e06481e104a71977f951
 import { MasterCreateHeader } from '../../components/ui/MasterCreateHeader';
 import { Upload } from 'lucide-react';
 import { SelectField } from '../../components/ui';
@@ -125,6 +128,15 @@ const Create: React.FC<CreateProps> = ({
     }
   }, [mode, initialData]);
 
+  useEffect(() => {
+    if (initialData) {
+      setFormData(prev => ({
+        ...prev,
+        ...initialData,
+      }));
+    }
+  }, [initialData]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -196,7 +208,7 @@ const Create: React.FC<CreateProps> = ({
   return (
     <div className={inline ? 'w-full' : 'p-6'}>
       <MasterCreateHeader
-        title={''}
+        title={mode === 'edit' ? 'Edit Miss Campaign' : 'Create Miss Campaign'}
         onClose={onClose}
       />
       <div className="mt-6 bg-white rounded-2xl shadow-sm border border-[var(--border-color)] p-6">

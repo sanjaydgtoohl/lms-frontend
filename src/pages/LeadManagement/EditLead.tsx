@@ -236,7 +236,6 @@ const EditLead: React.FC = () => {
                               startIndex={0}
                               loading={false}
                               keyExtractor={(it) => it.id}
-                              compact
                             />
                   );
                 })()

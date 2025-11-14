@@ -7,9 +7,6 @@ const ApiErrorNotification: React.FC = () => {
   const [open, setOpen] = useState(false);
   const hasErrors = errorList.length > 0;
 
-  // Icon color is orange (CSS variable) - blinking animation will be applied to the badge instead
-  const iconAnimationClass = '';
-
   return (
     <div className="relative inline-block">
       <button

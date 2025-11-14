@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MasterFormHeader } from '../../components/ui';
-import { ROUTES } from '../../constants';
 
 interface Lead {
   id: string;

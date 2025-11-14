@@ -24,7 +24,6 @@ export default function LoginCard() {
     handleSubmit,
     formState: { errors },
     setError,
-    clearErrors,
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     mode: 'onSubmit',

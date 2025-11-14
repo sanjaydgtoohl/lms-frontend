@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft } from 'lucide-react';
 import Breadcrumb from './Breadcrumb';
+import SelectField from './SelectField';
 import { fetchLeadSources, type LeadSource } from '../../services/CreateSourceForm';
 import { showSuccess, showError } from '../../utils/notifications';
 
@@ -137,7 +138,7 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
                 <SelectField
                   name={k}
                   value={String(form[k] ?? '')}
-                  onChange={(v) => handleChange(k, v)}
+                  onChange={(value: string) => handleChange(k, value)}
                   options={options.map(o => ({ value: String(o.id), label: o.name }))}
                   placeholder={loadingOptions ? 'Loading...' : 'Search or select option'}
                   disabled={loadingOptions}

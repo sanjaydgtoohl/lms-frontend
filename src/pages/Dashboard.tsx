@@ -36,21 +36,6 @@ const systemAlerts: SystemAlert[] = [
   { message: 'System maintenance scheduled for next week', time: '2 days ago' },
 ];
 
-// Helper function to map priority to Tailwind classes
-const getPriorityClasses = (priority: 'High' | 'Medium' | 'Low') => {
-  switch (priority) {
-    case 'High':
-      return 'bg-red-100 text-red-700';
-    case 'Medium':
-      return 'bg-amber-100 text-amber-700';
-    case 'Low':
-      return 'bg-green-100 text-green-700';
-    default:
-      return 'bg-gray-100 text-gray-700';
-  }
-};
-
-
 const Dashboard: React.FC = () => {
   const [assignmentsPage, setAssignmentsPage] = useState(1);
   const [alertsPage, setAlertsPage] = useState(1);

@@ -9,6 +9,7 @@ import type {
 import { loginService } from './Login';
 import http from './http';
 import { getCookie } from '../utils/cookies';
+import { handleApiError } from '../utils/apiErrorHandler';
 
 class ApiClient {
   private baseURL: string;
@@ -17,10 +18,20 @@ class ApiClient {
     this.baseURL = baseURL;
   }
 
+  private resolveUrl(endpoint: string): string {
+    if (/^https?:\/\//.test(endpoint)) {
+      return endpoint;
+    }
+    const normalizedBase = this.baseURL.replace(/\/$/, '');
+    const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    return `${normalizedBase}${normalizedEndpoint}`;
+  }
+
   private async request<T>(endpoint: string, options: { method?: string; data?: any } = {}): Promise<ApiResponse<T>> {
     try {
       const method = (options.method || 'GET').toUpperCase();
-      const resp = await http.request({ url: endpoint, method, data: options.data });
+      const url = this.resolveUrl(endpoint);
+      const resp = await http.request({ url, method, data: options.data });
       const data = resp.data as ApiResponse<T>;
 
       if (!data || !data.success) {
@@ -30,7 +41,6 @@ class ApiClient {
       return data;
     } catch (error: any) {
       console.error('API Error:', error);
-      const { handleApiError } = await import('../utils/apiErrorHandler');
       handleApiError(error, false);
       throw error;
     }

@@ -1,4 +1,5 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Component } from 'react';
+import type { ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle } from 'lucide-react';
 
 interface Props {
@@ -69,7 +70,7 @@ class ErrorBoundary extends Component<Props, State> {
                   We're sorry, but something unexpected happened. Please try refreshing the page or contact support if the problem persists.
                 </p>
                 
-                {process.env.NODE_ENV === 'development' && this.state.error && (
+                {(import.meta.env?.DEV ?? false) && this.state.error && (
                   <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <p className="text-sm font-semibold text-gray-700 mb-2">
                       Error Details (Development Only):
