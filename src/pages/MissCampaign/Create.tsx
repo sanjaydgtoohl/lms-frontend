@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { MasterCreateHeader } from '../../components/ui/MasterCreateHeader';
-import { Upload, ChevronDown } from 'lucide-react';
+import { Upload } from 'lucide-react';
+import { SelectField } from '../../components/ui';
 
 interface CreateProps {
   inline?: boolean;
@@ -57,19 +58,14 @@ const Create: React.FC<CreateProps> = ({
               <label className="block text-sm font-medium mb-2">
                 Brand Name <span className="text-[#FF0000]">*</span>
               </label>
-              <div className="relative">
-                <select
+              <div>
+                <SelectField
                   name="brandName"
                   value={formData.brandName}
-                  onChange={handleChange}
-                  required
-                  className="w-full appearance-none px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent pr-10"
-                >
-                  <option value="">Please Select Brand Name</option>
-                  <option value="brand1">Brand 1</option>
-                  <option value="brand2">Brand 2</option>
-                </select>
-                <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  onChange={(v) => setFormData(prev => ({ ...prev, brandName: v }))}
+                  options={[ 'Brand 1', 'Brand 2' ]}
+                  placeholder="Search or select option"
+                />
               </div>
               {/* helper removed as requested */}
             </div>
@@ -79,19 +75,14 @@ const Create: React.FC<CreateProps> = ({
               <label className="block text-sm font-medium mb-2">
                 Source <span className="text-[#FF0000]">*</span>
               </label>
-              <div className="relative">
-                <select
+              <div>
+                <SelectField
                   name="source"
                   value={formData.source}
-                  onChange={handleChange}
-                  required
-                  className="w-full appearance-none px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent pr-10"
-                >
-                  <option value="">Please Select Source</option>
-                  <option value="News Paper">News Paper</option>
-                  <option value="Social Media">Social Media</option>
-                </select>
-                <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  onChange={(v) => setFormData(prev => ({ ...prev, source: v }))}
+                  options={[ 'News Paper', 'Social Media' ]}
+                  placeholder="Search or select option"
+                />
               </div>
             </div>
 
@@ -100,20 +91,14 @@ const Create: React.FC<CreateProps> = ({
               <label className="block text-sm font-medium mb-2">
                 Sub Source <span className="text-[#FF0000]">*</span>
               </label>
-              <div className="relative">
-                <select
+              <div>
+                <SelectField
                   name="subSource"
                   value={formData.subSource}
-                  onChange={handleChange}
-                  required
-                  className="w-full appearance-none px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent pr-10"
-                >
-                  <option value="">Please Select Sub Source</option>
-                  <option value="sub1">Sub Source 1</option>
-                  <option value="sub2">Sub Source 2</option>
-                  <option value="sub3">Sub Source 3</option>
-                </select>
-                <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  onChange={(v) => setFormData(prev => ({ ...prev, subSource: v }))}
+                  options={[ 'Sub Source 1', 'Sub Source 2', 'Sub Source 3' ]}
+                  placeholder="Search or select option"
+                />
               </div>
             </div>
 

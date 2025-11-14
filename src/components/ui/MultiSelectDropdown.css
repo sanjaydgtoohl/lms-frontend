@@ -1,0 +1,38 @@
+.msd-dropdown {
+  scroll-behavior: smooth;
+}
+.msd-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.msd-scroll::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 8px;
+}
+.msd-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 8px;
+}
+.msd-tag {
+  background: #eef2ff;
+  color: #1e3a8a;
+  margin: 2px 4px 2px 0;
+  padding: 2px 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  font-size: 13px;
+  line-height: 1.2;
+}
+.msd-tag [role="button"] {
+  margin-left: 4px;
+  font-size: 16px;
+  opacity: 0.8;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.msd-tag [role="button"]:hover {
+  color: #d92d20;
+  opacity: 1;
+}

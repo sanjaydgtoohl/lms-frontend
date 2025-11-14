@@ -54,7 +54,7 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({
               <li>
                 <Link 
                   to="/dashboard" 
-                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                  style={{ color: 'var(--color-orange-400)', fontWeight: 600 }}
                 >
                   <Home className="w-4 h-4" />
                 </Link>
@@ -68,12 +68,12 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({
               {item.path && !item.isActive ? (
                 <Link
                   to={item.path}
-                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                  style={{ color: 'var(--color-orange-400)', fontWeight: 500 }}
                 >
                   {item.label}
                 </Link>
               ) : (
-                <span className={`${item.isActive ? 'text-gray-900 font-semibold' : 'text-gray-500'}`}>
+                <span style={{ color: 'var(--color-orange-400)', fontWeight: item.isActive ? 600 : 500 }}>
                   {item.label}
                 </span>
               )}
@@ -232,6 +232,119 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({
       return crumbs;
     }
 
+    // Handle user-management routes
+    if (pathname.startsWith('/user-management')) {
+      crumbs.push({
+        label: 'User Management',
+        path: '/user-management',
+      });
+
+      if (pathname.includes('/permission')) {
+        crumbs.push({
+          label: 'Permission',
+          path: '/user-management/permission',
+        });
+
+        if (pathname.includes('/create')) {
+          crumbs.push({
+            label: 'Create',
+            isActive: true,
+          });
+        } else if (pathname.includes('/edit/')) {
+          const id = pathname.split('/edit/')[1];
+          crumbs.push({
+            label: `ID: ${id}`,
+            path: `/user-management/permission`,
+          });
+          crumbs.push({
+            label: 'Edit',
+            isActive: true,
+          });
+        } else if (parts.length > 2) {
+          const id = parts[2];
+          crumbs.push({
+            label: `ID: ${id}`,
+            isActive: true,
+          });
+        } else {
+          // Default to Permission as active
+          crumbs[crumbs.length - 1] = {
+            ...crumbs[crumbs.length - 1],
+            isActive: true,
+          };
+        }
+      } else if (pathname.includes('/role')) {
+        crumbs.push({
+          label: 'Role',
+          path: '/user-management/role',
+        });
+
+        if (pathname.includes('/create')) {
+          crumbs.push({
+            label: 'Create',
+            isActive: true,
+          });
+        } else if (pathname.includes('/edit/')) {
+          const id = pathname.split('/edit/')[1];
+          crumbs.push({
+            label: `ID: ${id}`,
+            path: `/user-management/role`,
+          });
+          crumbs.push({
+            label: 'Edit',
+            isActive: true,
+          });
+        } else if (parts.length > 2) {
+          const id = parts[2];
+          crumbs.push({
+            label: `ID: ${id}`,
+            isActive: true,
+          });
+        } else {
+          // Default to Role as active
+          crumbs[crumbs.length - 1] = {
+            ...crumbs[crumbs.length - 1],
+            isActive: true,
+          };
+        }
+      } else if (pathname.includes('/user')) {
+        crumbs.push({
+          label: 'User',
+          path: '/user-management/user',
+        });
+
+        if (pathname.includes('/create')) {
+          crumbs.push({
+            label: 'Create',
+            isActive: true,
+          });
+        } else if (pathname.includes('/edit/')) {
+          const id = pathname.split('/edit/')[1];
+          crumbs.push({
+            label: `ID: ${id}`,
+            path: `/user-management/user`,
+          });
+          crumbs.push({
+            label: 'Edit',
+            isActive: true,
+          });
+        } else if (parts.length > 2) {
+          const id = parts[2];
+          crumbs.push({
+            label: `ID: ${id}`,
+            isActive: true,
+          });
+        } else {
+          // Default to User as active
+          crumbs[crumbs.length - 1] = {
+            ...crumbs[crumbs.length - 1],
+            isActive: true,
+          };
+        }
+      }
+      return crumbs;
+    }
+
     // Default behavior for other paths
     const defaultCrumbs: BreadcrumbItem[] = [];
     parts.forEach((part, idx) => {
@@ -284,7 +397,7 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({
             <li>
               <Link 
                 to="/dashboard" 
-                className="text-gray-500 hover:text-gray-700 transition-colors"
+                style={{ color: 'var(--color-orange-400)', fontWeight: 600 }}
                 aria-label="Home"
               >
                 <Home className="w-4 h-4" />
@@ -299,12 +412,12 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({
             {crumb.path && !crumb.isActive ? (
               <Link
                 to={crumb.path}
-                className="text-gray-500 hover:text-gray-700 transition-colors"
+                style={{ color: 'var(--color-orange-400)', fontWeight: 500 }}
               >
                 {crumb.label}
               </Link>
             ) : (
-              <span className={`${crumb.isActive ? 'text-gray-900 font-semibold' : 'text-gray-500'}`}>
+              <span style={{ color: 'var(--color-orange-400)', fontWeight: crumb.isActive ? 600 : 500 }}>
                 {crumb.label}
               </span>
             )}

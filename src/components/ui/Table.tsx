@@ -1,6 +1,7 @@
 import React from 'react';
 import ActionMenu from './ActionMenu';
 import { Loader2 } from 'lucide-react';
+import { toTitleCase } from '../../utils';
 
 export type Column<T> = {
   /** unique key for the column */
@@ -45,14 +46,15 @@ const Table = <T,>(props: TableProps<T>) => {
               {columns.map(col => (
                 <th
                   key={String(col.key)}
-                  className={`px-6 py-3.5 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider border-b border-gray-200 ${col.className || ''}`}
+                  className={`px-6 py-3.5 text-center text-xs font-semibold text-gray-700 tracking-wider border-b border-gray-200 whitespace-nowrap truncate ${col.className || ''}`}
+                  style={{ maxWidth: 220 }}
                 >
-                  {col.header}
+                  {typeof col.header === 'string' ? toTitleCase(col.header) : col.header}
                 </th>
               ))}
               {showActions && (
-                <th className="px-6 py-3.5 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider border-b border-gray-200">
-                  Actions
+                <th className={`px-6 py-3.5 text-center text-xs font-semibold text-gray-700 tracking-wider border-b border-gray-200 whitespace-nowrap truncate`} style={{ maxWidth: 220 }}>
+                  {toTitleCase('Actions')}
                 </th>
               )}
             </tr>
@@ -99,8 +101,14 @@ const Table = <T,>(props: TableProps<T>) => {
                     <td
                       key={col.key}
                       className={`px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center ${col.className || ''}`}
+                      style={{ maxWidth: 320 }}
                     >
-                      {col.render ? col.render(item) : String((item as Record<string, unknown>)[col.key] ?? '-')}
+                          {col.render ? col.render(item) : (() => {
+                            const raw = String((item as Record<string, unknown>)[col.key] ?? '-');
+                            // Don't title-case obvious codes, numbers, or hashes
+                            if (raw === '-' || /^[#\d]/.test(raw) || /\d{2}[-\/\.]\d{2}[-\/\.]\d{2,4}/.test(raw)) return raw;
+                            return toTitleCase(raw);
+                          })()}
                     </td>
                   ))}
                   {showActions && (
@@ -182,10 +190,10 @@ const Table = <T,>(props: TableProps<T>) => {
                       key={col.key}
                       className="flex flex-col items-center gap-1 text-center"
                     >
-                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                        {typeof col.header === 'string' ? col.header : col.key}
+                      <span className="text-xs font-medium text-gray-500 tracking-wide whitespace-nowrap truncate">
+                        {typeof col.header === 'string' ? toTitleCase(col.header) : col.key}
                       </span>
-                      <span className="text-sm font-medium text-gray-900 break-words">
+                      <span className="text-sm font-medium text-gray-900 truncate">
                         {col.render ? col.render(item) : String((item as Record<string, unknown>)[col.key] ?? '-')}
                       </span>
                     </div>

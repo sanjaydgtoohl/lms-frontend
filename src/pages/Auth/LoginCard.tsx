@@ -18,21 +18,37 @@ export default function LoginCard() {
   const notification = useUiStore((s) => s.notification);
   const [loginError, setLoginError] = useState<string | null>(null);
 
+
   const {
     register,
     handleSubmit,
     formState: { errors },
+    setError,
+    clearErrors,
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
+    mode: 'onSubmit',
   });
 
+  // Track if user has attempted to submit
+  const [submitted, setSubmitted] = useState(false);
+
   const onSubmit = async (data: LoginFormData) => {
+    setSubmitted(true);
+    let hasError = false;
+    if (!data.email) {
+      setError('email', { type: 'manual', message: 'Email Address is required' });
+      hasError = true;
+    }
+    if (!data.password) {
+      setError('password', { type: 'manual', message: 'Password is required' });
+      hasError = true;
+    }
+    if (hasError) return;
     try {
       await login(data.email, data.password);
-      // Clear any previous inline login error on success
       setLoginError(null);
     } catch (error: any) {
-      // Hide global notification popup and show inline message instead
       useUiStore.getState().hideNotification();
       setLoginError(error?.message || 'Login failed. Please check your credentials.');
     }
@@ -83,50 +99,67 @@ export default function LoginCard() {
         {loginError && (
           <div className="w-full text-center mb-4">
             <div className="inline-block bg-red-900/60 text-red-100 px-3 py-2 rounded-md text-sm sm:text-base">
-              {/* <strong className="mr-1">Login Error:</strong> */}
-              <span>{loginError}</span>
+              <span>{loginError.replace(/^Login validation failed:\s*/, '')}</span>
             </div>
           </div>
         )}
 
          {/* Form - Clean & Simple */}
-         <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-sm sm:max-w-md space-y-4 sm:space-y-5">
-           {/* Email */}
-           <Input
-             type="email"
-             placeholder="you@example.com"
-             label="Email Address"
-             {...register('email')}
-             error={errors.email?.message}
-             required
-           />
+        <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-sm sm:max-w-md space-y-4 sm:space-y-5">
+          {/* Email */}
+          <div>
+            <Input
+              type="email"
+              placeholder="Please enter your email address"
+              label="Email Address"
+              {...register('email')}
+              error={errors.email?.message}
+            />
+            {/* Validation message below input */}
+            {submitted && errors.email?.message && (
+              <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {errors.email.message}
+              </div>
+            )}
+          </div>
 
-           {/* Password */}
-           <div>
-             <Input
-               type="password"
-               placeholder="••••••••"
-               label="Password"
-               {...register('password')}
-               error={errors.password?.message}
-               required
-             />
-           </div>
+          {/* Password */}
+          <div>
+            <Input
+              type="password"
+              placeholder="Please enter your password"
+              label="Password"
+              {...register('password')}
+              error={errors.password?.message}
+            />
+            {/* Validation message below input */}
+            {submitted && errors.password?.message && (
+              <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {errors.password.message}
+              </div>
+            )}
+          </div>
 
-           {/* Login Button */}
+          {/* Login Button */}
           <Button
-             type="submit"
-             variant="primary"
-             size="lg"
-             loading={isLoading}
-           className="w-full hover:!bg-orange-300 !bg-orange-400 !text-black font-semibold py-3 sm:py-4 rounded-lg sm:rounded-xl 
-                        transition-all duration-300 active:scale-[0.98] 
-                        shadow-[0_0_25px_rgba(255,165,0,0.3)] hover:shadow-[0_0_35px_rgba(255,165,0,0.5)] 
-                        text-sm sm:text-base tracking-wide mt-3"
-           >
-             Login
-           </Button>
-         </form>
+            type="submit"
+            variant="primary"
+            size="lg"
+            loading={isLoading}
+            className="w-full hover:!bg-orange-300 !bg-orange-400 !text-black font-semibold py-3 sm:py-4 rounded-lg sm:rounded-xl 
+                      transition-all duration-300 active:scale-[0.98] 
+                      shadow-[0_0_25px_rgba(255,165,0,0.3)] hover:shadow-[0_0_35px_rgba(255,165,0,0.5)] 
+                      text-sm sm:text-base tracking-wide mt-3"
+          >
+            Login
+          </Button>
+        </form>
       </div>
     </div>
   );

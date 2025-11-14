@@ -26,6 +26,14 @@ interface MainContentProps<T extends LeadSource | Agency> {
   dataType?: 'leadSource' | 'agency';
   onView?: (item: T) => void;
   onEdit?: (item: T) => void;
+  onDelete?: (item: T) => void | Promise<void>;
+  // optional external data/pagination support
+  data?: T[];
+  loading?: boolean;
+  totalItems?: number;
+  currentPage?: number;
+  itemsPerPage?: number;
+  onPageChange?: (page: number) => void;
 }
 
 const MainContent = <T extends LeadSource | Agency>({ 
@@ -33,10 +41,18 @@ const MainContent = <T extends LeadSource | Agency>({
   headerActions, 
   dataType = 'leadSource', 
   onView, 
-  onEdit 
+  onEdit,
+  onDelete,
+  data: externalData,
+  loading: externalLoading,
+  totalItems: externalTotal,
+  currentPage: externalCurrentPage,
+  itemsPerPage: externalItemsPerPage,
+  onPageChange: externalOnPageChange,
 }: MainContentProps<T>) => {
-  const [currentPage, setCurrentPage] = useState(1);
+  const [internalPage, setInternalPage] = useState(1);
   const itemsPerPage = 10;
+  const currentPage = externalCurrentPage ?? internalPage;
   const [searchQuery, setSearchQuery] = useState('');
 
   // Sample data
@@ -76,38 +92,39 @@ const MainContent = <T extends LeadSource | Agency>({
   // totalPages not used directly (pagination component uses totalItems)
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentData = filteredArray.slice(startIndex, endIndex);
+  const providedData = externalData;
+  const currentData = providedData ? (providedData as T[]).slice(startIndex, endIndex) : filteredArray.slice(startIndex, endIndex);
 
-  const handleEdit = (id: string) => {
-    const item = currentDataArray.find(i => i.id === id);
-    if (item && onEdit) {
-      // Type is already T since we cast currentDataArray as T[]
+  const handleEdit = (item: T) => {
+    if (onEdit) {
       onEdit(item);
     }
   };
 
-  const handleView = (id: string) => {
-    const item = currentDataArray.find(i => i.id === id);
-    if (item && onView) {
-      // Type is already T since we cast currentDataArray as T[]
+  const handleView = (item: T) => {
+    if (onView) {
       onView(item);
     }
   };
 
-  const handleDelete = (id: string) => {
-    console.log(`Delete ${dataType === 'agency' ? 'agency' : 'lead source'}:`, id);
+  const handleDelete = (item: T) => {
+    if (onDelete) {
+      onDelete(item);
+    }
   };
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    if (externalOnPageChange) return externalOnPageChange(page);
+    setInternalPage(page);
   };
 
   const renderPagination = () => {
+    const total = typeof externalTotal === 'number' ? externalTotal : (searchQuery ? filteredArray.length : currentDataArray.length);
     return (
       <Pagination
         currentPage={currentPage}
-        totalItems={searchQuery ? filteredArray.length : currentDataArray.length}
-        itemsPerPage={itemsPerPage}
+        totalItems={total}
+        itemsPerPage={externalItemsPerPage ?? itemsPerPage}
         onPageChange={handlePageChange}
       />
     );
@@ -124,7 +141,7 @@ const MainContent = <T extends LeadSource | Agency>({
               <SearchBar
                 delay={300}
                 placeholder={dataType === 'agency' ? 'Search Agency Group' : 'Search...'}
-                onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }}
+                onSearch={(q: string) => { setSearchQuery(q); if (externalOnPageChange) externalOnPageChange(1); else setInternalPage(1); }}
               />
               {headerActions && (
                 <div className="flex items-center space-x-2">
@@ -139,7 +156,7 @@ const MainContent = <T extends LeadSource | Agency>({
           <Table
           data={currentData}
           startIndex={startIndex}
-          loading={false}
+          loading={!!externalLoading}
           keyExtractor={(it: T, idx: number) => `${it.id}-${idx}`}
           columns={(
             (dataType === 'agency'
@@ -164,9 +181,9 @@ const MainContent = <T extends LeadSource | Agency>({
                   { key: 'dateTime', header: 'Date & Time', render: (it: T) => (it as LeadSource).dateTime },
                 ]) as Column<T>[]
           )}
-          onEdit={(it: T) => handleEdit(it.id)}
-          onView={(it: T) => handleView(it.id)}
-          onDelete={(it: T) => handleDelete(it.id)}
+          onEdit={(it: T) => handleEdit(it)}
+          onView={(it: T) => handleView(it)}
+          onDelete={(it: T) => handleDelete(it)}
         />
         </div>
       </div>

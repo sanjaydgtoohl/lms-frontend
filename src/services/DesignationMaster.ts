@@ -1,5 +1,5 @@
-import { API_BASE_URL } from '../constants';
 import { handleApiError } from '../utils/apiErrorHandler';
+import { apiClient } from '../utils/apiClient';
 
 export type Designation = {
   id: number | string;
@@ -12,12 +12,6 @@ export type Designation = {
   deleted_at?: string | null;
 };
 
-type ApiEnvelope<T> = {
-  success?: boolean;
-  message?: string;
-  data: T;
-};
-
 const ENDPOINTS = {
   LIST: '/designations',
   DETAIL: (id: string | number) => `/designations/${id}`,
@@ -25,28 +19,13 @@ const ENDPOINTS = {
   UPDATE: (id: string | number) => `/designations/${id}`,
   DELETE: (id: string | number) => `/designations/${id}`,
 } as const;
-
-function authHeaders(): HeadersInit {
-  const token = localStorage.getItem('auth_token');
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
-
-async function handleResponse<T>(res: Response): Promise<T> {
-  const json = await res.json().catch(() => null);
-  if (!res.ok) {
-    const error = new Error((json && (json.message || json.error)) || 'Request failed');
-    (error as any).statusCode = res.status;
-    (error as any).responseData = json;
-    handleApiError(error);
+async function handleResponse<T>(res: any): Promise<T> {
+  if (!res || !res.success) {
+    const error = new Error((res && (res.message || 'Request failed')) || 'Request failed');
+    try { handleApiError(error); } catch {}
     throw error;
   }
-  if (json && typeof json === 'object' && 'data' in json) {
-    return (json as ApiEnvelope<T>).data;
-  }
-  return json as T;
+  return res.data as T;
 }
 
 export type DesignationListResponse = {
@@ -64,55 +43,30 @@ export type DesignationListResponse = {
 };
 
 export async function listDesignations(page = 1, perPage = 10): Promise<DesignationListResponse> {
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.LIST}?page=${page}&per_page=${perPage}`, {
-    method: 'GET',
-    headers: authHeaders(),
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const error = new Error((json && (json.message || json.error)) || 'Request failed');
-    (error as any).statusCode = res.status;
-    (error as any).responseData = json;
-    handleApiError(error);
-    throw error;
-  }
+  const res = await apiClient.get<Designation[]>(`${ENDPOINTS.LIST}?page=${page}&per_page=${perPage}`);
   return {
-    data: json.data || [],
-    meta: json.meta || {},
+    data: res.data || [],
+    meta: (res as any).meta || {},
   };
 }
 
 export async function getDesignation(id: string | number): Promise<Designation> {
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.DETAIL(id)}`, {
-    method: 'GET',
-    headers: authHeaders(),
-  });
+  const res = await apiClient.get<Designation>(ENDPOINTS.DETAIL(id));
   return handleResponse<Designation>(res);
 }
 
 export async function createDesignation(payload: Partial<Designation>): Promise<Designation> {
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.CREATE}`, {
-    method: 'POST',
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
-  });
+  const res = await apiClient.post<Designation>(ENDPOINTS.CREATE, payload);
   return handleResponse<Designation>(res);
 }
 
 export async function updateDesignation(id: string | number, payload: Partial<Designation>): Promise<Designation> {
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.UPDATE(id)}`, {
-    method: 'PUT',
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
-  });
+  const res = await apiClient.put<Designation>(ENDPOINTS.UPDATE(id), payload);
   return handleResponse<Designation>(res);
 }
 
 export async function deleteDesignation(id: string | number): Promise<void> {
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.DELETE(id)}`, {
-    method: 'DELETE',
-    headers: authHeaders(),
-  });
+  const res = await apiClient.delete<unknown>(ENDPOINTS.DELETE(id));
   await handleResponse<unknown>(res);
 }
 

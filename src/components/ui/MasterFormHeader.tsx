@@ -1,5 +1,6 @@
 import React from 'react';
 import Breadcrumb from './Breadcrumb';
+import Button from './Button';
 import { ChevronLeft } from 'lucide-react';
 
 interface MasterFormHeaderProps {
@@ -18,13 +19,13 @@ const MasterFormHeader: React.FC<MasterFormHeaderProps> = ({
         {/* keep title available for accessibility/screen-readers but don't render visibly to avoid duplication */}
         <span style={{ display: 'none' }}>{title}</span>
       </div>
-      <button
+      <Button
         onClick={onBack}
-        className="flex items-center space-x-2 btn-primary text-white px-3 py-1 rounded-lg"
+        className="flex items-center space-x-2 px-3 py-1"
       >
         <ChevronLeft className="w-4 h-4" />
         <span className="text-sm">Go Back</span>
-      </button>
+      </Button>
     </div>
   );
 };

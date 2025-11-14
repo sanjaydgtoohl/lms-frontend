@@ -1,5 +1,5 @@
-import { API_BASE_URL } from '../constants';
 import { useUiStore } from '../store/ui';
+import { apiClient } from '../utils/apiClient';
 
 export interface BriefItem {
   id: string;
@@ -27,13 +27,6 @@ const ENDPOINTS = {
   DETAIL: (id: string) => `/briefs/${id}`,
 } as const;
 
-function authHeaders(): HeadersInit {
-  const token = localStorage.getItem('auth_token');
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
 
 export type BriefListResponse = {
   data: BriefItem[];
@@ -55,14 +48,10 @@ export async function listBriefs(page = 1, perPage = 10, search?: string): Promi
   params.set('per_page', String(perPage));
   if (search && String(search).trim()) params.set('search', String(search).trim());
 
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.LIST}?${params.toString()}`, {
-    method: 'GET',
-    headers: authHeaders(),
-  });
-
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const message = (json && (json.message || json.error)) || 'Request failed';
+  const res = await apiClient.get<BriefItem[]>(ENDPOINTS.LIST + `?${params.toString()}`);
+  const json = res;
+  if (!json || !json.success) {
+    const message = (json && (json.message || 'Request failed')) || 'Request failed';
     try { useUiStore.getState().pushError(message); } catch {}
     throw new Error(message);
   }
@@ -108,6 +97,6 @@ export async function listBriefs(page = 1, perPage = 10, search?: string): Promi
 
   return {
     data: items,
-    meta: json.meta || {},
+    meta: (json.meta as any) || {},
   };
 }

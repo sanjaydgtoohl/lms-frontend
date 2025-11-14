@@ -1,5 +1,5 @@
-import { API_BASE_URL } from '../constants';
 import { handleApiError } from '../utils/apiErrorHandler';
+import { apiClient } from '../utils/apiClient';
 
 export type Department = {
   id: number | string;
@@ -12,11 +12,6 @@ export type Department = {
   deleted_at?: string | null;
 };
 
-type ApiEnvelope<T> = {
-  success?: boolean;
-  message?: string;
-  data: T;
-};
 
 const ENDPOINTS = {
   LIST: '/departments',
@@ -26,27 +21,13 @@ const ENDPOINTS = {
   DELETE: (id: string | number) => `/departments/${id}`,
 } as const;
 
-function authHeaders(): HeadersInit {
-  const token = localStorage.getItem('auth_token');
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
-
-async function handleResponse<T>(res: Response): Promise<T> {
-  const json = await res.json().catch(() => null);
-  if (!res.ok) {
-    const error = new Error((json && (json.message || json.error)) || 'Request failed');
-    (error as any).statusCode = res.status;
-    (error as any).responseData = json;
-    handleApiError(error);
-    throw error;
+async function handleResponse<T>(res: any): Promise<T> {
+  if (!res || !res.success) {
+    const err = new Error((res && (res.message || 'Request failed')) || 'Request failed');
+    try { handleApiError(err); } catch {}
+    throw err;
   }
-  if (json && typeof json === 'object' && 'data' in json) {
-    return (json as ApiEnvelope<T>).data;
-  }
-  return json as T;
+  return res.data as T;
 }
 
 export type DepartmentListResponse = {
@@ -64,54 +45,29 @@ export type DepartmentListResponse = {
 };
 
 export async function listDepartments(page = 1, perPage = 10): Promise<DepartmentListResponse> {
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.LIST}?page=${page}&per_page=${perPage}`, {
-    method: 'GET',
-    headers: authHeaders(),
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const error = new Error((json && (json.message || json.error)) || 'Request failed');
-    (error as any).statusCode = res.status;
-    (error as any).responseData = json;
-    handleApiError(error);
-    throw error;
-  }
+  const res = await apiClient.get<Department[]>(`${ENDPOINTS.LIST}?page=${page}&per_page=${perPage}`);
   return {
-    data: json.data || [],
-    meta: json.meta || {},
+    data: res.data || [],
+    meta: (res as any).meta || {},
   };
 }
 
 export async function getDepartment(id: string | number): Promise<Department> {
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.DETAIL(id)}`, {
-    method: 'GET',
-    headers: authHeaders(),
-  });
+  const res = await apiClient.get<Department>(ENDPOINTS.DETAIL(id));
   return handleResponse<Department>(res);
 }
 
 export async function createDepartment(payload: Partial<Department>): Promise<Department> {
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.CREATE}`, {
-    method: 'POST',
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
-  });
+  const res = await apiClient.post<Department>(ENDPOINTS.CREATE, payload);
   return handleResponse<Department>(res);
 }
 
 export async function updateDepartment(id: string | number, payload: Partial<Department>): Promise<Department> {
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.UPDATE(id)}`, {
-    method: 'PUT',
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
-  });
+  const res = await apiClient.put<Department>(ENDPOINTS.UPDATE(id), payload);
   return handleResponse<Department>(res);
 }
 
 export async function deleteDepartment(id: string | number): Promise<void> {
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.DELETE(id)}`, {
-    method: 'DELETE',
-    headers: authHeaders(),
-  });
+  const res = await apiClient.delete<unknown>(ENDPOINTS.DELETE(id));
   await handleResponse<unknown>(res);
 }

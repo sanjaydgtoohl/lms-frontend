@@ -2,9 +2,12 @@
  * Enhanced API Client with retry logic and better error handling
  */
 
-import { API_BASE_URL } from '../constants';
-import { handleApiError, extractErrorMessage } from './apiErrorHandler';
+import { API_BASE_URL, API_ENDPOINTS } from '../constants';
+// keep api error helpers available if needed in the future
+// import { handleApiError, extractErrorMessage } from './apiErrorHandler';
 import { useAuthStore } from '../store/auth';
+import { getCookie } from '../utils/cookies';
+import http from '../services/http';
 
 export interface RequestConfig extends RequestInit {
   retries?: number;
@@ -41,7 +44,7 @@ class EnhancedApiClient {
    * Get authentication headers
    */
   private getAuthHeaders(): HeadersInit {
-    const token = localStorage.getItem('auth_token');
+    const token = getCookie('auth_token');
     return {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -51,7 +54,7 @@ class EnhancedApiClient {
   /**
    * Check if error is retryable
    */
-  private isRetryableError(statusCode?: number, error?: Error): boolean {
+  private isRetryableError(statusCode?: number): boolean {
     if (!statusCode) return false;
     // Retry on network errors, timeouts, and 5xx errors
     return statusCode >= 500 || statusCode === 429 || statusCode === 408;
@@ -84,23 +87,24 @@ class EnhancedApiClient {
       if (!refreshTokenValue) {
         return false;
       }
+      // Use axios http instance to call the refresh endpoint so it benefits from the same baseURL and cookie handling
+      const resp = await http.post(API_ENDPOINTS.AUTH.REFRESH, { refreshToken: refreshTokenValue });
+      const data = resp.data;
+      if (data && data.success && data.data?.token) {
+        authStore.login('', ''); // Update token in store (store may be updated elsewhere as well)
+        // Use cookie helper behavior: set cookies via document.cookie here (server should set HttpOnly in production)
+        const now = Date.now();
+        const access = data.data.token;
+        const refresh = data.data.refreshToken;
+        const expiresIn = data.data.expires_in || 3600;
+        const refreshExpiresIn = data.data.refresh_expires_in || null;
 
-      const response = await fetch(`${this.baseURL}/auth/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken: refreshTokenValue }),
-      });
-
-      if (!response.ok) {
-        return false;
-      }
-
-      const data = await response.json();
-      if (data.success && data.data?.token) {
-        authStore.login('', ''); // Update token in store
-        localStorage.setItem('auth_token', data.data.token);
-        if (data.data.refreshToken) {
-          localStorage.setItem('refresh_token', data.data.refreshToken);
+        document.cookie = `auth_token=${encodeURIComponent(access)}; Path=/; Max-Age=${expiresIn}; Secure; SameSite=Lax`;
+        document.cookie = `auth_token_expires=${String(now + expiresIn * 1000)}; Path=/; Max-Age=${expiresIn}; Secure; SameSite=Lax`;
+        if (refresh) {
+          const rExp = refreshExpiresIn || 7 * 24 * 3600;
+          document.cookie = `refresh_token=${encodeURIComponent(refresh)}; Path=/; Max-Age=${rExp}; Secure; SameSite=Lax`;
+          document.cookie = `refresh_token_expires=${String(now + rExp * 1000)}; Path=/; Max-Age=${rExp}; Secure; SameSite=Lax`;
         }
         return true;
       }
@@ -128,9 +132,18 @@ class EnhancedApiClient {
     } = config;
 
     const url = `${this.baseURL}${endpoint}`;
+    // If the body is a FormData instance, do not set Content-Type here
+    // so the browser can set the proper multipart boundary header.
+    const isFormDataBody = (fetchConfig as any).body instanceof FormData;
+    const baseAuthHeaders = this.getAuthHeaders();
+    if (isFormDataBody) {
+      // remove Content-Type for FormData
+      delete (baseAuthHeaders as any)['Content-Type'];
+    }
+
     const headers = skipAuth
-      ? { 'Content-Type': 'application/json', ...fetchConfig.headers }
-      : { ...this.getAuthHeaders(), ...fetchConfig.headers };
+      ? (isFormDataBody ? { ...(fetchConfig.headers || {}) } : { 'Content-Type': 'application/json', ...(fetchConfig.headers || {}) })
+      : ({ ...baseAuthHeaders, ...(fetchConfig.headers || {}) });
 
     let lastError: Error | null = null;
     let statusCode: number | undefined;
@@ -154,12 +167,12 @@ class EnhancedApiClient {
 
         // Handle 401 Unauthorized - try token refresh
         if (response.status === 401 && !skipAuth && attempt === 0) {
-          const refreshed = await this.handleTokenRefresh();
-          if (refreshed) {
-            // Retry with new token
-            headers.Authorization = `Bearer ${localStorage.getItem('auth_token')}`;
-            continue;
-          } else {
+            const refreshed = await this.handleTokenRefresh();
+            if (refreshed) {
+              // Retry with new token
+              (headers as any).Authorization = `Bearer ${getCookie('auth_token')}`;
+              continue;
+            } else {
             // Refresh failed, logout user
             useAuthStore.getState().logout();
             window.location.href = '/login';
@@ -186,7 +199,7 @@ class EnhancedApiClient {
         lastError = error;
 
         // Don't retry on abort (timeout) or non-retryable errors
-        if (error.name === 'AbortError' || !this.isRetryableError(statusCode, error)) {
+        if (error.name === 'AbortError' || !this.isRetryableError(statusCode)) {
           throw error;
         }
 
@@ -222,10 +235,11 @@ class EnhancedApiClient {
     data?: any,
     config?: RequestConfig
   ): Promise<ApiResponse<T>> {
+    const body = data instanceof FormData ? data : data ? JSON.stringify(data) : undefined;
     return this.request<T>(endpoint, {
       ...config,
       method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
+      body,
     });
   }
 
@@ -237,10 +251,11 @@ class EnhancedApiClient {
     data?: any,
     config?: RequestConfig
   ): Promise<ApiResponse<T>> {
+    const body = data instanceof FormData ? data : data ? JSON.stringify(data) : undefined;
     return this.request<T>(endpoint, {
       ...config,
       method: 'PUT',
-      body: data ? JSON.stringify(data) : undefined,
+      body,
     });
   }
 
@@ -252,10 +267,11 @@ class EnhancedApiClient {
     data?: any,
     config?: RequestConfig
   ): Promise<ApiResponse<T>> {
+    const body = data instanceof FormData ? data : data ? JSON.stringify(data) : undefined;
     return this.request<T>(endpoint, {
       ...config,
       method: 'PATCH',
-      body: data ? JSON.stringify(data) : undefined,
+      body,
     });
   }
 

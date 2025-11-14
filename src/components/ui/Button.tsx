@@ -15,7 +15,7 @@ const Button: React.FC<ButtonProps & React.ButtonHTMLAttributes<HTMLButtonElemen
   const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]';
   
   const variantClasses = {
-    primary: 'btn-primary text-white focus:ring-blue-500 shadow-sm hover:shadow-md',
+    primary: 'btn-primary text-black focus:ring-blue-500 shadow-sm hover:shadow-md',
     secondary: 'bg-gray-600 hover:bg-gray-700 text-white focus:ring-gray-500 shadow-sm hover:shadow-md',
     outline: 'border-2 border-blue-500 text-blue-600 hover:bg-blue-500 hover:text-white focus:ring-blue-500 bg-transparent',
     ghost: 'text-blue-600 hover:bg-blue-50 focus:ring-blue-500 bg-transparent',
@@ -36,12 +36,39 @@ const Button: React.FC<ButtonProps & React.ButtonHTMLAttributes<HTMLButtonElemen
 
   const classes = `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`;
 
+  // Detect if button label matches one of the target texts for orange background
+  let labelText = '';
+  if (typeof children === 'string') {
+    labelText = children.trim();
+  } else if (Array.isArray(children)) {
+    // Handle JSX children (e.g., [icon, span with text])
+    for (const child of children) {
+      if (typeof child === 'string') {
+        labelText = child.trim();
+        break;
+      } else if (child && typeof child === 'object' && 'props' in child && child.props.children) {
+        const childText = typeof child.props.children === 'string' ? child.props.children.trim() : '';
+        if (childText) {
+          labelText = childText;
+          break;
+        }
+      }
+    }
+  } else if (children && typeof children === 'object' && 'props' in children) {
+    // Handle single JSX element child
+    labelText = typeof children.props.children === 'string' ? children.props.children.trim() : '';
+  }
+  
+  const orangeLabels = ['Add', 'Create', 'Go Back', 'Save', 'Update'];
+  const btnLabel = orangeLabels.includes(labelText) ? labelText : undefined;
+
   return (
     <button
       type={type}
       className={classes}
       disabled={disabled || loading}
       onClick={onClick}
+      data-btn-label={btnLabel}
       {...props}
     >
       {loading && (

@@ -37,7 +37,8 @@ const Layout: React.FC = () => {
   const shouldShowBreadcrumb = !location.pathname.startsWith('/master')
     && !location.pathname.startsWith('/miss-campaign')
     && !location.pathname.startsWith('/lead-management')
-    && !location.pathname.startsWith('/brief');
+    && !location.pathname.startsWith('/brief')
+    && !location.pathname.startsWith('/user-management');
 
   return (
     <>
@@ -52,7 +53,7 @@ const Layout: React.FC = () => {
 
           {/* Breadcrumb */}
           {shouldShowBreadcrumb && (
-            <div className="bg-transparent px-6 pt-6 pb-0">
+            <div className="bg-transparent px-4 sm:px-6 lg:px-8 pt-6 pb-4">
               <Breadcrumb />
             </div>
           )}

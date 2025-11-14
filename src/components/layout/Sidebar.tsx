@@ -109,7 +109,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
     },
     { name: "Campaign Management", path: "/campaign-management", icon: CampaignManagementIcon },
   { name: "Finance", path: "/finance", icon: FinanceIcon },
-    { name: "User Management", path: "/user-management", icon: UserManagementIcon },
+    {
+      name: "User Management",
+      icon: UserManagementIcon,
+      children: [
+        { name: "Permission", path: "/user-management/permission", icon: UserManagementIcon },
+        { name: "Role", path: "/user-management/role", icon: UserManagementIcon },
+        { name: "User", path: "/user-management/user", icon: UserManagementIcon },
+      ]
+    },
     { name: "Settings", path: "/settings", icon: Settings },
   ];
 
@@ -131,9 +139,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
   // All Leads item while the Create Lead page is open.
   const routeAliases: Record<string, string> = {
     "/lead-management/create": "/lead-management/all-leads",
+    "/user-management/permission/create": "/user-management/permission",
+    "/user-management/role/create": "/user-management/role",
+    "/user-management/user/create": "/user-management/user",
   };
 
-  const getEffectivePath = (pathname: string) => routeAliases[pathname] ?? pathname;
+  const getEffectivePath = (pathname: string) => {
+    // Handle edit routes with IDs like /user-management/permission/edit/:id, /user-management/role/edit/:id, and /user-management/user/edit/:id
+    if (pathname.match(/^\/user-management\/(permission|role|user)\/edit\//)) {
+      const match = pathname.match(/^\/user-management\/(\w+)\/edit\//);
+      if (match) {
+        return `/user-management/${match[1]}`;
+      }
+    }
+    return routeAliases[pathname] ?? pathname;
+  };
 
   // Treat a path as active when the effective pathname is exactly the path
   // or when the effective pathname is a nested route under that path.
@@ -187,7 +207,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
             flex items-center justify-between px-4 py-3 text-sm font-medium cursor-pointer rounded-lg
             transition-all duration-200 ease-in-out
             ${level > 0 ? "ml-6" : ""}
-            ${isItemActive ? "bg-green-100" : "hover:bg-green-50"}
+            ${isItemActive ? "bg-orange-100" : "hover:bg-orange-50"}
             ${isCollapsed ? "px-2 justify-center" : ""}
           `}
           onClick={() => {
@@ -248,7 +268,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
               <Link
                 key={child.name}
                 to={child.path || ""}
-                className="flex items-center px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-green-50"
+                className="flex items-center px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-orange-50"
                 onClick={() => {
                   setShowMobilePopup(false);
                 }}
@@ -314,7 +334,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
       {/* Footer Section */}
       <div className="border-t border-gray-100 p-3 space-y-2">
         <div
-          className={`flex items-center px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] rounded-lg hover:bg-green-50 transition-all cursor-pointer ${
+          className={`flex items-center px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] rounded-lg hover:bg-orange-50 transition-all cursor-pointer ${
             isCollapsed ? "px-2 justify-center" : ""
           }`}
         >

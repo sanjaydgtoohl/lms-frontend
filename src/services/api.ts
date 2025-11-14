@@ -7,88 +7,31 @@ import type {
   Course
 } from '../types';
 import { loginService } from './Login';
+import http from './http';
+import { getCookie } from '../utils/cookies';
 
 class ApiClient {
   private baseURL: string;
-  private token: string | null = null;
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
-    this.token = localStorage.getItem('auth_token');
   }
 
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<ApiResponse<T>> {
-    const url = `${this.baseURL}${endpoint}`;
-    
-    const config: RequestInit = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(this.token && { Authorization: `Bearer ${this.token}` }),
-        ...options.headers,
-      },
-      ...options,
-    };
-
+  private async request<T>(endpoint: string, options: { method?: string; data?: any } = {}): Promise<ApiResponse<T>> {
     try {
-      let response = await fetch(url, config);
-      let data = await response.json();
+      const method = (options.method || 'GET').toUpperCase();
+      const resp = await http.request({ url: endpoint, method, data: options.data });
+      const data = resp.data as ApiResponse<T>;
 
-      // Handle token expiration
-      if (response.status === 401 && endpoint !== API_ENDPOINTS.AUTH.REFRESH) {
-        const refreshToken = localStorage.getItem('refresh_token');
-        
-        if (refreshToken) {
-          try {
-            // Try to refresh the token
-            const refreshResponse = await this.request<AuthResponse>(
-              API_ENDPOINTS.AUTH.REFRESH,
-              {
-                method: 'POST',
-                body: JSON.stringify({ refreshToken }),
-              }
-            );
-
-            if (refreshResponse.data.token) {
-              // Update the token and retry the original request
-              this.setToken(refreshResponse.data.token);
-              if (refreshResponse.data.refreshToken) {
-                localStorage.setItem('refresh_token', refreshResponse.data.refreshToken);
-              }
-
-              config.headers = {
-                ...config.headers,
-                Authorization: `Bearer ${refreshResponse.data.token}`,
-              };
-
-              response = await fetch(url, config);
-              data = await response.json();
-            }
-          } catch (refreshError) {
-            // If refresh fails, clear tokens and redirect to login
-            this.clearToken();
-            window.location.href = '/login';
-            throw new Error('Session expired. Please login again.');
-          }
-        } else {
-          this.clearToken();
-          window.location.href = '/login';
-          throw new Error('Authentication required. Please login.');
-        }
-      }
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'An error occurred');
+      if (!data || !data.success) {
+        throw new Error((data && (data as any).message) || 'API Error');
       }
 
       return data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('API Error:', error);
-      // Use centralized error handler
       const { handleApiError } = await import('../utils/apiErrorHandler');
-      handleApiError(error, false); // Don't show notification here, let caller handle it
+      handleApiError(error, false);
       throw error;
     }
   }
@@ -110,7 +53,7 @@ class ApiClient {
       API_ENDPOINTS.AUTH.REGISTER,
       {
         method: 'POST',
-        body: JSON.stringify(userData),
+        data: userData,
       }
     );
 
@@ -132,14 +75,11 @@ class ApiClient {
   }
 
   async refreshToken(): Promise<AuthResponse> {
-    const refreshToken = localStorage.getItem('refresh_token');
-    const response = await this.request<AuthResponse>(
-      API_ENDPOINTS.AUTH.REFRESH,
-      {
-        method: 'POST',
-        body: JSON.stringify({ refreshToken }),
-      }
-    );
+    const refreshToken = getCookie('refresh_token');
+    const response = await this.request<AuthResponse>(API_ENDPOINTS.AUTH.REFRESH, {
+      method: 'POST',
+      data: { refreshToken },
+    });
 
     if (response.data.token) {
       this.setToken(response.data.token);
@@ -167,7 +107,7 @@ class ApiClient {
   async createCourse(courseData: Partial<Course>): Promise<Course> {
     const response = await this.request<Course>(API_ENDPOINTS.COURSES.CREATE, {
       method: 'POST',
-      body: JSON.stringify(courseData),
+      data: courseData,
     });
     return response.data;
   }
@@ -175,7 +115,7 @@ class ApiClient {
   async updateCourse(id: string, courseData: Partial<Course>): Promise<Course> {
     const response = await this.request<Course>(API_ENDPOINTS.COURSES.UPDATE(id), {
       method: 'PUT',
-      body: JSON.stringify(courseData),
+      data: courseData,
     });
     return response.data;
   }
@@ -194,18 +134,26 @@ class ApiClient {
 
   // Token Management
   setToken(token: string): void {
-    this.token = token;
-    localStorage.setItem('auth_token', token);
+    // store token in cookie (recommend server-set HttpOnly cookie instead)
+    try {
+      // default expiry 1 hour
+      const expires = 3600;
+      // write cookie via document.cookie
+      document.cookie = `auth_token=${encodeURIComponent(token)}; Path=/; Max-Age=${expires}; Secure; SameSite=Lax`;
+    } catch (e) {
+      // ignore
+    }
   }
 
   clearToken(): void {
-    this.token = null;
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('refresh_token');
+    // Clear cookies
+    document.cookie = 'auth_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = 'refresh_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT';
   }
 
   isAuthenticated(): boolean {
-    return !!this.token;
+    const match = document.cookie.match(new RegExp('(?:^|; )' + encodeURIComponent('auth_token') + '=([^;]*)'));
+    return !!(match && match[1]);
   }
 }
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './MasterForm.css';
+import { SelectField } from './index';
 
 interface FormField {
   name: string;
@@ -68,21 +69,13 @@ const MasterForm: React.FC<MasterFormProps> = ({
               {field.label} {field.required && <span className="text-[#FF0000]">*</span>}
             </label>
             {field.type === 'select' ? (
-              <select
-                id={field.name}
+              <SelectField
                 name={field.name}
-                value={formData[field.name] || ''}
-                onChange={handleChange}
-                className="block w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 focus:border-green-500 focus:ring-green-500 sm:text-sm"
-                required={field.required}
-              >
-                <option value="">{field.placeholder || 'Select an option'}</option>
-                {field.options?.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                value={String(formData[field.name] || '')}
+                onChange={(v) => handleChange({ target: { name: field.name, value: v } } as any)}
+                options={(field.options || []).map(o => ({ value: o.value, label: o.label }))}
+                placeholder={field.placeholder || 'Search or select option'}
+              />
             ) : (
               <input
                 type={field.type}

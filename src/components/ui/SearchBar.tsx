@@ -10,7 +10,7 @@ type Props = {
 
 const SearchBar: React.FC<Props> = ({ onSearch, placeholder = 'Search Brand', className = '', delay = 300 }) => {
   const [value, setValue] = useState('');
-  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout>();
+  const [timeoutId, setTimeoutId] = useState<ReturnType<typeof setTimeout> | undefined>();
 
   const handleChange = (v: string) => {
     setValue(v);
@@ -36,11 +36,7 @@ const SearchBar: React.FC<Props> = ({ onSearch, placeholder = 'Search Brand', cl
         </span>
         <input
           value={value}
-          onChange={(e) => {
-            const v = e.target.value;
-            setValue(v);
-            onSearch(v.trim());
-          }}
+          onChange={(e) => handleChange(e.target.value)}
           placeholder={placeholder}
           className="w-56 sm:w-64 px-3 pl-9 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
         />

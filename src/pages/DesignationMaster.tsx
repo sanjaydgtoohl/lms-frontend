@@ -62,9 +62,9 @@ const CreateDesignationForm: React.FC<{
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
       transition={{ duration: 0.22 }}
       className="space-y-6"
     >
@@ -330,7 +330,6 @@ const DesignationMaster: React.FC = () => {
               keyExtractor={(it: any, idx: number) => `${it.id}-${idx}`}
               columns={([
                 { key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },
-                { key: 'id', header: 'ID', render: (it: any) => it.id || '-' },
                 { key: 'name', header: 'Designation Name', render: (it: any) => it.name || '-' },
                 { key: 'dateTime', header: 'Date & Time', render: (it: any) => it.dateTime ? new Date(it.dateTime).toLocaleString() : '-' },
               ] as Column<any>[]) }

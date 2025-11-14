@@ -1,5 +1,5 @@
-import { API_BASE_URL } from '../constants';
 import { handleApiError } from '../utils/apiErrorHandler';
+import { apiClient } from '../utils/apiClient';
 
 export interface LeadSourceItem {
   id: string;
@@ -18,34 +18,13 @@ const ENDPOINTS = {
   DELETE: (id: string) => `/lead-sub-sources/${id}`,
 } as const;
 
-type ApiEnvelope<T> = {
-  success?: boolean;
-  message?: string;
-  data: T;
-};
-
-function authHeaders(): HeadersInit {
-  const token = localStorage.getItem('auth_token');
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
-
-async function handleResponse<T>(res: Response): Promise<T> {
-  const json = await res.json().catch(() => null);
-  if (!res.ok) {
-    const error = new Error((json && (json.message || json.error)) || 'Request failed');
-    (error as any).statusCode = res.status;
-    (error as any).responseData = json;
-    handleApiError(error);
+async function handleResponse<T>(res: any): Promise<T> {
+  if (!res || !res.success) {
+    const error = new Error((res && (res.message || 'Request failed')) || 'Request failed');
+    try { handleApiError(error); } catch {}
     throw error;
   }
-  // Accept either envelope { success, data } or raw array/object
-  if (json && typeof json === 'object' && 'data' in json) {
-    return (json as ApiEnvelope<T>).data;
-  }
-  return json as T;
+  return res.data as T;
 }
 
 
@@ -64,19 +43,8 @@ export type LeadSourceListResponse = {
 };
 
 export async function listLeadSources(page = 1, perPage = 10): Promise<LeadSourceListResponse> {
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.LIST}?page=${page}&per_page=${perPage}`, {
-    method: 'GET',
-    headers: authHeaders(),
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const error = new Error((json && (json.message || json.error)) || 'Request failed');
-    (error as any).statusCode = res.status;
-    (error as any).responseData = json;
-    handleApiError(error);
-    throw error;
-  }
-  const items = (json.data || []).map((it: any, idx: number) => {
+  const res = await apiClient.get<LeadSourceItem[]>(`${ENDPOINTS.LIST}?page=${page}&per_page=${perPage}`);
+  const items = (res.data || []).map((it: any, idx: number) => {
     const id = it.id ?? `LS${String(idx + 1).padStart(3, '0')}`;
     const source = it.lead_source ?? '';
     const subSource = it.name ?? '';
@@ -90,50 +58,33 @@ export async function listLeadSources(page = 1, perPage = 10): Promise<LeadSourc
   });
   return {
     data: items,
-    meta: json.meta || {},
+    meta: (res as any).meta || {},
   };
 }
 
 export async function getLeadSource(id: string): Promise<LeadSourceItem> {
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.DETAIL(id)}`, {
-    method: 'GET',
-    headers: authHeaders(),
-  });
+  const res = await apiClient.get<LeadSourceItem>(ENDPOINTS.DETAIL(id));
   return handleResponse<LeadSourceItem>(res);
 }
 
 export async function createLeadSource(payload: Partial<LeadSourceItem>): Promise<LeadSourceItem> {
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.CREATE}`, {
-    method: 'POST',
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
-  });
+  const res = await apiClient.post<LeadSourceItem>(ENDPOINTS.CREATE, payload);
   return handleResponse<LeadSourceItem>(res);
 }
 
 export async function updateLeadSource(id: string, payload: Partial<LeadSourceItem>): Promise<LeadSourceItem> {
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.UPDATE(id)}`, {
-    method: 'PUT',
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
-  });
+  const res = await apiClient.put<LeadSourceItem>(ENDPOINTS.UPDATE(id), payload);
   return handleResponse<LeadSourceItem>(res);
 }
 
 export async function deleteLeadSource(id: string): Promise<void> {
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.DELETE(id)}`, {
-    method: 'DELETE',
-    headers: authHeaders(),
-  });
+  const res = await apiClient.delete<unknown>(ENDPOINTS.DELETE(id));
   await handleResponse<unknown>(res);
 }
 
 // Alias with clearer name for lead sub-source deletion
 export async function deleteLeadSubSource(id: string | number): Promise<void> {
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.DELETE(String(id))}`, {
-    method: 'DELETE',
-    headers: authHeaders(),
-  });
+  const res = await apiClient.delete<unknown>(ENDPOINTS.DELETE(String(id)));
   await handleResponse<unknown>(res);
 }
 
@@ -148,11 +99,7 @@ export async function updateLeadSubSource(
   id: string | number,
   payload: UpdateLeadSubSourcePayload
 ): Promise<LeadSourceItem> {
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.UPDATE(String(id))}`, {
-    method: 'PUT',
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
-  });
+  const res = await apiClient.put<LeadSourceItem>(ENDPOINTS.UPDATE(String(id)), payload);
   return handleResponse<LeadSourceItem>(res);
 }
 

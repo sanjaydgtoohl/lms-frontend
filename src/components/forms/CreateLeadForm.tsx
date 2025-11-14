@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import Input from '../ui/Input';
+import { SelectField } from '../ui';
 
 interface ContactPerson {
   id: string;
@@ -26,6 +27,10 @@ interface CreateLeadFormProps {
 
 const CreateLeadForm: React.FC<CreateLeadFormProps> = ({ onSubmit, loading = false }) => {
   const [selectedOption, setSelectedOption] = useState<'brand' | 'agency' | 'both'>('brand');
+  const [brand, setBrand] = useState('');
+  const [agencySel, setAgencySel] = useState('');
+  const [assignTo, setAssignTo] = useState('');
+  const [priority, setPriority] = useState('');
   const [contacts, setContacts] = useState<ContactPerson[]>([{
     id: '1',
     fullName: '',
@@ -118,10 +123,13 @@ const CreateLeadForm: React.FC<CreateLeadFormProps> = ({ onSubmit, loading = fal
               <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
                 Select Brand
               </label>
-              <select className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="">Select Brand</option>
-                {/* Add brand options here */}
-              </select>
+              <SelectField
+                name="selectBrand"
+                value={brand}
+                onChange={(v) => setBrand(v)}
+                options={[]}
+                placeholder="Search or select option"
+              />
             </div>
           )}
           {(selectedOption === 'agency' || selectedOption === 'both') && (
@@ -129,10 +137,13 @@ const CreateLeadForm: React.FC<CreateLeadFormProps> = ({ onSubmit, loading = fal
               <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
                 Select Agency
               </label>
-              <select className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="">Select Agency</option>
-                {/* Add agency options here */}
-              </select>
+              <SelectField
+                name="selectAgency"
+                value={agencySel}
+                onChange={(v) => setAgencySel(v)}
+                options={[]}
+                placeholder="Search or select option"
+              />
             </div>
           )}
         </div>
@@ -258,21 +269,25 @@ const CreateLeadForm: React.FC<CreateLeadFormProps> = ({ onSubmit, loading = fal
             <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
               Assign To
             </label>
-            <select className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="">Select team member</option>
-              {/* Add team member options here */}
-            </select>
+            <SelectField
+              name="assignTo"
+              value={assignTo}
+              onChange={(v) => setAssignTo(v)}
+              options={[]}
+              placeholder="Search or select option"
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
               Priority
             </label>
-            <select className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="">Select priority</option>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
-            </select>
+            <SelectField
+              name="priority"
+              value={priority}
+              onChange={(v) => setPriority(v)}
+              options={[ 'High', 'Medium', 'Low' ]}
+              placeholder="Search or select option"
+            />
           </div>
         </div>
       </div>

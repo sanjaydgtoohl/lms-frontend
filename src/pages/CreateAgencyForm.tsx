@@ -1,27 +1,28 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { listAgencyTypes, listAgencyClients } from '../services';
+import { listAgencyTypes, listAgencyClients, createGroupAgency } from '../services';
 import { motion } from 'framer-motion';
-import ChevronDropdownIcon from '../components/ui/ChevronDropdownIcon';
-import { Plus, Loader2, Trash2 } from 'lucide-react';
-import { MasterFormHeader, NotificationPopup } from '../components/ui';
+// ChevronDropdownIcon replaced by unified SelectDropdown; keep import removed
+import { Plus, Trash2 } from 'lucide-react';
+import { MasterFormHeader, SelectField, MultiSelectDropdown } from '../components/ui';
+import { showSuccess, showError } from '../utils/notifications';
 
 // --- Types used by this form
 interface ParentAgency {
   name: string;
   type: string;
-  client: string;
+  client: string[];
 }
 
 interface ChildAgency {
   id: string;
   name: string;
   type: string;
-  client: string;
+  client: string[];
 }
 
 interface Props {
   onClose: () => void;
-  onSave?: (payload: { parent: ParentAgency; children: Array<{ name: string; type: string; client: string }> }) => Promise<any> | any;
+  onSave?: (payload: { parent: ParentAgency; children: Array<{ name: string; type: string; client: string[] }> }) => Promise<any> | any;
 }
 
 // helper to create a new blank child entry
@@ -29,18 +30,18 @@ const blankChild = (): ChildAgency => ({
   id: `child-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
   name: '',
   type: '',
-  client: '',
+  client: [],
 });
 const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
-  const [parent, setParent] = useState<ParentAgency>({ name: '', type: '', client: '' });
+  const [parent, setParent] = useState<ParentAgency>({ name: '', type: '', client: [] });
   const [children, setChildren] = useState<ChildAgency[]>([]);
   const childNameRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [lastAddedId, setLastAddedId] = useState<string | null>(null);
   const [parentErrors, setParentErrors] = useState<{ name?: string; type?: string; client?: string }>({});
   const [childErrors, setChildErrors] = useState<Record<string, { name?: string; type?: string; client?: string }>>({});
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  // use global notification utility (showSuccess/showError) like other masters
 
-  const [agencyTypes, setAgencyTypes] = useState<string[]>([]);
+  const [agencyTypes, setAgencyTypes] = useState<Array<{ value: string; label: string }>>([]);
   const [agencyClients, setAgencyClients] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState({ agencyTypes: true, agencyClients: true });
 
@@ -51,10 +52,11 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
     let mounted = true;
     (async () => {
       try {
-        const items = await listAgencyTypes();
-        if (!mounted) return;
-        const names = items.map((i: any) => i.name || String(i.id));
-        setAgencyTypes(names);
+  const items = await listAgencyTypes();
+  if (!mounted) return;
+  // keep both id and label so SelectField provides id as value (server expects numeric id)
+  const opts = items.map((it: any) => ({ value: String(it.id), label: it.name || String(it.id) }));
+  setAgencyTypes(opts);
       } catch (err) {
         console.error('Failed to load agency types', err);
       } finally {
@@ -84,7 +86,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
     setChildren(prev => [...prev, nc]);
     setLastAddedId(nc.id);
   };
-  const handleUpdateChild = (id: string, key: keyof ChildAgency, value: string) => {
+  const handleUpdateChild = (id: string, key: keyof ChildAgency, value: any) => {
     setChildren(prev => prev.map(c => c.id === id ? { ...c, [key]: value } : c));
   };
   // legacy remove (not used) -- removed to avoid unused variable lint
@@ -135,7 +137,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
       newParentErrors.type = 'Please select agency type';
       valid = false;
     }
-    if (!parent.client.trim()) {
+    if (!parent.client || parent.client.length === 0) {
       newParentErrors.client = 'Please select agency client';
       valid = false;
     }
@@ -149,7 +151,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
         childErr.type = 'Please select agency type';
         valid = false;
       }
-      if (!c.client.trim()) {
+      if (!c.client || c.client.length === 0) {
         childErr.client = 'Please select agency client';
         valid = false;
       }
@@ -168,23 +170,60 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
       return;
     }
 
-    const payload = {
-      parent: { ...parent, name: parent.name.trim() },
-      children: children.map(c => ({ name: c.name.trim(), type: c.type, client: c.client })),
-    };
-
     try {
       setSubmitting(true);
-      const res: any = onSave ? (onSave as any)(payload) : null;
-      if (res && typeof res.then === 'function') await res;
-      setShowSuccessToast(true);
+
+      // Build FormData arrays to match backend expectations.
+      // Backend expects name[] and type[] arrays and nested client arrays like client[0][].
+      const form = new FormData();
+
+      const allNames = [parent.name.trim(), ...children.map(c => c.name.trim())];
+      allNames.forEach(n => form.append('name[]', n));
+
+      const allTypes = [parent.type, ...children.map(c => c.type)];
+      allTypes.forEach(t => {
+        // t might be either the id string or the label (depending on previous state).
+        const match = agencyTypes.find(a => String(a.value) === String(t) || String(a.label) === String(t));
+        const typeVal = match ? String(match.value) : String(t);
+        form.append('type[]', typeVal);
+      });
+
+      const allClients = [parent.client, ...children.map(c => c.client)];
+      allClients.forEach((clientsForAgency, idx) => {
+        (clientsForAgency || []).forEach((clientId) => {
+          // Append as client[<index>][] to create nested arrays: client[0][], client[1][], ...
+          form.append(`client[${idx}][]`, clientId);
+        });
+      });
+
+      // Call API to create group agency (apiClient will send FormData as multipart)
+      await createGroupAgency(form);
+      
+      // Also call custom onSave callback if provided (for additional processing)
+      if (onSave && typeof onSave === 'function') {
+        const payload = {
+          parent: { ...parent, name: parent.name.trim() },
+          children: children.map(c => ({ name: c.name.trim(), type: c.type, client: c.client })),
+        };
+        const customRes = onSave(payload);
+        if (customRes && typeof customRes.then === 'function') await customRes;
+      }
+
+      // show global success notification (same behaviour as Brand Master)
+      showSuccess('Agency created successfully');
+      // close the form and refresh listing after a short delay so user can see the toast
       setTimeout(() => {
-        setShowSuccessToast(false);
         onClose();
         window.location.reload();
-      }, 2000);
+      }, 1200);
     } catch (err) {
       console.error('Submit failed', err);
+      // Show an error toast as well
+      try {
+        showError((err as any)?.message || 'Failed to create agency');
+      } catch (e) {
+        // ignore notification errors
+      }
     } finally {
       setSubmitting(false);
     }
@@ -192,18 +231,13 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
       transition={{ duration: 0.22 }}
       className="flex-1 overflow-auto w-full overflow-x-hidden bg-[#F6F8FB] min-h-screen"
     >
-      <NotificationPopup
-        isOpen={showSuccessToast}
-        onClose={() => setShowSuccessToast(false)}
-        message="Agency created successfully"
-        type="success"
-      />
+      {/* global notification used via showSuccess/showError; local popup removed */}
 
       <div className="space-y-6 p-6">
         <MasterFormHeader onBack={onClose} title="Create Group Agency" />
@@ -231,51 +265,33 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
 
                 <div>
                   <label className="block text-sm text-[#667085] mb-1">Agency Type</label>
-                  <div className="relative">
-                    <select
+                    <SelectField
+                      name="parentType"
                       value={parent.type}
-                      onChange={e => {
-                        setParent(prev => ({ ...prev, type: e.target.value }));
-                        setParentErrors(prev => ({ ...prev, type: undefined }));
-                      }}
-                      className={`w-full appearance-none px-4 pr-10 py-2 text-sm border rounded-lg bg-white text-[#344054] focus:outline-none focus:ring-2 focus:ring-[#1570EF] ${parentErrors.type ? 'border-red-500' : 'border-[#D0D5DD]'}`}
-                    >
-                      <option value="">Please Select Agency Type</option>
-                      {agencyTypes.map((t: string) => (
-                        <option key={t} value={t}>{t}</option>
-                      ))}
-                    </select>
-                    <ChevronDropdownIcon className="absolute right-3 top-1/2 -translate-y-1/2" />
-                  </div>
+                      options={agencyTypes}
+                      onChange={(v) => { setParent(prev => ({ ...prev, type: v })); setParentErrors(prev => ({ ...prev, type: undefined })); }}
+                      placeholder="Please Select Agency Type"
+                      inputClassName={parentErrors.type ? 'border-red-500' : 'border-[#D0D5DD]'}
+                    />
                   {parentErrors.type && (
                     <div className="text-xs text-red-500 mt-1">{parentErrors.type}</div>
                   )}
                 </div>
 
-                <div>
+                <div className="mb-2">
                   <label className="block text-sm text-[#667085] mb-1">Agency Client</label>
-                  <div className="relative">
-                    <select
+                  <div className="w-full">
+                    <MultiSelectDropdown
+                      name="parentClient"
                       value={parent.client}
-                      onChange={e => {
-                        setParent(prev => ({ ...prev, client: e.target.value }));
-                        setParentErrors(prev => ({ ...prev, client: undefined }));
-                      }}
-                      className={`w-full appearance-none px-4 pr-10 py-2 text-sm border rounded-lg bg-white text-[#344054] focus:outline-none focus:ring-2 focus:ring-[#1570EF] ${parentErrors.client ? 'border-red-500' : 'border-[#D0D5DD]'}`}
+                      options={agencyClients.map((c: any) => ({ value: String(c.id), label: c.name }))}
+                      onChange={(v) => { setParent(prev => ({ ...prev, client: v })); setParentErrors(prev => ({ ...prev, client: undefined })); }}
+                      placeholder={isLoading.agencyClients ? 'Loading clients...' : 'Search or select option'}
+                      inputClassName={`border ${parentErrors.client ? 'border-red-500' : 'border-[#D0D5DD]'} px-3 py-2 min-h-[44px]`}
                       disabled={isLoading.agencyClients}
-                    >
-                      <option value="">{isLoading.agencyClients ? 'Loading clients...' : 'Please Select Brand'}</option>
-                      {!isLoading.agencyClients && agencyClients.map((c: any) => (
-                        <option key={c.id} value={c.id.toString()}>{c.name}</option>
-                      ))}
-                    </select>
-                    {isLoading.agencyClients ? (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
-                      </div>
-                    ) : (
-                      <ChevronDropdownIcon className="absolute right-3 top-1/2 -translate-y-1/2" />
-                    )}
+                      multi={true}
+                      maxVisibleOptions={3}
+                    />
                   </div>
                   {parentErrors.client && (
                     <div className="text-xs text-red-500 mt-1">{parentErrors.client}</div>
@@ -290,7 +306,9 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
                 <button
                   type="button"
                   onClick={handleAddChild}
-                  className="inline-flex items-center space-x-2 px-4 py-2 rounded-lg btn-primary text-white font-medium shadow-sm transition-colors duration-200"
+                  className="inline-flex items-center space-x-2 px-4 py-2 rounded-lg text-white font-medium shadow-sm transition-colors duration-200"
+                  data-btn-label="Add"
+                  style={{ backgroundColor: 'var(--color-orange-400)' }}
                 >
                   <Plus className="w-4 h-4" />
                   <span className="text-sm">Add Child Agency</span>
@@ -298,7 +316,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
               </div>
               <div className="space-y-6">
                 {children.map((c, idx) => (
-                  <div key={c.id} className="p-6 border border-[#E3E8EF] rounded-xl bg-white">
+                  <div key={c.id} className="p-4 md:p-6 border border-[#E3E8EF] rounded-xl bg-white">
                     <div className="flex items-center justify-between mb-4">
                       <div className="text-sm font-medium text-[#344054]">Child Agency {idx + 1}</div>
                       <button
@@ -312,7 +330,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
                         <Trash2 className="w-4 h-4 mr-1" /> Delete
                       </button>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
                       <div>
                         <label className="block text-sm text-[#667085] mb-1">Agency Name <span className="text-red-500">*</span></label>
                         <input
@@ -331,40 +349,32 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
                       </div>
                       <div>
                         <label className="block text-sm text-[#667085] mb-1">Agency Type</label>
-                        <div className="relative">
-                          <select
-                            value={c.type}
-                            onChange={e => {
-                              handleUpdateChild(c.id, 'type', e.target.value);
-                              setChildErrors(prev => ({ ...prev, [c.id]: { ...prev[c.id], type: undefined } }));
-                            }}
-                            className={`w-full appearance-none px-4 pr-10 py-2 text-sm border rounded-lg bg-white text-[#344054] focus:outline-none focus:ring-2 focus:ring-[#1570EF] ${childErrors[c.id]?.type ? 'border-red-500' : 'border-[#D0D5DD]'}`}
-                          >
-                            <option value="">Please Select Agency Type</option>
-                            {agencyTypes.map((t: string) => (<option key={t} value={t}>{t}</option>))}
-                          </select>
-                          <ChevronDropdownIcon className="absolute right-3 top-1/2 -translate-y-1/2" />
-                        </div>
+                        <SelectField
+                          name={`child-${c.id}-type`}
+                          value={c.type}
+                          options={agencyTypes}
+                          onChange={(v) => { handleUpdateChild(c.id, 'type', v); setChildErrors(prev => ({ ...prev, [c.id]: { ...prev[c.id], type: undefined } })); }}
+                          placeholder="Please Select Agency Type"
+                          inputClassName={childErrors[c.id]?.type ? 'border-red-500' : 'border-[#D0D5DD]'}
+                        />
                         {childErrors[c.id]?.type && (
                           <div className="text-xs text-red-500 mt-1">{childErrors[c.id].type}</div>
                         )}
                       </div>
                       <div>
                         <label className="block text-sm text-[#667085] mb-1">Agency Client</label>
-                        <div className="relative">
-                          <select
+                        <div className="w-full">
+                          <MultiSelectDropdown
+                            name={`child-${c.id}-client`}
                             value={c.client}
-                            onChange={e => {
-                              handleUpdateChild(c.id, 'client', e.target.value);
-                              setChildErrors(prev => ({ ...prev, [c.id]: { ...prev[c.id], client: undefined } }));
-                            }}
-                            className={`w-full appearance-none px-4 pr-10 py-2 text-sm border rounded-lg bg-white text-[#344054] focus:outline-none focus:ring-2 focus:ring-[#1570EF] ${childErrors[c.id]?.client ? 'border-red-500' : 'border-[#D0D5DD]'}`}
+                            options={agencyClients.map((cc: any) => ({ value: String(cc.id), label: cc.name }))}
+                            onChange={(v) => { handleUpdateChild(c.id, 'client', v); setChildErrors(prev => ({ ...prev, [c.id]: { ...prev[c.id], client: undefined } })); }}
+                            placeholder={isLoading.agencyClients ? 'Loading clients...' : 'Search or select option'}
+                            inputClassName={`border ${childErrors[c.id]?.client ? 'border-red-500' : 'border-[#D0D5DD]'} px-3 py-2 min-h-[44px]`}
                             disabled={isLoading.agencyClients}
-                          >
-                            <option value="">{isLoading.agencyClients ? 'Loading clients...' : 'Please Select Brand'}</option>
-                            {!isLoading.agencyClients && agencyClients.map((cc: any) => (<option key={cc.id} value={cc.id.toString()}>{cc.name}</option>))}
-                          </select>
-                          <ChevronDropdownIcon className="absolute right-3 top-1/2 -translate-y-1/2" />
+                            multi={true}
+                            maxVisibleOptions={3}
+                          />
                         </div>
                         {childErrors[c.id]?.client && (
                           <div className="text-xs text-red-500 mt-1">{childErrors[c.id].client}</div>
@@ -380,8 +390,10 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
               <button
                 type="button"
                 onClick={submitAll}
-                className="px-6 py-2 rounded-lg btn-primary text-white font-semibold shadow-sm transition-colors duration-200"
+                className="px-6 py-2 rounded-lg text-white font-semibold shadow-sm transition-colors duration-200"
                 disabled={submitting}
+                data-btn-label="Save"
+                style={{ backgroundColor: 'var(--color-orange-400)' }}
               >
                 {submitting ? 'Saving...' : 'Save'}
               </button>

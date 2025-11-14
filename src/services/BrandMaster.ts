@@ -1,5 +1,5 @@
-import { API_BASE_URL } from '../constants';
 import { handleApiError } from '../utils/apiErrorHandler';
+import { apiClient } from '../utils/apiClient';
 
 export interface BrandItem {
   id: string;
@@ -25,33 +25,17 @@ const ENDPOINTS = {
   DELETE: (id: string) => `/brands/${id}`,
 } as const;
 
-type ApiEnvelope<T> = {
-  success?: boolean;
-  message?: string;
-  data: T;
-};
-
-function authHeaders(): HeadersInit {
-  const token = localStorage.getItem('auth_token');
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
-
-async function handleResponse<T>(res: Response): Promise<T> {
-  const json = await res.json().catch(() => null);
-  if (!res.ok) {
-    const error = new Error((json && (json.message || json.error)) || 'Request failed');
-    (error as any).statusCode = res.status;
-    (error as any).responseData = json;
-    handleApiError(error);
-    throw error;
-  }
-  if (json && typeof json === 'object' && 'data' in json) {
-    return (json as ApiEnvelope<T>).data;
-  }
-  return json as T;
+async function handleResponse<T>(res: any): Promise<T> {
+  const json = res;
+    if (!json || !json.success) {
+      const message = (json as any)?.message || (json as any)?.error || 'Request failed';
+      const error = new Error(message);
+      (error as any).statusCode = (json as any)?.meta?.status_code || (json as any)?.meta?.status || undefined;
+      (error as any).responseData = json;
+      handleApiError(error);
+      throw error;
+    }
+  return json.data as T;
 }
 
 export type BrandListResponse = {
@@ -73,19 +57,16 @@ export async function listBrands(page = 1, perPage = 10, search?: string): Promi
   params.set('page', String(page));
   params.set('per_page', String(perPage));
   if (search && String(search).trim()) params.set('search', String(search).trim());
-
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.LIST}?${params.toString()}`, {
-    method: 'GET',
-    headers: authHeaders(),
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const error = new Error((json && (json.message || json.error)) || 'Request failed');
-    (error as any).statusCode = res.status;
-    (error as any).responseData = json;
-    handleApiError(error);
-    throw error;
-  }
+  const res = await apiClient.get<BrandItem[]>(ENDPOINTS.LIST + `?${params.toString()}`);
+  const json = res;
+    if (!json || !json.success) {
+      const message = (json as any)?.message || (json as any)?.error || 'Request failed';
+      const error = new Error(message);
+      (error as any).statusCode = (json as any)?.meta?.status_code || (json as any)?.meta?.status || undefined;
+      (error as any).responseData = json;
+      handleApiError(error);
+      throw error;
+    }
 
   const items = (json.data || []).map((it: unknown, idx: number) => {
     const raw = it as Record<string, unknown>;
@@ -123,40 +104,26 @@ export async function listBrands(page = 1, perPage = 10, search?: string): Promi
 
   return {
     data: items,
-    meta: json.meta || {},
+    meta: (json.meta as any) || {},
   };
 }
 
 export async function getBrand(id: string): Promise<BrandItem> {
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.DETAIL(encodeURIComponent(id))}`, {
-    method: 'GET',
-    headers: authHeaders(),
-  });
+  const res = await apiClient.get<BrandItem>(ENDPOINTS.DETAIL(encodeURIComponent(id)));
   return handleResponse<BrandItem>(res);
 }
 
 export async function createBrand(payload: Partial<BrandItem>): Promise<BrandItem> {
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.CREATE}`, {
-    method: 'POST',
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
-  });
+  const res = await apiClient.post<BrandItem>(ENDPOINTS.CREATE, payload);
   return handleResponse<BrandItem>(res);
 }
 
 export async function updateBrand(id: string, payload: Partial<BrandItem>): Promise<BrandItem> {
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.UPDATE(encodeURIComponent(id))}`, {
-    method: 'PUT',
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
-  });
+  const res = await apiClient.put<BrandItem>(ENDPOINTS.UPDATE(encodeURIComponent(id)), payload);
   return handleResponse<BrandItem>(res);
 }
 
 export async function deleteBrand(id: string): Promise<void> {
-  const res = await fetch(`${API_BASE_URL}${ENDPOINTS.DELETE(encodeURIComponent(id))}`, {
-    method: 'DELETE',
-    headers: authHeaders(),
-  });
+  const res = await apiClient.delete<unknown>(ENDPOINTS.DELETE(encodeURIComponent(id)));
   await handleResponse<unknown>(res);
 }
