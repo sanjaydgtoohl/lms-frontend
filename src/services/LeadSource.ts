@@ -103,4 +103,33 @@ export async function updateLeadSubSource(
   return handleResponse<LeadSourceItem>(res);
 }
 
+/**
+ * Fetch lead sub-sources filtered by lead_source_id
+ */
+export async function listLeadSubSourcesBySourceId(
+  sourceId: string | number,
+  page = 1,
+  perPage = 1000
+): Promise<LeadSourceListResponse> {
+  const res = await apiClient.get<LeadSourceItem[]>(
+    `${ENDPOINTS.LIST}?lead_source_id=${sourceId}&page=${page}&per_page=${perPage}`
+  );
+  const items = (res.data || []).map((it: any, idx: number) => {
+    const id = it.id ?? `LSS${String(idx + 1).padStart(3, '0')}`;
+    const source = it.lead_source ?? '';
+    const subSource = it.name ?? '';
+    const dateTime = it.created_at ?? '';
+    return {
+      id: String(id),
+      source,
+      subSource,
+      dateTime,
+    } as LeadSourceItem;
+  });
+  return {
+    data: items,
+    meta: (res as any).meta || {},
+  };
+}
+
 

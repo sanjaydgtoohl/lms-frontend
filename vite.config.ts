@@ -15,7 +15,7 @@ function resolveProxyTarget(apiBaseUrl: string): string {
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  const apiBaseUrl = env.VITE_API_BASE_URL || 'https://www.apislms.dgtoohl.com/api/v1'
+  const apiBaseUrl = String(env.VITE_API_BASE_URL || 'https://www.apislms.dgtoohl.com/api/v1').trim()
 
   return {
     plugins: [react(), tailwind()],

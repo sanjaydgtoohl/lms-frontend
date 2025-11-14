@@ -3,45 +3,24 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import MasterView from '../../components/ui/MasterView';
 import Pagination from '../../components/ui/Pagination';
 import Table, { type Column } from '../../components/ui/Table';
-import { ROUTES } from '../../constants';
 import MasterHeader from '../../components/ui/MasterHeader';
 import SearchBar from '../../components/ui/SearchBar';
 import Create from './Create';
-
-interface MissCampaign {
-  id: string;
-  brandName: string;
-  productName: string;
-  source: string;
-  subSource: string;
-  proof: string;
-  dateTime: string;
-}
+import { 
+  listMissCampaigns, 
+  createMissCampaign, 
+  updateMissCampaign, 
+  deleteMissCampaign,
+  type MissCampaign 
+} from '../../services/View';
 
 const View: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const [campaigns, setCampaigns] = useState<MissCampaign[]>([
-    {
-      id: '#MC001',
-      brandName: 'Nike',
-      productName: 'Air Max',
-      source: 'Instagram',
-      subSource: 'Stories',
-      proof: 'https://proof.url',
-      dateTime: '02-07-2025 22:23'
-    },
-    {
-      id: '#MC002',
-      brandName: 'Adidas',
-      productName: 'Ultraboost',
-      source: 'Facebook',
-      subSource: 'Feed',
-      proof: 'https://proof.url',
-      dateTime: '02-07-2025 22:21'
-    },
-  ]);
+  const [campaigns, setCampaigns] = useState<MissCampaign[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [totalItems, setTotalItems] = useState(0);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreate, setShowCreate] = useState(false);
@@ -64,24 +43,42 @@ const View: React.FC = () => {
   const params = useParams();
   const location = useLocation();
 
+  // Fetch campaigns from API
+  const fetchCampaigns = async (page: number, search: string = '') => {
+    try {
+      setLoading(true);
+      const response = await listMissCampaigns(page, itemsPerPage, search);
+      setCampaigns(response.data || []);
+      setTotalItems(response.meta?.pagination?.total || 0);
+    } catch (error) {
+      console.error('Failed to fetch campaigns:', error);
+      setCampaigns([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleEdit = (id: string) => navigate(`/miss-campaign/view/${encodeURIComponent(id)}/edit`);
   const handleView = (id: string) => navigate(`/miss-campaign/view/${encodeURIComponent(id)}`);
-  const handleDelete = (id: string) => setCampaigns(prev => prev.filter(c => c.id !== id));
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteMissCampaign(id);
+      setCampaigns(prev => prev.filter(c => c.id !== id));
+    } catch (error) {
+      console.error('Failed to delete campaign:', error);
+    }
+  };
 
   const handleCreate = () => navigate('/miss-campaign/create');
 
-  const handleSave = (data: any) => {
-    const newCampaign: MissCampaign = {
-      id: `#MC${Math.floor(Math.random() * 90000) + 10000}`,
-      brandName: data.brandName || '',
-      productName: data.productName || '',
-      source: data.source || '',
-      subSource: data.subSource || '',
-      proof: data.proof || '',
-      dateTime: new Date().toLocaleString(),
-    };
-    setCampaigns(prev => [newCampaign, ...prev]);
-    setCurrentPage(1);
+  const handleSave = async (data: any) => {
+    try {
+      const newCampaign = await createMissCampaign(data);
+      setCampaigns(prev => [newCampaign, ...prev]);
+      setCurrentPage(1);
+    } catch (error) {
+      console.error('Failed to create campaign:', error);
+    }
   };
 
   useEffect(() => {
@@ -116,9 +113,19 @@ const View: React.FC = () => {
     setEditItem(null);
   }, [location.pathname, params.id, campaigns]);
 
-  const handleSaveEdited = (updated: Record<string, any>) => {
-    setCampaigns(prev => prev.map(c => (c.id === updated.id ? { ...c, ...updated } as MissCampaign : c)));
+  const handleSaveEdited = async (updated: Record<string, any>) => {
+    try {
+      const updatedCampaign = await updateMissCampaign(updated.id, updated);
+      setCampaigns(prev => prev.map(c => (c.id === updated.id ? updatedCampaign : c)));
+    } catch (error) {
+      console.error('Failed to update campaign:', error);
+    }
   };
+
+  // Fetch campaigns on mount and when page or search changes
+  useEffect(() => {
+    fetchCampaigns(currentPage, searchQuery);
+  }, [currentPage, searchQuery]);
 
   const handlePageChange = (page: number) => setCurrentPage(page);
 
@@ -149,7 +156,7 @@ const View: React.FC = () => {
             <Table
               data={currentData}
               startIndex={startIndex}
-              loading={false}
+              loading={loading}
               keyExtractor={(it: MissCampaign, idx: number) => `${it.id}-${idx}`}
               columns={([
                 { key: 'sr', header: 'Sr. No.', render: (it: MissCampaign) => String(startIndex + currentData.indexOf(it) + 1) },
@@ -168,7 +175,7 @@ const View: React.FC = () => {
 
           <Pagination
             currentPage={currentPage}
-            totalItems={searchQuery ? filteredCampaigns.length : campaigns.length}
+            totalItems={totalItems || campaigns.length}
             itemsPerPage={itemsPerPage}
             onPageChange={handlePageChange}
           />
