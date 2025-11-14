@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { MasterFormHeader, SelectField } from '../components/ui';
 import { listZones, listStates, listCountries, listBrandTypes } from '../services/CreateBrandForm';
 import type { Zone, State, Country, BrandType } from '../services/CreateBrandForm';
+import { listAgencies } from '../services/AgencyMaster';
+import type { Agency } from '../services/AgencyMaster';
 import { fetchIndustries } from '../services/CreateIndustryForm';
 import type { Industry } from '../services/CreateIndustryForm';
 import { showSuccess, showError } from '../utils/notifications';
@@ -89,6 +91,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
   const [states, setStates] = useState<State[]>([]);
   const [countries, setCountries] = useState<Country[]>([]);
   const [brandTypes, setBrandTypes] = useState<BrandType[]>([]);
+  const [agencies, setAgencies] = useState<Agency[]>([]);
   const [industries, setIndustries] = useState<Industry[]>([]);
   const [postalLoading, setPostalLoading] = useState(false);
   const [postalError, setPostalError] = useState<string>('');
@@ -222,13 +225,43 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
       listZones(),
       listStates(),
       listCountries(),
-      listBrandTypes()
-    ]).then(([zonesData, statesData, countriesData, brandTypesData]) => {
+      listBrandTypes(),
+      // fetch a large page so SelectDropdown can client-side search
+      listAgencies(1, 1000)
+    ]).then(([zonesData, statesData, countriesData, brandTypesData, agenciesResp]) => {
       if (!mounted) return;
       setZones(zonesData || []);
       setStates(statesData || []);
       setCountries(countriesData || []);
       setBrandTypes(brandTypesData || []);
+      // agenciesResp is AgencyListResponse { data, meta }
+      try {
+        const items = (agenciesResp && agenciesResp.data) ? agenciesResp.data : [];
+        setAgencies(items);
+
+        // If initialData provided and contains agency name/id, try to preselect the matching id
+        if (mounted && initialData) {
+          const rawAgency = initialData.agency ?? initialData.agencyName ?? null;
+          if (rawAgency) {
+            let rawVal = '';
+            if (typeof rawAgency === 'object' && rawAgency !== null) rawVal = String((rawAgency as any).id ?? (rawAgency as any).name ?? '');
+            else rawVal = String(rawAgency);
+
+            // Try to find by id first
+            const byId = items.find(a => String(a.id) === rawVal);
+            if (byId) {
+              setForm(prev => ({ ...prev, agency: String(byId.id) }));
+            } else {
+              // Try to find by name (case-insensitive)
+              const byName = items.find(a => String(a.name).toLowerCase() === String(rawVal).toLowerCase());
+              if (byName) setForm(prev => ({ ...prev, agency: String(byName.id) }));
+              else setForm(prev => ({ ...prev, agency: rawVal }));
+            }
+          }
+        }
+      } catch (e) {
+        setAgencies([]);
+      }
     }).catch(() => {
       // Errors are handled by UI store
     });
@@ -291,8 +324,8 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
               name="agency"
               value={form.agency}
               onChange={(v) => setForm(prev => ({ ...prev, agency: v }))}
-              options={[ 'Agency 1', 'Agency 2', 'Agency 3' ]}
-              placeholder="Search or select option"
+              options={agencies.map(a => ({ value: String(a.id), label: a.name }))}
+              placeholder={agencies.length ? 'Search or select option' : 'Loading agencies...'}
             />
           </div>
         </div>

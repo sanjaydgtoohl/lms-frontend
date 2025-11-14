@@ -19,6 +19,15 @@ export const truncateText = (text: string, maxLength: number): string => {
   return text.slice(0, maxLength) + '...';
 };
 
+export const toTitleCase = (input: string): string => {
+  if (!input) return input;
+  return String(input)
+    .toLowerCase()
+    .split(/\s+/)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
 export const debounce = <T extends (...args: any[]) => any>(
   func: T,
   wait: number

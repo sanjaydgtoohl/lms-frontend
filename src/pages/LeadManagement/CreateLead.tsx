@@ -19,7 +19,7 @@ const CreateLead: React.FC = () => {
     <div className="flex-1 p-6 w-full max-w-full">
       <MasterFormHeader onBack={() => navigate(-1)} title="Create Lead" />
 
-      <div>
+      <div className="space-y-6">
         <LeadManagementSection selectedOption={selectedOption} onSelectOption={setSelectedOption} />
 
         <ContactPersonsCard />

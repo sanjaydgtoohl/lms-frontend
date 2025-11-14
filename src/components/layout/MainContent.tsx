@@ -26,6 +26,7 @@ interface MainContentProps<T extends LeadSource | Agency> {
   dataType?: 'leadSource' | 'agency';
   onView?: (item: T) => void;
   onEdit?: (item: T) => void;
+  onDelete?: (item: T) => void | Promise<void>;
   // optional external data/pagination support
   data?: T[];
   loading?: boolean;
@@ -41,6 +42,7 @@ const MainContent = <T extends LeadSource | Agency>({
   dataType = 'leadSource', 
   onView, 
   onEdit,
+  onDelete,
   data: externalData,
   loading: externalLoading,
   totalItems: externalTotal,
@@ -93,24 +95,22 @@ const MainContent = <T extends LeadSource | Agency>({
   const providedData = externalData;
   const currentData = providedData ? (providedData as T[]).slice(startIndex, endIndex) : filteredArray.slice(startIndex, endIndex);
 
-  const handleEdit = (id: string) => {
-    const item = currentDataArray.find(i => i.id === id);
-    if (item && onEdit) {
-      // Type is already T since we cast currentDataArray as T[]
+  const handleEdit = (item: T) => {
+    if (onEdit) {
       onEdit(item);
     }
   };
 
-  const handleView = (id: string) => {
-    const item = currentDataArray.find(i => i.id === id);
-    if (item && onView) {
-      // Type is already T since we cast currentDataArray as T[]
+  const handleView = (item: T) => {
+    if (onView) {
       onView(item);
     }
   };
 
-  const handleDelete = (id: string) => {
-    console.log(`Delete ${dataType === 'agency' ? 'agency' : 'lead source'}:`, id);
+  const handleDelete = (item: T) => {
+    if (onDelete) {
+      onDelete(item);
+    }
   };
 
   const handlePageChange = (page: number) => {
@@ -181,9 +181,9 @@ const MainContent = <T extends LeadSource | Agency>({
                   { key: 'dateTime', header: 'Date & Time', render: (it: T) => (it as LeadSource).dateTime },
                 ]) as Column<T>[]
           )}
-          onEdit={(it: T) => handleEdit(it.id)}
-          onView={(it: T) => handleView(it.id)}
-          onDelete={(it: T) => handleDelete(it.id)}
+          onEdit={(it: T) => handleEdit(it)}
+          onView={(it: T) => handleView(it)}
+          onDelete={(it: T) => handleDelete(it)}
         />
         </div>
       </div>

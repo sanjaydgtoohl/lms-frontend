@@ -37,11 +37,13 @@ const ENDPOINTS = {
   LIST: '/agency-types',
   DETAIL: (id: string | number) => `/agency-types/${id}`,
   GROUP_AGENCIES: {
-    LIST: '/agency-groups',
-    DETAIL: (id: string | number) => `/agency-groups/${id}`,
-    CREATE: '/agency-groups',
-    UPDATE: (id: string | number) => `/agency-groups/${id}`,
-    DELETE: (id: string | number) => `/agency-groups/${id}`,
+    // The backend exposes agencies under `/agencies` (not `agency-groups`).
+    // Using the correct route fixes creation failures where requests hit the wrong endpoint.
+    LIST: '/agencies',
+    DETAIL: (id: string | number) => `/agencies/${id}`,
+    CREATE: '/agencies',
+    UPDATE: (id: string | number) => `/agencies/${id}`,
+    DELETE: (id: string | number) => `/agencies/${id}`,
   },
   AGENCY_CLIENTS: {
     LIST: '/brands', // Assuming clients are brands in your API
@@ -103,7 +105,9 @@ export async function getGroupAgency(id: string | number): Promise<GroupAgency> 
   return handleResponse<GroupAgency>(res);
 }
 
-export async function createGroupAgency(payload: Partial<GroupAgency>): Promise<GroupAgency> {
+// Accept either JSON-compatible payload or FormData (multipart) to support
+// backends that expect form-data arrays (e.g. name[], type[], client[0][]).
+export async function createGroupAgency(payload: any): Promise<GroupAgency> {
   const res = await apiClient.post<GroupAgency>(ENDPOINTS.GROUP_AGENCIES.CREATE, payload);
   return handleResponse<GroupAgency>(res);
 }

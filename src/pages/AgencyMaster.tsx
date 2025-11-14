@@ -5,11 +5,12 @@ import CreateAgencyForm from './CreateAgencyForm';
 import MasterView from '../components/ui/MasterView';
 import MasterEdit from '../components/ui/MasterEdit';
 import type { Agency } from '../components/layout/MainContent';
-import { listAgencies as fetchAgencies } from '../services/AgencyMaster';
+import { listAgencies as fetchAgencies, deleteAgency } from '../services/AgencyMaster';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants';
 import { getItem } from '../data/masterData';
 import { MasterHeader } from '../components/ui';
+import { showSuccess, showError } from '../utils/notifications';
 
 const AgencyMaster: React.FC = () => {
   const [showCreate, setShowCreate] = useState(false);
@@ -72,6 +73,28 @@ const AgencyMaster: React.FC = () => {
     // Update in API/store as needed
     console.log('Save edited agency:', updated);
     navigate(ROUTES.AGENCY_MASTER);
+  };
+
+  const handleDelete = async (item: Agency): Promise<void> => {
+    if (!item.id) {
+      showError('Agency ID is missing');
+      return;
+    }
+
+    // Confirm deletion
+    if (!window.confirm(`Are you sure you want to delete agency "${item.agencyName}"?`)) {
+      return;
+    }
+
+    try {
+      await deleteAgency(item.id);
+      showSuccess('Agency deleted successfully');
+      // Refresh the list
+      loadAgencies(page);
+    } catch (err) {
+      console.error('Delete failed:', err);
+      showError((err as any)?.message || 'Failed to delete agency');
+    }
   };
 
   // Sync UI state with route params
@@ -139,6 +162,7 @@ const AgencyMaster: React.FC = () => {
             dataType="agency" 
             onView={handleView}
             onEdit={handleEdit}
+            onDelete={handleDelete}
             data={agenciesList}
             loading={loadingList}
             totalItems={totalItems}

@@ -330,7 +330,6 @@ const DesignationMaster: React.FC = () => {
               keyExtractor={(it: any, idx: number) => `${it.id}-${idx}`}
               columns={([
                 { key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },
-                { key: 'id', header: 'ID', render: (it: any) => it.id || '-' },
                 { key: 'name', header: 'Designation Name', render: (it: any) => it.name || '-' },
                 { key: 'dateTime', header: 'Date & Time', render: (it: any) => it.dateTime ? new Date(it.dateTime).toLocaleString() : '-' },
               ] as Column<any>[]) }

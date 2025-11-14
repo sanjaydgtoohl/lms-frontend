@@ -3,7 +3,8 @@ import { listAgencyTypes, listAgencyClients, createGroupAgency } from '../servic
 import { motion } from 'framer-motion';
 // ChevronDropdownIcon replaced by unified SelectDropdown; keep import removed
 import { Plus, Trash2 } from 'lucide-react';
-import { MasterFormHeader, NotificationPopup, SelectField, MultiSelectDropdown } from '../components/ui';
+import { MasterFormHeader, SelectField, MultiSelectDropdown } from '../components/ui';
+import { showSuccess, showError } from '../utils/notifications';
 
 // --- Types used by this form
 interface ParentAgency {
@@ -38,9 +39,9 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
   const [lastAddedId, setLastAddedId] = useState<string | null>(null);
   const [parentErrors, setParentErrors] = useState<{ name?: string; type?: string; client?: string }>({});
   const [childErrors, setChildErrors] = useState<Record<string, { name?: string; type?: string; client?: string }>>({});
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  // use global notification utility (showSuccess/showError) like other masters
 
-  const [agencyTypes, setAgencyTypes] = useState<string[]>([]);
+  const [agencyTypes, setAgencyTypes] = useState<Array<{ value: string; label: string }>>([]);
   const [agencyClients, setAgencyClients] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState({ agencyTypes: true, agencyClients: true });
 
@@ -51,10 +52,11 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
     let mounted = true;
     (async () => {
       try {
-        const items = await listAgencyTypes();
-        if (!mounted) return;
-        const names = items.map((i: any) => i.name || String(i.id));
-        setAgencyTypes(names);
+  const items = await listAgencyTypes();
+  if (!mounted) return;
+  // keep both id and label so SelectField provides id as value (server expects numeric id)
+  const opts = items.map((it: any) => ({ value: String(it.id), label: it.name || String(it.id) }));
+  setAgencyTypes(opts);
       } catch (err) {
         console.error('Failed to load agency types', err);
       } finally {
@@ -170,21 +172,32 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
 
     try {
       setSubmitting(true);
-      
-      // Transform payload to match API structure
-      const apiPayload = {
-        name: parent.name.trim(),
-        type: parent.type,
-        clients: parent.client, // API expects clients array
-        child_agencies: children.map(c => ({
-          name: c.name.trim(),
-          type: c.type,
-          clients: c.client,
-        })),
-      };
 
-      // Call API to create group agency
-      await createGroupAgency(apiPayload);
+      // Build FormData arrays to match backend expectations.
+      // Backend expects name[] and type[] arrays and nested client arrays like client[0][].
+      const form = new FormData();
+
+      const allNames = [parent.name.trim(), ...children.map(c => c.name.trim())];
+      allNames.forEach(n => form.append('name[]', n));
+
+      const allTypes = [parent.type, ...children.map(c => c.type)];
+      allTypes.forEach(t => {
+        // t might be either the id string or the label (depending on previous state).
+        const match = agencyTypes.find(a => String(a.value) === String(t) || String(a.label) === String(t));
+        const typeVal = match ? String(match.value) : String(t);
+        form.append('type[]', typeVal);
+      });
+
+      const allClients = [parent.client, ...children.map(c => c.client)];
+      allClients.forEach((clientsForAgency, idx) => {
+        (clientsForAgency || []).forEach((clientId) => {
+          // Append as client[<index>][] to create nested arrays: client[0][], client[1][], ...
+          form.append(`client[${idx}][]`, clientId);
+        });
+      });
+
+      // Call API to create group agency (apiClient will send FormData as multipart)
+      await createGroupAgency(form);
       
       // Also call custom onSave callback if provided (for additional processing)
       if (onSave && typeof onSave === 'function') {
@@ -196,15 +209,21 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
         if (customRes && typeof customRes.then === 'function') await customRes;
       }
 
-      setShowSuccessToast(true);
+      // show global success notification (same behaviour as Brand Master)
+      showSuccess('Agency created successfully');
+      // close the form and refresh listing after a short delay so user can see the toast
       setTimeout(() => {
-        setShowSuccessToast(false);
         onClose();
         window.location.reload();
-      }, 2000);
+      }, 1200);
     } catch (err) {
       console.error('Submit failed', err);
-      // Error is already handled by API error handler in useUiStore
+      // Show an error toast as well
+      try {
+        showError((err as any)?.message || 'Failed to create agency');
+      } catch (e) {
+        // ignore notification errors
+      }
     } finally {
       setSubmitting(false);
     }
@@ -218,12 +237,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
       transition={{ duration: 0.22 }}
       className="flex-1 overflow-auto w-full overflow-x-hidden bg-[#F6F8FB] min-h-screen"
     >
-      <NotificationPopup
-        isOpen={showSuccessToast}
-        onClose={() => setShowSuccessToast(false)}
-        message="Agency created successfully"
-        type="success"
-      />
+      {/* global notification used via showSuccess/showError; local popup removed */}
 
       <div className="space-y-6 p-6">
         <MasterFormHeader onBack={onClose} title="Create Group Agency" />
@@ -251,14 +265,14 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
 
                 <div>
                   <label className="block text-sm text-[#667085] mb-1">Agency Type</label>
-                  <SelectField
-                    name="parentType"
-                    value={parent.type}
-                    options={agencyTypes}
-                    onChange={(v) => { setParent(prev => ({ ...prev, type: v })); setParentErrors(prev => ({ ...prev, type: undefined })); }}
-                    placeholder="Please Select Agency Type"
-                    inputClassName={parentErrors.type ? 'border-red-500' : 'border-[#D0D5DD]'}
-                  />
+                    <SelectField
+                      name="parentType"
+                      value={parent.type}
+                      options={agencyTypes}
+                      onChange={(v) => { setParent(prev => ({ ...prev, type: v })); setParentErrors(prev => ({ ...prev, type: undefined })); }}
+                      placeholder="Please Select Agency Type"
+                      inputClassName={parentErrors.type ? 'border-red-500' : 'border-[#D0D5DD]'}
+                    />
                   {parentErrors.type && (
                     <div className="text-xs text-red-500 mt-1">{parentErrors.type}</div>
                   )}

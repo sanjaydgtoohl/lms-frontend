@@ -132,9 +132,18 @@ class EnhancedApiClient {
     } = config;
 
     const url = `${this.baseURL}${endpoint}`;
+    // If the body is a FormData instance, do not set Content-Type here
+    // so the browser can set the proper multipart boundary header.
+    const isFormDataBody = (fetchConfig as any).body instanceof FormData;
+    const baseAuthHeaders = this.getAuthHeaders();
+    if (isFormDataBody) {
+      // remove Content-Type for FormData
+      delete (baseAuthHeaders as any)['Content-Type'];
+    }
+
     const headers = skipAuth
-      ? { 'Content-Type': 'application/json', ...fetchConfig.headers }
-      : { ...this.getAuthHeaders(), ...fetchConfig.headers };
+      ? (isFormDataBody ? { ...(fetchConfig.headers || {}) } : { 'Content-Type': 'application/json', ...(fetchConfig.headers || {}) })
+      : ({ ...baseAuthHeaders, ...(fetchConfig.headers || {}) });
 
     let lastError: Error | null = null;
     let statusCode: number | undefined;
@@ -226,10 +235,11 @@ class EnhancedApiClient {
     data?: any,
     config?: RequestConfig
   ): Promise<ApiResponse<T>> {
+    const body = data instanceof FormData ? data : data ? JSON.stringify(data) : undefined;
     return this.request<T>(endpoint, {
       ...config,
       method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
+      body,
     });
   }
 
@@ -241,10 +251,11 @@ class EnhancedApiClient {
     data?: any,
     config?: RequestConfig
   ): Promise<ApiResponse<T>> {
+    const body = data instanceof FormData ? data : data ? JSON.stringify(data) : undefined;
     return this.request<T>(endpoint, {
       ...config,
       method: 'PUT',
-      body: data ? JSON.stringify(data) : undefined,
+      body,
     });
   }
 
@@ -256,10 +267,11 @@ class EnhancedApiClient {
     data?: any,
     config?: RequestConfig
   ): Promise<ApiResponse<T>> {
+    const body = data instanceof FormData ? data : data ? JSON.stringify(data) : undefined;
     return this.request<T>(endpoint, {
       ...config,
       method: 'PATCH',
-      body: data ? JSON.stringify(data) : undefined,
+      body,
     });
   }
 

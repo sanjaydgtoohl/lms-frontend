@@ -159,7 +159,6 @@ const BrandMaster: React.FC = () => {
               keyExtractor={(it: Brand, idx: number) => `${it.id}-${idx}`}
               columns={([
                 { key: 'sr', header: 'Sr. No.', render: (it: Brand) => String(startIndex + currentData.indexOf(it) + 1) },
-                { key: 'id', header: 'ID', render: (it: Brand) => it.id || '-' },
                 { key: 'name', header: 'Brand Name', render: (it: Brand) => it.name || '-' },
                 { key: 'agencyName', header: 'Agency Name', render: (it: Brand) => it.agencyName || '-' },
                 { key: 'brandType', header: 'Brand Type', render: (it: Brand) => it.brandType || '-' },
