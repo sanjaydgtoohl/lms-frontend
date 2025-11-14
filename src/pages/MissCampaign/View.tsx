@@ -13,6 +13,7 @@ import {
   deleteMissCampaign,
   type MissCampaign 
 } from '../../services/View';
+import { useRef } from 'react';
 
 const View: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -26,6 +27,14 @@ const View: React.FC = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [viewItem, setViewItem] = useState<MissCampaign | null>(null);
   const [editItem, setEditItem] = useState<MissCampaign | null>(null);
+  // Tooltip state for Proof hover (similar to AllLeads comment tooltip)
+  const [tooltipVisible, setTooltipVisible] = useState(false);
+  const [tooltipContent, setTooltipContent] = useState('');
+  const [tooltipLeft, setTooltipLeft] = useState(0);
+  const [tooltipTop, setTooltipTop] = useState(0);
+  const [tooltipPlacement, setTooltipPlacement] = useState<'top' | 'bottom'>('top');
+  const hoverTimeout = useRef<number | null>(null);
+  const tooltipRef = useRef<HTMLDivElement | null>(null);
 
   const filteredCampaigns = campaigns.filter(c => {
     if (!searchQuery) return true;
@@ -113,6 +122,46 @@ const View: React.FC = () => {
     setEditItem(null);
   }, [location.pathname, params.id, campaigns]);
 
+  // Tooltip helpers
+  const showTooltip = (e: React.MouseEvent, content: string) => {
+    if (hoverTimeout.current) {
+      window.clearTimeout(hoverTimeout.current);
+      hoverTimeout.current = null;
+    }
+    const target = e.currentTarget as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const preferTop = rect.top > 140;
+    const left = Math.max(12, Math.min(window.innerWidth - 12, centerX));
+    const top = preferTop ? Math.max(12, rect.top - 8) : Math.min(window.innerHeight - 12, rect.bottom + 8);
+
+    setTooltipContent(content);
+    setTooltipLeft(left);
+    setTooltipTop(top);
+    setTooltipPlacement(preferTop ? 'top' : 'bottom');
+    setTooltipVisible(true);
+  };
+
+  const hideTooltip = () => {
+    if (hoverTimeout.current) window.clearTimeout(hoverTimeout.current);
+    hoverTimeout.current = window.setTimeout(() => {
+      setTooltipVisible(false);
+      hoverTimeout.current = null;
+    }, 100);
+  };
+
+  const onTooltipEnter = () => {
+    if (hoverTimeout.current) {
+      window.clearTimeout(hoverTimeout.current);
+      hoverTimeout.current = null;
+    }
+    setTooltipVisible(true);
+  };
+
+  const onTooltipLeave = () => {
+    hideTooltip();
+  };
+
   const handleSaveEdited = async (updated: Record<string, any>) => {
     try {
       const updatedCampaign = await updateMissCampaign(updated.id, updated);
@@ -164,7 +213,30 @@ const View: React.FC = () => {
                 { key: 'productName', header: 'Product Name', render: (it: MissCampaign) => it.productName },
                 { key: 'source', header: 'Source', render: (it: MissCampaign) => it.source },
                 { key: 'subSource', header: 'Sub Source', render: (it: MissCampaign) => it.subSource },
-                { key: 'proof', header: 'Proof', render: (it: MissCampaign) => it.proof },
+                {
+                  key: 'proof',
+                  header: 'Proof',
+                  render: (it: MissCampaign) => (
+                    <div
+                      className="cursor-help max-w-[360px]"
+                      onMouseEnter={(e) => showTooltip(e, String(it.proof || ''))}
+                      onMouseLeave={() => hideTooltip()}
+                    >
+                      <div
+                        className="text-sm text-[var(--text-primary)]"
+                        style={{
+                          display: 'block',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          overflowWrap: 'break-word'
+                        }}
+                      >
+                        {it.proof || '-'}
+                      </div>
+                    </div>
+                  ),
+                },
                 { key: 'dateTime', header: 'Date & Time', render: (it: MissCampaign) => it.dateTime },
               ] as Column<MissCampaign>[])}
               onEdit={(it: MissCampaign) => handleEdit(it.id)}
@@ -179,6 +251,22 @@ const View: React.FC = () => {
             itemsPerPage={itemsPerPage}
             onPageChange={handlePageChange}
           />
+          {/* Tooltip popup for full proof text */}
+          {tooltipVisible && (
+            <div
+              ref={tooltipRef}
+              onMouseEnter={onTooltipEnter}
+              onMouseLeave={onTooltipLeave}
+              role="tooltip"
+              aria-hidden={!tooltipVisible}
+              style={{ left: tooltipLeft, top: tooltipTop }}
+              className={`fixed z-50 transform -translate-x-1/2 ${tooltipPlacement === 'top' ? '-translate-y-full' : 'translate-y-0'}`}
+            >
+              <div className="bg-white border border-[var(--border-color)] rounded-lg shadow-md p-3 max-w-[48ch] text-sm text-[var(--text-primary)]">
+                {tooltipContent}
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>
