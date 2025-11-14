@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MasterCreateHeader } from '../../components/ui/MasterCreateHeader';
 import { Upload } from 'lucide-react';
 import { SelectField } from '../../components/ui';
@@ -26,6 +26,15 @@ const Create: React.FC<CreateProps> = ({
     image: null as File | null,
   });
 
+  useEffect(() => {
+    if (initialData) {
+      setFormData(prev => ({
+        ...prev,
+        ...initialData,
+      }));
+    }
+  }, [initialData]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -47,7 +56,7 @@ const Create: React.FC<CreateProps> = ({
   return (
     <div className={inline ? 'w-full' : 'p-6'}>
       <MasterCreateHeader
-        title={''}
+        title={mode === 'edit' ? 'Edit Miss Campaign' : 'Create Miss Campaign'}
         onClose={onClose}
       />
       <div className="mt-6 bg-white rounded-2xl shadow-sm border border-[var(--border-color)] p-6">

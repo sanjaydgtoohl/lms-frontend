@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Pagination from '../ui/Pagination';
 import ActionMenu from '../ui/ActionMenu';
 import SearchBar from '../ui/SearchBar';
-import { matchesQuery, type SearchOptions } from '../../utils/index';
+import { matchesQuery } from '../../utils';
 
 export interface LeadSource {
   id: string;
@@ -65,12 +65,11 @@ const MainContent = <T extends LeadSource | Agency>({
 
   // apply search filtering across common fields
   const filteredArray = currentDataArray.filter((item) => {
-    // allow exact field matching using syntax `field:term` (exact equality), otherwise contains across common fields
-    const commonFields = ['id', 'agencyName', 'agencyGroup', 'agencyType', 'source', 'subSource'];
-    return matchesQuery(item as any, searchQuery, { 
-      fields: commonFields,
-      useStartsWith: dataType === 'agency'
-    });
+    const commonFields =
+      dataType === 'agency'
+        ? ['id', 'agencyName', 'agencyGroup', 'agencyType', 'contactPerson']
+        : ['id', 'source', 'subSource'];
+    return matchesQuery(item as unknown as Record<string, unknown>, searchQuery, commonFields);
   });
 
   // totalPages not used directly (pagination component uses totalItems)

@@ -74,10 +74,16 @@ const CreateLeadForm: React.FC<CreateLeadFormProps> = ({ onSubmit, loading = fal
   };
 
   const handleContactChange = (id: string, field: keyof ContactPerson, value: string) => {
-    setContacts(prev => prev.map(contact => 
-      contact.id === id ? { ...contact, [field]: value } : contact
-    ));
+    setContacts(prev =>
+      prev.map(contact => (contact.id === id ? { ...contact, [field]: value } : contact))
+    );
   };
+
+  const handleContactInputChange =
+    (id: string, field: keyof ContactPerson) =>
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      handleContactChange(id, field, event.target.value);
+    };
 
   return (
     <form onSubmit={(e) => { e.preventDefault(); onSubmit({ contacts }); }}>
@@ -163,7 +169,7 @@ const CreateLeadForm: React.FC<CreateLeadFormProps> = ({ onSubmit, loading = fal
           </button>
         </div>
 
-        {contacts.map((contact, index) => (
+        {contacts.map((contact) => (
           <div key={contact.id} className="bg-white rounded-2xl border border-[var(--border-color)] p-6 mb-4">
             <div className="flex justify-end mb-4">
               {contacts.length > 1 && (
@@ -182,80 +188,80 @@ const CreateLeadForm: React.FC<CreateLeadFormProps> = ({ onSubmit, loading = fal
                 label="Full Name"
                 placeholder="Enter full name"
                 value={contact.fullName}
-                onChange={(e) => handleContactChange(contact.id, 'fullName', e.target.value)}
+                onChange={handleContactInputChange(contact.id, 'fullName')}
               />
               <Input
                 label="Email"
                 type="email"
                 placeholder="Enter email address"
                 value={contact.email}
-                onChange={(e) => handleContactChange(contact.id, 'email', e.target.value)}
+                onChange={handleContactInputChange(contact.id, 'email')}
               />
               <Input
                 label="Type"
                 placeholder="Select type"
                 value={contact.type}
-                onChange={(e) => handleContactChange(contact.id, 'type', e.target.value)}
+                onChange={handleContactInputChange(contact.id, 'type')}
               />
               <Input
                 label="Department"
                 placeholder="Select department"
                 value={contact.department}
-                onChange={(e) => handleContactChange(contact.id, 'department', e.target.value)}
+                onChange={handleContactInputChange(contact.id, 'department')}
               />
               <Input
                 label="Country"
                 placeholder="Select country"
                 value={contact.country}
-                onChange={(e) => handleContactChange(contact.id, 'country', e.target.value)}
+                onChange={handleContactInputChange(contact.id, 'country')}
               />
               <Input
                 label="State"
                 placeholder="Select state"
                 value={contact.state}
-                onChange={(e) => handleContactChange(contact.id, 'state', e.target.value)}
+                onChange={handleContactInputChange(contact.id, 'state')}
               />
               <Input
                 label="Zone"
                 placeholder="Select zone"
                 value={contact.zone}
-                onChange={(e) => handleContactChange(contact.id, 'zone', e.target.value)}
+                onChange={handleContactInputChange(contact.id, 'zone')}
               />
               <Input
                 label="Profile URL"
                 placeholder="Enter profile URL"
                 value={contact.profileUrl}
-                onChange={(e) => handleContactChange(contact.id, 'profileUrl', e.target.value)}
+                onChange={handleContactInputChange(contact.id, 'profileUrl')}
               />
               <Input
                 label="Mobile No."
                 placeholder="Enter mobile number"
                 value={contact.mobileNo}
-                onChange={(e) => handleContactChange(contact.id, 'mobileNo', e.target.value)}
+                onChange={handleContactInputChange(contact.id, 'mobileNo')}
               />
               <Input
                 label="Designation"
                 placeholder="Select designation"
                 value={contact.designation}
-                onChange={(e) => handleContactChange(contact.id, 'designation', e.target.value)}
+                onChange={handleContactInputChange(contact.id, 'designation')}
               />
               <Input
                 label="Sub-Source"
                 placeholder="Select sub-source"
                 value={contact.subSource}
-                onChange={(e) => handleContactChange(contact.id, 'subSource', e.target.value)}
+                onChange={handleContactInputChange(contact.id, 'subSource')}
               />
               <Input
                 label="Postal Code"
                 placeholder="Enter postal code"
                 value={contact.postalCode}
-                onChange={(e) => handleContactChange(contact.id, 'postalCode', e.target.value)}
+                onChange={handleContactInputChange(contact.id, 'postalCode')}
               />
               <Input
                 label="City"
                 placeholder="Select city"
                 value={contact.city}
-                onChange={(e) => handleContactChange(contact.id, 'city', e.target.value)}
+                onChange={handleContactInputChange(contact.id, 'city')}
               />
             </div>
           </div>

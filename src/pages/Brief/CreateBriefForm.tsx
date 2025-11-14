@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MasterFormHeader, NotificationPopup, Button, SelectField } from '../../components/ui';
-import ChevronDropdownIcon from '../../components/ui/ChevronDropdownIcon';
 // Dropdown UI uses SelectField component
 
 type Props = {

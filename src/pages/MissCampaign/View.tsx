@@ -3,7 +3,6 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import MasterView from '../../components/ui/MasterView';
 import Pagination from '../../components/ui/Pagination';
 import Table, { type Column } from '../../components/ui/Table';
-import { ROUTES } from '../../constants';
 import MasterHeader from '../../components/ui/MasterHeader';
 import SearchBar from '../../components/ui/SearchBar';
 import Create from './Create';

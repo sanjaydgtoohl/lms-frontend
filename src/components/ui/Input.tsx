@@ -24,8 +24,6 @@ const Input = forwardRef<HTMLInputElement, InputProps & React.InputHTMLAttribute
     ? 'border-red-500 bg-red-50'
     : 'border-[var(--border-color)] bg-white hover:border-[#A7B4FF] focus:shadow-[0_0_0_3px_rgba(66,133,244,0.12)]';
   const disabledClasses = disabled ? 'bg-gray-100 cursor-not-allowed opacity-60' : '';
-  const rightElementClasses = rightElement ? 'pr-10' : '';
-
   const inputClasses = `${baseClasses} ${stateClasses} ${disabledClasses} ${isPassword || rightElement ? 'pr-10' : ''}`;
 
   return (
