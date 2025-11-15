@@ -13,7 +13,7 @@ import IndustryMaster from './pages/IndustryMaster';
 import DesignationMaster from './pages/DesignationMaster';
 import DepartmentMaster from './pages/DepartmentMaster';
 import { MissCampaignView, MissCampaignCreate } from './pages/MissCampaign';
-import { AllLeads, CreateLead, EditLead, ViewLead, Pending, Interested, MeetingScheduled, MeetingDone } from './pages/LeadManagement';
+import { AllLeads, CreateLead, EditLead, ViewLead, Pending, Interested, MeetingScheduled, MeetingDone, MeetingSchedule } from './pages/LeadManagement';
 import { AllPermissions, CreatePermission, ViewPermission, AllRoles, CreateRole, ViewRole, AllUsers, CreateUser, ViewUser } from './pages/UserManagement';
 import Layout from './components/layout/Layout';
 import BriefPipeline from './pages/Brief/BriefPipeline';
@@ -125,6 +125,9 @@ function App() {
             <Route path="edit/:id" element={<EditLead />} />
             <Route path=":id" element={<ViewLead />} />
           </Route>
+
+          {/* Meeting Schedule top-level route */}
+          <Route path="meeting-schedule" element={<MeetingSchedule />} />
 
           {/* Miss Campaign Routes */}
           <Route path="miss-campaign/view" element={<MissCampaignView />} />

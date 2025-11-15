@@ -1,52 +1,56 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Table, { type Column } from '../../../components/ui/Table';
 import Pagination from '../../../components/ui/Pagination';
 import SearchBar from '../../../components/ui/SearchBar';
 import { MasterHeader } from '../../../components/ui';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
+import { listPermissions } from '../../../services/AllPermissions';
 
 interface Permission {
   id: string;
   name: string;
-  description: string;
+  display_name?: string;
+  description?: string;
+  srNo?: number;
 }
-
-const mockPermissions: Permission[] = [
-  { id: '#PM001', name: 'User Read', description: 'Allows viewing user information and profiles' },
-  { id: '#PM002', name: 'User Create', description: 'Allows creating new user accounts' },
-  { id: '#PM003', name: 'User Update', description: 'Allows updating user information' },
-  { id: '#PM004', name: 'User Delete', description: 'Allows deleting user accounts' },
-  { id: '#PM005', name: 'Profile Read', description: 'Allows viewing user profile details' },
-  { id: '#PM006', name: 'Permission Read', description: 'Allows viewing permission information' },
-  { id: '#PM007', name: 'Permission Create', description: 'Allows creating new permissions' },
-  { id: '#PM008', name: 'Permission Update', description: 'Allows updating permissions' },
-  { id: '#PM009', name: 'Permission Delete', description: 'Allows deleting permissions' },
-  { id: '#PM010', name: 'Role Read', description: 'Allows viewing role information' },
-];
 
 const AllPermissions: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const itemsPerPage = 10;
-  const [permissions] = useState<Permission[]>(mockPermissions);
+  const [permissions, setPermissions] = useState<Permission[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [totalItems, setTotalItems] = useState(0);
 
-  // Filter permissions by search query
-  const filteredPermissions = permissions.filter((p) => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return true;
-    return (
-      p.id.toLowerCase().startsWith(q) ||
-      p.name.toLowerCase().startsWith(q) ||
-      p.description.toLowerCase().startsWith(q)
-    );
-  });
+  // Fetch permissions from API
+  const fetchPermissions = async () => {
+    setLoading(true);
+    try {
+      const res = await listPermissions(currentPage, itemsPerPage, searchQuery);
+      const data = (res.data || []).map((it: any, idx: number) => ({
+        ...it,
+        srNo: (currentPage - 1) * itemsPerPage + idx + 1,
+      }));
+      setPermissions(data);
+      // Try different meta locations depending on backend
+      const total = res.meta?.pagination?.total ?? res.meta?.total ?? data.length;
+      setTotalItems(Number(total || 0));
+    } catch (err) {
+      // keep console error for now; UI-level notifications can be added
+      // eslint-disable-next-line no-console
+      console.error('Failed to fetch permissions', err);
+      setPermissions([]);
+      setTotalItems(0);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentData = filteredPermissions.slice(startIndex, startIndex + itemsPerPage).map((perm, index) => ({
-    ...perm,
-    srNo: startIndex + index + 1,
-  }));
+  useEffect(() => {
+    fetchPermissions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, searchQuery]);
 
   const navigate = useNavigate();
 
@@ -69,7 +73,7 @@ const AllPermissions: React.FC = () => {
       render: (it: Permission & { srNo: number }) => it.srNo,
       className: 'text-left whitespace-nowrap' 
     },
-    { key: 'name', header: 'Name', render: (it: Permission) => it.name, className: 'max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap' },
+    { key: 'display_name', header: 'Name', render: (it: Permission) => it.display_name || it.name, className: 'max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap' },
     { key: 'description', header: 'Description', render: (it: Permission) => it.description, className: 'max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap' },
   ] as Column<Permission>[]);
 
@@ -95,9 +99,9 @@ const AllPermissions: React.FC = () => {
         </div>
 
         <Table
-          data={currentData}
-          startIndex={startIndex}
-          loading={false}
+          data={permissions}
+          startIndex={(currentPage - 1) * itemsPerPage}
+          loading={loading}
           keyExtractor={(it: Permission) => it.id}
           columns={columns}
           onEdit={(it: Permission) => handleEdit(it.id)}
@@ -107,7 +111,7 @@ const AllPermissions: React.FC = () => {
 
       <Pagination
         currentPage={currentPage}
-        totalItems={filteredPermissions.length}
+        totalItems={totalItems}
         itemsPerPage={itemsPerPage}
         onPageChange={(p: number) => setCurrentPage(p)}
       />

@@ -1,92 +1,45 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Table, { type Column } from '../../../components/ui/Table';
 import Pagination from '../../../components/ui/Pagination';
 import SearchBar from '../../../components/ui/SearchBar';
 import { MasterHeader } from '../../../components/ui';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
-
-interface User {
-  id: string;
-  name: string;
-  lastLogin: string;
-  created: string;
-  status: 'Active' | 'Inactive';
-  role: string;
-  email: string;
-}
-
-const mockUsers: User[] = [
-  {
-    id: '#USR001',
-    name: 'Mayank Sharma',
-    lastLogin: '7:32pm',
-    created: '01/01/2024',
-    status: 'Active',
-    role: 'S-Admin',
-    email: 'admin@gmail.com',
-  },
-  {
-    id: '#USR002',
-    name: 'Anuj',
-    lastLogin: '7:32pm',
-    created: '01/01/2024',
-    status: 'Active',
-    role: 'Admin',
-    email: 'admin@gmail.com',
-  },
-  {
-    id: '#USR003',
-    name: 'Shivalika',
-    lastLogin: '7:32pm',
-    created: '01/01/2024',
-    status: 'Active',
-    role: 'BDM',
-    email: 'bdm@gmail.com',
-  },
-  {
-    id: '#USR004',
-    name: 'Manraj',
-    lastLogin: '7:32pm',
-    created: '01/01/2024',
-    status: 'Active',
-    role: 'S-BDM',
-    email: 'bdm@gmail.com',
-  },
-  {
-    id: '#USR005',
-    name: 'Olivia Rhye',
-    lastLogin: '7:32pm',
-    created: '01/01/2024',
-    status: 'Inactive',
-    role: 'Planner',
-    email: 'planner@gmail.com',
-  },
-];
+import { listUsers, type User } from '../../../services/AllUsers';
 
 const AllUsers: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const itemsPerPage = 10;
-  const [users] = useState<User[]>(mockUsers);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [totalItems, setTotalItems] = useState(0);
 
-  // Filter users by search query
-  const filteredUsers = users.filter((u) => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return true;
-    return (
-      u.id.toLowerCase().startsWith(q) ||
-      u.name.toLowerCase().startsWith(q) ||
-      u.email.toLowerCase().startsWith(q) ||
-      u.role.toLowerCase().startsWith(q)
-    );
-  });
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const res = await listUsers(currentPage, itemsPerPage, searchQuery);
+      const data = (res.data || []).map((it: any, idx: number) => ({
+        ...it,
+        srNo: (currentPage - 1) * itemsPerPage + idx + 1,
+      }));
+      setUsers(data);
+      const total = res.meta?.pagination?.total ?? res.meta?.total ?? data.length;
+      setTotalItems(Number(total || 0));
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to fetch users', err);
+      setUsers([]);
+      setTotalItems(0);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentData = filteredUsers.slice(startIndex, startIndex + itemsPerPage).map((user, index) => ({
-    ...user,
-    srNo: startIndex + index + 1,
-  }));
+  useEffect(() => {
+    fetchUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, searchQuery]);
 
   const navigate = useNavigate();
 
@@ -102,13 +55,13 @@ const AllUsers: React.FC = () => {
     navigate(ROUTES.USER.DETAIL(cleanId));
   };
 
-  const getStatusBadgeColor = (status: 'Active' | 'Inactive') => {
+  const getStatusBadgeColor = (status?: 'Active' | 'Inactive') => {
     return status === 'Active' 
       ? 'bg-green-100 text-green-700' 
       : 'bg-red-100 text-red-700';
   };
 
-  const getRoleBadgeColor = (role: string) => {
+  const getRoleBadgeColor = (role?: string) => {
     const roleColorMap: Record<string, string> = {
       'S-Admin': 'border-purple-300 text-purple-700 bg-purple-50',
       'Admin': 'border-blue-300 text-blue-700 bg-blue-50',
@@ -116,7 +69,7 @@ const AllUsers: React.FC = () => {
       'S-BDM': 'border-yellow-300 text-yellow-700 bg-yellow-50',
       'Planner': 'border-pink-300 text-pink-700 bg-pink-50',
     };
-    return roleColorMap[role] || 'border-gray-300 text-gray-700 bg-gray-50';
+    return (role && roleColorMap[role]) || 'border-gray-300 text-gray-700 bg-gray-50';
   };
 
   const columns = ([
@@ -208,9 +161,9 @@ const AllUsers: React.FC = () => {
         </div>
 
         <Table
-          data={currentData}
-          startIndex={startIndex}
-          loading={false}
+          data={users}
+          startIndex={(currentPage - 1) * itemsPerPage}
+          loading={loading}
           keyExtractor={(it: User) => it.id}
           columns={columns}
           onEdit={(it: User) => handleEdit(it.id)}
@@ -220,7 +173,7 @@ const AllUsers: React.FC = () => {
 
       <Pagination
         currentPage={currentPage}
-        totalItems={filteredUsers.length}
+        totalItems={totalItems}
         itemsPerPage={itemsPerPage}
         onPageChange={(p: number) => setCurrentPage(p)}
       />

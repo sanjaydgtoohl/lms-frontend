@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
 import { MasterFormHeader, NotificationPopup, SelectField } from '../../../components/ui';
+import { createPermission, updatePermission } from '../../../services/CreatePermission';
 
 type Props = {
   mode?: 'create' | 'edit';
@@ -50,14 +51,21 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
 
     try {
       setSaving(true);
-      const payload = { ...form } as Record<string, any>;
-      if (initialData && initialData.id) payload.id = initialData.id;
-      
-      // TODO: Make API call to save permission
-      console.log('Saving permission:', payload);
-      
-      // Mock API success
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const payload = {
+        displayName: form.displayName,
+        name: form.name,
+        url: form.url,
+        parentPermission: form.parentPermission || null,
+        description: form.description,
+      };
+
+      if (mode === 'edit' && initialData?.id) {
+        // Update existing permission
+        await updatePermission(initialData.id, payload);
+      } else {
+        // Create new permission
+        await createPermission(payload);
+      }
       
       setShowSuccessToast(true);
       setTimeout(() => {
@@ -66,6 +74,7 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
       }, 1200);
     } catch (err) {
       console.error('Error saving permission:', err);
+      setErrors({ submit: 'Failed to save permission. Please try again.' });
     } finally {
       setSaving(false);
     }

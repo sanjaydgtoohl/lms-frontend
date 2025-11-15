@@ -3,45 +3,100 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
 import { MasterFormHeader, NotificationPopup, SelectField } from '../../../components/ui';
+import { apiClient } from '../../../utils/apiClient';
+import { createUser, updateUser } from '../../../services/CreateUser';
 
 type Props = {
   mode?: 'create' | 'edit';
   initialData?: Record<string, any>;
 };
 
-const roleOptions = [
-  { label: 'S-Admin', value: 's-admin' },
-  { label: 'Admin', value: 'admin' },
-  { label: 'BDM', value: 'bdm' },
-  { label: 'S-BDM', value: 's-bdm' },
-  { label: 'Planner', value: 'planner' },
-];
+// roleOptions will be fetched from the API
 
-const statusOptions = [
-  { label: 'Active', value: 'active' },
-  { label: 'Inactive', value: 'inactive' },
-];
+// status removed — backend doesn't require a status field from the frontend
 
 const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
   const navigate = useNavigate();
   const [form, setForm] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    role: '',
-    status: 'active',
+  name: '',
+  email: '',
+  phone: '',
+  password: '',
+  password_confirmation: '',
+  role: '',
   });
 
   const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [showErrorToast, setShowErrorToast] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [roleOptions, setRoleOptions] = useState<Array<{ label: string; value: string }>>([]);
+  const [rolesLoading, setRolesLoading] = useState(false);
+  const [rolesError, setRolesError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (initialData) {
-      setForm((prev) => ({ ...prev, ...initialData }));
+      setForm((prev) => ({
+        ...prev,
+        ...initialData,
+        // normalize role id to select value
+        role: initialData.role_id ? String(initialData.role_id) : (initialData.role ? String(initialData.role) : prev.role),
+        name: initialData.name ?? initialData.full_name ?? prev.name,
+      }));
     }
   }, [initialData]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadRoles = async () => {
+      setRolesLoading(true);
+      setRolesError(null);
+      try {
+        // Request a reasonably large page so we get all roles in one go
+        const resp = await apiClient.get<any>('/roles?per_page=100');
+
+        // resp may be the api wrapper with `data` or direct array/object depending on server
+        // Try a few common shapes to extract the array of items
+        let items: any[] = [];
+        if (!resp) items = [];
+        else if (Array.isArray((resp as any).data)) items = (resp as any).data;
+        else if (Array.isArray((resp as any).data?.data)) items = (resp as any).data.data;
+        else if (Array.isArray((resp as any).data?.items)) items = (resp as any).data.items;
+        else if (Array.isArray((resp as any).data?.roles)) items = (resp as any).data.roles;
+        else if (Array.isArray((resp as any).roles)) items = (resp as any).roles;
+        else if (Array.isArray((resp as any).data?.data?.data)) items = (resp as any).data.data.data;
+        else if (Array.isArray((resp as any))) items = (resp as any);
+        else items = [];
+
+        const opts = items.map((it: any) => {
+          // Prefer numeric id if available; strip non-digits if server returns decorated ids
+          const rawId = it.id ?? it.role_id ?? it.value ?? '';
+          const numeric = String(rawId).replace(/[^0-9]/g, '') || String(rawId);
+          return {
+            label: it.name ?? it.title ?? it.role ?? String(it.label ?? ''),
+            value: String(numeric),
+          };
+        });
+
+        if (mounted) {
+          setRoleOptions(opts);
+        }
+      } catch (err: any) {
+        console.error('Failed to load roles', err);
+        if (mounted) setRolesError(err?.message || 'Failed to load roles');
+      } finally {
+        if (mounted) setRolesLoading(false);
+      }
+    };
+
+    loadRoles();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -64,37 +119,84 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const next: Record<string, string> = {};
-    if (!form.firstName || form.firstName.trim() === '') next.firstName = 'Please enter first name';
-    if (!form.lastName || form.lastName.trim() === '') next.lastName = 'Please enter last name';
+  const next: Record<string, string> = {};
+  if (!form.name || form.name.trim() === '') next.name = 'Please enter name';
     if (!form.email || form.email.trim() === '') next.email = 'Please enter email';
     else if (!validateEmail(form.email)) next.email = 'Please enter a valid email address';
     
-    if (form.phone && !validatePhone(form.phone)) next.phone = 'Please enter a valid phone number';
-    if (!form.role || form.role.trim() === '') next.role = 'Please select a role';
-    if (!form.status || form.status.trim() === '') next.status = 'Please select status';
+  if (form.phone && !validatePhone(form.phone)) next.phone = 'Please enter a valid phone number';
+
+    // Password required on create
+    if (mode !== 'edit') {
+      if (!form.password || String(form.password).trim() === '') next.password = 'Please enter password';
+      if (!form.password_confirmation || String(form.password_confirmation).trim() === '') next.password_confirmation = 'Please confirm password';
+      else if (form.password !== form.password_confirmation) next.password_confirmation = 'Password confirmation does not match';
+    } else {
+      // If editing and password fields provided, ensure confirmation matches
+      if (form.password && form.password_confirmation && form.password !== form.password_confirmation) {
+        next.password_confirmation = 'Password confirmation does not match';
+      }
+    }
 
     setErrors(next);
     if (Object.keys(next).length > 0) return;
 
     try {
       setSaving(true);
-      const payload = { ...form } as Record<string, any>;
+      const base = { ...form } as Record<string, any>;
+      // Build payload expected by backend
+      const payload: Record<string, any> = {
+        name: String(base.name || ''),
+        email: base.email || '',
+        phone: base.phone || null,
+      };
+
+      // role is SelectField value (string id) -> send as role_id (number)
+      if (base.role) payload.role_id = Number(base.role);
+
+      // include password only when provided (required on create)
+      if (base.password && String(base.password).trim() !== '') {
+        payload.password = base.password;
+        payload.password_confirmation = base.password_confirmation;
+      }
+
       if (initialData && initialData.id) payload.id = initialData.id;
-      
-      // TODO: Make API call to save user
-      console.log('Saving user:', payload);
-      
-      // Mock API success
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      
+
+      // Call API service
+      if (mode === 'edit' && initialData && initialData.id) {
+        await updateUser(String(initialData.id), payload);
+      } else {
+        await createUser(payload);
+      }
+
       setShowSuccessToast(true);
       setTimeout(() => {
         setShowSuccessToast(false);
         navigate(ROUTES.USER.ROOT);
       }, 1200);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving user:', err);
+
+      // try to extract structured validation errors from API
+      const respData = err?.responseData || err?.response?.data || null;
+      if (respData && respData.errors && typeof respData.errors === 'object') {
+        const nextErrs: Record<string, string> = {};
+        Object.keys(respData.errors).forEach((k) => {
+          const v = respData.errors[k];
+          // map backend field names to form field names
+          let mappedKey = k;
+          if (k === 'role_id') mappedKey = 'role';
+          if (k === 'first_name' || k === 'full_name') mappedKey = 'name';
+          if (k === 'name') mappedKey = 'name';
+          // take first message if array
+          nextErrs[mappedKey] = Array.isArray(v) ? String(v[0]) : String(v);
+        });
+        setErrors((prev) => ({ ...prev, ...nextErrs }));
+      } else {
+        const msg = respData?.message || err?.message || 'Failed to save user';
+        setErrorMessage(String(msg));
+        setShowErrorToast(true);
+      }
     } finally {
       setSaving(false);
     }
@@ -122,33 +224,39 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
         message={mode === 'edit' ? 'User updated successfully' : 'User created successfully'}
         type="success"
       />
+      <NotificationPopup
+        isOpen={showErrorToast}
+        onClose={() => setShowErrorToast(false)}
+        message={errorMessage}
+        type="error"
+      />
 
       <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
         <div className="p-6 bg-[#F9FAFB]">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* First Name */}
+            {/* Name */}
             <div>
               <label className="block text-sm text-[var(--text-secondary)] mb-1">
-                First Name <span className="text-[#FF0000]">*</span>
+                Name <span className="text-[#FF0000]">*</span>
               </label>
               <input
-                name="firstName"
-                value={form.firstName}
+                name="name"
+                value={form.name}
                 onChange={(e) => {
                   handleChange(e);
-                  setErrors((prev) => ({ ...prev, firstName: '' }));
+                  setErrors((prev) => ({ ...prev, name: '' }));
                 }}
-                placeholder="Please enter first name"
+                placeholder="Please enter name"
                 className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
-                  errors.firstName
+                  errors.name
                     ? 'border border-red-500 bg-red-50 focus:ring-red-500'
                     : 'border border-[var(--border-color)] focus:ring-blue-500'
                 }`}
-                aria-invalid={errors.firstName ? 'true' : 'false'}
-                aria-describedby={errors.firstName ? 'firstName-error' : undefined}
+                aria-invalid={errors.name ? 'true' : 'false'}
+                aria-describedby={errors.name ? 'name-error' : undefined}
               />
-              {errors.firstName && (
-                <div id="firstName-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+              {errors.name && (
+                <div id="name-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
                   <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path
                       fillRule="evenodd"
@@ -156,42 +264,71 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
                       clipRule="evenodd"
                     />
                   </svg>
-                  {errors.firstName}
+                  {errors.name}
                 </div>
               )}
             </div>
 
-            {/* Last Name */}
+            {/* Password */}
             <div>
               <label className="block text-sm text-[var(--text-secondary)] mb-1">
-                Last Name <span className="text-[#FF0000]">*</span>
+                Password {mode !== 'edit' && <span className="text-[#FF0000]">*</span>}
               </label>
               <input
-                name="lastName"
-                value={form.lastName}
+                name="password"
+                type="password"
+                value={form.password}
                 onChange={(e) => {
                   handleChange(e);
-                  setErrors((prev) => ({ ...prev, lastName: '' }));
+                  setErrors((prev) => ({ ...prev, password: '' }));
                 }}
-                placeholder="Please enter last name"
+                placeholder={mode === 'edit' ? 'Leave blank to keep current password' : 'Please enter password'}
                 className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
-                  errors.lastName
+                  errors.password
                     ? 'border border-red-500 bg-red-50 focus:ring-red-500'
                     : 'border border-[var(--border-color)] focus:ring-blue-500'
                 }`}
-                aria-invalid={errors.lastName ? 'true' : 'false'}
-                aria-describedby={errors.lastName ? 'lastName-error' : undefined}
+                aria-invalid={errors.password ? 'true' : 'false'}
+                aria-describedby={errors.password ? 'password-error' : undefined}
               />
-              {errors.lastName && (
-                <div id="lastName-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+              {errors.password && (
+                <div id="password-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
                   <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                      clipRule="evenodd"
-                    />
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                   </svg>
-                  {errors.lastName}
+                  {errors.password}
+                </div>
+              )}
+            </div>
+
+            {/* Password confirmation */}
+            <div>
+              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+                Confirm Password {mode !== 'edit' && <span className="text-[#FF0000]">*</span>}
+              </label>
+              <input
+                name="password_confirmation"
+                type="password"
+                value={form.password_confirmation}
+                onChange={(e) => {
+                  handleChange(e);
+                  setErrors((prev) => ({ ...prev, password_confirmation: '' }));
+                }}
+                placeholder={mode === 'edit' ? 'Leave blank to keep current password' : 'Please confirm password'}
+                className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
+                  errors.password_confirmation
+                    ? 'border border-red-500 bg-red-50 focus:ring-red-500'
+                    : 'border border-[var(--border-color)] focus:ring-blue-500'
+                }`}
+                aria-invalid={errors.password_confirmation ? 'true' : 'false'}
+                aria-describedby={errors.password_confirmation ? 'password_confirmation-error' : undefined}
+              />
+              {errors.password_confirmation && (
+                <div id="password_confirmation-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.password_confirmation}
                 </div>
               )}
             </div>
@@ -269,7 +406,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
               </label>
               <SelectField
                 name="role"
-                placeholder="Please select a role"
+                placeholder={rolesLoading ? 'Loading roles...' : 'Please select a role'}
                 options={roleOptions}
                 value={form.role}
                 onChange={(v) => {
@@ -277,8 +414,17 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
                   setErrors((prev) => ({ ...prev, role: '' }));
                 }}
                 searchable
+                disabled={rolesLoading}
                 inputClassName={`border ${errors.role ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-[var(--border-color)] focus:ring-blue-500'}`}
               />
+              {rolesError && (
+                <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {rolesError}
+                </div>
+              )}
               {errors.role && (
                 <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
                   <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -293,36 +439,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
               )}
             </div>
 
-            {/* Status */}
-            <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
-                Status <span className="text-[#FF0000]">*</span>
-              </label>
-              <SelectField
-                name="status"
-                placeholder="Please select status"
-                options={statusOptions}
-                value={form.status}
-                onChange={(v) => {
-                  setForm((prev) => ({ ...prev, status: v }));
-                  setErrors((prev) => ({ ...prev, status: '' }));
-                }}
-                searchable
-                inputClassName={`border ${errors.status ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-[var(--border-color)] focus:ring-blue-500'}`}
-              />
-              {errors.status && (
-                <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
-                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  {errors.status}
-                </div>
-              )}
-            </div>
+            {/* status removed */}
 
             {/* Form Actions */}
             <div className="flex items-center justify-end">

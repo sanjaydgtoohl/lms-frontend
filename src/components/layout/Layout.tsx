@@ -37,6 +37,8 @@ const Layout: React.FC = () => {
   const shouldShowBreadcrumb = !location.pathname.startsWith('/master')
     && !location.pathname.startsWith('/miss-campaign')
     && !location.pathname.startsWith('/lead-management')
+    // The Meeting Schedule page renders its own breadcrumb with Lead Management context.
+    && !location.pathname.startsWith('/meeting-schedule')
     && !location.pathname.startsWith('/brief')
     && !location.pathname.startsWith('/user-management');
 
