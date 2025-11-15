@@ -200,6 +200,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
     const isItemActive = isParentActive(item);
     const IconComponent = item.icon;
 
+    const handleCardClick = () => {
+      if (hasChildren) {
+        if (isCollapsed && item.name === "Master Data") {
+          setShowMobilePopup(!showMobilePopup);
+        } else {
+          toggleExpanded(slug);
+        }
+      } else if (item.path) {
+        navigate(item.path);
+      }
+    };
+
     return (
       <div key={item.name}>
         <div
@@ -210,42 +222,20 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
             ${isItemActive ? "bg-orange-100" : "hover:bg-orange-50"}
             ${isCollapsed ? "px-2 justify-center" : ""}
           `}
-          onClick={() => {
-            if (hasChildren) {
-              if (isCollapsed && item.name === "Master Data") {
-                setShowMobilePopup(!showMobilePopup);
-              } else {
-                toggleExpanded(slug);
-              }
-            }
-          }}
+          onClick={handleCardClick}
         >
-          {item.path ? (
-            <Link
-              to={item.path}
-              className={`flex items-center w-full ${
-                isCollapsed ? "justify-center" : ""
-              }`}
-            >
-              <IconComponent
-                // enforce a fixed visual size and prevent flex shrinking so icons remain
-                // identical across breakpoints (w-4 = 1rem = 16px)
-                className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)] ${isCollapsed ? "" : "mr-2.5"}`}
-              />
-              {!isCollapsed && <span className="text-[var(--text-primary)]">{item.name}</span>}
-            </Link>
-          ) : (
-            <div
-              className={`flex items-center w-full ${
-                isCollapsed ? "justify-center" : ""
-              }`}
-            >
-              <IconComponent
-                className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)] ${isCollapsed ? "" : "mr-2.5"}`}
-              />
-              {!isCollapsed && <span className="text-[var(--text-primary)]">{item.name}</span>}
-            </div>
-          )}
+          <div
+            className={`flex items-center w-full ${
+              isCollapsed ? "justify-center" : ""
+            }`}
+          >
+            <IconComponent
+              // enforce a fixed visual size and prevent flex shrinking so icons remain
+              // identical across breakpoints (w-4 = 1rem = 16px)
+              className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)] ${isCollapsed ? "" : "mr-2.5"}`}
+            />
+            {!isCollapsed && <span className="text-[var(--text-primary)]">{item.name}</span>}
+          </div>
 
           {hasChildren && !isCollapsed && (
             <div className="ml-auto">
