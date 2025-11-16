@@ -143,7 +143,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                           type="button"
                           onClick={() => updateContact(c.id, 'showSecondMobile', true)}
                           className="h-10 w-10 flex items-center justify-center rounded-lg text-white font-medium transition-colors mt-6 hover:bg-blue-700"
-                          style={{ backgroundColor: '#4285F4' }}
+                          style={{ backgroundColor: '#ff9500' }}
                           title="Add another mobile number"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

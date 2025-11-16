@@ -6,46 +6,35 @@ import Table, { type Column } from '../../components/ui/Table';
 import MasterHeader from '../../components/ui/MasterHeader';
 import SearchBar from '../../components/ui/SearchBar';
 import Create from './Create';
-
-interface MissCampaign {
-  id: string;
-  brandName: string;
-  productName: string;
-  source: string;
-  subSource: string;
-  proof: string;
-  dateTime: string;
-}
+import { 
+  listMissCampaigns, 
+  createMissCampaign, 
+  updateMissCampaign, 
+  deleteMissCampaign,
+  type MissCampaign 
+} from '../../services/View';
+import { useRef } from 'react';
 
 const View: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const [campaigns, setCampaigns] = useState<MissCampaign[]>([
-    {
-      id: '#MC001',
-      brandName: 'Nike',
-      productName: 'Air Max',
-      source: 'Instagram',
-      subSource: 'Stories',
-      proof: 'https://proof.url',
-      dateTime: '02-07-2025 22:23'
-    },
-    {
-      id: '#MC002',
-      brandName: 'Adidas',
-      productName: 'Ultraboost',
-      source: 'Facebook',
-      subSource: 'Feed',
-      proof: 'https://proof.url',
-      dateTime: '02-07-2025 22:21'
-    },
-  ]);
+  const [campaigns, setCampaigns] = useState<MissCampaign[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [totalItems, setTotalItems] = useState(0);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [viewItem, setViewItem] = useState<MissCampaign | null>(null);
   const [editItem, setEditItem] = useState<MissCampaign | null>(null);
+  // Tooltip state for Proof hover (similar to AllLeads comment tooltip)
+  const [tooltipVisible, setTooltipVisible] = useState(false);
+  const [tooltipContent, setTooltipContent] = useState('');
+  const [tooltipLeft, setTooltipLeft] = useState(0);
+  const [tooltipTop, setTooltipTop] = useState(0);
+  const [tooltipPlacement, setTooltipPlacement] = useState<'top' | 'bottom'>('top');
+  const hoverTimeout = useRef<number | null>(null);
+  const tooltipRef = useRef<HTMLDivElement | null>(null);
 
   const filteredCampaigns = campaigns.filter(c => {
     if (!searchQuery) return true;
@@ -63,24 +52,42 @@ const View: React.FC = () => {
   const params = useParams();
   const location = useLocation();
 
+  // Fetch campaigns from API
+  const fetchCampaigns = async (page: number, search: string = '') => {
+    try {
+      setLoading(true);
+      const response = await listMissCampaigns(page, itemsPerPage, search);
+      setCampaigns(response.data || []);
+      setTotalItems(response.meta?.pagination?.total || 0);
+    } catch (error) {
+      console.error('Failed to fetch campaigns:', error);
+      setCampaigns([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleEdit = (id: string) => navigate(`/miss-campaign/view/${encodeURIComponent(id)}/edit`);
   const handleView = (id: string) => navigate(`/miss-campaign/view/${encodeURIComponent(id)}`);
-  const handleDelete = (id: string) => setCampaigns(prev => prev.filter(c => c.id !== id));
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteMissCampaign(id);
+      setCampaigns(prev => prev.filter(c => c.id !== id));
+    } catch (error) {
+      console.error('Failed to delete campaign:', error);
+    }
+  };
 
   const handleCreate = () => navigate('/miss-campaign/create');
 
-  const handleSave = (data: any) => {
-    const newCampaign: MissCampaign = {
-      id: `#MC${Math.floor(Math.random() * 90000) + 10000}`,
-      brandName: data.brandName || '',
-      productName: data.productName || '',
-      source: data.source || '',
-      subSource: data.subSource || '',
-      proof: data.proof || '',
-      dateTime: new Date().toLocaleString(),
-    };
-    setCampaigns(prev => [newCampaign, ...prev]);
-    setCurrentPage(1);
+  const handleSave = async (data: any) => {
+    try {
+      const newCampaign = await createMissCampaign(data);
+      setCampaigns(prev => [newCampaign, ...prev]);
+      setCurrentPage(1);
+    } catch (error) {
+      console.error('Failed to create campaign:', error);
+    }
   };
 
   useEffect(() => {
@@ -115,9 +122,59 @@ const View: React.FC = () => {
     setEditItem(null);
   }, [location.pathname, params.id, campaigns]);
 
-  const handleSaveEdited = (updated: Record<string, any>) => {
-    setCampaigns(prev => prev.map(c => (c.id === updated.id ? { ...c, ...updated } as MissCampaign : c)));
+  // Tooltip helpers
+  const showTooltip = (e: React.MouseEvent, content: string) => {
+    if (hoverTimeout.current) {
+      window.clearTimeout(hoverTimeout.current);
+      hoverTimeout.current = null;
+    }
+    const target = e.currentTarget as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const preferTop = rect.top > 140;
+    const left = Math.max(12, Math.min(window.innerWidth - 12, centerX));
+    const top = preferTop ? Math.max(12, rect.top - 8) : Math.min(window.innerHeight - 12, rect.bottom + 8);
+
+    setTooltipContent(content);
+    setTooltipLeft(left);
+    setTooltipTop(top);
+    setTooltipPlacement(preferTop ? 'top' : 'bottom');
+    setTooltipVisible(true);
   };
+
+  const hideTooltip = () => {
+    if (hoverTimeout.current) window.clearTimeout(hoverTimeout.current);
+    hoverTimeout.current = window.setTimeout(() => {
+      setTooltipVisible(false);
+      hoverTimeout.current = null;
+    }, 100);
+  };
+
+  const onTooltipEnter = () => {
+    if (hoverTimeout.current) {
+      window.clearTimeout(hoverTimeout.current);
+      hoverTimeout.current = null;
+    }
+    setTooltipVisible(true);
+  };
+
+  const onTooltipLeave = () => {
+    hideTooltip();
+  };
+
+  const handleSaveEdited = async (updated: Record<string, any>) => {
+    try {
+      const updatedCampaign = await updateMissCampaign(updated.id, updated);
+      setCampaigns(prev => prev.map(c => (c.id === updated.id ? updatedCampaign : c)));
+    } catch (error) {
+      console.error('Failed to update campaign:', error);
+    }
+  };
+
+  // Fetch campaigns on mount and when page or search changes
+  useEffect(() => {
+    fetchCampaigns(currentPage, searchQuery);
+  }, [currentPage, searchQuery]);
 
   const handlePageChange = (page: number) => setCurrentPage(page);
 
@@ -148,7 +205,7 @@ const View: React.FC = () => {
             <Table
               data={currentData}
               startIndex={startIndex}
-              loading={false}
+              loading={loading}
               keyExtractor={(it: MissCampaign, idx: number) => `${it.id}-${idx}`}
               columns={([
                 { key: 'sr', header: 'Sr. No.', render: (it: MissCampaign) => String(startIndex + currentData.indexOf(it) + 1) },
@@ -156,7 +213,30 @@ const View: React.FC = () => {
                 { key: 'productName', header: 'Product Name', render: (it: MissCampaign) => it.productName },
                 { key: 'source', header: 'Source', render: (it: MissCampaign) => it.source },
                 { key: 'subSource', header: 'Sub Source', render: (it: MissCampaign) => it.subSource },
-                { key: 'proof', header: 'Proof', render: (it: MissCampaign) => it.proof },
+                {
+                  key: 'proof',
+                  header: 'Proof',
+                  render: (it: MissCampaign) => (
+                    <div
+                      className="cursor-help max-w-[360px]"
+                      onMouseEnter={(e) => showTooltip(e, String(it.proof || ''))}
+                      onMouseLeave={() => hideTooltip()}
+                    >
+                      <div
+                        className="text-sm text-[var(--text-primary)]"
+                        style={{
+                          display: 'block',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          overflowWrap: 'break-word'
+                        }}
+                      >
+                        {it.proof || '-'}
+                      </div>
+                    </div>
+                  ),
+                },
                 { key: 'dateTime', header: 'Date & Time', render: (it: MissCampaign) => it.dateTime },
               ] as Column<MissCampaign>[])}
               onEdit={(it: MissCampaign) => handleEdit(it.id)}
@@ -167,10 +247,26 @@ const View: React.FC = () => {
 
           <Pagination
             currentPage={currentPage}
-            totalItems={searchQuery ? filteredCampaigns.length : campaigns.length}
+            totalItems={totalItems || campaigns.length}
             itemsPerPage={itemsPerPage}
             onPageChange={handlePageChange}
           />
+          {/* Tooltip popup for full proof text */}
+          {tooltipVisible && (
+            <div
+              ref={tooltipRef}
+              onMouseEnter={onTooltipEnter}
+              onMouseLeave={onTooltipLeave}
+              role="tooltip"
+              aria-hidden={!tooltipVisible}
+              style={{ left: tooltipLeft, top: tooltipTop }}
+              className={`fixed z-50 transform -translate-x-1/2 ${tooltipPlacement === 'top' ? '-translate-y-full' : 'translate-y-0'}`}
+            >
+              <div className="bg-white border border-[var(--border-color)] rounded-lg shadow-md p-3 max-w-[48ch] text-sm text-[var(--text-primary)]">
+                {tooltipContent}
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

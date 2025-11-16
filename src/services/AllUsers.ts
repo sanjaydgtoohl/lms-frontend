@@ -1,0 +1,109 @@
+import { handleApiError } from '../utils/apiErrorHandler';
+import { apiClient } from '../utils/apiClient';
+
+export interface User {
+  id: string;
+  name: string;
+  email?: string;
+  role?: string;
+  status?: 'Active' | 'Inactive';
+  lastLogin?: string;
+  created?: string;
+}
+
+const ENDPOINTS = {
+  LIST: '/users',
+  DETAIL: (id: string) => `/users/${id}`,
+  CREATE: '/users',
+  UPDATE: (id: string) => `/users/${id}`,
+  DELETE: (id: string) => `/users/${id}`,
+} as const;
+
+async function handleResponse<T>(res: any): Promise<T> {
+  if (!res || !res.success) {
+    const error = new Error((res && (res.message || 'Request failed')) || 'Request failed');
+    try { handleApiError(error); } catch {};
+    throw error;
+  }
+  return res.data as T;
+}
+
+export type UserListResponse = {
+  data: User[];
+  meta?: any;
+};
+
+export async function listUsers(page = 1, perPage = 10, search?: string): Promise<UserListResponse> {
+  const params = new URLSearchParams();
+  params.set('page', String(page));
+  params.set('per_page', String(perPage));
+  if (search && String(search).trim()) params.set('search', String(search).trim());
+
+  const res = await apiClient.get<any>(`${ENDPOINTS.LIST}?${params.toString()}`);
+  const items = (res.data || []).map((it: any, idx: number) => {
+    const rawId = it.id ?? idx + 1;
+    let idStr = String(rawId);
+    if (/^\d+$/.test(idStr)) {
+      idStr = `#USR${String(Number(idStr)).padStart(3, '0')}`;
+    } else if (!idStr.startsWith('#')) {
+      idStr = `#USR${idStr}`;
+    }
+
+    const name = it.name ?? it.full_name ?? it.display_name ?? '';
+    const email = it.email ?? '';
+    // status from API might be number or string; normalize to 'Active' or 'Inactive'
+    let status: 'Active' | 'Inactive' = 'Active';
+    if (it.status !== undefined && it.status !== null) {
+      const statusStr = String(it.status).toLowerCase();
+      status = (statusStr === 'inactive' || statusStr === '0' || statusStr === 'false') ? 'Inactive' : 'Active';
+    }
+    // If roles is an array, get first role's name, else use role string
+    let role = '';
+    if (Array.isArray(it.roles) && it.roles.length > 0) {
+      role = it.roles[0].name ?? it.roles[0] ?? '';
+    } else {
+      role = it.role ?? it.role_name ?? '';
+    }
+
+    const lastLogin = it.last_login ?? it.lastLogin ?? '';
+    const created = it.created_at ?? it.created ?? '';
+
+    return {
+      id: String(idStr),
+      name,
+      email,
+      role,
+      status,
+      lastLogin,
+      created,
+    } as User;
+  });
+
+  return {
+    data: items,
+    meta: (res as any).meta || {},
+  };
+}
+
+export async function getUser(id: string): Promise<User> {
+  const cleanId = id.replace(/^#/, '');
+  const res = await apiClient.get<any>(ENDPOINTS.DETAIL(cleanId));
+  return handleResponse<User>(res);
+}
+
+export async function createUser(payload: Partial<User>): Promise<User> {
+  const res = await apiClient.post<any>(ENDPOINTS.CREATE, payload);
+  return handleResponse<User>(res);
+}
+
+export async function updateUser(id: string, payload: Partial<User>): Promise<User> {
+  const cleanId = id.replace(/^#/, '');
+  const res = await apiClient.put<any>(ENDPOINTS.UPDATE(cleanId), payload);
+  return handleResponse<User>(res);
+}
+
+export async function deleteUser(id: string): Promise<void> {
+  const cleanId = id.replace(/^#/, '');
+  const res = await apiClient.delete<unknown>(ENDPOINTS.DELETE(cleanId));
+  await handleResponse<unknown>(res);
+}

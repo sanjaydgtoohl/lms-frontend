@@ -1,47 +1,52 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Table, { type Column } from '../../../components/ui/Table';
 import Pagination from '../../../components/ui/Pagination';
 import SearchBar from '../../../components/ui/SearchBar';
 import { MasterHeader } from '../../../components/ui';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
+import { listRoles } from '../../../services/AllRoles';
 
 interface Role {
   id: string;
   name: string;
-  description: string;
+  description?: string;
+  srNo?: number;
 }
-
-const mockRoles: Role[] = [
-  { id: '#RL001', name: 'Admin', description: 'Full system access with all permissions and settings control' },
-  { id: '#RL002', name: 'BDM', description: 'Business Development Manager with lead and campaign management access' },
-  { id: '#RL003', name: 'Manager', description: 'Manager with team oversight and reporting access' },
-  { id: '#RL004', name: 'User', description: 'Standard user with basic access to assigned features' },
-  { id: '#RL005', name: 'Super Admin', description: 'Super Administrator with system-wide control and user management access' },
-];
 
 const AllRoles: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const itemsPerPage = 10;
-  const [roles] = useState<Role[]>(mockRoles);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [totalItems, setTotalItems] = useState(0);
 
-  // Filter roles by search query
-  const filteredRoles = roles.filter((r) => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return true;
-    return (
-      r.id.toLowerCase().startsWith(q) ||
-      r.name.toLowerCase().startsWith(q) ||
-      r.description.toLowerCase().startsWith(q)
-    );
-  });
+  const fetchRoles = async () => {
+    setLoading(true);
+    try {
+      const res = await listRoles(currentPage, itemsPerPage, searchQuery);
+      const data = (res.data || []).map((it: any, idx: number) => ({
+        ...it,
+        srNo: (currentPage - 1) * itemsPerPage + idx + 1,
+      }));
+      setRoles(data);
+      const total = res.meta?.pagination?.total ?? res.meta?.total ?? data.length;
+      setTotalItems(Number(total || 0));
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to fetch roles', err);
+      setRoles([]);
+      setTotalItems(0);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentData = filteredRoles.slice(startIndex, startIndex + itemsPerPage).map((role, index) => ({
-    ...role,
-    srNo: startIndex + index + 1,
-  }));
+  useEffect(() => {
+    fetchRoles();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, searchQuery]);
 
   const navigate = useNavigate();
 
@@ -90,9 +95,9 @@ const AllRoles: React.FC = () => {
         </div>
 
         <Table
-          data={currentData}
-          startIndex={startIndex}
-          loading={false}
+          data={roles}
+          startIndex={(currentPage - 1) * itemsPerPage}
+          loading={loading}
           keyExtractor={(it: Role) => it.id}
           columns={columns}
           onEdit={(it: Role) => handleEdit(it.id)}
@@ -102,7 +107,7 @@ const AllRoles: React.FC = () => {
 
       <Pagination
         currentPage={currentPage}
-        totalItems={filteredRoles.length}
+        totalItems={totalItems}
         itemsPerPage={itemsPerPage}
         onPageChange={(p: number) => setCurrentPage(p)}
       />

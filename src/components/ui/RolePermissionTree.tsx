@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { rolePermissionsData } from '../../data/rolePermissionsData';
 import type { Permission } from '../../data/rolePermissionsData';
-import { FolderIcon, PencilIcon, EyeIcon, Trash2Icon, PlusIcon, ChevronDown } from 'lucide-react';
+import { PencilIcon, EyeIcon, Trash2Icon, PlusIcon, ChevronDown } from 'lucide-react';
 import SearchBar from './SearchBar';
 
 interface ModulePermissions {
@@ -87,6 +87,57 @@ const RolePermissionTree: React.FC<Props> = ({ modulePermissions, onToggle }) =>
     return 'indeterminate';
   };
 
+  // Calculate checkbox state for an entire module (all submodules & permissions)
+  const getModuleCheckboxState = (moduleName: string) => {
+    const moduleDef = rolePermissionsData.find((m) => m.name === moduleName);
+    if (!moduleDef) return 'unchecked';
+
+    let total = 0;
+    let checked = 0;
+
+    moduleDef.submodules.forEach((sub) => {
+      const permissions = modulePermissions[moduleName]?.[sub.name] || sub.permissions;
+      Object.values(permissions).forEach((v) => {
+        total += 1;
+        if (v === true) checked += 1;
+      });
+    });
+
+    if (checked === 0) return 'unchecked';
+    if (checked === total) return 'checked';
+    return 'indeterminate';
+  };
+
+  // Handle module-level checkbox click to toggle all permissions within the module
+  const handleModuleGroupCheckboxClick = (
+    moduleName: string,
+    event: React.MouseEvent
+  ) => {
+    event.stopPropagation();
+
+    const state = getModuleCheckboxState(moduleName);
+    const shouldCheck = state !== 'checked';
+
+    const moduleDef = rolePermissionsData.find((m) => m.name === moduleName);
+    if (!moduleDef) return;
+
+    moduleDef.submodules.forEach((sub) => {
+      const permissions = modulePermissions[moduleName]?.[sub.name] || sub.permissions;
+      Object.keys(permissions).forEach((permKey) => {
+        const perm = permKey as keyof Permission;
+        const currentState = permissions[perm] as boolean;
+        if (currentState !== shouldCheck) {
+          onToggle(moduleName, sub.name, perm);
+        }
+      });
+    });
+
+    // Ensure module is expanded so users can see the result
+    if (!expandedModules[moduleName]) {
+      setExpandedModules((prev) => ({ ...prev, [moduleName]: true }));
+    }
+  };
+
   // Handle submodule group checkbox click
   const handleSubmoduleGroupCheckboxClick = (
     module: string,
@@ -134,7 +185,21 @@ const RolePermissionTree: React.FC<Props> = ({ modulePermissions, onToggle }) =>
                 onClick={() => handleExpandModule(module.name)}
                 style={{ minHeight: 40 }}
               >
-                <FolderIcon className="w-5 h-5 text-gray-500 flex-shrink-0" />
+                <input
+                  type="checkbox"
+                  checked={getModuleCheckboxState(module.name) === 'checked'}
+                  ref={(el) => {
+                    if (el && getModuleCheckboxState(module.name) === 'indeterminate') {
+                      (el as HTMLInputElement).indeterminate = true;
+                    }
+                  }}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    handleModuleGroupCheckboxClick(module.name, e as any);
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-5 h-5 rounded border-gray-300 cursor-pointer accent-blue-500 flex-shrink-0"
+                />
                 <span className="font-semibold text-base text-gray-800">{module.name}</span>
                 <span className="text-xs text-gray-500 ml-2">({module.submodules.length})</span>
                 <span className="ml-auto text-gray-500 transition-transform" style={{ transform: expandedModules[module.name] ? 'rotate(180deg)' : 'rotate(0deg)' }}>

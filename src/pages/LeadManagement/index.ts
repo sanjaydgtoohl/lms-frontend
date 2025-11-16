@@ -6,5 +6,6 @@ import Pending from './Pending';
 import Interested from './Interested';
 import MeetingScheduled from './MeetingScheduled';
 import MeetingDone from './MeetingDone';
+import MeetingSchedule from './MeetingSchedule';
 
-export { AllLeads, CreateLead, EditLead, ViewLead, Pending, Interested, MeetingScheduled, MeetingDone };
+export { AllLeads, CreateLead, EditLead, ViewLead, Pending, Interested, MeetingScheduled, MeetingDone, MeetingSchedule };
