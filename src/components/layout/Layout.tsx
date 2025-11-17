@@ -10,6 +10,8 @@ import { useUiStore } from '../../store/ui';
 
 const Layout: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const location = useLocation();
   const notification = useUiStore((s) => s.notification);
   const hideNotification = useUiStore((s) => s.hideNotification);
@@ -17,11 +19,19 @@ const Layout: React.FC = () => {
   // Handle responsive sidebar
   useEffect(() => {
     const handleResize = () => {
+      // Mobile breakpoint (max-width: 768px)
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+
+      // Keep the existing desktop collapse behaviour for >= 1024px
       if (window.innerWidth < 1024) {
         setSidebarCollapsed(true);
       } else {
         setSidebarCollapsed(false);
       }
+
+      // Close mobile sidebar when resizing to desktop/tablet
+      if (!mobile) setMobileSidebarOpen(false);
     };
 
     handleResize();
@@ -31,6 +41,10 @@ const Layout: React.FC = () => {
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
+  };
+
+  const toggleMobileSidebar = () => {
+    setMobileSidebarOpen((v) => !v);
   };
 
   // Determine if breadcrumb should be shown
@@ -45,34 +59,41 @@ const Layout: React.FC = () => {
   return (
     <>
       <div className="min-h-screen bg-[var(--background)] flex">
-        {/* Sidebar */}
-        <Sidebar isCollapsed={sidebarCollapsed} onToggle={toggleSidebar} />
+        {/* Sidebar (desktop) and mobile variant */}
+        <Sidebar
+          isCollapsed={sidebarCollapsed}
+          onToggle={toggleSidebar}
+          isMobile={isMobile}
+          mobileOpen={mobileSidebarOpen}
+          onCloseMobile={() => setMobileSidebarOpen(false)}
+        />
         
         {/* Main Content Area */}
         <div className={`flex-1 flex flex-col min-h-0 transition-all duration-300 ${sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64'} w-full`}>
           {/* Header */}
-          <Header />
+          <Header showHamburger={isMobile} onHamburgerClick={toggleMobileSidebar} />
 
           {/* Breadcrumb */}
           {shouldShowBreadcrumb && (
-            <div className="bg-transparent px-4 sm:px-6 lg:px-8 pt-6 pb-4">
+            <div className="bg-transparent px-3 md:px-6 lg:px-8 pt-4 pb-3">
               <Breadcrumb />
             </div>
           )}
 
           {/* Main Content */}
-          <main className="flex-1 overflow-auto w-full overflow-x-hidden px-4 sm:px-6 lg:px-8 py-6">
+          <main className="flex-1 overflow-auto w-full overflow-x-hidden px-3 md:px-6 lg:px-8 py-4">
             <ErrorBoundary>
               <Outlet />
             </ErrorBoundary>
           </main>
         </div>
 
-        {/* Mobile Overlay */}
-        {!sidebarCollapsed && typeof window !== 'undefined' && window.innerWidth < 1024 && (
-          <div 
-            className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
-            onClick={() => setSidebarCollapsed(true)}
+        {/* Mobile transparent overlay (captures outside taps to close mobile sidebar). No blackout. */}
+        {isMobile && mobileSidebarOpen && (
+          <div
+            className="fixed inset-0 z-30"
+            onClick={() => setMobileSidebarOpen(false)}
+            aria-hidden
           />
         )}
       </div>

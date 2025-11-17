@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, User, LogOut, Settings, UserRound, LifeBuoy, ChevronDown } from 'lucide-react';
+import { Plus, User, LogOut, Settings, UserRound, LifeBuoy, ChevronDown, Menu } from 'lucide-react';
 import ApiErrorNotification from '../ui/ApiErrorNotification';
 import { Button } from '../ui';
 import { useAuthStore } from '../../store/auth';
@@ -7,11 +7,15 @@ import { useAuthStore } from '../../store/auth';
 interface HeaderProps {
   onCreateClick?: () => void;
   createButtonText?: string;
+  showHamburger?: boolean;
+  onHamburgerClick?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ 
-  onCreateClick, 
-  createButtonText = "Create Source" 
+const Header: React.FC<HeaderProps> = ({
+  onCreateClick,
+  createButtonText = "Create Source",
+  showHamburger,
+  onHamburgerClick,
 }) => {
   const [isUserMenuOpen, setIsUserMenuOpen] = React.useState(false);
   const userMenuRef = React.useRef<HTMLDivElement | null>(null);
@@ -38,9 +42,19 @@ const Header: React.FC<HeaderProps> = ({
 
   return (
   <header className="sticky top-0 z-20 border-b border-gray-200 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70">
-      <div className="flex items-center justify-between px-4 sm:px-6 py-3" style={{ paddingTop: '4px', paddingBottom: '4px' }}>
-        {/* Left side intentionally left blank (removed Dashboard title) */}
-        <div />
+      <div className="flex items-center justify-between px-3 md:px-4 sm:px-6 py-3" style={{ paddingTop: '4px', paddingBottom: '4px' }}>
+        {/* Left: show hamburger on mobile only */}
+        <div className="flex items-center">
+          {showHamburger && (
+            <button
+              onClick={onHamburgerClick}
+              aria-label="Open menu"
+              className="p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-[#344054] md:hidden"
+            >
+              <Menu className="w-5 h-5 text-[#344054]" />
+            </button>
+          )}
+        </div>
 
         <div className="flex items-center gap-3 sm:gap-4">
           {/* API Error Notification Icon */}
