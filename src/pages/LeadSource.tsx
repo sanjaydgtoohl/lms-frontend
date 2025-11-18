@@ -23,6 +23,7 @@ const LeadSource: React.FC = () => {
   const [viewItem, setViewItem] = useState<LeadSourceItem | null>(null);
   const [editItem, setEditItem] = useState<LeadSourceItem | null>(null);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('Source updated successfully');
   const [showDeleteToast, setShowDeleteToast] = useState(false);
   // track deletion in-flight if needed (not used currently)
 
@@ -82,11 +83,19 @@ const LeadSource: React.FC = () => {
       id: `LS${String(items.length + 1).padStart(3, '0')}`,
       source: data.source,
       subSource: data.subSource,
-      dateTime: new Date().toLocaleString(),
+      dateTime: new Date().toISOString(),
     };
     setItems(prev => [newItem, ...prev]);
     setCurrentPage(1);
-    navigate(ROUTES.SOURCE_MASTER);
+    // Show create success popup, then navigate and reload to refresh listing
+    setSuccessMessage('Source created successfully');
+    setShowSuccessToast(true);
+    setTimeout(() => {
+      setShowSuccessToast(false);
+      navigate(ROUTES.SOURCE_MASTER);
+      // Force reload to ensure fresh data
+      window.location.reload();
+    }, 1800);
   };
 
   const handleView = (item: LeadSourceItem) => {
@@ -183,7 +192,7 @@ const LeadSource: React.FC = () => {
       <NotificationPopup
         isOpen={showSuccessToast}
         onClose={() => setShowSuccessToast(false)}
-        message="Source updated successfully"
+        message={successMessage}
         type="success"
       />
       <NotificationPopup
@@ -199,7 +208,16 @@ const LeadSource: React.FC = () => {
         }}
       />
       {showCreate ? (
-        <CreateSourceForm inline onClose={() => navigate(ROUTES.SOURCE_MASTER)} onSave={handleSaveSource} />
+        <CreateSourceForm
+          inline
+          onClose={() => {
+            navigate(ROUTES.SOURCE_MASTER);
+            window.location.reload();
+          }}
+          onSave={(data: any) => {
+            handleSaveSource(data);
+          }}
+        />
       ) : viewItem ? (
         <MasterView item={viewItem} onClose={() => navigate(ROUTES.SOURCE_MASTER)} />
       ) : editItem ? (
@@ -245,7 +263,12 @@ const LeadSource: React.FC = () => {
                 { key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },
                 { key: 'source', header: 'Source', render: (it: any) => it.source || '-' },
                 { key: 'subSource', header: 'Sub-Source', render: (it: any) => it.subSource || '-' },
-                { key: 'dateTime', header: 'Date & Time', render: (it: any) => it.dateTime ? new Date(it.dateTime).toLocaleString() : '-' },
+                { key: 'dateTime', header: 'Date & Time', render: (it: any) => {
+                    if (!it.dateTime) return '-';
+                    const d = new Date(it.dateTime);
+                    return isNaN(d.getTime()) ? String(it.dateTime) : d.toLocaleString();
+                  }
+                },
               ] as Column<any>[])}
               onEdit={(it: any) => handleEdit(it)}
               onView={(it: any) => handleView(it)}
