@@ -11,7 +11,7 @@ type Props = {
   inline?: boolean;
 };
 
-const CreateSourceForm: React.FC<Props> = ({ onClose }) => {
+const CreateSourceForm: React.FC<Props> = ({ onClose, onSave, inline }) => {
   const [source, setSource] = useState('');
   const [subSource, setSubSource] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -51,13 +51,29 @@ const CreateSourceForm: React.FC<Props> = ({ onClose }) => {
     if (Object.keys(next).length > 0) return;
     try {
       setSaving(true);
-      await createLeadSubSource({
+      const created = await createLeadSubSource({
         lead_source_id: source,
         name: subSource,
         status: 1,
       });
-      showSuccess('Sub-source created successfully');
-      onClose();
+
+      // Find selected source name for parent callback
+      const selectedSourceName = options.find(o => String(o.id) === String(source))?.name || String(source);
+
+      const payload = {
+        id: created?.id,
+        source: selectedSourceName,
+        subSource: created?.name || subSource,
+      };
+
+      // If parent supplied onSave (inline mode), call it so parent can update listing and handle navigation/reload
+      if (onSave) {
+        try { onSave(payload); } catch (e) { /* swallow parent errors */ }
+      } else {
+        // show local success and fallback to closing the form when not inline
+        showSuccess('Sub-source created successfully');
+        onClose();
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to create sub-source';
       showError(msg);

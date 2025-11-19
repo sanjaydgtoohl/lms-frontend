@@ -48,7 +48,21 @@ export async function listLeadSources(page = 1, perPage = 10): Promise<LeadSourc
     const id = it.id ?? `LS${String(idx + 1).padStart(3, '0')}`;
     const source = it.lead_source ?? '';
     const subSource = it.name ?? '';
-    const dateTime = it.created_at ?? '';
+    const rawCreated = it.created_at ?? '';
+    let dateTime = '';
+    if (rawCreated) {
+      // handle common API format like 'DD-MM-YYYY HH:mm:ss' -> convert to ISO
+      const m = String(rawCreated).match(/^(\d{2})-(\d{2})-(\d{4})\s+(\d{2}:\d{2}:\d{2})$/);
+      if (m) {
+        const [, dd, mm, yyyy, time] = m;
+        const iso = `${yyyy}-${mm}-${dd}T${time}`;
+        const d = new Date(iso);
+        dateTime = isNaN(d.getTime()) ? String(rawCreated) : d.toISOString();
+      } else {
+        const d = new Date(rawCreated);
+        dateTime = isNaN(d.getTime()) ? String(rawCreated) : d.toISOString();
+      }
+    }
     return {
       id: String(id),
       source,
@@ -118,7 +132,20 @@ export async function listLeadSubSourcesBySourceId(
     const id = it.id ?? `LSS${String(idx + 1).padStart(3, '0')}`;
     const source = it.lead_source ?? '';
     const subSource = it.name ?? '';
-    const dateTime = it.created_at ?? '';
+    const rawCreated = it.created_at ?? '';
+    let dateTime = '';
+    if (rawCreated) {
+      const m = String(rawCreated).match(/^(\d{2})-(\d{2})-(\d{4})\s+(\d{2}:\d{2}:\d{2})$/);
+      if (m) {
+        const [, dd, mm, yyyy, time] = m;
+        const iso = `${yyyy}-${mm}-${dd}T${time}`;
+        const d = new Date(iso);
+        dateTime = isNaN(d.getTime()) ? String(rawCreated) : d.toISOString();
+      } else {
+        const d = new Date(rawCreated);
+        dateTime = isNaN(d.getTime()) ? String(rawCreated) : d.toISOString();
+      }
+    }
     return {
       id: String(id),
       source,
