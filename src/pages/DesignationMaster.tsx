@@ -49,8 +49,11 @@ const CreateDesignationForm: React.FC<{
     try {
       const res: any = onSave ? (onSave as any)({ name, dateTime: formatDateTime(new Date()) }) : null;
       if (res && typeof res.then === 'function') await res;
-      showSuccess('Designation created successfully');
-      onClose();
+      // If parent provided onSave (inline mode) let parent show success and handle navigation/reload.
+      if (!onSave) {
+        showSuccess('Designation created successfully');
+        onClose();
+      }
     } catch (err) {
       const message = (err as any)?.message || 'Failed to create designation';
       setError(message);
@@ -114,6 +117,8 @@ const DesignationMaster: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);
   const [showDeleteToast, setShowDeleteToast] = useState(false);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('Designation created successfully');
   const itemsPerPage = 10;
 
   // Store designations in state fetched from API
@@ -141,9 +146,17 @@ const DesignationMaster: React.FC = () => {
       try {
         // API expects `title` for designation payload (see Postman traces)
 	await createDesignation({ title: data.name } as any);
-        await refresh();
-        setCurrentPage(1);
-        showSuccess('Designation created successfully');
+	await refresh();
+	setCurrentPage(1);
+
+	// Show local success popup then navigate back to listing and reload (match Lead Source timing)
+	setSuccessMessage('Designation created successfully');
+	setShowSuccessToast(true);
+	setTimeout(() => {
+	  setShowSuccessToast(false);
+	  navigate(ROUTES.DESIGNATION_MASTER);
+	  window.location.reload();
+	}, 1800);
       } catch (e: any) {
         showError(e?.message || 'Failed to create designation');
         throw e;
@@ -281,6 +294,12 @@ const DesignationMaster: React.FC = () => {
           text: 'text-red-800',
           icon: 'text-red-500'
         }}
+      />
+      <NotificationPopup
+        isOpen={showSuccessToast}
+        onClose={() => setShowSuccessToast(false)}
+        message={successMessage}
+        type="success"
       />
       {showCreate ? (
         <CreateDesignationForm onClose={() => navigate(ROUTES.DESIGNATION_MASTER)} onSave={handleSaveDesignation} />

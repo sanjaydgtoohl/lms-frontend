@@ -29,14 +29,12 @@ export default function LoginCard() {
     register,
     handleSubmit,
     formState: { errors },
-    setError,
+    
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     mode: 'onSubmit',
   });
 
-  // Track if user has attempted to submit
-  const [submitted, setSubmitted] = useState(false);
 
   const onSubmit = async (data: LoginFormData) => {
     try {

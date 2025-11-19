@@ -35,14 +35,20 @@ const AgencyMaster: React.FC = () => {
     try {
       const res = await fetchAgencies(p, perPage);
       // map service Agency -> MainContent Agency shape
-      const mapped = (res.data || []).map((a: any) => ({
-        id: String(a.id),
-        agencyGroup: a.agency_group ? (a.agency_group.name || String(a.agency_group)) : '',
-        agencyName: a.name || '',
-        agencyType: a.agency_type || (a.type || ''),
-        contactPerson: a.contact_person || '',
-        dateTime: a.created_at || a.updated_at || '',
-      }));
+      const mapped = (res.data || []).map((a: any) => {
+        // API can return parent info either in `is_parent` (object) or `agency_group`.
+        // Prefer `is_parent.name` if available, otherwise fall back to `agency_group.name` or a string.
+        const parentObj = a.is_parent ?? a.agency_group ?? null;
+        const agencyGroupName = parentObj ? (typeof parentObj === 'object' ? (parentObj.name || String(parentObj?.id || '')) : String(parentObj)) : '';
+        return {
+          id: String(a.id),
+          agencyGroup: agencyGroupName,
+          agencyName: a.name || '',
+          agencyType: a.agency_type || (a.type || ''),
+          contactPerson: a.contact_person || '',
+          dateTime: a.created_at || a.updated_at || '',
+        };
+      });
       setAgenciesList(mapped);
   // attempt to read pagination meta if present
   const total = res.meta?.pagination?.total;
