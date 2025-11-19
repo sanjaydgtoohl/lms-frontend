@@ -23,6 +23,27 @@ interface Designation {
   dateTime: string;
 }
 
+// Helpers to parse API date strings like "19-11-2025 10:35:57"
+const parseApiDateToISO = (s?: string) => {
+  if (!s) return '';
+  const m = String(s).trim().match(/^(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2})(?::(\d{2}))?$/);
+  if (!m) return s;
+  const [, dd, mm, yyyy, hh, min, sec] = m;
+  return `${yyyy}-${mm}-${dd}T${hh}:${min}:${sec || '00'}`;
+};
+
+const formatDisplayDate = (s?: string) => {
+  if (!s) return '-';
+  try {
+    const iso = parseApiDateToISO(s);
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return String(s);
+    return d.toLocaleString();
+  } catch {
+    return String(s);
+  }
+};
+
 // Inline CreateDesignationForm component
 const CreateDesignationForm: React.FC<{
   onClose: () => void;
@@ -348,7 +369,7 @@ const DesignationMaster: React.FC = () => {
               columns={([
                 { key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },
                 { key: 'name', header: 'Designation Name', render: (it: any) => it.name || '-' },
-                { key: 'dateTime', header: 'Date & Time', render: (it: any) => it.dateTime ? new Date(it.dateTime).toLocaleString() : '-' },
+                { key: 'dateTime', header: 'Date & Time', render: (it: any) => it.dateTime ? formatDisplayDate(it.dateTime) : '-' },
               ] as Column<any>[]) }
               onEdit={(it: any) => handleEdit(it.id)}
               onView={(it: any) => handleView(it.id)}

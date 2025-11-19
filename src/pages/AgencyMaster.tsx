@@ -12,6 +12,30 @@ import { getItem } from '../data/masterData';
 import { MasterHeader } from '../components/ui';
 import { showSuccess, showError } from '../utils/notifications';
 
+// Helpers to parse API date strings like "19-11-2025 10:35:57" or ISO strings
+const parseApiDateToISO = (s?: string) => {
+  if (!s) return '';
+  const raw = String(s).trim();
+  // If already ISO-like, return as-is
+  if (/^\d{4}-\d{2}-\d{2}T/.test(raw)) return raw;
+  const m = raw.match(/^(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2})(?::(\d{2}))?$/);
+  if (!m) return raw;
+  const [, dd, mm, yyyy, hh, min, sec] = m;
+  return `${yyyy}-${mm}-${dd}T${hh}:${min}:${sec || '00'}`;
+};
+
+const formatDisplayDate = (s?: string) => {
+  if (!s) return '-';
+  try {
+    const iso = parseApiDateToISO(s);
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return String(s);
+    return d.toLocaleString();
+  } catch {
+    return String(s);
+  }
+};
+
 const AgencyMaster: React.FC = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [viewItem, setViewItem] = useState<Agency | null>(null);
@@ -46,7 +70,7 @@ const AgencyMaster: React.FC = () => {
           agencyName: a.name || '',
           agencyType: a.agency_type || (a.type || ''),
           contactPerson: a.contact_person || '',
-          dateTime: a.created_at || a.updated_at || '',
+          dateTime: formatDisplayDate(a.created_at || a.updated_at || ''),
         };
       });
       setAgenciesList(mapped);
