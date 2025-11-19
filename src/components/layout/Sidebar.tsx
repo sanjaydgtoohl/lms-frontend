@@ -117,10 +117,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
     {
       name: "Miss Campaign",
       icon: Globe,
-      children: [
-        { name: "View", path: "/miss-campaign/view", icon: Globe },
-        { name: "Create", path: "/miss-campaign/create", icon: Globe }
-      ]
+      path: "/miss-campaign/view"
     },
     { name: "Campaign Management", path: "/campaign-management", icon: CampaignManagementIcon },
   { name: "Finance", path: "/finance", icon: FinanceIcon },

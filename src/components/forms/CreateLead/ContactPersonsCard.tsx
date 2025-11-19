@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { fetchDesignations, fetchDepartments, fetchZones, fetchCities, fetchStates, fetchCountries } from '../../../services/CreateLead';
 import { Trash2, X as XIcon } from 'lucide-react';
 import SelectField from '../../ui/SelectField';
 
@@ -53,6 +54,84 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
 }) => {
   const [contacts, setContacts] = useState<Contact[]>(initialContacts || [emptyContact('1')]);
 
+  // Designation dropdown state
+  const [designationOptions, setDesignationOptions] = useState<{ value: string; label: string }[]>([]);
+  const [designationLoading, setDesignationLoading] = useState(false);
+  const [designationError, setDesignationError] = useState<string | null>(null);
+
+  // Department dropdown state
+  const [departmentOptions, setDepartmentOptions] = useState<{ value: string; label: string }[]>([]);
+  const [departmentLoading, setDepartmentLoading] = useState(false);
+  const [departmentError, setDepartmentError] = useState<string | null>(null);
+
+  // Zone dropdown state
+  const [zoneOptions, setZoneOptions] = useState<{ value: string; label: string }[]>([]);
+  const [zoneLoading, setZoneLoading] = useState(false);
+  const [zoneError, setZoneError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    setDesignationLoading(true);
+    setDesignationError(null);
+    fetchDesignations().then(({ data, error }) => {
+      if (!isMounted) return;
+      if (error) {
+        setDesignationError(error);
+        setDesignationOptions([]);
+      } else {
+        setDesignationOptions(
+          Array.isArray(data)
+            ? data.map((item: any) => ({ value: String(item.id), label: item.name }))
+            : []
+        );
+      }
+      setDesignationLoading(false);
+    });
+    return () => { isMounted = false; };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    setDepartmentLoading(true);
+    setDepartmentError(null);
+    fetchDepartments().then(({ data, error }) => {
+      if (!isMounted) return;
+      if (error) {
+        setDepartmentError(error);
+        setDepartmentOptions([]);
+      } else {
+        setDepartmentOptions(
+          Array.isArray(data)
+            ? data.map((item: any) => ({ value: String(item.id), label: item.name }))
+            : []
+        );
+      }
+      setDepartmentLoading(false);
+    });
+    return () => { isMounted = false; };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    setZoneLoading(true);
+    setZoneError(null);
+    fetchZones().then(({ data, error }) => {
+      if (!isMounted) return;
+      if (error) {
+        setZoneError(error);
+        setZoneOptions([]);
+      } else {
+        setZoneOptions(
+          Array.isArray(data)
+            ? data.map((item: any) => ({ value: String(item.id), label: item.name }))
+            : []
+        );
+      }
+      setZoneLoading(false);
+    });
+    return () => { isMounted = false; };
+  }, []);
+
   const updateContacts = (newContacts: Contact[]) => {
     setContacts(newContacts);
     onChange?.(newContacts);
@@ -68,6 +147,85 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
       [field]: value 
     } : c));
   };
+
+
+
+  // Country dropdown state
+  const [countryOptions, setCountryOptions] = useState<{ value: string; label: string }[]>([]);
+  const [countryLoading, setCountryLoading] = useState(false);
+  const [countryError, setCountryError] = useState<string | null>(null);
+
+  // State dropdown state
+  const [stateOptions, setStateOptions] = useState<{ value: string; label: string }[]>([]);
+  const [stateLoading, setStateLoading] = useState(false);
+  const [stateError, setStateError] = useState<string | null>(null);
+
+  // City dropdown state
+  const [cityOptions, setCityOptions] = useState<{ value: string; label: string }[]>([]);
+  const [cityLoading, setCityLoading] = useState(false);
+  const [cityError, setCityError] = useState<string | null>(null);
+  useEffect(() => {
+    let isMounted = true;
+    setCountryLoading(true);
+    setCountryError(null);
+    fetchCountries().then(({ data, error }) => {
+      if (!isMounted) return;
+      if (error) {
+        setCountryError(error);
+        setCountryOptions([]);
+      } else {
+        setCountryOptions(
+          Array.isArray(data)
+            ? data.map((item: any) => ({ value: String(item.id), label: item.name }))
+            : []
+        );
+      }
+      setCountryLoading(false);
+    });
+    return () => { isMounted = false; };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    setStateLoading(true);
+    setStateError(null);
+    fetchStates().then(({ data, error }) => {
+      if (!isMounted) return;
+      if (error) {
+        setStateError(error);
+        setStateOptions([]);
+      } else {
+        setStateOptions(
+          Array.isArray(data)
+            ? data.map((item: any) => ({ value: String(item.id), label: item.name }))
+            : []
+        );
+      }
+      setStateLoading(false);
+    });
+    return () => { isMounted = false; };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    setCityLoading(true);
+    setCityError(null);
+    fetchCities().then(({ data, error }) => {
+      if (!isMounted) return;
+      if (error) {
+        setCityError(error);
+        setCityOptions([]);
+      } else {
+        setCityOptions(
+          Array.isArray(data)
+            ? data.map((item: any) => ({ value: String(item.id), label: item.name }))
+            : []
+        );
+      }
+      setCityLoading(false);
+    });
+    return () => { isMounted = false; };
+  }, []);
 
   return (
     <div className="space-y-6 mb-6">
@@ -204,22 +362,34 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                   <SelectField
                     name="designation"
                     placeholder="Select designation"
-                    options={['Manager', 'Senior Manager', 'Executive', 'Director', 'VP']}
+                    options={designationOptions}
                     value={c.designation}
                     onChange={(v) => updateContact(c.id, 'designation', v)}
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
+                    disabled={designationLoading}
                   />
+                  {designationLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
+                  {designationError && <div className="text-xs text-red-500 mt-1">{designationError}</div>}
+                  {!designationLoading && !designationError && designationOptions.length === 0 && (
+                    <div className="text-xs text-gray-400 mt-1">No designations found.</div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">Department <span className="text-[#FF0000]">*</span></label>
                   <SelectField
                     name="department"
                     placeholder="Select department"
-                    options={['Marketing', 'Sales', 'Finance', 'Operations', 'HR']}
+                    options={departmentOptions}
                     value={c.department}
                     onChange={(v) => updateContact(c.id, 'department', v)}
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
+                    disabled={departmentLoading}
                   />
+                  {departmentLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
+                  {departmentError && <div className="text-xs text-red-500 mt-1">{departmentError}</div>}
+                  {!departmentLoading && !departmentError && departmentOptions.length === 0 && (
+                    <div className="text-xs text-gray-400 mt-1">No departments found.</div>
+                  )}
                 </div>
               </div>
 
@@ -230,33 +400,51 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                   <SelectField
                     name="country"
                     placeholder="Select country"
-                    options={['India', 'USA', 'UK', 'Canada', 'Australia']}
+                    options={countryOptions}
                     value={c.country}
                     onChange={(v) => updateContact(c.id, 'country', v)}
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
+                    disabled={countryLoading}
                   />
+                  {countryLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
+                  {countryError && <div className="text-xs text-red-500 mt-1">{countryError}</div>}
+                  {!countryLoading && !countryError && countryOptions.length === 0 && (
+                    <div className="text-xs text-gray-400 mt-1">No countries found.</div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">State</label>
                   <SelectField
                     name="state"
                     placeholder="Select state"
-                    options={['Delhi', 'Mumbai', 'Bangalore', 'Hyderabad', 'Pune']}
+                    options={stateOptions}
                     value={c.state}
                     onChange={(v) => updateContact(c.id, 'state', v)}
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
+                    disabled={stateLoading}
                   />
+                  {stateLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
+                  {stateError && <div className="text-xs text-red-500 mt-1">{stateError}</div>}
+                  {!stateLoading && !stateError && stateOptions.length === 0 && (
+                    <div className="text-xs text-gray-400 mt-1">No states found.</div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">City</label>
                   <SelectField
                     name="city"
                     placeholder="Select city"
-                    options={['New Delhi', 'Mumbai', 'Bangalore', 'Hyderabad', 'Pune']}
+                    options={cityOptions}
                     value={c.city}
                     onChange={(v) => updateContact(c.id, 'city', v)}
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
+                    disabled={cityLoading}
                   />
+                  {cityLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
+                  {cityError && <div className="text-xs text-red-500 mt-1">{cityError}</div>}
+                  {!cityLoading && !cityError && cityOptions.length === 0 && (
+                    <div className="text-xs text-gray-400 mt-1">No cities found.</div>
+                  )}
                 </div>
               </div>
 
@@ -267,11 +455,17 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                   <SelectField
                     name="zone"
                     placeholder="Select zone"
-                    options={['North', 'South', 'East', 'West', 'Central']}
+                    options={zoneOptions}
                     value={c.zone}
                     onChange={(v) => updateContact(c.id, 'zone', v)}
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
+                    disabled={zoneLoading}
                   />
+                  {zoneLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
+                  {zoneError && <div className="text-xs text-red-500 mt-1">{zoneError}</div>}
+                  {!zoneLoading && !zoneError && zoneOptions.length === 0 && (
+                    <div className="text-xs text-gray-400 mt-1">No zones found.</div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">Sub-Source <span className="text-[#FF0000]">*</span></label>

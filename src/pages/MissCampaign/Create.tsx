@@ -206,7 +206,7 @@ const Create: React.FC<CreateProps> = ({
     <div className={inline ? 'w-full' : 'p-6'}>
       <MasterCreateHeader
         title={mode === 'edit' ? 'Edit Miss Campaign' : ''}
-        onClose={onClose}
+        onClose={onClose ? onClose : () => navigate(-1)}
       />
       <div className="mt-6 bg-white rounded-2xl shadow-sm border border-[var(--border-color)] p-6">
         <form onSubmit={handleSubmit} className="space-y-6">

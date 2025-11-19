@@ -7,13 +7,19 @@ interface Props {
   onSelectOption: (v: 'brand' | 'agency') => void;
   value?: string;
   onChange?: (value: string) => void;
+  options?: { value: string; label: string }[];
+  loading?: boolean;
+  error?: string | null;
 }
 
-const LeadManagementSection: React.FC<Props> = ({ 
-  selectedOption, 
+const LeadManagementSection: React.FC<Props> = ({
+  selectedOption,
   onSelectOption,
   value,
-  onChange = () => {} 
+  onChange = () => {},
+  options = [],
+  loading = false,
+  error = null,
 }) => {
   const navigate = useNavigate();
 
@@ -68,33 +74,24 @@ const LeadManagementSection: React.FC<Props> = ({
           </label>
         </div>
 
-        {selectedOption === 'brand' && (
+        {(selectedOption === 'brand' || selectedOption === 'agency') && (
           <div className="w-full">
             <label className="block text-sm text-[var(--text-secondary)] mb-1">
-              Select Brand
+              {selectedOption === 'brand' ? 'Select Brand' : 'Select Agency'}
             </label>
             <SelectField
-              placeholder="Choose Existing Brand"
-              options={[]}
+              placeholder={selectedOption === 'brand' ? 'Choose Existing Brand' : 'Choose Existing Agency'}
+              options={options}
               value={value}
               onChange={onChange}
               inputClassName="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+              disabled={loading}
             />
-          </div>
-        )}
-
-        {selectedOption === 'agency' && (
-          <div className="w-full">
-            <label className="block text-sm text-[var(--text-secondary)] mb-1">
-              Select Agency
-            </label>
-            <SelectField
-              placeholder="Choose Existing Agency"
-              options={[]}
-              value={value}
-              onChange={onChange}
-              inputClassName="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-            />
+            {loading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
+            {error && <div className="text-xs text-red-500 mt-1">{error}</div>}
+            {!loading && !error && options.length === 0 && (
+              <div className="text-xs text-gray-400 mt-1">No options found.</div>
+            )}
           </div>
         )}
       </div>
