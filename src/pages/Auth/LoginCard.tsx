@@ -7,8 +7,14 @@ import { useAuthStore } from '../../store/auth';
 import { useUiStore } from '../../store/ui';
 
 const loginSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  email: z
+    .string()
+    .nonempty('Please enter a valid email address')
+    .email('Please enter a valid email address'),
+  password: z
+    .string()
+    .nonempty('Please enter your password')
+    .min(8, 'Password must be at least 8 characters'),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -33,23 +39,24 @@ export default function LoginCard() {
   const [submitted, setSubmitted] = useState(false);
 
   const onSubmit = async (data: LoginFormData) => {
-    setSubmitted(true);
-    let hasError = false;
-    if (!data.email) {
-      setError('email', { type: 'manual', message: 'Email Address is required' });
-      hasError = true;
-    }
-    if (!data.password) {
-      setError('password', { type: 'manual', message: 'Password is required' });
-      hasError = true;
-    }
-    if (hasError) return;
     try {
       await login(data.email, data.password);
       setLoginError(null);
     } catch (error: any) {
       useUiStore.getState().hideNotification();
-      setLoginError(error?.message || 'Login failed. Please check your credentials.');
+      // Try to extract API error message if present
+      let apiErrorMsg = '';
+      if (error?.response?.data?.errors) {
+        // Try to extract the first error message from errors object
+        const errors = error.response.data.errors;
+        if (typeof errors === 'object') {
+          const firstKey = Object.keys(errors)[0];
+          if (firstKey && Array.isArray(errors[firstKey]) && errors[firstKey][0]) {
+            apiErrorMsg = errors[firstKey][0];
+          }
+        }
+      }
+      setLoginError(apiErrorMsg || error?.message || 'Login failed. Please check your credentials.');
     }
   };
 
@@ -114,15 +121,7 @@ export default function LoginCard() {
               {...register('email')}
               error={errors.email?.message}
             />
-            {/* Validation message below input */}
-            {submitted && errors.email?.message && (
-              <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
-                <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-                {errors.email.message}
-              </div>
-            )}
+            {/* Only show a single error message below input, Input component already shows it */}
           </div>
 
           {/* Password */}
@@ -135,14 +134,6 @@ export default function LoginCard() {
               error={errors.password?.message}
             />
             {/* Validation message below input */}
-            {submitted && errors.password?.message && (
-              <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
-                <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-                {errors.password.message}
-              </div>
-            )}
           </div>
 
           {/* Login Button */}

@@ -98,6 +98,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
     icon: LeadManagementIcon,
     children: [
       { name: "All Leads", path: "/lead-management/all-leads", icon: LeadManagementIcon },
+      { name: "Brief Status", path: "/lead-management/brief-status", icon: Brief2Icon },
       { name: "Pending", path: "/lead-management/pending", icon: LeadManagementIcon },
       { name: "Interested", path: "/lead-management/interested", icon: LeadManagementIcon },
       { name: "Meeting Scheduled", path: "/lead-management/meeting-scheduled", icon: LeadManagementIcon },

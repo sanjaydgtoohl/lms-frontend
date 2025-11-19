@@ -30,6 +30,7 @@ const mockLeads: Lead[] = [
   { id: '#CL003', brandName: 'Apple', contactPerson: 'Demi Wilkinson', phoneNumber: '8797099888', source: 'Referral', subSource: 'Web', assignBy: 'Shivika', assignTo: 'Sales Man 3', dateTime: '02-07-2025 22:23', status: 'Meeting Scheduled', callStatus: 'Meeting', callAttempt: 1, comment: 'According to Form' },
   { id: '#CL004', brandName: 'Pepsi', contactPerson: 'Candice Wu', phoneNumber: '8797099888', source: 'Website', subSource: 'Direct', assignBy: 'Shivika', assignTo: 'Sales Man 1', dateTime: '02-07-2025 22:23', status: 'Meeting Done', callStatus: 'Website', callAttempt: 3, comment: 'According to Form' },
   { id: '#CL005', brandName: 'Coca Cola', contactPerson: 'Natal Craig', phoneNumber: '8797099888', source: 'Referral', subSource: 'Partner', assignBy: 'Shivika', assignTo: 'Sales Man 2', dateTime: '02-07-2025 22:23', status: 'Brief Received', callStatus: 'Referel', callAttempt: 6, comment: 'According to Form' },
+  { id: '#CL006', brandName: 'Adidas', contactPerson: 'Liam Turner', phoneNumber: '8797099001', source: 'Email', subSource: 'Campaign', assignBy: 'Shivika', assignTo: 'Sales Man 4', dateTime: '03-07-2025 10:00', status: 'Brief Pending', callStatus: 'Not Connected', callAttempt: 0, comment: 'Awaiting brief from client' },
 ];
 
 
@@ -202,6 +203,7 @@ const AllLeads: React.FC = () => {
         const statusColors = {
           'Interested': '#22c55e',
           'Pending': '#f59e0b',
+          'Brief Pending': '#f97316',
           'Meeting Scheduled': '#3b82f6',
           'Meeting Done': '#8b5cf6',
           'Brief Received': '#06b6d4'
