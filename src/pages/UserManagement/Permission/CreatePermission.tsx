@@ -18,6 +18,8 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
     url: '',
     parentPermission: '',
     description: '',
+    icon: '',
+    iconText: '',
   });
 
   const [showSuccessToast, setShowSuccessToast] = useState(false);
@@ -57,6 +59,8 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
         url: form.url,
         parentPermission: form.parentPermission || null,
         description: form.description,
+        icon: form.icon,
+        iconText: form.iconText,
       };
 
       if (mode === 'edit' && initialData?.id) {
@@ -176,6 +180,7 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
               )}
             </div>
 
+
             {/* URL */}
             <div>
               <label className="block text-sm text-[var(--text-secondary)] mb-1">
@@ -187,6 +192,34 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
                 onChange={handleChange}
                 placeholder="Please enter URL"
                 className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors border border-[var(--border-color)] focus:ring-blue-500`}
+              />
+            </div>
+
+            {/* Icon */}
+            <div>
+              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+                Icon
+              </label>
+              <input
+                name="icon"
+                value={form.icon}
+                onChange={handleChange}
+                placeholder="Please enter icon name or path"
+                className="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors border border-[var(--border-color)] focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Icon Text */}
+            <div>
+              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+                Icon Text
+              </label>
+              <input
+                name="iconText"
+                value={form.iconText}
+                onChange={handleChange}
+                placeholder="Please enter icon text"
+                className="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors border border-[var(--border-color)] focus:ring-blue-500"
               />
             </div>
 
