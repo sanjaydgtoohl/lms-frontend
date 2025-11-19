@@ -20,6 +20,8 @@ const IndustryMaster: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);
   const [showDeleteToast, setShowDeleteToast] = useState(false);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('Industry created successfully');
   const itemsPerPage = 10;
 
   const [industries, setIndustries] = useState<Industry[]>([]);
@@ -38,9 +40,25 @@ const IndustryMaster: React.FC = () => {
 
   const handleCreateIndustry = () => navigate(`${ROUTES.INDUSTRY_MASTER}/create`);
 
-  const handleSaveIndustry = () => {
-    // After create form closes, refresh the list from API
-    refresh();
+  const handleSaveIndustry = (data?: any) => {
+    // Optimistic prepend so UI shows newly created item immediately
+    const newItem: Industry = {
+      id: String(data?.id || `I${String(industries.length + 1).padStart(3, '0')}`),
+      name: data?.name || '',
+      dateTime: new Date().toISOString(),
+    };
+    setIndustries(prev => [newItem, ...prev]);
+    setCurrentPage(1);
+
+    // Show success popup then navigate back to listing and reload
+    setSuccessMessage('Industry created successfully');
+    setShowSuccessToast(true);
+    setTimeout(() => {
+      setShowSuccessToast(false);
+      navigate(ROUTES.INDUSTRY_MASTER);
+      // Force reload to ensure fresh data
+      window.location.reload();
+    }, 1800);
   };
 
   const handleEdit = (id: string) => {
@@ -75,10 +93,31 @@ const IndustryMaster: React.FC = () => {
     try {
       // For now, search is not sent to backend, only pagination
       const resp = await listIndustries(page, itemsPerPage);
+      // Helper to parse API date strings. API returns 'DD-MM-YYYY HH:mm:ss' currently.
+      const parseCreatedAt = (val?: string | null) => {
+        if (!val) return '';
+        // If it's already an ISO string or parsable by Date, prefer that
+        const tryDate = new Date(val);
+        if (!isNaN(tryDate.getTime())) return tryDate.toISOString();
+
+        // Match DD-MM-YYYY HH:mm:ss (e.g., 18-11-2025 18:34:34)
+        const m = /^([0-3]\d)-([0-1]\d)-(\d{4})\s+(\d{2}:\d{2}:\d{2})$/.exec(val.trim());
+        if (m) {
+          const [, dd, mm, yyyy, time] = m;
+          // Convert to YYYY-MM-DDTHH:MM:SS for reliable parsing
+          const iso = `${yyyy}-${mm}-${dd}T${time}`;
+          const d = new Date(iso);
+          if (!isNaN(d.getTime())) return d.toISOString();
+        }
+
+        // Fallback: return original string so UI can at least show it
+        return val;
+      };
+
       let mapped: Industry[] = (resp.data || []).map((it: ApiIndustry) => ({
         id: String(it.id),
         name: it.name,
-        dateTime: it.created_at || '',
+        dateTime: parseCreatedAt(it.created_at),
       }));
       // If search is present, filter client-side
       if (search) {
@@ -156,6 +195,12 @@ const IndustryMaster: React.FC = () => {
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
       <NotificationPopup
+        isOpen={showSuccessToast}
+        onClose={() => setShowSuccessToast(false)}
+        message={successMessage}
+        type="success"
+      />
+      <NotificationPopup
         isOpen={showDeleteToast}
         onClose={() => setShowDeleteToast(false)}
         message="Industry deleted successfully"
@@ -214,7 +259,12 @@ const IndustryMaster: React.FC = () => {
               columns={([
                 { key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },
                 { key: 'name', header: 'Industry Name', render: (it: any) => it.name || '-' },
-                { key: 'dateTime', header: 'Date & Time', render: (it: any) => it.dateTime ? new Date(it.dateTime).toLocaleString() : '-' },
+                { key: 'dateTime', header: 'Date & Time', render: (it: any) => {
+                    if (!it.dateTime) return '-';
+                    const d = new Date(it.dateTime);
+                    return isNaN(d.getTime()) ? String(it.dateTime) : d.toLocaleString();
+                  }
+                },
               ] as Column<any>[])}
               onEdit={(it: any) => handleEdit(it.id)}
               onView={(it: any) => handleView(it.id)}

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { MasterFormHeader, NotificationPopup } from '../components/ui';
+import { MasterFormHeader } from '../components/ui';
 import { createIndustry } from '../services/IndustryMaster';
+import { showSuccess, showError } from '../utils/notifications';
 
 type Props = {
   onClose: () => void;
@@ -12,7 +13,7 @@ const CreateIndustryForm: React.FC<Props> = ({ onClose, onSave }) => {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  
 
   const formatDateTime = (d: Date) => {
     const dd = String(d.getDate()).padStart(2, '0');
@@ -22,25 +23,33 @@ const CreateIndustryForm: React.FC<Props> = ({ onClose, onSave }) => {
     const min = String(d.getMinutes()).padStart(2, '0');
     return `${dd}-${mm}-${yyyy} ${hh}:${min}`;
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
       setError('Industry Name Is Required');
       return;
     }
+
     try {
       setSaving(true);
-      await createIndustry({ name });
-      if (onSave) (onSave as any)({ name, dateTime: formatDateTime(new Date()) });
-      setShowSuccessToast(true);
-      setTimeout(() => {
-        setShowSuccessToast(false);
+      const created = await createIndustry({ name });
+
+      // If parent provided onSave (inline mode), let it handle updates/navigation
+      if (onSave) {
+        try {
+          onSave({ name: created?.name || name, dateTime: formatDateTime(new Date()), id: created?.id });
+        } catch (e) {
+          // swallow parent errors
+        }
+      } else {
+        // Use global notification (same behaviour as Lead Source)
+        showSuccess('Industry created successfully');
         onClose();
-        window.location.reload();
-      }, 5000);
+      }
     } catch (err: any) {
-      setError(err?.message || 'Failed to create industry');
+      const msg = err instanceof Error ? err.message : 'Failed to create industry';
+      setError(msg);
+      showError(msg);
     } finally {
       setSaving(false);
     }
@@ -55,12 +64,6 @@ const CreateIndustryForm: React.FC<Props> = ({ onClose, onSave }) => {
       className="space-y-6"
     >
       <MasterFormHeader onBack={onClose} title="Create Industry" />
-      <NotificationPopup
-        isOpen={showSuccessToast}
-        onClose={() => setShowSuccessToast(false)}
-        message="Industry created successfully"
-        type="success"
-      />
       <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
         <div className="p-6 bg-[#F9FAFB]">
           <form onSubmit={handleSubmit} className="space-y-6">

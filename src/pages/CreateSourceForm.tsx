@@ -11,7 +11,7 @@ type Props = {
   inline?: boolean;
 };
 
-const CreateSourceForm: React.FC<Props> = ({ onClose, onSave, inline }) => {
+const CreateSourceForm: React.FC<Props> = ({ onClose, onSave, inline: _inline }) => {
   const [source, setSource] = useState('');
   const [subSource, setSubSource] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});

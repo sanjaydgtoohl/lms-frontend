@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import './NotificationPopup.css';
-import { X } from 'lucide-react';
 
 interface NotificationPopupProps {
   isOpen: boolean;
@@ -116,13 +115,7 @@ const NotificationPopup: React.FC<NotificationPopupProps> = ({
               <h3 className={`font-semibold ${mergedStyle.text} text-base`}>{title}</h3>
             </div>
 
-            <button 
-              onClick={onClose}
-              className={`${mergedStyle.icon} hover:opacity-75 transition-opacity p-1 rounded-full hover:bg-black/5`}
-              aria-label="Close notification"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            {/* Close button intentionally removed to match desired UX */}
           </div>
           
           {/* Message Content */}

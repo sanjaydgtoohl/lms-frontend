@@ -93,7 +93,10 @@ const MainContent = <T extends LeadSource | Agency>({
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const providedData = externalData;
-  const currentData = providedData ? (providedData as T[]).slice(startIndex, endIndex) : filteredArray.slice(startIndex, endIndex);
+  // If parent provided `externalData` it is assumed to already be the current page
+  // of results (server-side pagination). In that case use it as-is. Otherwise
+  // fall back to client-side sample data which we slice for paging.
+  const currentData = providedData ? (providedData as T[]) : filteredArray.slice(startIndex, endIndex);
 
   const handleEdit = (item: T) => {
     if (onEdit) {
