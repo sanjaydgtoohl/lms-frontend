@@ -103,11 +103,34 @@ const Table = <T,>(props: TableProps<T>) => {
                       className={`px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center ${col.className || ''}`}
                       style={{ maxWidth: 320 }}
                     >
-                          {col.render ? col.render(item) : (() => {
-                            const raw = String((item as Record<string, unknown>)[col.key] ?? '-');
-                            // Don't title-case obvious codes, numbers, or hashes
-                            if (raw === '-' || /^[#\d]/.test(raw) || /\d{2}[-\/\.]\d{2}[-\/\.]\d{2,4}/.test(raw)) return raw;
-                            return toTitleCase(raw);
+                          {(() => {
+                            // Get the raw output from renderer or default extractor
+                            const extracted = col.render
+                              ? col.render(item)
+                              : (() => {
+                                const raw = String((item as Record<string, unknown>)[col.key] ?? '-');
+                                // Don't title-case obvious codes, numbers, or hashes
+                                if (raw === '-' || /^[#\d]/.test(raw) || /\d{2}[-\/\.]\d{2}[-\/\.]\d{2,4}/.test(raw)) return raw;
+                                return toTitleCase(raw);
+                              })();
+
+                            // If renderer returned a valid React element, render it directly
+                            if (React.isValidElement(extracted)) return extracted;
+
+                            // Defensive handling for plain objects (avoid React child error)
+                            if (extracted === null || extracted === undefined) return '';
+                            if (typeof extracted === 'object') {
+                              // Prefer common `name` field when available
+                              const _ex: any = extracted as any;
+                              if (_ex && 'name' in _ex) return String(_ex.name ?? '');
+                              try {
+                                return String(JSON.stringify(extracted));
+                              } catch (e) {
+                                return String(extracted);
+                              }
+                            }
+
+                            return extracted;
                           })()}
                     </td>
                   ))}
@@ -194,7 +217,17 @@ const Table = <T,>(props: TableProps<T>) => {
                         {typeof col.header === 'string' ? toTitleCase(col.header) : col.key}
                       </span>
                       <span className="text-sm font-medium text-gray-900 truncate">
-                        {col.render ? col.render(item) : String((item as Record<string, unknown>)[col.key] ?? '-')}
+                        {(() => {
+                          const out = col.render ? col.render(item) : String((item as Record<string, unknown>)[col.key] ?? '-');
+                          if (React.isValidElement(out)) return out;
+                          if (out === null || out === undefined) return '';
+                          if (typeof out === 'object') {
+                            const _out: any = out as any;
+                            if (_out && 'name' in _out) return String(_out.name ?? '');
+                            try { return JSON.stringify(out); } catch { return String(out); }
+                          }
+                          return String(out);
+                        })()}
                       </span>
                     </div>
                   ))}

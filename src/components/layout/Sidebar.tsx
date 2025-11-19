@@ -26,6 +26,10 @@ import { useAuthStore } from "../../store/auth";
 interface SidebarProps {
   isCollapsed: boolean;
   onToggle: () => void;
+  // Mobile specific
+  isMobile?: boolean;
+  mobileOpen?: boolean;
+  onCloseMobile?: () => void;
 }
 
 interface NavigationItem {
@@ -35,7 +39,7 @@ interface NavigationItem {
   children?: NavigationItem[];
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobileOpen = false, onCloseMobile }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuthStore();
@@ -64,6 +68,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  // Mobile: close on Escape key
+  useEffect(() => {
+    if (!isMobile) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCloseMobile && onCloseMobile();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [isMobile, onCloseMobile]);
 
   const navigationItems: NavigationItem[] = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutGrid },
@@ -280,6 +294,49 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed }) => {
       </div>
     );
   };
+
+  // Mobile variant: icon-only slide-in panel
+  if (isMobile) {
+    return (
+      <div
+        aria-hidden={!mobileOpen}
+        className={`fixed top-0 left-0 h-full bg-white border-r border-gray-200 shadow-sm transition-transform duration-300 ease-in-out z-40 transform ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} w-16`}
+        ref={popupRef}
+      >
+        {/* Render collapsed (icons-only) content inside */}
+        <div className="flex h-16 items-center px-2">
+          <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
+            <span className="text-[#F5F7FA] font-semibold text-xl leading-none">L</span>
+          </div>
+        </div>
+
+        <nav className="flex-1 overflow-y-auto py-2 px-1 scrolling-touch">
+          <div className="space-y-1">
+            {navigationItems.map((item) => renderNavigationItem(item))}
+          </div>
+        </nav>
+
+        <div className="border-t border-gray-100 p-2 space-y-2">
+          <div
+            className={`flex items-center px-2 py-2 text-sm font-medium text-[var(--text-primary)] rounded-lg hover:bg-orange-50 transition-all cursor-pointer justify-center`}
+            onClick={() => onCloseMobile && onCloseMobile()}
+          >
+            <HelpIcon className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)]`} />
+          </div>
+
+          <div
+            onClick={() => {
+              handleLogout();
+              onCloseMobile && onCloseMobile();
+            }}
+            className={`flex items-center px-2 py-2 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-all cursor-pointer justify-center`}
+          >
+            <LogoutIcon className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-red-600`} />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
