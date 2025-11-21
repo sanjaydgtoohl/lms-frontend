@@ -8,10 +8,10 @@ import type { Agency } from '../services/AgencyMaster';
 import { fetchIndustries } from '../services/CreateIndustryForm';
 import type { Industry } from '../services/CreateIndustryForm';
 import { showSuccess, showError } from '../utils/notifications';
+import { apiClient } from '../utils/apiClient';
 
 type Props = {
   onClose: () => void;
-  onSave?: (data: any) => void;
   inline?: boolean;
   initialData?: Record<string, any>;
   mode?: 'create' | 'edit';
@@ -70,7 +70,7 @@ const CitySelect: React.FC<CitySelectProps> = ({ state, value, onChange, presele
   );
 };
 
-const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode = 'create' }) => {
+const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create' }) => {
   const [form, setForm] = useState({
     brandName: '',
     brandType: '',
@@ -105,6 +105,9 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
     if (!form.brandType) next.brandType = 'Brand Type Is Required';
     if (!form.industry) next.industry = 'Please Select An Industry';
     if (!form.country || form.country === 'Please Select Country') next.country = 'Please Select A Country';
+    if (!form.state) next.state = 'Please Select A State';
+    if (!form.city) next.city = 'Please Select A City';
+    if (!form.zone) next.zone = 'Please Select A Zone';
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -112,16 +115,31 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
+
     try {
-      const payload = { ...form } as Record<string, any>;
-      // preserve id when editing if present on initialData
-      if (initialData && initialData.id) payload.id = initialData.id;
-      const res: any = onSave ? (onSave as any)(payload) : null;
-      if (res && typeof res.then === 'function') {
-        await res;
+      const payload = {
+        name: form.brandName,
+        website: form.website,
+        brand_type_id: form.brandType,
+        industry_id: form.industry,
+        country_id: form.country,
+        state_id: form.state,
+        city_id: form.city,
+        zone_id: form.zone,
+        postal_code: form.postalCode,
+        agency_id: form.agency,
+      };
+
+      const res = await apiClient.post('/brands', payload);
+
+      if (res && res.success) {
+        showSuccess('Brand created successfully');
+        onClose();
+        // Auto-reload Brand Master page after successful creation
+        window.location.reload();
+      } else {
+        throw new Error(res?.message || 'Failed to create brand');
       }
-      showSuccess(initialData ? 'Brand updated successfully' : 'Brand created successfully');
-      onClose();
     } catch (err: any) {
       showError(err?.message || 'Failed to save brand');
     }
@@ -378,7 +396,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
         </div>
 
         <div>
-          <label className="block text-sm text-[var(--text-secondary)] mb-1">State</label>
+          <label className="block text-sm text-[var(--text-secondary)] mb-1">State <span className="text-[#FF0000]">*</span></label>
           <div>
             <SelectField
               name="state"
@@ -388,15 +406,17 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
               placeholder="Search or select option"
             />
           </div>
+          {errors.state && <div className="text-xs text-red-500 mt-1">{errors.state}</div>}
         </div>
 
         <div>
-          <label className="block text-sm text-[var(--text-secondary)] mb-1">City</label>
+          <label className="block text-sm text-[var(--text-secondary)] mb-1">City <span className="text-[#FF0000]">*</span></label>
           <CitySelect state={form.state} value={form.city} preselectedCityName={form.city} onChange={(val) => setForm(prev => ({ ...prev, city: val }))} />
+          {errors.city && <div className="text-xs text-red-500 mt-1">{errors.city}</div>}
         </div>
 
         <div>
-          <label className="block text-sm text-[var(--text-secondary)] mb-1">Zone</label>
+          <label className="block text-sm text-[var(--text-secondary)] mb-1">Zone <span className="text-[#FF0000]">*</span></label>
           <div>
             <SelectField
               name="zone"
@@ -406,6 +426,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
               placeholder="Search or select option"
             />
           </div>
+          {errors.zone && <div className="text-xs text-red-500 mt-1">{errors.zone}</div>}
         </div>
       </div>
 
