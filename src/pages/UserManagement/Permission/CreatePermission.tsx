@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
 import { MasterFormHeader, NotificationPopup, SelectField } from '../../../components/ui';
 import { createPermission, updatePermission } from '../../../services/CreatePermission';
+import { fetchParentPermissions } from '../../../services/ParentPermissions';
 
 type Props = {
   mode?: 'create' | 'edit';
@@ -25,12 +26,56 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [parentOptions, setParentOptions] = useState<{ value: string; label: string }[]>([]);
+  const [parentLoading, setParentLoading] = useState(false);
+  const [parentError, setParentError] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialData) {
-      setForm((prev) => ({ ...prev, ...initialData }));
+      setForm((prev) => ({
+        ...prev,
+        displayName: (initialData as any).display_name ?? (initialData as any).displayName ?? prev.displayName,
+        name: (initialData as any).name ?? prev.name,
+        url: (initialData as any).url ?? prev.url,
+        parentPermission: (initialData as any).is_parent ?? (initialData as any).parentPermission ?? prev.parentPermission,
+        description: (initialData as any).description ?? prev.description,
+        icon: (initialData as any).icon_file ?? (initialData as any).icon ?? prev.icon,
+        iconText: (initialData as any).icon_text ?? (initialData as any).iconText ?? prev.iconText,
+      }));
     }
   }, [initialData]);
+
+  // Fetch parent permissions for the SelectField (use endpoint returning raw ids)
+  useEffect(() => {
+    let isMounted = true;
+    setParentLoading(true);
+    setParentError(null);
+    const fetchParents = async () => {
+      try {
+        const { data, error } = await fetchParentPermissions();
+        if (!isMounted) return;
+        if (error) {
+          setParentError(error);
+          setParentOptions([]);
+        } else {
+          const opts = Array.isArray(data)
+            ? data.map((p: any) => ({ value: String(p.id), label: p.display_name || p.name || String(p.id) }))
+            : [];
+          setParentOptions(opts);
+        }
+      } catch (err: any) {
+        if (!isMounted) return;
+        setParentError(err?.message || 'Failed to load parent permissions');
+        setParentOptions([]);
+      } finally {
+        if (!isMounted) return;
+        setParentLoading(false);
+      }
+    };
+
+    fetchParents();
+    return () => { isMounted = false; };
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -54,14 +99,14 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
     try {
       setSaving(true);
       const payload = {
-        displayName: form.displayName,
+        display_name: form.displayName,
         name: form.name,
         url: form.url,
-        parentPermission: form.parentPermission || null,
+           is_parent: form.parentPermission ? Number(String(form.parentPermission).replace(/^#/, '')) : null,
         description: form.description,
-        icon: form.icon,
-        iconText: form.iconText,
-      };
+        icon_text: form.iconText,
+        status: '1',
+      } as any;
 
       if (mode === 'edit' && initialData?.id) {
         // Update existing permission
@@ -231,7 +276,7 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
               <SelectField
                 name="parentPermission"
                 placeholder="Please select parent permission"
-                options={[]}
+                options={parentOptions}
                 value={form.parentPermission}
                 onChange={(v) => {
                   setForm((prev) => ({ ...prev, parentPermission: v }));
@@ -239,7 +284,13 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
                 }}
                 searchable
                 inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
+                disabled={parentLoading}
               />
+                {parentLoading && <div className="text-xs text-gray-400 mt-1">Loading parent permissions...</div>}
+                {parentError && <div className="text-xs text-red-500 mt-1">{parentError}</div>}
+                {!parentLoading && !parentError && parentOptions.length === 0 && (
+                  <div className="text-xs text-gray-400 mt-1">No parent permissions available.</div>
+                )}
             </div>
 
             {/* Description */}

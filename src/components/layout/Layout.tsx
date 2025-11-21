@@ -7,6 +7,7 @@ import Breadcrumb from '../ui/Breadcrumb';
 import ErrorBoundary from '../ui/ErrorBoundary';
 import NotificationPopup from '../ui/NotificationPopup';
 import { useUiStore } from '../../store/ui';
+import { debounce } from 'lodash';
 
 const Layout: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -18,7 +19,7 @@ const Layout: React.FC = () => {
 
   // Handle responsive sidebar
   useEffect(() => {
-    const handleResize = () => {
+    const handleResize = debounce(() => {
       // Mobile breakpoint (max-width: 768px)
       const mobile = window.innerWidth <= 768;
       setIsMobile(mobile);
@@ -32,7 +33,7 @@ const Layout: React.FC = () => {
 
       // Close mobile sidebar when resizing to desktop/tablet
       if (!mobile) setMobileSidebarOpen(false);
-    };
+    }, 200); // Debounce to limit executions
 
     handleResize();
     window.addEventListener('resize', handleResize);

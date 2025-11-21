@@ -14,6 +14,9 @@ const CreateLead: React.FC = () => {
   const [options, setOptions] = useState<{ value: string; label: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Priority state
+  const [priority, setPriority] = useState<string | undefined>(undefined);
   const navigate = useNavigate();
 
   // Fetch dropdown data when selectedOption changes
@@ -68,7 +71,10 @@ const CreateLead: React.FC = () => {
 
         <ContactPersonsCard />
 
-        <AssignPriorityCard />
+        <AssignPriorityCard
+          priority={priority}
+          onChange={({ priority: newPriority }) => setPriority(newPriority)}
+        />
 
         <CommentSection />
 
