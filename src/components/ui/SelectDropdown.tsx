@@ -69,7 +69,7 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
             }, 0);
           }}
           placeholder={placeholder}
-          className={`w-full h-10 px-4 text-sm rounded-[10px] bg-white text-[var(--text-primary)] border border-[#DDE1E7] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#1570EF] ${inputClassName} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+          className={`w-full h-10 px-4 text-sm font-medium rounded-[10px] bg-white text-[var(--text-primary)] border border-[#DDE1E7] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#1570EF] ${inputClassName} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
           disabled={disabled}
           autoComplete="off"
         />

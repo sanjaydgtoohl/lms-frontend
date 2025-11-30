@@ -19,9 +19,10 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
     url: '',
     parentPermission: '',
     description: '',
-    icon: '',
+    icon: null as File | null,
     iconText: '',
   });
+  
 
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -123,7 +124,22 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
       }, 1200);
     } catch (err) {
       console.error('Error saving permission:', err);
-      setErrors({ submit: 'Failed to save permission. Please try again.' });
+      // Try to extract field-level validation errors from the API client
+      const respData = (err as any)?.responseData || (err as any)?.response || ((err as any)?.data ?? null);
+      if (respData && respData.errors && typeof respData.errors === 'object') {
+        const fieldErrors: Record<string, string> = {};
+        for (const key of Object.keys(respData.errors)) {
+          const val = respData.errors[key];
+          if (Array.isArray(val) && val.length > 0) {
+            fieldErrors[key === 'display_name' ? 'displayName' : key] = String(val[0]);
+          } else if (typeof val === 'string') {
+            fieldErrors[key === 'display_name' ? 'displayName' : key] = val;
+          }
+        }
+        setErrors((prev) => ({ ...prev, ...fieldErrors }));
+      } else {
+        setErrors({ submit: 'Failed to save permission. Please try again.' });
+      }
     } finally {
       setSaving(false);
     }
@@ -155,145 +171,185 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
       <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
         <div className="p-6 bg-[#F9FAFB]">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Display Name */}
-            <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
-                Display Name <span className="text-[#FF0000]">*</span>
-              </label>
-              <input
-                name="displayName"
-                value={form.displayName}
-                onChange={(e) => {
-                  handleChange(e);
-                  setErrors((prev) => ({ ...prev, displayName: '' }));
-                }}
-                placeholder="Please enter display name"
-                className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
-                  errors.displayName
-                    ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                    : 'border border-[var(--border-color)] focus:ring-blue-500'
-                }`}
-                aria-invalid={errors.displayName ? 'true' : 'false'}
-                aria-describedby={errors.displayName ? 'displayName-error' : undefined}
-              />
-              {errors.displayName && (
-                <div id="displayName-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
-                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  {errors.displayName}
+            {/* Row 1: Display Name & Name */}
+            <div className="grid grid-cols-2 gap-6">
+              {/* Display Name */}
+              <div>
+                <label className="block text-sm text-[var(--text-secondary)] mb-1">
+                  Display Name <span className="text-[#FF0000]">*</span>
+                </label>
+                <input
+                  name="displayName"
+                  value={form.displayName}
+                  onChange={(e) => {
+                    handleChange(e);
+                    setErrors((prev) => ({ ...prev, displayName: '' }));
+                  }}
+                  placeholder="Please enter display name"
+                  className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
+                    errors.displayName
+                      ? 'border border-red-500 bg-red-50 focus:ring-red-500'
+                      : 'border border-[var(--border-color)] focus:ring-blue-500'
+                  }`}
+                  aria-invalid={errors.displayName ? 'true' : 'false'}
+                  aria-describedby={errors.displayName ? 'displayName-error' : undefined}
+                />
+                {errors.displayName && (
+                  <div id="displayName-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                    <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    {errors.displayName}
+                  </div>
+                )}
+              </div>
+
+              {/* Name (Route Name) */}
+              <div>
+                <label className="block text-sm text-[var(--text-secondary)] mb-1">
+                  Name (Route Name) <span className="text-[#FF0000]">*</span>
+                </label>
+                <input
+                  name="name"
+                  value={form.name}
+                  onChange={(e) => {
+                    handleChange(e);
+                    setErrors((prev) => ({ ...prev, name: '' }));
+                  }}
+                  placeholder="Please enter name"
+                  className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
+                    errors.name
+                      ? 'border border-red-500 bg-red-50 focus:ring-red-500'
+                      : 'border border-[var(--border-color)] focus:ring-blue-500'
+                  }`}
+                  aria-invalid={errors.name ? 'true' : 'false'}
+                  aria-describedby={errors.name ? 'name-error' : undefined}
+                />
+                {errors.name && (
+                  <div id="name-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                    <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    {errors.name}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Row 2: URL & Icon */}
+            <div className="grid grid-cols-2 gap-6">
+              {/* URL */}
+              <div>
+                <label className="block text-sm text-[var(--text-secondary)] mb-1">
+                  URL
+                </label>
+                <input
+                  name="url"
+                  value={form.url}
+                  onChange={handleChange}
+                  placeholder="Please enter URL"
+                  className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors border border-[var(--border-color)] focus:ring-blue-500`}
+                />
+              </div>
+
+              {/* Icon */}
+              <div>
+                <label className="block text-sm text-[var(--text-secondary)] mb-1">
+                  Icon
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    id="icon-upload"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setForm((prev) => ({ ...prev, icon: file }));
+                        if (errors.icon) {
+                          setErrors((prev) => ({ ...prev, icon: '' }));
+                        }
+                      }
+                    }}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="icon-upload"
+                    className="flex-1 px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)] focus:ring-blue-500 cursor-pointer hover:bg-gray-50 transition-colors flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                    </svg>
+                    <span className="text-gray-500">
+                      {form.icon ? `${form.icon.name}` : 'Choose icon file'}
+                    </span>
+                  </label>
+                  {form.icon && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setForm((prev) => ({ ...prev, icon: null }));
+                      }}
+                      className="px-3 py-2 rounded-lg bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors text-sm"
+                    >
+                      Clear
+                    </button>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
 
-            {/* Name (Route Name) */}
-            <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
-                Name (Route Name) <span className="text-[#FF0000]">*</span>
-              </label>
-              <input
-                name="name"
-                value={form.name}
-                onChange={(e) => {
-                  handleChange(e);
-                  setErrors((prev) => ({ ...prev, name: '' }));
-                }}
-                placeholder="Please enter name"
-                className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
-                  errors.name
-                    ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                    : 'border border-[var(--border-color)] focus:ring-blue-500'
-                }`}
-                aria-invalid={errors.name ? 'true' : 'false'}
-                aria-describedby={errors.name ? 'name-error' : undefined}
-              />
-              {errors.name && (
-                <div id="name-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
-                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  {errors.name}
-                </div>
-              )}
-            </div>
+            {/* Row 3: Icon Text & Parent Permission */}
+            <div className="grid grid-cols-2 gap-6">
+              {/* Icon Text */}
+              <div>
+                <label className="block text-sm text-[var(--text-secondary)] mb-1">
+                  Icon Text
+                </label>
+                <input
+                  name="iconText"
+                  value={form.iconText}
+                  onChange={handleChange}
+                  placeholder="Please enter icon text"
+                  className="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors border border-[var(--border-color)] focus:ring-blue-500"
+                />
+              </div>
 
-
-            {/* URL */}
-            <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
-                URL
-              </label>
-              <input
-                name="url"
-                value={form.url}
-                onChange={handleChange}
-                placeholder="Please enter URL"
-                className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors border border-[var(--border-color)] focus:ring-blue-500`}
-              />
-            </div>
-
-            {/* Icon */}
-            <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
-                Icon
-              </label>
-              <input
-                name="icon"
-                value={form.icon}
-                onChange={handleChange}
-                placeholder="Please enter icon name or path"
-                className="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors border border-[var(--border-color)] focus:ring-blue-500"
-              />
-            </div>
-
-            {/* Icon Text */}
-            <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
-                Icon Text
-              </label>
-              <input
-                name="iconText"
-                value={form.iconText}
-                onChange={handleChange}
-                placeholder="Please enter icon text"
-                className="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors border border-[var(--border-color)] focus:ring-blue-500"
-              />
-            </div>
-
-            {/* Select Parent Permission */}
-            <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
-                Select Parent Permission
-              </label>
-              <SelectField
-                name="parentPermission"
-                placeholder="Please select parent permission"
-                options={parentOptions}
-                value={form.parentPermission}
-                onChange={(v) => {
-                  setForm((prev) => ({ ...prev, parentPermission: v }));
-                  setErrors((prev) => ({ ...prev, parentPermission: '' }));
-                }}
-                searchable
-                inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
-                disabled={parentLoading}
-              />
+              {/* Select Parent Permission */}
+              <div>
+                <label className="block text-sm text-[var(--text-secondary)] mb-1">
+                  Select Parent Permission
+                </label>
+                <SelectField
+                  name="parentPermission"
+                  placeholder="Please select parent permission"
+                  options={parentOptions}
+                  value={form.parentPermission}
+                  onChange={(v) => {
+                    setForm((prev) => ({ ...prev, parentPermission: v }));
+                    setErrors((prev) => ({ ...prev, parentPermission: '' }));
+                  }}
+                  searchable
+                  inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
+                  disabled={parentLoading}
+                />
                 {parentLoading && <div className="text-xs text-gray-400 mt-1">Loading parent permissions...</div>}
                 {parentError && <div className="text-xs text-red-500 mt-1">{parentError}</div>}
                 {!parentLoading && !parentError && parentOptions.length === 0 && (
                   <div className="text-xs text-gray-400 mt-1">No parent permissions available.</div>
                 )}
+              </div>
             </div>
 
-            {/* Description */}
+            {/* Description - Full Width */}
             <div>
               <label className="block text-sm text-[var(--text-secondary)] mb-1">
                 Description <span className="text-[#FF0000]">*</span>
