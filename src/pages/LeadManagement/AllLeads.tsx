@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Table, { type Column } from '../../components/ui/Table';
 import AssignDropdown from '../../components/ui/AssignDropdown';
 import CallStatusDropdown from '../../components/ui/CallStatusDropdown';
@@ -7,6 +7,7 @@ import SearchBar from '../../components/ui/SearchBar';
 import { MasterHeader, StatusPill } from '../../components/ui';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants';
+import { listLeads, updateLead } from '../../services/AllLeads';
 
 interface Lead {
   id: string;
@@ -23,16 +24,6 @@ interface Lead {
   callAttempt: number;
   comment: string;
 }
-
-const mockLeads: Lead[] = [
-  { id: '#CL001', brandName: 'Nike', contactPerson: 'Phoenix Baker', phoneNumber: '8797099888', source: 'FB', subSource: 'Website', assignBy: 'Shivika', assignTo: 'Sales Man 1', dateTime: '02-07-2025 22:23', status: 'Interested', callStatus: 'Follow Up', callAttempt: 2, comment: 'According to Form' },
-  { id: '#CL002', brandName: 'Puma', contactPerson: 'Demi Wilkinson', phoneNumber: '8797099888', source: 'PPC', subSource: 'Landing', assignBy: 'Shivika', assignTo: 'Sales Man 2', dateTime: '02-07-2025 22:21', status: 'Pending', callStatus: 'Ringing', callAttempt: 3, comment: 'Newspaper' },
-  { id: '#CL003', brandName: 'Apple', contactPerson: 'Demi Wilkinson', phoneNumber: '8797099888', source: 'Referral', subSource: 'Web', assignBy: 'Shivika', assignTo: 'Sales Man 3', dateTime: '02-07-2025 22:23', status: 'Meeting Scheduled', callStatus: 'Meeting', callAttempt: 1, comment: 'According to Form' },
-  { id: '#CL004', brandName: 'Pepsi', contactPerson: 'Candice Wu', phoneNumber: '8797099888', source: 'Website', subSource: 'Direct', assignBy: 'Shivika', assignTo: 'Sales Man 1', dateTime: '02-07-2025 22:23', status: 'Meeting Done', callStatus: 'Website', callAttempt: 3, comment: 'According to Form' },
-  { id: '#CL005', brandName: 'Coca Cola', contactPerson: 'Natal Craig', phoneNumber: '8797099888', source: 'Referral', subSource: 'Partner', assignBy: 'Shivika', assignTo: 'Sales Man 2', dateTime: '02-07-2025 22:23', status: 'Brief Received', callStatus: 'Referel', callAttempt: 6, comment: 'According to Form' },
-  { id: '#CL006', brandName: 'Adidas', contactPerson: 'Liam Turner', phoneNumber: '8797099001', source: 'Email', subSource: 'Campaign', assignBy: 'Shivika', assignTo: 'Sales Man 4', dateTime: '03-07-2025 10:00', status: 'Brief Pending', callStatus: 'Not Connected', callAttempt: 0, comment: 'Awaiting brief from client' },
-];
-
 
 const salesMen = [
   'Sales Man 1',
@@ -66,8 +57,10 @@ const callStatusOptions = [
 const AllLeads: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
-  const itemsPerPage = 10;
-  const [leads, setLeads] = useState<Lead[]>(mockLeads);
+  const itemsPerPage = 15;
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [totalItems, setTotalItems] = useState(0);
 
   // Tooltip state for Comment hover
   const [tooltipVisible, setTooltipVisible] = useState(false);
@@ -127,7 +120,6 @@ const AllLeads: React.FC = () => {
       l.brandName.toLowerCase().includes(q) ||
       l.contactPerson.toLowerCase().includes(q) ||
       l.phoneNumber.toLowerCase().includes(q) ||
-      l.source.toLowerCase().includes(q) ||
       l.callStatus.toLowerCase().includes(q)
     );
   });
@@ -157,6 +149,16 @@ const AllLeads: React.FC = () => {
       )
     );
     // Optionally, call API here to persist change
+    // Try persisting assignTo change to server (best-effort)
+    (async () => {
+      try {
+        // remove leading '#' if present
+        const numericId = String(leadId).replace('#', '');
+        await updateLead(numericId, { current_assign_user: newSalesMan });
+      } catch (err) {
+        console.warn('Failed to persist assignTo change', err);
+      }
+    })();
   };
 
   const handleCallStatusChange = (leadId: string, newStatus: string) => {
@@ -164,23 +166,80 @@ const AllLeads: React.FC = () => {
     setLeads((prev) =>
       prev.map((lead) => {
         if (lead.id !== leadId) return lead;
-        if (lead.callStatus === newStatus) return lead; // no change
+        // Treat 'N/A' as empty when comparing previous value
+        const prevStatus = lead.callStatus === 'N/A' ? '' : lead.callStatus;
+        if (prevStatus === newStatus) return lead; // no change
         return { ...lead, callStatus: newStatus, callAttempt: (lead.callAttempt ?? 0) + 1 };
       })
     );
     // Optional: Log the change to verify it's being called
     console.log(`Call status updated for ${leadId} to ${newStatus} — callAttempt incremented`);
 
-    // TODO: Make API call to persist changes
-    // updateLeadCallStatus(leadId, newStatus);
+    // Persist call status change to server (best-effort)
+    (async () => {
+      try {
+        const numericId = String(leadId).replace('#', '');
+        await updateLead(numericId, { call_status: newStatus });
+      } catch (err) {
+        console.warn('Failed to persist call status change', err);
+      }
+    })();
   };
+
+  // Fetch leads from API
+  useEffect(() => {
+    let mounted = true;
+    const fetchLeads = async () => {
+      setLoading(true);
+      try {
+        const filters: Record<string, any> = {};
+        if (searchQuery) filters.search = searchQuery;
+        const resp = await listLeads(currentPage, itemsPerPage, filters);
+        if (!mounted) return;
+        const items = (resp.data || []).map((it: any) => ({
+            id: it.id ? `#${String(it.id)}` : '#0',
+            brandName: it.brand_name || it.brand?.name || String(it.brand_id || ''),
+            contactPerson: it.contact_person || it.name || '',
+            phoneNumber: Array.isArray(it.mobile_number) ? (it.mobile_number[0] || '') : (it.mobile_number || ''),
+            source: it.lead_source || it.source || '',
+            // Fix: subSource should use sub_source.name if available
+            subSource: it.sub_source?.name || it.lead_sub_source?.name || it.lead_sub_source_name || it.lead_sub_source || '',
+            assignBy: it.assign_by_name || it.created_by || '',
+            // Show the assigned user's name. Avoid falling back to a numeric id string.
+            assignTo: it.current_assign_user_name || it.assigned_user?.name || (it.current_assign_user && typeof it.current_assign_user === 'object' ? it.current_assign_user.name : '') || it.assign_to_name || '',
+            dateTime: it.created_at || it.dateTime || it.created_at_formatted || '',
+            status: it.status || it.lead_status || '',
+            // Normalize call status: if API returns null/empty, show 'N/A' in UI
+            callStatus: (() => {
+              const raw = it.call_status ?? it.callStatus ?? '';
+              return raw === null || raw === undefined || raw === '' ? 'N/A' : raw;
+            })(),
+            callAttempt: Number(it.call_attempt ?? it.callAttempt ?? 0),
+            comment: it.comment || it.notes || '',
+          } as Lead));
+
+        setLeads(items);
+        // Try to read total from meta.pagination.total or meta.total
+        const total = resp.meta?.pagination?.total ?? resp.meta?.total ?? items.length;
+        setTotalItems(Number(total ?? items.length));
+      } catch (err) {
+        console.error('Failed to fetch leads', err);
+        setLeads([]);
+        setTotalItems(0);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    fetchLeads();
+    return () => { mounted = false; };
+  }, [currentPage, searchQuery]);
 
   const columns = ([
     { key: 'sr', header: 'S.No.', render: (it: Lead) => String(startIndex + currentData.indexOf(it) + 1), className: 'text-left whitespace-nowrap' },
     { key: 'brandName', header: 'Brand Name', render: (it: Lead) => it.brandName, className: 'max-w-[180px] overflow-hidden text-ellipsis whitespace-nowrap' },
     { key: 'contactPerson', header: 'Contact Person', render: (it: Lead) => it.contactPerson, className: 'max-w-[160px] overflow-hidden text-ellipsis whitespace-nowrap' },
     { key: 'phoneNumber', header: 'Phone Number', render: (it: Lead) => it.phoneNumber, className: 'whitespace-nowrap' },
-    { key: 'source', header: 'Source', render: (it: Lead) => it.source, className: 'whitespace-nowrap' },
     { key: 'subSource', header: 'Sub-Source', render: (it: Lead) => it.subSource, className: 'whitespace-nowrap' },
     { key: 'assignBy', header: 'Assign By', render: (it: Lead) => it.assignBy, className: 'whitespace-nowrap' },
     {
@@ -264,9 +323,9 @@ const AllLeads: React.FC = () => {
         onCreateClick={handleCreateLead}
         createButtonLabel="Create Lead"
       />
-      <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-        <div className="bg-gray-50 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[var(--text-primary)]">All Leads</h2>
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-200">
+          <h2 className="text-base font-semibold text-gray-900">All Leads</h2>
           <div className="ml-4">
             <SearchBar
               placeholder="Search leads..."
@@ -279,20 +338,23 @@ const AllLeads: React.FC = () => {
           </div>
         </div>
 
-        <Table
-          data={currentData}
-          startIndex={startIndex}
-          loading={false}
-          keyExtractor={(it: Lead) => it.id}
-          columns={columns}
-          onEdit={(it: Lead) => handleEdit(it.id)}
-          onView={(it: Lead) => handleView(it.id)}
-        />
+        <div className="pt-0 overflow-visible">
+          <Table
+            data={currentData}
+            startIndex={startIndex}
+            loading={loading}
+            desktopOnMobile={true}
+            keyExtractor={(it: Lead) => it.id}
+            columns={columns}
+            onEdit={(it: Lead) => handleEdit(it.id)}
+            onView={(it: Lead) => handleView(it.id)}
+          />
+        </div>
       </div>
 
       <Pagination
         currentPage={currentPage}
-        totalItems={leads.length}
+        totalItems={totalItems}
         itemsPerPage={itemsPerPage}
         onPageChange={(p: number) => setCurrentPage(p)}
       />

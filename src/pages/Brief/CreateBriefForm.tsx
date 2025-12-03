@@ -1,4 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { listBrands } from '../../services/BrandMaster';
+import { listAgencies } from '../../services/AgencyMaster';
+import { listUsers } from '../../services/AllUsers';
+import { listLeads } from '../../services/AllLeads';
+import { fetchBriefStatuses } from '../../services/BriefStatus';
 import { motion } from 'framer-motion';
 import { MasterFormHeader, NotificationPopup, Button, SelectField } from '../../components/ui';
 // Dropdown UI uses SelectField component
@@ -31,49 +36,27 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
     type: '',
   });
 
-  // Contact person dropdown state
-  const contactPersons = [
-    'John Smith',
-    'Emily Chen',
-    'Lisa Brown',
-    'Alex Green',
-    'Robert Taylor',
-    'Sarah Jones',
-    'Michael Wong',
-    'David Miller',
-    'Emma White',
-    'Jennifer Lee',
-  ];
-  // contact dropdown is handled by SelectField
+  // Contact person dropdown state (loaded from API - leads list)
+  const [contactPersons, setContactPersons] = useState<Array<string | { value: string; label: string }>>([]);
+  const [contactPersonsLoading, setContactPersonsLoading] = useState(false);
+  const [contactPersonsError, setContactPersonsError] = useState<string | null>(null);
 
-  // Brand Name dropdown state
-  const brands = [
-    'CoolBrand',
-    'TechGear',
-    'JoyGifts',
-    'EcoLife',
-    'GlobalFoods',
-    'Nike',
-    'Puma',
-    'Apple',
-    'Pepsi',
-    'Coca Cola',
-  ];
-  // brand dropdown is handled by SelectField
-  // Agency Name dropdown state
-  const agencies = [
-    'Agency One',
-    'Agency Two',
-    'Agency Three',
-    'Global Media',
-    'Digital Solutions',
-    'Creative Works',
-    'Media Masters',
-    'Ad Agency Pro',
-    'Marketing Hub',
-    'Brand Connect',
-  ];
-  // agency dropdown is handled by SelectField
+  // Brand Name dropdown state (will be loaded from API)
+  const [brands, setBrands] = useState<Array<string | { value: string; label: string }>>([]);
+  const [brandsLoading, setBrandsLoading] = useState(false);
+  const [brandsError, setBrandsError] = useState<string | null>(null);
+  // Agency Name dropdown state (will be loaded from API)
+  const [agencies, setAgencies] = useState<Array<string | { value: string; label: string }>>([]);
+  const [agenciesLoading, setAgenciesLoading] = useState(false);
+  const [agenciesError, setAgenciesError] = useState<string | null>(null);
+  // Assign To users dropdown state (will be loaded from API)
+  const [users, setUsers] = useState<Array<string | { value: string; label: string }>>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState<string | null>(null);
+  // Brief Status dropdown state (will be loaded from API)
+  const [briefStatuses, setBriefStatuses] = useState<Array<string | { value: string; label: string }>>([]);
+  const [briefStatusesLoading, setBriefStatusesLoading] = useState(false);
+  const [briefStatusesError, setBriefStatusesError] = useState<string | null>(null);
 
   // dropdowns are handled by SelectField; it manages outside-click and blur
 
@@ -86,6 +69,157 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
       setForm(prev => ({ ...prev, ...initialData }));
     }
   }, [initialData]);
+
+  // Load brand options on mount
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setBrandsLoading(true);
+        const res = await listBrands(1, 200); // fetch up to 200 brands; adjust if needed
+        if (!mounted) return;
+        const opts = (res.data || []).map(b => ({ value: String(b.id), label: String(b.name) }));
+        setBrands(opts);
+
+        // if initialData had a brand name, try to reconcile to id
+        if (initialData && initialData.brandName) {
+          const foundById = opts.find(o => o.value === String(initialData.brandName));
+          const foundByName = opts.find(o => o.label === String(initialData.brandName));
+          if (foundById) setForm(prev => ({ ...prev, brandName: foundById.value }));
+          else if (foundByName) setForm(prev => ({ ...prev, brandName: foundByName.value }));
+        }
+      } catch (err: any) {
+        console.error('Failed to load brands', err);
+        if (!mounted) return;
+        setBrandsError(err?.message || 'Failed to load brands');
+      } finally {
+        if (mounted) setBrandsLoading(false);
+      }
+    })();
+
+    return () => { mounted = false; };
+  }, [initialData]);
+
+  // Load agency options on mount
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setAgenciesLoading(true);
+        const res = await listAgencies(1, 200);
+        if (!mounted) return;
+        const opts = (res.data || []).map(a => ({ value: String(a.id), label: String(a.name) }));
+        setAgencies(opts);
+
+        // if initialData had a createdBy value, try to reconcile to id
+        if (initialData && initialData.createdBy) {
+          const foundById = opts.find(o => o.value === String(initialData.createdBy));
+          const foundByName = opts.find(o => o.label === String(initialData.createdBy));
+          if (foundById) setForm(prev => ({ ...prev, createdBy: foundById.value }));
+          else if (foundByName) setForm(prev => ({ ...prev, createdBy: foundByName.value }));
+        }
+      } catch (err: any) {
+        console.error('Failed to load agencies', err);
+        if (!mounted) return;
+        setAgenciesError(err?.message || 'Failed to load agencies');
+      } finally {
+        if (mounted) setAgenciesLoading(false);
+      }
+    })();
+
+    return () => { mounted = false; };
+  }, [initialData]);
+
+  // Load user options on mount (for Assign To)
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setUsersLoading(true);
+        const res = await listUsers(1, 200);
+        if (!mounted) return;
+        const opts = (res.data || []).map(u => ({ value: String(u.id), label: String(u.name) }));
+        setUsers(opts);
+
+        // if initialData had an assignTo value, try to reconcile to id
+        if (initialData && initialData.assignTo) {
+          const foundById = opts.find(o => o.value === String(initialData.assignTo));
+          const foundByName = opts.find(o => o.label === String(initialData.assignTo));
+          if (foundById) setForm(prev => ({ ...prev, assignTo: foundById.value }));
+          else if (foundByName) setForm(prev => ({ ...prev, assignTo: foundByName.value }));
+        }
+      } catch (err: any) {
+        console.error('Failed to load users', err);
+        if (!mounted) return;
+        setUsersError(err?.message || 'Failed to load users');
+      } finally {
+        if (mounted) setUsersLoading(false);
+      }
+    })();
+
+    return () => { mounted = false; };
+  }, [initialData]);
+
+  // Load contact persons (from leads) on mount
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setContactPersonsLoading(true);
+        const res = await listLeads(1, 200);
+        if (!mounted) return;
+        const opts = (res.data || []).map((l) => ({ value: String(l.id), label: String(l.name || l.contact_person || l.email || `Lead ${l.id}`) }));
+        setContactPersons(opts);
+
+        // if initialData had a contactPerson value, try to reconcile to id or name
+        if (initialData && initialData.contactPerson) {
+          const foundById = opts.find(o => o.value === String(initialData.contactPerson));
+          const foundByLabel = opts.find(o => o.label === String(initialData.contactPerson));
+          if (foundById) setForm(prev => ({ ...prev, contactPerson: foundById.value }));
+          else if (foundByLabel) setForm(prev => ({ ...prev, contactPerson: foundByLabel.value }));
+        }
+      } catch (err: any) {
+        console.error('Failed to load contact persons', err);
+        if (!mounted) return;
+        setContactPersonsError(err?.message || 'Failed to load contact persons');
+      } finally {
+        if (mounted) setContactPersonsLoading(false);
+      }
+    })();
+
+    return () => { mounted = false; };
+  }, [initialData]);
+
+  // Load brief status options on mount
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setBriefStatusesLoading(true);
+        const res = await fetchBriefStatuses();
+        if (!mounted) return;
+        
+        // Map brief statuses to SelectField options
+        let opts: Array<string | { value: string; label: string }> = [];
+        if (res.data && Array.isArray(res.data)) {
+          opts = res.data.map((s: any) => {
+            const id = String(s.id ?? s.status_id ?? '');
+            const name = String(s.name ?? s.status ?? s.brief_status ?? '');
+            return { value: id, label: name };
+          });
+        }
+        setBriefStatuses(opts);
+      } catch (err: any) {
+        console.error('Failed to load brief statuses', err);
+        if (!mounted) return;
+        setBriefStatusesError(err?.message || 'Failed to load brief statuses');
+      } finally {
+        if (mounted) setBriefStatusesLoading(false);
+      }
+    })();
+
+    return () => { mounted = false; };
+  }, []);
 
   // When brief status changes, map it to a default priority
   const [priorityAutoSet, setPriorityAutoSet] = useState(true);
@@ -133,10 +267,77 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
 
     try {
       setSaving(true);
-      const payload = { ...form } as Record<string, any>;
+      // Build payload matching backend expected field names
+      const payload: Record<string, any> = {};
+      // Basic fields
+      payload.name = form.briefName;
+      // IDs from select components (they may be strings or option objects). Convert to integers when possible.
+      const toInt = (val: any) => {
+        if (val === null || val === undefined) return undefined;
+        const raw = typeof val === 'object' ? (val.value ?? val.id ?? '') : String(val);
+        const n = parseInt(String(raw), 10);
+        return Number.isNaN(n) ? undefined : n;
+      };
+
+      const bid = toInt(form.brandName);
+      if (bid !== undefined) payload.brand_id = bid;
+      const aid = toInt(form.createdBy);
+      if (aid !== undefined) payload.agency_id = aid;
+      const cp = toInt(form.contactPerson);
+      if (cp !== undefined) payload.contact_person_id = cp;
+      const assignId = toInt(form.assignTo);
+      if (assignId !== undefined) payload.assign_user_id = assignId;
+      const statusId = toInt(form.status);
+      if (statusId !== undefined) payload.brief_status_id = statusId;
+
+      // Product / mode / media / budget / comment
+      if (form.productName) payload.product_name = form.productName;
+      // programmatic value chosen by user may be 'Programmatic'|'Non-Programmatic'
+      if (form.programmatic) payload.mode_of_campaign = String(form.programmatic).toLowerCase().replace(/\s+/g, '_');
+      if (form.mediaType) payload.media_type = form.mediaType;
+      if (form.budget) payload.budget = form.budget;
+      if (form.briefDetail) payload.comment = form.briefDetail;
+
+      // submission date/time - normalize to `YYYY-MM-DD HH:mm:ss` when possible
+      const submissionDate = (form as any).submissionDate;
+      const submissionTime = (form as any).submissionTime;
+      if (submissionDate && submissionTime) {
+        let dateStr = String(submissionDate).trim();
+        // convert DD-MM-YYYY -> YYYY-MM-DD
+        const dmy = dateStr.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+        if (dmy) dateStr = `${dmy[3]}-${dmy[2]}-${dmy[1]}`;
+        // if time is HH:mm, add seconds
+        let timeStr = String(submissionTime).trim();
+        if (/^\d{2}:\d{2}$/.test(timeStr)) timeStr = `${timeStr}:00`;
+        payload.submission_date = `${dateStr} ${timeStr}`;
+      } else if (submissionDate) {
+        let dateStr = String(submissionDate).trim();
+        const dmy = dateStr.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+        if (dmy) dateStr = `${dmy[3]}-${dmy[2]}-${dmy[1]}`;
+        payload.submission_date = dateStr;
+      }
+
+      // Priority mapping: UI uses labels, backend expects priority_id (1/2/3)
+      const priorityMap: Record<string, number> = { Low: 1, Medium: 2, High: 3 };
+      if (form.priority) {
+        // priority may be a label like 'Low'|'Medium'|'High' - map to numeric ids when possible
+        const mapped = priorityMap[String(form.priority)];
+        payload.priority_id = mapped ?? toInt(form.priority) ?? form.priority;
+      }
+
       if (initialData && initialData.id) payload.id = initialData.id;
-      const res: any = onSave ? (onSave as any)(payload) : null;
-      if (res && typeof res.then === 'function') await res;
+      // If parent provided an onSave handler, use it. Otherwise use the
+      // built-in API wiring available in services/CreateBriefForm.ts
+      let res: any = null;
+      if (onSave) {
+        res = (onSave as any)(payload);
+        if (res && typeof res.then === 'function') await res;
+      } else {
+        // Lazy import to avoid circular dependency issues and keep bundle small
+        const svc = await import('../../services/CreateBriefForm');
+        res = svc.submitCreateBrief ? svc.submitCreateBrief(payload) : null;
+        if (res && typeof res.then === 'function') await res;
+      }
       setShowSuccessToast(true);
       setTimeout(() => {
         setShowSuccessToast(false);
@@ -192,13 +393,15 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">Brand Name</label>
                   <SelectField
                     name="brandName"
-                    placeholder="Auto Select"
+                    placeholder={brandsLoading ? 'Loading brands...' : 'Auto Select'}
                     options={brands}
                     value={form.brandName}
                     onChange={(v) => { setForm(prev => ({ ...prev, brandName: v })); }}
                     searchable
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
+                    disabled={brandsLoading}
                   />
+                  {brandsError && <div className="text-xs text-red-600 mt-1">{brandsError}</div>}
                 </div>
                 <div>
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">Product Name</label>
@@ -210,23 +413,29 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">Assign To</label>
                   <SelectField
                     name="assignTo"
-                    placeholder="Please Assign To Planner"
-                    options={['Planner 1', 'Planner 2', 'Planner 3', 'Planner 4', 'Planner 5']}
+                    placeholder={usersLoading ? 'Loading users...' : 'Please Assign To Planner'}
+                    options={users}
                     value={form.assignTo}
                     onChange={(v) => setForm(prev => ({ ...prev, assignTo: v }))}
+                    searchable
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
+                    disabled={usersLoading}
                   />
+                  {usersError && <div className="text-xs text-red-600 mt-1">{usersError}</div>}
                 </div>
                 <div>
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">Brief Status</label>
                   <SelectField
                     name="status"
-                    placeholder="Select Brief Status"
-                    options={['Not Interested', 'Submission', 'Negotiation', 'Approve', 'Closed']}
+                    placeholder={briefStatusesLoading ? 'Loading statuses...' : 'Select Brief Status'}
+                    options={briefStatuses}
                     value={form.status}
                     onChange={(v) => { setForm(prev => ({ ...prev, status: v })); }}
+                    searchable
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
+                    disabled={briefStatusesLoading}
                   />
+                  {briefStatusesError && <div className="text-xs text-red-600 mt-1">{briefStatusesError}</div>}
                 </div>
                 <div>
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">Mode Of Campaign</label>
@@ -273,11 +482,12 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">Contact Person Name <span className="text-[#FF0000]">*</span></label>
                   <SelectField
                     name="contactPerson"
-                    placeholder="Search or select contact person"
+                    placeholder={contactPersonsLoading ? 'Loading contacts...' : 'Search or select contact person'}
                     options={contactPersons}
                     value={form.contactPerson}
                     onChange={(v) => { setForm(prev => ({ ...prev, contactPerson: v })); setErrors(prev => ({ ...prev, contactPerson: '' })); }}
                     searchable
+                    disabled={contactPersonsLoading}
                     inputClassName={errors.contactPerson ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-[var(--border-color)] focus:ring-blue-500'}
                     className=""
                   />
@@ -289,17 +499,20 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                       {errors.contactPerson}
                     </div>
                   )}
+                  {contactPersonsError && <div className="text-xs text-red-600 mt-1">{contactPersonsError}</div>}
                 </div>
                 <div>
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">Agency Name</label>
                   <SelectField
                     name="createdBy"
-                    placeholder="Search or select agency"
+                    placeholder={agenciesLoading ? 'Loading agencies...' : 'Search or select agency'}
                     options={agencies}
                     value={form.createdBy}
                     onChange={(v) => setForm(prev => ({ ...prev, createdBy: v }))}
                     searchable
+                    disabled={agenciesLoading}
                   />
+                  {agenciesError && <div className="text-xs text-red-600 mt-1">{agenciesError}</div>}
                 </div>
                 <div>
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">Brief Budget</label>

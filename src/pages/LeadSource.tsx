@@ -5,6 +5,7 @@ import CreateSourceForm from './CreateSourceForm';
 import MasterView from '../components/ui/MasterView';
 import MasterEdit from '../components/ui/MasterEdit';
 import { MasterHeader, NotificationPopup } from '../components/ui';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
 import SearchBar from '../components/ui/SearchBar';
 import Table, { type Column } from '../components/ui/Table';
 import { listLeadSources, deleteLeadSubSource, updateLeadSubSource, type LeadSourceItem } from '../services/LeadSource';
@@ -25,6 +26,11 @@ const LeadSource: React.FC = () => {
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [successMessage, setSuccessMessage] = useState('Source updated successfully');
   const [showDeleteToast, setShowDeleteToast] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [confirmDeleteLabel, setConfirmDeleteLabel] = useState<string>('');
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [showErrorToast, setShowErrorToast] = useState(false);
+  const [errorMessageToast, setErrorMessageToast] = useState('');
   // track deletion in-flight if needed (not used currently)
 
   useEffect(() => {
@@ -136,20 +142,27 @@ const LeadSource: React.FC = () => {
 
   // helper to refresh list is available if needed (removed because unused)
 
-  const handleDelete = async (item: LeadSourceItem) => {
-    const confirm = window.confirm(`Delete sub-source "${item.subSource || item.id}"?`);
-    if (!confirm) return;
+  // open confirmation modal instead of browser confirm
+  const handleDelete = (item: LeadSourceItem) => {
+    setConfirmDeleteId(item.id);
+    setConfirmDeleteLabel(item.subSource || item.id);
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmDeleteId) return;
+    setConfirmLoading(true);
     try {
-      await deleteLeadSubSource(item.id);
-      // remove locally, then optionally refresh
-      setItems(prev => prev.filter(i => i.id !== item.id));
-      // show delete success toast
+      await deleteLeadSubSource(confirmDeleteId);
+      setItems(prev => prev.filter(i => i.id !== confirmDeleteId));
       setShowDeleteToast(true);
       setTimeout(() => setShowDeleteToast(false), 3000);
-      // await refreshList(); // keep commented for performance; enable if needed
     } catch (e: any) {
-      alert(e?.message || 'Failed to delete');
+      setErrorMessageToast(e?.message || 'Failed to delete');
+      setShowErrorToast(true);
     } finally {
+      setConfirmLoading(false);
+      setConfirmDeleteId(null);
+      setConfirmDeleteLabel('');
     }
   };
 
@@ -207,6 +220,23 @@ const LeadSource: React.FC = () => {
           icon: 'text-red-500'
         }}
       />
+      <NotificationPopup
+        isOpen={showErrorToast}
+        onClose={() => setShowErrorToast(false)}
+        message={errorMessageToast}
+        type="error"
+      />
+
+      <ConfirmDialog
+        isOpen={!!confirmDeleteId}
+        title={`Delete sub-source "${confirmDeleteLabel}"?`}
+        message="This will permanently remove the sub-source. This cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        loading={confirmLoading}
+        onCancel={() => setConfirmDeleteId(null)}
+        onConfirm={confirmDelete}
+      />
       {showCreate ? (
         <CreateSourceForm
           inline
@@ -253,11 +283,12 @@ const LeadSource: React.FC = () => {
               </div>
             )}
 
-            <div className="p-4 overflow-visible">
+            <div className="pt-0 overflow-visible">
               <Table
               data={currentData}
               startIndex={startIndex}
               loading={loading}
+              desktopOnMobile={true}
               keyExtractor={(it: any, idx: number) => `${it.id}-${idx}`}
               columns={([
                 { key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },

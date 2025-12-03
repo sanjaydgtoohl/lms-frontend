@@ -10,6 +10,7 @@ interface AssignDropdownProps {
 
 const AssignDropdown: React.FC<AssignDropdownProps> = ({ value, options, onChange }) => {
   const [open, setOpen] = useState(false);
+  const [placement, setPlacement] = useState<'top' | 'bottom'>('bottom');
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -18,6 +19,23 @@ const AssignDropdown: React.FC<AssignDropdownProps> = ({ value, options, onChang
     };
     if (open) document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  // compute placement (top or bottom) when opening based on viewport space
+  useEffect(() => {
+    if (!open) return;
+    const el = ref.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const DROPDOWN_EST_HEIGHT = 220; // estimate dropdown height
+    // prefer top if not enough space below but there is space above
+    if (spaceBelow < DROPDOWN_EST_HEIGHT && spaceAbove > spaceBelow) {
+      setPlacement('top');
+    } else {
+      setPlacement('bottom');
+    }
   }, [open]);
 
   return (
@@ -30,11 +48,14 @@ const AssignDropdown: React.FC<AssignDropdownProps> = ({ value, options, onChang
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: 8 }}
+            initial={{ opacity: 0, y: placement === 'bottom' ? 8 : -8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
+            exit={{ opacity: 0, y: placement === 'bottom' ? 8 : -8 }}
             transition={{ duration: 0.18 }}
-            className="absolute z-20 left-0 mt-2 w-44 bg-white shadow-lg rounded-xl border border-gray-200 transition-all"
+            className={
+              `absolute z-20 left-0 w-44 bg-white shadow-lg rounded-xl border border-gray-200 transition-all ` +
+              (placement === 'bottom' ? 'mt-2 top-full' : 'mb-2 bottom-full')
+            }
           >
             <ul
               tabIndex={-1}

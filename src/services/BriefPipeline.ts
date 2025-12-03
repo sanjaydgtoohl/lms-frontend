@@ -25,6 +25,9 @@ export interface BriefItem {
 const ENDPOINTS = {
   LIST: '/briefs',
   DETAIL: (id: string) => `/briefs/${id}`,
+  CREATE: '/briefs',
+  UPDATE: (id: string) => `/briefs/${id}`,
+  DELETE: (id: string) => `/briefs/${id}`,
 } as const;
 
 
@@ -48,7 +51,7 @@ export async function listBriefs(page = 1, perPage = 10, search?: string): Promi
   params.set('per_page', String(perPage));
   if (search && String(search).trim()) params.set('search', String(search).trim());
 
-  const res = await apiClient.get<BriefItem[]>(ENDPOINTS.LIST + `?${params.toString()}`);
+  const res = await apiClient.get<any>(ENDPOINTS.LIST + `?${params.toString()}`);
   const json = res;
   if (!json || !json.success) {
     const message = (json && (json.message || 'Request failed')) || 'Request failed';
@@ -61,7 +64,11 @@ export async function listBriefs(page = 1, perPage = 10, search?: string): Promi
     const idVal = raw['id'] ?? raw['uuid'] ?? raw['code'] ?? `BRF${String(idx + 1).padStart(4, '0')}`;
     const briefNameVal = raw['brief_name'] ?? raw['name'] ?? '';
     const briefIdVal = raw['brief_id'] ?? raw['code'] ?? String(idVal);
-    const brandNameVal = raw['brand_name'] ?? raw['brand'] ?? '';
+    // Handle brand_name which might be an object {id, name} or a string
+    const brandRaw = raw['brand_name'] ?? raw['brand'] ?? '';
+    const brandNameVal = typeof brandRaw === 'object' && brandRaw !== null && 'name' in brandRaw 
+      ? (brandRaw as any).name 
+      : String(brandRaw);
     const productNameVal = raw['product_name'] ?? raw['product'] ?? '';
     const contactPersonVal = raw['contact_person'] ?? raw['contact'] ?? '';
     const modeVal = raw['mode_of_campaign'] ?? raw['mode'] ?? '';
@@ -100,3 +107,58 @@ export async function listBriefs(page = 1, perPage = 10, search?: string): Promi
     meta: (json.meta as any) || {},
   };
 }
+
+export async function getBrief(id: string): Promise<BriefItem> {
+  const res = await apiClient.get<any>(ENDPOINTS.DETAIL(id));
+  const json = res;
+  if (!json || !json.success) {
+    const message = (json && (json.message || 'Request failed')) || 'Request failed';
+    try { useUiStore.getState().pushError(message); } catch {}
+    throw new Error(message);
+  }
+  const raw = json.data as Record<string, unknown>;
+  return (await listBriefs(1, 1)).data.find(b => b.id === String(id)) ?? ({ id: String(id), _raw: raw } as BriefItem);
+}
+
+export async function createBrief(payload: Partial<BriefItem>): Promise<BriefItem> {
+  const res = await apiClient.post<any>(ENDPOINTS.CREATE, payload);
+  const json = res;
+  if (!json || !json.success) {
+    const message = (json && (json.message || 'Create failed')) || 'Create failed';
+    try { useUiStore.getState().pushError(message); } catch {}
+    throw new Error(message);
+  }
+  // normalize single item response
+  const items = (json.data ? [json.data] : []) as unknown[];
+  const first = items[0] as Record<string, unknown> | undefined;
+  return (first && (await listBriefs(1, 1)).data[0]) ?? ({ id: String(first?.['id'] ?? first?.['_id'] ?? ''), _raw: first } as BriefItem);
+}
+
+export async function updateBrief(id: string, payload: Partial<BriefItem>): Promise<BriefItem> {
+  const res = await apiClient.put<any>(ENDPOINTS.UPDATE(id), payload);
+  const json = res;
+  if (!json || !json.success) {
+    const message = (json && (json.message || 'Update failed')) || 'Update failed';
+    try { useUiStore.getState().pushError(message); } catch {}
+    throw new Error(message);
+  }
+  return ({ id: String(id), ...(json.data || {}) } as BriefItem);
+}
+
+export async function deleteBrief(id: string): Promise<void> {
+  const res = await apiClient.delete<any>(ENDPOINTS.DELETE(id));
+  const json = res;
+  if (!json || !json.success) {
+    const message = (json && (json.message || 'Delete failed')) || 'Delete failed';
+    try { useUiStore.getState().pushError(message); } catch {}
+    throw new Error(message);
+  }
+}
+
+export default {
+  listBriefs,
+  getBrief,
+  createBrief,
+  updateBrief,
+  deleteBrief,
+};

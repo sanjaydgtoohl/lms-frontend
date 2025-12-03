@@ -9,6 +9,7 @@ import { fetchIndustries } from '../services/CreateIndustryForm';
 import type { Industry } from '../services/CreateIndustryForm';
 import { showSuccess, showError } from '../utils/notifications';
 import { apiClient } from '../utils/apiClient';
+import { updateBrand } from '../services/BrandMaster';
 
 type Props = {
   onClose: () => void;
@@ -130,18 +131,69 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
         agency_id: form.agency,
       };
 
-      const res = await apiClient.post('/brands', payload);
-
-      if (res && res.success) {
-        showSuccess('Brand created successfully');
-        onClose();
-        // Auto-reload Brand Master page after successful creation
-        window.location.reload();
+      let res;
+      if (mode === 'edit' && initialData?.id) {
+        // Update existing brand
+        res = await updateBrand(initialData.id, payload);
+        if (res) {
+          showSuccess('Brand updated successfully');
+          onClose();
+          // Auto-reload Brand Master page after successful update
+          window.location.reload();
+        }
       } else {
-        throw new Error(res?.message || 'Failed to create brand');
+        // Create new brand
+        res = await apiClient.post('/brands', payload);
+
+        if (res && res.success) {
+          showSuccess('Brand created successfully');
+          onClose();
+          // Auto-reload Brand Master page after successful creation
+          window.location.reload();
+        } else {
+          throw new Error(res?.message || 'Failed to create brand');
+        }
       }
     } catch (err: any) {
-      showError(err?.message || 'Failed to save brand');
+      // Handle server-side validation errors
+      const responseData = err?.responseData;
+      if (responseData?.errors && typeof responseData.errors === 'object') {
+        // Map server field names to form field names
+        const fieldErrorMap: Record<string, string> = {
+          'name': 'brandName',
+          'brand_type_id': 'brandType',
+          'industry_id': 'industry',
+          'country_id': 'country',
+          'state_id': 'state',
+          'city_id': 'city',
+          'zone_id': 'zone',
+          'postal_code': 'postalCode',
+          'agency_id': 'agency',
+          'website': 'website',
+        };
+
+        const newErrors: Record<string, string> = {};
+        
+        // Process each error from the server response
+        Object.entries(responseData.errors).forEach(([serverField, messages]: [string, any]) => {
+          const formField = fieldErrorMap[serverField] || serverField;
+          // Get the first error message if it's an array
+          const errorMessage = Array.isArray(messages) ? messages[0] : String(messages);
+          newErrors[formField] = errorMessage;
+        });
+
+        setErrors(newErrors);
+        
+        // Show only the first error in a notification
+        const firstError = Object.values(newErrors)[0];
+        // Don't show popup for "already been taken" errors - only show on form field
+        if (firstError && !firstError.toLowerCase().includes('already been taken')) {
+          showError(firstError);
+        }
+      } else {
+        // Show general error if not a validation error
+        showError(err?.message || `Failed to ${mode === 'edit' ? 'update' : 'save'} brand`);
+      }
     }
   };
 
@@ -222,16 +274,16 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
     if (initialData) {
       setForm(prev => ({
         ...prev,
-        brandName: initialData.brandName ?? initialData.name ?? prev.brandName,
-        brandType: initialData.brandType ?? String(initialData.brandType ?? '') ?? prev.brandType,
+        brandName: initialData.name ?? initialData.brandName ?? prev.brandName,
+        brandType: String(initialData.brand_type_id ?? initialData.brandType ?? initialData.brand_type ?? ''),
         website: initialData.website ?? prev.website,
-        agency: initialData.agency ?? initialData.agencyName ?? prev.agency,
-        industry: initialData.industry ?? prev.industry,
-        country: initialData.country ?? prev.country,
-        postalCode: initialData.postalCode ?? initialData.pinCode ?? prev.postalCode,
-        state: initialData.state ?? prev.state,
-        city: initialData.city ?? prev.city,
-        zone: initialData.zone ?? prev.zone,
+        agency: String(initialData.agency_id ?? initialData.agency ?? initialData.agencyName ?? ''),
+        industry: String(initialData.industry_id ?? initialData.industry ?? ''),
+        country: String(initialData.country_id ?? initialData.country ?? ''),
+        postalCode: initialData.postal_code ?? initialData.postalCode ?? initialData.pinCode ?? prev.postalCode,
+        state: String(initialData.state_id ?? initialData.state ?? ''),
+        city: String(initialData.city_id ?? initialData.city ?? ''),
+        zone: String(initialData.zone_id ?? initialData.zone ?? ''),
       }));
     }
 

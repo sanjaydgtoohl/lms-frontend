@@ -72,7 +72,22 @@ const RolePermissionTree: React.FC<Props> = ({ modulePermissions, onToggle }) =>
       .filter(Boolean);
   };
 
-  const filteredModules = filterModules(rolePermissionsData);
+  // If modulePermissions contains items, derive modules from it; otherwise fall back to static `rolePermissionsData`.
+  const deriveModulesFromPermissions = (mp: ModulePermissions) => {
+    return Object.keys(mp).map((moduleName) => ({
+      name: moduleName,
+      submodules: Object.keys(mp[moduleName]).map((subName) => ({
+        name: subName,
+        permissions: mp[moduleName][subName],
+      })),
+    }));
+  };
+
+  const modulesSource = Object.keys(modulePermissions || {}).length
+    ? deriveModulesFromPermissions(modulePermissions)
+    : rolePermissionsData;
+
+  const filteredModules = filterModules(modulesSource as any);
 
   const getSubmoduleKey = (moduleName: string, submoduleName: string) => `${moduleName}::${submoduleName}`;
 

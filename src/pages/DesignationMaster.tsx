@@ -7,6 +7,7 @@ import Table, { type Column } from '../components/ui/Table';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants';
 import { MasterHeader, MasterFormHeader, NotificationPopup } from '../components/ui';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
 import SearchBar from '../components/ui/SearchBar';
 import {
   listDesignations,
@@ -141,6 +142,8 @@ const DesignationMaster: React.FC = () => {
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [successMessage, setSuccessMessage] = useState('Designation created successfully');
   const itemsPerPage = 10;
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   // Store designations in state fetched from API
   const [designations, setDesignations] = useState<Designation[]>([]);
@@ -193,16 +196,23 @@ const DesignationMaster: React.FC = () => {
     navigate(`${ROUTES.DESIGNATION_MASTER}/${encodeURIComponent(id)}`);
   };
 
-  const handleDelete = async (id: string) => {
-    const confirm = window.confirm('Delete this designation?');
-    if (!confirm) return;
+  const handleDelete = (id: string) => {
+    setConfirmDeleteId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmDeleteId) return;
+    setConfirmLoading(true);
     try {
-      await deleteDesignation(id);
-      setDesignations(prev => prev.filter(d => d.id !== id));
+      await deleteDesignation(confirmDeleteId);
+      setDesignations(prev => prev.filter(d => d.id !== confirmDeleteId));
       setShowDeleteToast(true);
       setTimeout(() => setShowDeleteToast(false), 3000);
     } catch (e: any) {
       showError(e?.message || 'Failed to delete designation');
+    } finally {
+      setConfirmLoading(false);
+      setConfirmDeleteId(null);
     }
   };
 
@@ -322,6 +332,16 @@ const DesignationMaster: React.FC = () => {
         message={successMessage}
         type="success"
       />
+      <ConfirmDialog
+        isOpen={!!confirmDeleteId}
+        title="Delete this designation?"
+        message="This action will permanently remove the designation. This cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        loading={confirmLoading}
+        onCancel={() => setConfirmDeleteId(null)}
+        onConfirm={confirmDelete}
+      />
       {showCreate ? (
         <CreateDesignationForm onClose={() => navigate(ROUTES.DESIGNATION_MASTER)} onSave={handleSaveDesignation} />
       ) : viewItem ? (
@@ -360,11 +380,12 @@ const DesignationMaster: React.FC = () => {
               </div>
             )}
 
-            <div className="p-4 overflow-visible">
+            <div className="pt-0 overflow-visible">
               <Table
               data={currentData}
               startIndex={startIndex}
               loading={loading}
+              desktopOnMobile={true}
               keyExtractor={(it: any, idx: number) => `${it.id}-${idx}`}
               columns={([
                 { key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },

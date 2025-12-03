@@ -21,10 +21,10 @@ const ENDPOINTS = {
   DELETE: (id: string | number) => `/departments/${id}`,
 } as const;
 
-async function handleResponse<T>(res: any): Promise<T> {
+async function handleResponse<T>(res: any, showNotification = true): Promise<T> {
   if (!res || !res.success) {
     const err = new Error((res && (res.message || 'Request failed')) || 'Request failed');
-    try { handleApiError(err); } catch {}
+    try { handleApiError(err, showNotification); } catch {}
     throw err;
   }
   return res.data as T;
@@ -59,7 +59,8 @@ export async function getDepartment(id: string | number): Promise<Department> {
 
 export async function createDepartment(payload: Partial<Department>): Promise<Department> {
   const res = await apiClient.post<Department>(ENDPOINTS.CREATE, payload);
-  return handleResponse<Department>(res);
+  // Suppress global notification for create so callers can handle validation errors inline
+  return handleResponse<Department>(res, false);
 }
 
 export async function updateDepartment(id: string | number, payload: Partial<Department>): Promise<Department> {

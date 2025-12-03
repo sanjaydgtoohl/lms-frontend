@@ -36,10 +36,40 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
       .then(list => {
         if (!mounted) return;
         setOptions(list);
-        // If the form does not have a source value, default to the first option's name
-        // If source field is not hidden and the form does not have a source value, default to the first option's name
-        if (!hideSource && ((!form.source || form.source === '') && list.length > 0)) {
-          setForm(prev => ({ ...prev, source: list[0].name }));
+
+        if (hideSource) return;
+
+        // Determine a sensible value for `source` when opening edit form.
+        // The incoming `item` may contain one of several keys:
+        // - `source` (string name or id)
+        // - `lead_source_id` (id)
+        // - `lead_source` (object or name)
+        const incoming = item || {};
+
+        const incomingId = incoming.lead_source_id ?? incoming.leadSource ?? (incoming.lead_source && (incoming.lead_source.id ?? incoming.lead_source));
+        const incomingName = incoming.source ?? (incoming.lead_source && (typeof incoming.lead_source === 'string' ? incoming.lead_source : incoming.lead_source.name));
+
+        // If we have an id from the item, use that id (string) as the select value.
+        if (incomingId) {
+          setForm(prev => ({ ...prev, source: String(incomingId) }));
+          return;
+        }
+
+        // If we have a name, try to map it to an id from fetched list.
+        if (incomingName) {
+          const match = list.find(o => String(o.name).toLowerCase() === String(incomingName).toLowerCase() || String(o.id) === String(incomingName));
+          if (match) {
+            setForm(prev => ({ ...prev, source: String(match.id) }));
+            return;
+          }
+          // fallback to storing the raw name so text remains visible
+          setForm(prev => ({ ...prev, source: String(incomingName) }));
+          return;
+        }
+
+        // If nothing from item, default to first option id (if available)
+        if ((!form.source || form.source === '') && list.length > 0) {
+          setForm(prev => ({ ...prev, source: String(list[0].id) }));
         }
       })
       .catch(() => {
@@ -51,7 +81,7 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
         setLoadingOptions(false);
       });
     return () => { mounted = false; };
-  }, []);
+  }, [item]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

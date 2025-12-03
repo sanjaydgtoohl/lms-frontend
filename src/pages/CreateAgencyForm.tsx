@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Plus, Trash2 } from 'lucide-react';
 import { MasterFormHeader, SelectField, MultiSelectDropdown } from '../components/ui';
 import { showSuccess, showError } from '../utils/notifications';
+import { updateAgency } from '../services/AgencyMaster';
 
 // --- Types used by this form
 interface ParentAgency {
@@ -23,6 +24,8 @@ interface ChildAgency {
 interface Props {
   onClose: () => void;
   onSave?: (payload: { parent: ParentAgency; children: Array<{ name: string; type: string; client: string[] }> }) => Promise<any> | any;
+  mode?: 'create' | 'edit';
+  initialData?: Record<string, any>;
 }
 
 // helper to create a new blank child entry
@@ -32,7 +35,7 @@ const blankChild = (): ChildAgency => ({
   type: '',
   client: [],
 });
-const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
+const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', initialData }) => {
   const [parent, setParent] = useState<ParentAgency>({ name: '', type: '', client: [] });
   const [children, setChildren] = useState<ChildAgency[]>([]);
   const childNameRefs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -75,6 +78,81 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
         if (mounted) setIsLoading(prev => ({ ...prev, agencyClients: false }));
       }
     })();
+
+    // If initialData provided (edit mode), populate the form
+    if (initialData && mode === 'edit') {
+      const parentData = initialData.parent || initialData;
+      
+      // Extract agency type - could be nested object or string
+      let parentTypeId = '';
+      const rawParentType = parentData.type || parentData.agency_type;
+      if (typeof rawParentType === 'object' && rawParentType?.id) {
+        parentTypeId = String(rawParentType.id);
+      } else if (rawParentType) {
+        parentTypeId = String(rawParentType);
+      }
+
+      // Extract agency clients - could be array of objects or array of ids
+      // Also check for brand data in the response
+      let parentClientIds: string[] = [];
+      let rawParentClient = parentData.client || parentData.clients || [];
+      
+      // If no client data but brand data exists, use brand IDs as clients
+      if ((!rawParentClient || rawParentClient.length === 0) && parentData.brand && Array.isArray(parentData.brand)) {
+        rawParentClient = parentData.brand;
+      }
+      
+      if (Array.isArray(rawParentClient)) {
+        parentClientIds = rawParentClient.map((c: any) => {
+          if (typeof c === 'object' && c?.id) return String(c.id);
+          return String(c);
+        });
+      }
+
+      setParent({
+        name: parentData.name || parentData.agencyName || '',
+        type: parentTypeId,
+        client: parentClientIds,
+      });
+
+      // Handle child agencies
+      if (Array.isArray(initialData.children)) {
+        setChildren(initialData.children.map((c: any, idx: number) => {
+          // Extract child agency type
+          let childTypeId = '';
+          const rawChildType = c.type || c.agency_type;
+          if (typeof rawChildType === 'object' && rawChildType?.id) {
+            childTypeId = String(rawChildType.id);
+          } else if (rawChildType) {
+            childTypeId = String(rawChildType);
+          }
+
+          // Extract child agency clients
+          // Also check for brand data in the response
+          let childClientIds: string[] = [];
+          let rawChildClient = c.client || c.clients || [];
+          
+          // If no client data but brand data exists, use brand IDs as clients
+          if ((!rawChildClient || rawChildClient.length === 0) && c.brand && Array.isArray(c.brand)) {
+            rawChildClient = c.brand;
+          }
+          
+          if (Array.isArray(rawChildClient)) {
+            childClientIds = rawChildClient.map((cc: any) => {
+              if (typeof cc === 'object' && cc?.id) return String(cc.id);
+              return String(cc);
+            });
+          }
+
+          return {
+            id: `child-${idx}-${Date.now()}`,
+            name: c.name || '',
+            type: childTypeId,
+            client: childClientIds,
+          };
+        }));
+      }
+    }
 
     return () => { mounted = false; };
   }, []);
@@ -196,8 +274,14 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
         });
       });
 
-      // Call API to create group agency (apiClient will send FormData as multipart)
-      await createGroupAgency(form);
+      // Call appropriate API based on mode
+      if (mode === 'edit' && initialData?.id) {
+        // Update existing agency
+        await updateAgency(initialData.id, Object.fromEntries(form.entries()));
+      } else {
+        // Create new agency
+        await createGroupAgency(form);
+      }
       
       // Also call custom onSave callback if provided (for additional processing)
       if (onSave && typeof onSave === 'function') {
@@ -210,7 +294,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
       }
 
       // show global success notification (same behaviour as Brand Master)
-      showSuccess('Agency created successfully');
+      showSuccess(mode === 'edit' ? 'Agency updated successfully' : 'Agency created successfully');
       // close the form and refresh listing after a short delay so user can see the toast
       setTimeout(() => {
         onClose();
@@ -220,7 +304,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
       console.error('Submit failed', err);
       // Show an error toast as well
       try {
-        showError((err as any)?.message || 'Failed to create agency');
+        showError((err as any)?.message || `Failed to ${mode === 'edit' ? 'update' : 'create'} agency`);
       } catch (e) {
         // ignore notification errors
       }
@@ -240,7 +324,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
       {/* global notification used via showSuccess/showError; local popup removed */}
 
       <div className="space-y-6 p-6">
-        <MasterFormHeader onBack={onClose} title="Create Group Agency" />
+        <MasterFormHeader onBack={onClose} title={mode === 'edit' ? 'Edit Group Agency' : 'Create Group Agency'} />
 
   <div className="w-full max-w-full mx-auto bg-white rounded-2xl shadow-lg border border-[#E3E8EF] overflow-hidden">
           <div className="p-8 bg-[#F9FAFB] space-y-8">
@@ -395,7 +479,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
                 data-btn-label="Save"
                 style={{ backgroundColor: 'var(--color-orange-400)' }}
               >
-                {submitting ? 'Saving...' : 'Save'}
+                {submitting ? (mode === 'edit' ? 'Updating...' : 'Saving...') : (mode === 'edit' ? 'Update' : 'Save')}
               </button>
             </div>
           </div>

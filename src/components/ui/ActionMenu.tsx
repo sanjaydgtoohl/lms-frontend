@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { MoreHorizontal, Edit, Eye, Trash } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -21,6 +22,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, isLas
   const toggleRef = useRef<HTMLButtonElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [showIconFallback, setShowIconFallback] = useState(false);
+  const [portalStyles, setPortalStyles] = useState<{ right: number; top?: number; bottom?: number } | null>(null);
 
   // Check if row is near bottom (last 3 rows)
   const isNearBottom = typeof rowIndex === 'number' && typeof totalRows === 'number' 
@@ -92,6 +94,17 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, isLas
       if (isOpen && containerRef.current) {
         const shouldShowAbove = checkPosition();
         setShowAbove(shouldShowAbove);
+
+          // Compute fixed positioning so the menu is rendered in a portal
+          const rect = containerRef.current.getBoundingClientRect();
+          const right = Math.round(window.innerWidth - rect.right);
+          if (shouldShowAbove) {
+            const bottom = Math.round(window.innerHeight - rect.top);
+            setPortalStyles({ right, bottom });
+          } else {
+            const top = Math.round(rect.bottom);
+            setPortalStyles({ right, top });
+          }
       }
     };
 
@@ -264,9 +277,9 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, isLas
         )}
       </button>
 
-      {/* Dropdown Menu - Using portal-like positioning */}
-      <AnimatePresence>
-        {isOpen && (
+      {/* Dropdown Menu - render into body via portal so it escapes stacking contexts */}
+      {isOpen && portalStyles && createPortal(
+        <AnimatePresence>
           <motion.div
             ref={menuRef}
             initial={{ opacity: 0, y: showAbove ? 8 : -8, scale: 0.95 }}
@@ -275,9 +288,13 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, isLas
             transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
             role="menu"
             aria-orientation="vertical"
+            style={{
+              position: 'fixed',
+              right: portalStyles.right,
+              top: portalStyles.top ?? undefined,
+              bottom: portalStyles.bottom ?? undefined,
+            }}
             className={`
-              absolute right-0
-              ${showAbove ? 'bottom-full mb-2' : 'top-full mt-2'}
               bg-white rounded-lg shadow-xl border border-gray-200
               py-1.5 min-w-[160px]
               focus:outline-none
@@ -362,8 +379,9 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, isLas
                 </>
               )}
           </motion.div>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 };

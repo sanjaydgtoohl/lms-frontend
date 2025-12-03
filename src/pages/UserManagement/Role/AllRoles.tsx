@@ -79,9 +79,9 @@ const AllRoles: React.FC = () => {
         onCreateClick={handleCreateRole}
         createButtonLabel="Create Role"
       />
-      <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-        <div className="bg-gray-50 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[var(--text-primary)]">All Roles</h2>
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-200">
+          <h2 className="text-base font-semibold text-gray-900">All Roles</h2>
           <div className="ml-4">
             <SearchBar
               placeholder="Search roles..."
@@ -94,15 +94,18 @@ const AllRoles: React.FC = () => {
           </div>
         </div>
 
-        <Table
-          data={roles}
-          startIndex={(currentPage - 1) * itemsPerPage}
-          loading={loading}
-          keyExtractor={(it: Role) => it.id}
-          columns={columns}
-          onEdit={(it: Role) => handleEdit(it.id)}
-          onView={(it: Role) => handleView(it.id)}
-        />
+        <div className="pt-0 overflow-visible">
+          <Table
+            data={roles}
+            startIndex={(currentPage - 1) * itemsPerPage}
+            loading={loading}
+            desktopOnMobile={true}
+            keyExtractor={(it: Role) => it.id}
+            columns={columns}
+            onEdit={(it: Role) => handleEdit(it.id)}
+            onView={(it: Role) => handleView(it.id)}
+          />
+        </div>
       </div>
 
       <Pagination

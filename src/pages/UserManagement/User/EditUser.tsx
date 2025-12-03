@@ -1,31 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
 import { MasterFormHeader, NotificationPopup, MultiSelectDropdown } from '../../../components/ui';
 import { apiClient } from '../../../utils/apiClient';
-import { createUser, updateUser } from '../../../services/CreateUser';
+import { getUserForEdit, updateUserDetails } from '../../../services/EditUser';
+import type { EditUserPayload } from '../../../services/EditUser';
 
-type Props = {
-  mode?: 'create' | 'edit';
-  initialData?: Record<string, any>;
-};
-
-// roleOptions will be fetched from the API
-
-// status removed — backend doesn't require a status field from the frontend
-
-const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
+const EditUser: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  
   const [form, setForm] = useState({
-  name: '',
-  email: '',
-  phone: '',
-  password: '',
-  password_confirmation: '',
-  roles: [] as string[],
+    name: '',
+    email: '',
+    phone: '',
+    password: '',
+    password_confirmation: '',
+    roles: [] as string[],
   });
 
+  const [isLoading, setIsLoading] = useState(true);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [showErrorToast, setShowErrorToast] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -35,19 +30,38 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
   const [rolesError, setRolesError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // Fetch initial user data
   useEffect(() => {
-    if (initialData) {
-      setForm((prev) => ({
-        ...prev,
-        ...initialData,
-        // normalize role id(s) to select value(s)
-        roles: initialData.roles && Array.isArray(initialData.roles)
-          ? initialData.roles.map((r: any) => String(r.id))
-          : (initialData.role_id ? [String(initialData.role_id)] : (initialData.role ? [String(initialData.role)] : prev.roles)),
-        name: initialData.name ?? initialData.full_name ?? prev.name,
-      }));
+    const fetchUser = async () => {
+      try {
+        setIsLoading(true);
+        if (id) {
+          console.log('Fetching user with ID:', id);
+          const user = await getUserForEdit(id);
+          console.log('User data received:', user);
+          setForm({
+            name: user.name || '',
+            email: user.email || '',
+            phone: user.phone || '',
+            password: '',
+            password_confirmation: '',
+            roles: user.roles && Array.isArray(user.roles) 
+              ? user.roles.map(r => String(r.id)) 
+              : (user.role_id ? [String(user.role_id)] : []),
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching user:', error);
+        setErrors({ submit: 'Failed to load user data. Please try again.' });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchUser();
     }
-  }, [initialData]);
+  }, [id]);
 
   useEffect(() => {
     let mounted = true;
@@ -121,23 +135,18 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-  const next: Record<string, string> = {};
-  if (!form.name || form.name.trim() === '') next.name = 'Please enter name';
+    const next: Record<string, string> = {};
+    if (!form.name || form.name.trim() === '') next.name = 'Please enter name';
     if (!form.email || form.email.trim() === '') next.email = 'Please enter email';
     else if (!validateEmail(form.email)) next.email = 'Please enter a valid email address';
     
-  if (form.phone && !validatePhone(form.phone)) next.phone = 'Please enter a valid phone number';
+    if (form.phone && !validatePhone(form.phone)) next.phone = 'Please enter a valid phone number';
+    
+    if (!form.roles || form.roles.length === 0) next.roles = 'Please select at least one role';
 
-    // Password required on create
-    if (mode !== 'edit') {
-      if (!form.password || String(form.password).trim() === '') next.password = 'Please enter password';
-      if (!form.password_confirmation || String(form.password_confirmation).trim() === '') next.password_confirmation = 'Please confirm password';
-      else if (form.password !== form.password_confirmation) next.password_confirmation = 'Password confirmation does not match';
-    } else {
-      // If editing and password fields provided, ensure confirmation matches
-      if (form.password && form.password_confirmation && form.password !== form.password_confirmation) {
-        next.password_confirmation = 'Password confirmation does not match';
-      }
+    // If editing and password fields provided, ensure confirmation matches
+    if (form.password && form.password_confirmation && form.password !== form.password_confirmation) {
+      next.password_confirmation = 'Password confirmation does not match';
     }
 
     setErrors(next);
@@ -147,7 +156,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
       setSaving(true);
       const base = { ...form } as Record<string, any>;
       // Build payload expected by backend
-      const payload: Record<string, any> = {
+      const payload: EditUserPayload = {
         name: String(base.name || ''),
         email: base.email || '',
         phone: base.phone || null,
@@ -158,19 +167,14 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
         payload.role_ids = base.roles.map((r: string) => Number(r));
       }
 
-      // include password only when provided (required on create)
+      // include password only when provided (optional on edit)
       if (base.password && String(base.password).trim() !== '') {
         payload.password = base.password;
         payload.password_confirmation = base.password_confirmation;
       }
 
-      if (initialData && initialData.id) payload.id = initialData.id;
-
-      // Call API service
-      if (mode === 'edit' && initialData && initialData.id) {
-        await updateUser(String(initialData.id), payload);
-      } else {
-        await createUser(payload);
+      if (id) {
+        await updateUserDetails(id, payload);
       }
 
       setShowSuccessToast(true);
@@ -179,7 +183,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
         navigate(ROUTES.USER.ROOT);
       }, 1200);
     } catch (err: any) {
-      console.error('Error saving user:', err);
+      console.error('Error updating user:', err);
 
       // try to extract structured validation errors from API
       const respData = err?.responseData || err?.response?.data || null;
@@ -197,7 +201,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
         });
         setErrors((prev) => ({ ...prev, ...nextErrs }));
       } else {
-        const msg = respData?.message || err?.message || 'Failed to save user';
+        const msg = respData?.message || err?.message || 'Failed to update user';
         setErrorMessage(String(msg));
         setShowErrorToast(true);
       }
@@ -210,6 +214,16 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
     navigate(ROUTES.USER.ROOT);
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex-1 p-6">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-lg text-gray-500">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -220,12 +234,12 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
     >
       <MasterFormHeader 
         onBack={handleBack} 
-        title={mode === 'edit' ? 'Edit User' : 'Add User'} 
+        title="Edit User" 
       />
       <NotificationPopup
         isOpen={showSuccessToast}
         onClose={() => setShowSuccessToast(false)}
-        message={mode === 'edit' ? 'User updated successfully' : 'User created successfully'}
+        message="User updated successfully"
         type="success"
       />
       <NotificationPopup
@@ -276,7 +290,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
             {/* Password */}
             <div>
               <label className="block text-sm text-[var(--text-secondary)] mb-1">
-                Password {mode !== 'edit' && <span className="text-[#FF0000]">*</span>}
+                Password
               </label>
               <input
                 name="password"
@@ -286,7 +300,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
                   handleChange(e);
                   setErrors((prev) => ({ ...prev, password: '' }));
                 }}
-                placeholder={mode === 'edit' ? 'Leave blank to keep current password' : 'Please enter password'}
+                placeholder="Leave blank to keep current password"
                 className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
                   errors.password
                     ? 'border border-red-500 bg-red-50 focus:ring-red-500'
@@ -308,7 +322,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
             {/* Password confirmation */}
             <div>
               <label className="block text-sm text-[var(--text-secondary)] mb-1">
-                Confirm Password {mode !== 'edit' && <span className="text-[#FF0000]">*</span>}
+                Confirm Password
               </label>
               <input
                 name="password_confirmation"
@@ -318,7 +332,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
                   handleChange(e);
                   setErrors((prev) => ({ ...prev, password_confirmation: '' }));
                 }}
-                placeholder={mode === 'edit' ? 'Leave blank to keep current password' : 'Please confirm password'}
+                placeholder="Leave blank to keep current password"
                 className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
                   errors.password_confirmation
                     ? 'border border-red-500 bg-red-50 focus:ring-red-500'
@@ -408,16 +422,19 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
               <label className="block text-sm text-[var(--text-secondary)] mb-1">
                 Role <span className="text-[#FF0000]">*</span>
               </label>
-                <MultiSelectDropdown
-                  name="roles"
-                  placeholder={rolesLoading ? 'Loading roles...' : 'Search or select roles'}
-                  options={roleOptions}
-                  value={form.roles}
-                  onChange={(v) => { setForm((prev) => ({ ...prev, roles: v })); setErrors((prev) => ({ ...prev, roles: '' })); }}
-                  disabled={rolesLoading}
-                  inputClassName={`border ${errors.roles ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-[var(--border-color)] focus:ring-blue-500'}`}
-                  maxVisibleOptions={2}
-                />
+              <MultiSelectDropdown
+                name="roles"
+                placeholder={rolesLoading ? 'Loading roles...' : 'Search or select roles'}
+                options={roleOptions}
+                value={form.roles}
+                onChange={(v) => {
+                  setForm((prev) => ({ ...prev, roles: v }));
+                  setErrors((prev) => ({ ...prev, roles: '' }));
+                }}
+                disabled={rolesLoading}
+                inputClassName={`${errors.roles ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-[var(--border-color)] focus:ring-blue-500'}`}
+                maxVisibleOptions={2}
+              />
               {rolesError && (
                 <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
                   <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -426,7 +443,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
                   {rolesError}
                 </div>
               )}
-              {errors.role && (
+              {errors.roles && (
                 <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
                   <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path
@@ -435,12 +452,10 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
                       clipRule="evenodd"
                     />
                   </svg>
-                  {errors.role}
+                  {errors.roles}
                 </div>
               )}
             </div>
-
-            {/* status removed */}
 
             {/* Form Actions */}
             <div className="flex items-center justify-end">
@@ -449,7 +464,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
                 className="px-4 py-2 rounded-lg btn-primary text-white shadow-sm disabled:opacity-60"
                 disabled={saving}
               >
-                {saving ? 'Saving...' : mode === 'edit' ? 'Update' : 'Save'}
+                {saving ? 'Updating...' : 'Update'}
               </button>
             </div>
           </form>
@@ -459,4 +474,4 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
   );
 };
 
-export default CreateUser;
+export default EditUser;

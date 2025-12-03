@@ -34,7 +34,7 @@ interface Lead {
     postalCode: string;
   }>;
   assignTo?: string;
-  priority?: 'high' | 'medium' | 'low';
+  priority?: string;
   callFeedback?: string;
 }
 
@@ -235,6 +235,7 @@ const EditLead: React.FC = () => {
                               columns={columns}
                               startIndex={0}
                               loading={false}
+                              desktopOnMobile={true}
                               keyExtractor={(it) => it.id}
                             />
                   );

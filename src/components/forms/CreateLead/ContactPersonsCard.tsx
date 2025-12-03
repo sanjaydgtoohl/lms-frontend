@@ -142,10 +142,19 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
   };
 
   const updateContact = (id: string, field: keyof Contact, value: string | boolean) => {
-    updateContacts(contacts.map(c => c.id === id ? { 
-      ...c, 
-      [field]: value 
-    } : c));
+    updateContacts(contacts.map(c => {
+      const updated = { ...c, [field]: value };
+      // Clear state when country changes
+      if (field === 'country' && value !== c.country) {
+        updated.state = '';
+        updated.city = '';
+      }
+      // Clear city when state changes
+      if (field === 'state' && value !== c.state) {
+        updated.city = '';
+      }
+      return c.id === id ? updated : c;
+    }));
   };
 
 
@@ -185,11 +194,22 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
     return () => { isMounted = false; };
   }, []);
 
+  // Fetch states when any contact's country changes
   useEffect(() => {
     let isMounted = true;
+    
+    // Check if any contact has a country selected
+    const selectedCountry = contacts.find(c => c.country)?.country;
+    
+    if (!selectedCountry) {
+      setStateOptions([]);
+      setStateError(null);
+      return;
+    }
+    
     setStateLoading(true);
     setStateError(null);
-    fetchStates().then(({ data, error }) => {
+    fetchStates({ country_id: selectedCountry }).then(({ data, error }) => {
       if (!isMounted) return;
       if (error) {
         setStateError(error);
@@ -204,13 +224,24 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
       setStateLoading(false);
     });
     return () => { isMounted = false; };
-  }, []);
+  }, [contacts]);
 
+  // Fetch cities when any contact's state changes
   useEffect(() => {
     let isMounted = true;
+    
+    // Check if any contact has a state selected
+    const selectedState = contacts.find(c => c.state)?.state;
+    
+    if (!selectedState) {
+      setCityOptions([]);
+      setCityError(null);
+      return;
+    }
+    
     setCityLoading(true);
     setCityError(null);
-    fetchCities().then(({ data, error }) => {
+    fetchCities({ state_id: selectedState }).then(({ data, error }) => {
       if (!isMounted) return;
       if (error) {
         setCityError(error);
@@ -225,7 +256,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
       setCityLoading(false);
     });
     return () => { isMounted = false; };
-  }, []);
+  }, [contacts]);
 
   return (
     <div className="space-y-6 mb-6">
@@ -351,7 +382,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                   <SelectField
                     name="type"
                     placeholder="Select type"
-                    options={['Option 1', 'Option 2', 'Option 3']}
+                    options={[{ value: 'Brand', label: 'Brand' }, { value: 'Agency', label: 'Agency' }]}
                     value={c.type}
                     onChange={(v) => updateContact(c.id, 'type', v)}
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"

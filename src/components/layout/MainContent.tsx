@@ -34,6 +34,7 @@ interface MainContentProps<T extends LeadSource | Agency> {
   currentPage?: number;
   itemsPerPage?: number;
   onPageChange?: (page: number) => void;
+  onSearch?: (q: string) => void;
 }
 
 const MainContent = <T extends LeadSource | Agency>({ 
@@ -49,6 +50,7 @@ const MainContent = <T extends LeadSource | Agency>({
   currentPage: externalCurrentPage,
   itemsPerPage: externalItemsPerPage,
   onPageChange: externalOnPageChange,
+  onSearch: externalOnSearch,
 }: MainContentProps<T>) => {
   const [internalPage, setInternalPage] = useState(1);
   const itemsPerPage = 10;
@@ -81,9 +83,10 @@ const MainContent = <T extends LeadSource | Agency>({
 
   // apply search filtering across common fields
   const filteredArray = currentDataArray.filter((item) => {
-    // allow exact field matching using syntax `field:term` (exact equality), otherwise contains across common fields
-    const commonFields = ['id', 'agencyName', 'agencyGroup', 'agencyType', 'source', 'subSource'];
-    return matchesQuery(item as unknown as Record<string, unknown>, searchQuery, { 
+    // allow exact field matching using syntax `field:term` (exact equality), otherwise contains across
+    // all fields that are strings on the item (dynamic) — user requested "for all strings".
+    const commonFields = Object.keys(item).filter((k) => typeof (item as any)[k] === 'string');
+    return matchesQuery(item as unknown as Record<string, unknown>, searchQuery, {
       fields: commonFields,
       useStartsWith: dataType === 'agency'
     });
@@ -93,10 +96,28 @@ const MainContent = <T extends LeadSource | Agency>({
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const providedData = externalData;
-  // If parent provided `externalData` it is assumed to already be the current page
-  // of results (server-side pagination). In that case use it as-is. Otherwise
-  // fall back to client-side sample data which we slice for paging.
-  const currentData = providedData ? (providedData as T[]) : filteredArray.slice(startIndex, endIndex);
+  // If parent provided `externalData` it is assumed to be server-side data.
+  // However, some backends may not search across every textual field; to
+  // provide a better UX, when a search query is present we also apply a
+  // client-side filter across all string fields of the provided items so the
+  // table updates immediately (we still call parent `onSearch` so the server
+  // request can run and reconcile results).
+  let currentData: T[];
+  if (providedData) {
+    const provided = providedData as T[];
+    const q = String(searchQuery || '').trim();
+    if (q) {
+      const filteredProvided = provided.filter(item => {
+        const fields = Object.keys(item).filter(k => typeof (item as any)[k] === 'string');
+        return matchesQuery(item as unknown as Record<string, unknown>, q, { fields, useStartsWith: dataType === 'agency' });
+      });
+      currentData = filteredProvided.slice(startIndex, endIndex);
+    } else {
+      currentData = provided;
+    }
+  } else {
+    currentData = filteredArray.slice(startIndex, endIndex);
+  }
 
   const handleEdit = (item: T) => {
     if (onEdit) {
@@ -122,7 +143,24 @@ const MainContent = <T extends LeadSource | Agency>({
   };
 
   const renderPagination = () => {
-    const total = typeof externalTotal === 'number' ? externalTotal : (searchQuery ? filteredArray.length : currentDataArray.length);
+    let total: number;
+    if (typeof externalTotal === 'number') {
+      total = externalTotal;
+    } else if (providedData) {
+      const provided = (providedData as T[]);
+      const q = String(searchQuery || '').trim();
+      if (q) {
+        const filteredProvidedCount = provided.filter(item => {
+          const fields = Object.keys(item).filter(k => typeof (item as any)[k] === 'string');
+          return matchesQuery(item as unknown as Record<string, unknown>, q, { fields, useStartsWith: dataType === 'agency' });
+        }).length;
+        total = filteredProvidedCount;
+      } else {
+        total = provided.length;
+      }
+    } else {
+      total = searchQuery ? filteredArray.length : currentDataArray.length;
+    }
     return (
       <Pagination
         currentPage={currentPage}
@@ -144,7 +182,11 @@ const MainContent = <T extends LeadSource | Agency>({
               <SearchBar
                 delay={300}
                 placeholder={dataType === 'agency' ? 'Search Agency Group' : 'Search...'}
-                onSearch={(q: string) => { setSearchQuery(q); if (externalOnPageChange) externalOnPageChange(1); else setInternalPage(1); }}
+                onSearch={(q: string) => {
+                  setSearchQuery(q);
+                  if (externalOnPageChange) externalOnPageChange(1); else setInternalPage(1);
+                  if (externalOnSearch) externalOnSearch(q);
+                }}
               />
               {headerActions && (
                 <div className="flex items-center space-x-2">
@@ -155,11 +197,12 @@ const MainContent = <T extends LeadSource | Agency>({
           </div>
         </div>
 
-        <div className="p-4 overflow-visible">
+        <div className={dataType === 'agency' ? 'pt-0 overflow-visible' : 'p-4 overflow-visible'}>
           <Table
           data={currentData}
           startIndex={startIndex}
           loading={!!externalLoading}
+          desktopOnMobile={true}
           keyExtractor={(it: T, idx: number) => `${it.id}-${idx}`}
           columns={(
             (dataType === 'agency'
@@ -168,11 +211,11 @@ const MainContent = <T extends LeadSource | Agency>({
                     const idx = currentData.findIndex(item => item.id === it.id);
                     return String(startIndex + (idx >= 0 ? idx : 0) + 1);
                   }},
-                  { key: 'agencyGroup', header: 'Agency Group', render: (it: T) => (it as Agency).agencyGroup },
-                  { key: 'agencyName', header: 'Agency Name', render: (it: T) => (it as Agency).agencyName },
-                  { key: 'agencyType', header: 'Agency Type', render: (it: T) => (it as Agency).agencyType },
-                  { key: 'contactPerson', header: 'Contact Person', render: (it: T) => (it as Agency).contactPerson },
-                  { key: 'dateTime', header: 'Date & Time', render: (it: T) => (it as Agency).dateTime },
+                  { key: 'agencyGroup', header: 'Agency Group', render: (it: T) => (it as Agency).agencyGroup || '-' },
+                  { key: 'agencyName', header: 'Agency Name', render: (it: T) => (it as Agency).agencyName || '-' },
+                  { key: 'agencyType', header: 'Agency Type', render: (it: T) => (it as Agency).agencyType || '-' },
+                  { key: 'contactPerson', header: 'Contact Person', render: (it: T) => (it as Agency).contactPerson || '-' },
+                  { key: 'dateTime', header: 'Date & Time', render: (it: T) => (it as Agency).dateTime || '-' },
                 ]
               : [
                   { key: 'sr', header: 'Sr. No.', render: (it: T) => {

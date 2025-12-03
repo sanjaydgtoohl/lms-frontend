@@ -8,6 +8,7 @@ import Table, { type Column } from '../components/ui/Table';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants';
 import { MasterHeader, MasterFormHeader, NotificationPopup } from '../components/ui';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
 import SearchBar from '../components/ui/SearchBar';
 import {
 	listDepartments,
@@ -74,7 +75,21 @@ const CreateDepartmentForm: React.FC<{
 			showSuccess('Department created successfully');
 			onClose();
 		} catch (err: any) {
-			showError(err?.message || 'Failed to create department');
+			const responseData = err?.responseData;
+			if (responseData?.errors && typeof responseData.errors === 'object') {
+				// Handle validation errors
+				const nameErrors = responseData.errors.name;
+				const errorMessage = Array.isArray(nameErrors) ? nameErrors[0] : String(nameErrors);
+				setError(errorMessage);
+				
+				// Don't show popup for "already been taken" errors - only show on form field
+				if (!errorMessage.toLowerCase().includes('already been taken')) {
+					showError(errorMessage);
+				}
+			} else {
+				// Show general error if not a validation error
+				showError(err?.message || 'Failed to create department');
+			}
 		}
 	};
 
@@ -134,6 +149,8 @@ const DepartmentMaster: React.FC = () => {
 	const [currentPage, setCurrentPage] = useState(1);
 	const itemsPerPage = 10;
 	const [showDeleteToast, setShowDeleteToast] = useState(false);
+	const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+	const [confirmLoading, setConfirmLoading] = useState(false);
 
 	// Store departments in state fetched from API
 	const [departments, setDepartments] = useState<Department[]>([]);
@@ -156,15 +173,16 @@ const DepartmentMaster: React.FC = () => {
 	};
 
 	const handleSaveDepartment = (data: any) => {
-		// Create on server then refresh list
-		(async () => {
+		// Return the promise so the calling form can handle validation errors inline
+		return (async () => {
 			try {
 				await createDepartment({ name: data.name });
 				await refresh();
 				setCurrentPage(1);
 				showSuccess('Department created successfully');
 			} catch (e: any) {
-				showError(e?.message || 'Failed to create department');
+				// Rethrow so caller can decide whether to show a popup or render inline errors
+				throw e;
 			}
 		})();
 	};
@@ -177,16 +195,23 @@ const DepartmentMaster: React.FC = () => {
 		navigate(`${ROUTES.DEPARTMENT_MASTER}/${encodeURIComponent(id)}`);
 	};
 
-	const handleDelete = async (id: string) => {
-		const confirm = window.confirm('Delete this department?');
-		if (!confirm) return;
+	const handleDelete = (id: string) => {
+		setConfirmDeleteId(id);
+	};
+
+	const confirmDelete = async () => {
+		if (!confirmDeleteId) return;
+		setConfirmLoading(true);
 		try {
-			await deleteDepartment(id);
-			setDepartments(prev => prev.filter(d => d.id !== id));
+			await deleteDepartment(confirmDeleteId);
+			setDepartments(prev => prev.filter(d => d.id !== confirmDeleteId));
 			setShowDeleteToast(true);
 			setTimeout(() => setShowDeleteToast(false), 3000);
 		} catch (e: any) {
 			alert(e?.message || 'Failed to delete');
+		} finally {
+			setConfirmLoading(false);
+			setConfirmDeleteId(null);
 		}
 	};
 
@@ -287,6 +312,16 @@ const DepartmentMaster: React.FC = () => {
 					icon: 'text-red-500'
 				}}
 			/>
+			<ConfirmDialog
+				isOpen={!!confirmDeleteId}
+				title="Delete this department?"
+				message="This action will permanently remove the department. This cannot be undone."
+				confirmLabel="Delete"
+				cancelLabel="Cancel"
+				loading={confirmLoading}
+				onCancel={() => setConfirmDeleteId(null)}
+				onConfirm={confirmDelete}
+			/>
 			{showCreate ? (
 				<CreateDepartmentForm onClose={() => navigate(ROUTES.DEPARTMENT_MASTER)} onSave={handleSaveDepartment} />
 					) : viewItem ? (
@@ -326,13 +361,14 @@ const DepartmentMaster: React.FC = () => {
 							</div>
 						)}
 
-						<div className="p-4 overflow-visible">
-							<Table
-							data={currentData}
-							startIndex={startIndex}
-							loading={loading}
-							keyExtractor={(it: any, idx: number) => `${it.id}-${idx}`}
-							columns={([
+												<div className="pt-0 overflow-visible">
+						<Table
+						data={currentData}
+						startIndex={startIndex}
+						loading={loading}
+						desktopOnMobile={true}
+						keyExtractor={(it: any, idx: number) => `${it.id}-${idx}`}
+						columns={([
 								{ key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },
 								{ key: 'name', header: 'Department Name', render: (it: any) => it.name || '-' },
 									{ key: 'dateTime', header: 'Date & Time', render: (it: any) => it.dateTime ? formatDisplayDate(it.dateTime) : '-' },
