@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
 import { MasterFormHeader, NotificationPopup } from '../../../components/ui';
-import { rolePermissionsData } from '../../../data/rolePermissionsData';
+// removed static rolePermissionsData import to use dynamic API data only
 import type { Permission } from '../../../data/rolePermissionsData';
 import { fetchPermissionsAsModulePermissions, createRole as apiCreateRole } from '../../../services/CreateRole';
 import RolePermissionTree from '../../../components/ui/RolePermissionTree';
@@ -27,16 +27,8 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
     parentPermission: '',
   });
 
-  const [modulePermissions, setModulePermissions] = useState<ModulePermissions>(() => {
-    const initial: ModulePermissions = {};
-    rolePermissionsData.forEach((module) => {
-      initial[module.name] = {};
-      module.submodules.forEach((submodule) => {
-        initial[module.name][submodule.name] = { ...submodule.permissions };
-      });
-    });
-    return initial;
-  });
+  // start with an empty permissions object; will be populated from API
+  const [modulePermissions, setModulePermissions] = useState<ModulePermissions>({});
 
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [showErrorToast, setShowErrorToast] = useState(false);

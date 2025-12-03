@@ -1,10 +1,10 @@
 import { apiClient } from '../utils/apiClient';
 import { handleApiError } from '../utils/apiErrorHandler';
 import type { Permission } from '../data/rolePermissionsData';
-import rolePermissionsData from '../data/rolePermissionsData';
 
 const ENDPOINTS = {
   PERMISSIONS: '/permissions',
+  PERMISSION_TREE: '/permissions/all-permission-tree',
   ROLES: '/roles',
 } as const;
 
@@ -17,120 +17,86 @@ export type ModulePermissions = {
 // keep the latest permission id index fetched from the server so we can map UI booleans -> ids
 let latestPermissionIdIndex: Record<string, Record<string, Record<string, number>>> | undefined = undefined;
 
-function toTitle(s: string) {
-  return String(s)
-    .replace(/[-_]/g, ' ')
-    .split(/\s+/)
-    .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
-    .join(' ');
-}
-
 /**
- * Fetch permissions from API and transform into ModulePermissions shape expected by the UI.
- * The API returns items like "users.read"; we group by the prefix (module) and
- * create one submodule per prefix (named prettified). Each action (read/create/update/delete/view)
- * becomes a boolean flag on the Permission object.
+ * Fetch permissions from the new Permission Tree API and transform into ModulePermissions shape expected by the UI.
+ * The API returns a hierarchical tree structure:
+ * Level 1: Module (e.g., "Master Data")
+ * Level 2: Submodule (e.g., "Brand Master")
+ * Level 3: Permissions (e.g., "brand.create", "brand.edit", "brand.view", "brand.delete")
  */
 export async function fetchPermissionsAsModulePermissions(): Promise<ModulePermissions> {
   try {
-    const res = await apiClient.get<any>(ENDPOINTS.PERMISSIONS);
-    const items = Array.isArray(res.data) ? res.data : [];
+    const res = await apiClient.get<any>(ENDPOINTS.PERMISSION_TREE);
+    const treeData = res.data || res;
+    const items = Array.isArray(treeData) ? treeData : treeData?.data || [];
 
     const out: ModulePermissions = {};
     // index to map module/submodule/action -> permission id from API
     const permissionIdIndex: Record<string, Record<string, Record<string, number>>> = {};
 
-    // small custom grouping map for common prefixes that belong to the same UI module
-    const CUSTOM_MODULE_MAP: Record<string, string> = {
-      users: 'User Management',
-      roles: 'User Management',
-      profile: 'User Management',
-      permissions: 'User Management',
-      brand: 'Master Data',
-      agency: 'Master Data',
-      department: 'Master Data',
-      designation: 'Master Data',
-      industry: 'Master Data',
-      'lead source': 'Master Data',
+    // Helper function to extract action type from permission name
+    const extractActionType = (permName: string): keyof Permission => {
+      const nameLower = String(permName).toLowerCase();
+      
+      if (nameLower.includes('create') || nameLower.includes('add')) return 'create';
+      if (nameLower.includes('update') || nameLower.includes('edit')) return 'update';
+      if (nameLower.includes('delete') || nameLower.includes('remove')) return 'delete';
+      if (nameLower.includes('view') || nameLower.includes('read')) return 'read';
+      
+      return 'read'; // default
     };
 
+    // Process the 3-level hierarchy:
+    // Level 1 (modules): items in the root array
+    // Level 2 (submodules): children of level 1
+    // Level 3 (permissions): children of level 2
+    if (Array.isArray(items)) {
+      items.forEach((moduleNode: any) => {
+        const moduleDisplay = moduleNode.display_name || moduleNode.name || '';
+        // Include id in module label so UI shows "id - display_name" format
+        const moduleName = moduleNode.id ? `${moduleNode.id} - ${moduleDisplay}` : moduleDisplay;
+        if (!moduleName || !Array.isArray(moduleNode.children)) return;
 
-    items.forEach((it: any) => {
-      const rawName = it.name || it.slug || '';
-      if (!rawName) return;
+        // Iterate through submodules (Level 2)
+        moduleNode.children.forEach((submoduleNode: any) => {
+          const submoduleDisplay = submoduleNode.display_name || submoduleNode.name || '';
+          // Include id in submodule label so UI shows "id - display_name" format
+          const submoduleName = submoduleNode.id ? `${submoduleNode.id} - ${submoduleDisplay}` : submoduleDisplay;
+          if (!submoduleName) return;
 
-      const parts = String(rawName).split('.').map((p) => p.trim()).filter(Boolean);
-      if (parts.length === 0) return;
+          // Initialize module structure
+          if (!out[moduleName]) out[moduleName] = {};
+          if (!out[moduleName][submoduleName]) {
+            out[moduleName][submoduleName] = {
+              read: false,
+              create: false,
+              update: false,
+              delete: false,
+            } as Permission;
+          }
 
-      const moduleKey = parts[0];
-      const action = parts[1] || 'read';
+          // Ensure index structure exists
+          permissionIdIndex[moduleName] = permissionIdIndex[moduleName] || {};
+          permissionIdIndex[moduleName][submoduleName] = permissionIdIndex[moduleName][submoduleName] || {};
 
-      // Determine module group name: prefer CUSTOM_MODULE_MAP, then try to match existing rolePermissionsData modules/submodules,
-      // otherwise fallback to a prettified moduleKey
-      const lookupKey = String(moduleKey).toLowerCase();
-      let moduleName = CUSTOM_MODULE_MAP[lookupKey] || '';
+          // Process permissions (Level 3) - children of submodule
+          // We only store the permission IDs in the index here. Do NOT mark
+          // the permission flags as `true` by default, otherwise the UI will
+          // show all checkboxes selected when creating a new role. Flags
+          // should remain `false` so new roles start with no permissions.
+          if (Array.isArray(submoduleNode.children)) {
+            submoduleNode.children.forEach((permissionNode: any) => {
+              const permId = Number(permissionNode.id || 0);
+              const actionType = extractActionType(permissionNode.name || '');
 
-      if (!moduleName) {
-        // try to find a module that contains the key in its name or submodules
-        const found = rolePermissionsData.find((m) =>
-          m.name.toLowerCase().includes(lookupKey) ||
-          m.submodules.some((s) => s.name.toLowerCase().includes(lookupKey))
-        );
-        if (found) moduleName = found.name;
-      }
-
-      if (!moduleName) {
-        moduleName = toTitle(moduleKey);
-      }
-
-      // Submodule display: prefer API display_name if present, otherwise try to map to a submodule in static data, fallback to moduleName
-      let submoduleName = (it.display_name && String(it.display_name).trim()) || '';
-      if (!submoduleName) {
-        // try to match submodule in static data
-        const moduleDef = rolePermissionsData.find((m) => m.name === moduleName);
-        if (moduleDef) {
-          const sfound = moduleDef.submodules.find((s) => s.name.toLowerCase().includes(lookupKey));
-          if (sfound) submoduleName = sfound.name;
-        }
-      }
-      if (!submoduleName) submoduleName = toTitle(moduleKey);
-
-      if (!out[moduleName]) out[moduleName] = {};
-      if (!out[moduleName][submoduleName]) {
-        out[moduleName][submoduleName] = {
-          read: false,
-          create: false,
-          update: false,
-          delete: false,
-        } as Permission;
-      }
-
-      // ensure index structure exists
-      permissionIdIndex[moduleName] = permissionIdIndex[moduleName] || {};
-      permissionIdIndex[moduleName][submoduleName] = permissionIdIndex[moduleName][submoduleName] || {};
-
-      // Map action to permission key (normalize common synonyms)
-      const key = String(action).toLowerCase();
-      if (key === 'read' || key === 'view') {
-        out[moduleName][submoduleName].read = true;
-        permissionIdIndex[moduleName][submoduleName]['read'] = Number(it.id || it.ID || it.permission_id || it.permissionId || it._id || 0);
-      } else if (key === 'create' || key === 'add') {
-        out[moduleName][submoduleName].create = true;
-        permissionIdIndex[moduleName][submoduleName]['create'] = Number(it.id || it.ID || it.permission_id || it.permissionId || it._id || 0);
-      } else if (key === 'update' || key === 'edit') {
-        out[moduleName][submoduleName].update = true;
-        permissionIdIndex[moduleName][submoduleName]['update'] = Number(it.id || it.ID || it.permission_id || it.permissionId || it._id || 0);
-      } else if (key === 'delete' || key === 'remove') {
-        out[moduleName][submoduleName].delete = true;
-        permissionIdIndex[moduleName][submoduleName]['delete'] = Number(it.id || it.ID || it.permission_id || it.permissionId || it._id || 0);
-      } else {
-        // Unknown action: attach as `view` if Permission has view, else ignore
-        if ((out[moduleName][submoduleName] as any).view !== undefined) {
-          (out[moduleName][submoduleName] as any).view = true;
-          permissionIdIndex[moduleName][submoduleName]['view'] = Number(it.id || it.ID || it.permission_id || it.permissionId || it._id || 0);
-        }
-      }
-    });
+              // Keep the flag default (false). Only record the id for mapping
+              // later when a user checks a permission.
+              permissionIdIndex[moduleName][submoduleName][actionType] = permId;
+            });
+          }
+        });
+      });
+    }
 
     // persist latest index for fallback mapping in createRole
     latestPermissionIdIndex = permissionIdIndex;

@@ -294,7 +294,8 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
       if (form.productName) payload.product_name = form.productName;
       // programmatic value chosen by user may be 'Programmatic'|'Non-Programmatic'
       if (form.programmatic) payload.mode_of_campaign = String(form.programmatic).toLowerCase().replace(/\s+/g, '_');
-      if (form.mediaType) payload.media_type = form.mediaType;
+      // Use `type` field from UI as media type (Select name="type")
+      if (form.type) payload.media_type = String(form.type).toLowerCase();
       if (form.budget) payload.budget = form.budget;
       if (form.briefDetail) payload.comment = form.briefDetail;
 
@@ -396,7 +397,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     placeholder={brandsLoading ? 'Loading brands...' : 'Auto Select'}
                     options={brands}
                     value={form.brandName}
-                    onChange={(v) => { setForm(prev => ({ ...prev, brandName: v })); }}
+                    onChange={(v) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; setForm(prev => ({ ...prev, brandName: val })); }}
                     searchable
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
                     disabled={brandsLoading}
@@ -416,7 +417,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     placeholder={usersLoading ? 'Loading users...' : 'Please Assign To Planner'}
                     options={users}
                     value={form.assignTo}
-                    onChange={(v) => setForm(prev => ({ ...prev, assignTo: v }))}
+                    onChange={(v) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; setForm(prev => ({ ...prev, assignTo: val })); }}
                     searchable
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
                     disabled={usersLoading}
@@ -430,7 +431,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     placeholder={briefStatusesLoading ? 'Loading statuses...' : 'Select Brief Status'}
                     options={briefStatuses}
                     value={form.status}
-                    onChange={(v) => { setForm(prev => ({ ...prev, status: v })); }}
+                    onChange={(v) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; setForm(prev => ({ ...prev, status: val })); }}
                     searchable
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
                     disabled={briefStatusesLoading}
@@ -471,7 +472,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     placeholder="Select Type"
                     options={form.programmatic === 'Non-Programmatic' ? ['DOOH', 'OOH'] : ['DOOH', 'CTV']}
                     value={form.type}
-                    onChange={(v) => setForm(prev => ({ ...prev, type: v }))}
+                    onChange={(v) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; setForm(prev => ({ ...prev, type: val })); }}
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
                   />
                 </div>
@@ -485,7 +486,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     placeholder={contactPersonsLoading ? 'Loading contacts...' : 'Search or select contact person'}
                     options={contactPersons}
                     value={form.contactPerson}
-                    onChange={(v) => { setForm(prev => ({ ...prev, contactPerson: v })); setErrors(prev => ({ ...prev, contactPerson: '' })); }}
+                    onChange={(v) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; setForm(prev => ({ ...prev, contactPerson: val })); setErrors(prev => ({ ...prev, contactPerson: '' })); }}
                     searchable
                     disabled={contactPersonsLoading}
                     inputClassName={errors.contactPerson ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-[var(--border-color)] focus:ring-blue-500'}
@@ -508,7 +509,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     placeholder={agenciesLoading ? 'Loading agencies...' : 'Search or select agency'}
                     options={agencies}
                     value={form.createdBy}
-                    onChange={(v) => setForm(prev => ({ ...prev, createdBy: v }))}
+                    onChange={(v) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; setForm(prev => ({ ...prev, createdBy: val })); }}
                     searchable
                     disabled={agenciesLoading}
                   />
@@ -562,7 +563,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                           variant="priority"
                           size="sm"
                           className={`px-5 py-1.5 text-sm font-medium leading-none min-h-[32px] ${active ? activeClasses : inactiveClasses} ${colors.focus}`}
-                          disabled
+                          onClick={() => { setForm(prev => ({ ...prev, priority: p })); setPriorityAutoSet(false); }}
                           aria-pressed={active}
                         >
                           {p}

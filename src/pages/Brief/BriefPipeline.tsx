@@ -10,6 +10,7 @@ import SearchBar from '../../components/ui/SearchBar';
 import { type BriefItem as ServiceBriefItem, listBriefs, createBrief, updateBrief, deleteBrief } from '../../services/BriefPipeline';
 import StatusDropdown from '../../components/ui/StatusDropdown';
 import AssignDropdown from '../../components/ui/AssignDropdown';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
 
 type Brief = ServiceBriefItem;
 
@@ -25,6 +26,8 @@ const BriefPipeline: React.FC = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [viewItem, setViewItem] = useState<Brief | null>(null);
   const [editItem, setEditItem] = useState<Brief | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentData = briefs;
@@ -35,16 +38,22 @@ const BriefPipeline: React.FC = () => {
 
   const handleEdit = (id: string) => navigate(ROUTES.BRIEF.EDIT(encodeURIComponent(id)));
   const handleView = (id: string) => navigate(ROUTES.BRIEF.DETAIL(encodeURIComponent(id)));
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
+    setConfirmDeleteId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmDeleteId) return;
+    setConfirmLoading(true);
     try {
-      setLoading(true);
-      await deleteBrief(id);
-      setBriefs(prev => prev.filter(b => b.id !== id));
+      await deleteBrief(confirmDeleteId);
+      setBriefs(prev => prev.filter(b => b.id !== confirmDeleteId));
       setTotalItems(prev => Math.max(0, prev - 1));
     } catch (err) {
       console.error('Failed to delete brief', err);
     } finally {
-      setLoading(false);
+      setConfirmLoading(false);
+      setConfirmDeleteId(null);
     }
   };
 
@@ -266,21 +275,48 @@ const BriefPipeline: React.FC = () => {
                 { key: 'briefName', header: 'Brief Name', render: (it: Brief) => it.briefName, className: 'whitespace-nowrap overflow-hidden truncate' },
                 { key: 'brandName', header: 'Brand Name', render: (it: Brief) => it.brandName, className: 'whitespace-nowrap overflow-hidden truncate' },
                 { key: 'productName', header: 'Product Name', render: (it: Brief) => it.productName, className: 'whitespace-nowrap overflow-hidden truncate' },
-                { key: 'contactPerson', header: 'Contact Person', render: (it: Brief) => it.contactPerson, className: 'whitespace-nowrap overflow-hidden truncate' },
+                { key: 'contactPerson', header: 'Contact Person', render: (it: Brief) => {
+                  const contactPersonVal = it.contactPerson;
+                  if (typeof contactPersonVal === 'object' && contactPersonVal !== null && 'name' in contactPersonVal) {
+                    return (contactPersonVal as any).name;
+                  }
+                  return String(contactPersonVal ?? '');
+                }, className: 'whitespace-nowrap overflow-hidden truncate' },
                 { key: 'modeOfCampaign', header: 'Mode Of Campaign', render: (it: Brief) => it.modeOfCampaign, className: 'whitespace-nowrap overflow-hidden truncate' },
                 { key: 'mediaType', header: 'Media Type', render: (it: Brief) => it.mediaType, className: 'whitespace-nowrap overflow-hidden truncate' },
-                { key: 'priority', header: 'Priority', render: (it: Brief) => it.priority, className: 'whitespace-nowrap overflow-hidden truncate' },
+                { key: 'priority', header: 'Priority', render: (it: Brief) => {
+                  const priorityVal = it.priority;
+                  if (typeof priorityVal === 'object' && priorityVal !== null && 'name' in priorityVal) {
+                    return (priorityVal as any).name;
+                  }
+                  return String(priorityVal ?? '');
+                }, className: 'whitespace-nowrap overflow-hidden truncate' },
                 { key: 'budget', header: 'Budget', render: (it: Brief) => String(it.budget ?? ''), className: 'whitespace-nowrap overflow-hidden truncate' },
-                { key: 'createdBy', header: 'Created By', render: (it: Brief) => it.createdBy, className: 'whitespace-nowrap overflow-hidden truncate' },
-                { key: 'assignTo', header: 'Assign To', render: (it: Brief) => (
-                  <div className="min-w-[140px]">
-                    <AssignDropdown
-                      value={String(it.assignTo ?? '')}
-                      options={planners}
-                      onChange={(newPlanner: string) => handleAssignToChange(it.id, newPlanner)}
-                    />
-                  </div>
-                ), className: 'min-w-[140px]' },
+                { key: 'createdBy', header: 'Created By', render: (it: Brief) => {
+                  const createdByVal = it.createdBy;
+                  if (typeof createdByVal === 'object' && createdByVal !== null && 'name' in createdByVal) {
+                    return (createdByVal as any).name;
+                  }
+                  return String(createdByVal ?? '');
+                }, className: 'whitespace-nowrap overflow-hidden truncate' },
+                { key: 'assignTo', header: 'Assign To', render: (it: Brief) => {
+                  const assignToVal = it.assignTo;
+                  let displayName = '';
+                  if (typeof assignToVal === 'object' && assignToVal !== null && 'name' in assignToVal) {
+                    displayName = (assignToVal as any).name;
+                  } else {
+                    displayName = String(assignToVal ?? '');
+                  }
+                  return (
+                    <div className="min-w-[140px]">
+                      <AssignDropdown
+                        value={displayName}
+                        options={planners}
+                        onChange={(newPlanner: string) => handleAssignToChange(it.id, newPlanner)}
+                      />
+                    </div>
+                  );
+                }, className: 'min-w-[140px]' },
                 { key: 'status', header: 'Status', render: (it: Brief) => (
                   <div className="min-w-[140px]">
                     <StatusDropdown
@@ -296,10 +332,10 @@ const BriefPipeline: React.FC = () => {
                   render: (it: Brief) => (
                     <span
                       className="inline-block"
-                      onMouseEnter={(e) => showTooltip(e, String(it.briefDetail ?? ''))}
+                      onMouseEnter={(e) => showTooltip(e, String(it.comment ?? ''))}
                       onMouseLeave={() => hideTooltip()}
                       // provide native tooltip as a11y/fallback
-                      title={String(it.briefDetail ?? '')}
+                      title={String(it.comment ?? '')}
                     >
                       <div
                         className="text-sm text-[var(--text-primary)]"
@@ -313,7 +349,7 @@ const BriefPipeline: React.FC = () => {
                           overflowWrap: 'break-word',
                         }}
                       >
-                        {it.briefDetail}
+                        {it.comment}
                       </div>
                     </span>
                   ),
@@ -350,6 +386,16 @@ const BriefPipeline: React.FC = () => {
             </div>
           )}
           {/* Status dropdown now uses StatusDropdown component inside table cells */}
+          <ConfirmDialog
+            isOpen={!!confirmDeleteId}
+            title="Delete this brief?"
+            message="This action will permanently remove the brief. This cannot be undone."
+            confirmLabel="Delete"
+            cancelLabel="Cancel"
+            loading={confirmLoading}
+            onCancel={() => setConfirmDeleteId(null)}
+            onConfirm={confirmDelete}
+          />
         </>
       )}
     </div>

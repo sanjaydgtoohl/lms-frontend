@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { rolePermissionsData } from '../../data/rolePermissionsData';
 import type { Permission } from '../../data/rolePermissionsData';
 import { PencilIcon, EyeIcon, Trash2Icon, PlusIcon, ChevronDown } from 'lucide-react';
 import SearchBar from './SearchBar';
@@ -57,14 +56,16 @@ const RolePermissionTree: React.FC<Props> = ({ modulePermissions, onToggle }) =>
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const filterModules = (modules: typeof rolePermissionsData) => {
+  // Filter modules derived from dynamic permissions
+  const filterModules = (modules: Array<{ name: string; submodules: Array<{ name: string; permissions: Permission }> | any }>) => {
     if (!search.trim()) return modules;
     return modules
       .map((mod) => {
-        const filteredSubs = mod.submodules.filter((sub) =>
-          sub.name.toLowerCase().includes(search.toLowerCase())
+        const filteredSubs = mod.submodules.filter((sub: any) =>
+          String(sub.name).toLowerCase().includes(search.toLowerCase()) ||
+          Object.keys(sub.permissions || {}).some((p) => p.toLowerCase().includes(search.toLowerCase()))
         );
-        if (mod.name.toLowerCase().includes(search.toLowerCase()) || filteredSubs.length > 0) {
+        if (String(mod.name).toLowerCase().includes(search.toLowerCase()) || filteredSubs.length > 0) {
           return { ...mod, submodules: filteredSubs };
         }
         return null;
@@ -72,7 +73,7 @@ const RolePermissionTree: React.FC<Props> = ({ modulePermissions, onToggle }) =>
       .filter(Boolean);
   };
 
-  // If modulePermissions contains items, derive modules from it; otherwise fall back to static `rolePermissionsData`.
+  // Derive modules from the provided dynamic permissions object
   const deriveModulesFromPermissions = (mp: ModulePermissions) => {
     return Object.keys(mp).map((moduleName) => ({
       name: moduleName,
@@ -83,10 +84,8 @@ const RolePermissionTree: React.FC<Props> = ({ modulePermissions, onToggle }) =>
     }));
   };
 
-  const modulesSource = Object.keys(modulePermissions || {}).length
-    ? deriveModulesFromPermissions(modulePermissions)
-    : rolePermissionsData;
-
+  // Always derive modules from modulePermissions (no static fallback)
+  const modulesSource = deriveModulesFromPermissions(modulePermissions || {} as ModulePermissions);
   const filteredModules = filterModules(modulesSource as any);
 
   const getSubmoduleKey = (moduleName: string, submoduleName: string) => `${moduleName}::${submoduleName}`;
@@ -104,14 +103,14 @@ const RolePermissionTree: React.FC<Props> = ({ modulePermissions, onToggle }) =>
 
   // Calculate checkbox state for an entire module (all submodules & permissions)
   const getModuleCheckboxState = (moduleName: string) => {
-    const moduleDef = rolePermissionsData.find((m) => m.name === moduleName);
-    if (!moduleDef) return 'unchecked';
+    const module = modulePermissions[moduleName];
+    if (!module) return 'unchecked';
 
     let total = 0;
     let checked = 0;
 
-    moduleDef.submodules.forEach((sub) => {
-      const permissions = modulePermissions[moduleName]?.[sub.name] || sub.permissions;
+    Object.keys(module).forEach((subName) => {
+      const permissions = module[subName] as Permission;
       Object.values(permissions).forEach((v) => {
         total += 1;
         if (v === true) checked += 1;
@@ -133,16 +132,16 @@ const RolePermissionTree: React.FC<Props> = ({ modulePermissions, onToggle }) =>
     const state = getModuleCheckboxState(moduleName);
     const shouldCheck = state !== 'checked';
 
-    const moduleDef = rolePermissionsData.find((m) => m.name === moduleName);
-    if (!moduleDef) return;
+    const module = modulePermissions[moduleName];
+    if (!module) return;
 
-    moduleDef.submodules.forEach((sub) => {
-      const permissions = modulePermissions[moduleName]?.[sub.name] || sub.permissions;
+    Object.keys(module).forEach((subName) => {
+      const permissions = module[subName] as Permission;
       Object.keys(permissions).forEach((permKey) => {
         const perm = permKey as keyof Permission;
         const currentState = permissions[perm] as boolean;
         if (currentState !== shouldCheck) {
-          onToggle(moduleName, sub.name, perm);
+          onToggle(moduleName, subName, perm);
         }
       });
     });
@@ -192,7 +191,7 @@ const RolePermissionTree: React.FC<Props> = ({ modulePermissions, onToggle }) =>
         />
       </div>
       <div className="flex flex-col gap-0">
-        {filteredModules.map((module) => (
+        {filteredModules.map((module: any) => (
           module ? (
             <div key={module.name} className="mb-2">
               <div
@@ -224,7 +223,7 @@ const RolePermissionTree: React.FC<Props> = ({ modulePermissions, onToggle }) =>
               
               {expandedModules[module.name] && (
                 <div className="pl-4 border-l-2 border-gray-200 bg-gray-50">
-                  {module.submodules.map((submodule) => {
+                  {module.submodules.map((submodule: any) => {
                     const submoduleKey = getSubmoduleKey(module.name, submodule.name);
                     const isExpanded = expandedSubmodules[submoduleKey];
                     const permissions = modulePermissions[module.name]?.[submodule.name] || submodule.permissions;

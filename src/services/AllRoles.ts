@@ -5,6 +5,7 @@ export interface Role {
   id: string;
   name: string;
   description?: string;
+  _realId?: string; // Store the actual backend ID
 }
 
 const ENDPOINTS = {
@@ -37,6 +38,7 @@ export async function listRoles(page = 1, perPage = 10, search?: string): Promis
 
   const res = await apiClient.get<any>(`${ENDPOINTS.LIST}?${params.toString()}`);
   const items = (res.data || []).map((it: any, idx: number) => {
+    const realId = it.id; // Store the actual backend ID
     const rawId = it.id ?? idx + 1;
     // If rawId is numeric, format as #RL001, else use the string prefixed if not already
     let idStr = String(rawId);
@@ -51,6 +53,7 @@ export async function listRoles(page = 1, perPage = 10, search?: string): Promis
 
     return {
       id: String(idStr),
+      _realId: String(realId), // Store the real ID
       name,
       description,
     } as Role;
@@ -80,7 +83,13 @@ export async function updateRole(id: string, payload: Partial<Role>): Promise<Ro
 }
 
 export async function deleteRole(id: string): Promise<void> {
-  const cleanId = id.replace(/^#/, '');
-  const res = await apiClient.delete<unknown>(ENDPOINTS.DELETE(cleanId));
+  // If the id has the real ID stored, use it; otherwise clean it
+  let apiId = id;
+  // This will be called with the display id, so we need to extract the numeric part
+  const digits = String(id).replace(/\D/g, '');
+  if (digits) {
+    apiId = String(Number(digits)); // Remove padding (001 -> 1)
+  }
+  const res = await apiClient.delete<unknown>(ENDPOINTS.DELETE(apiId));
   await handleResponse<unknown>(res);
 }
