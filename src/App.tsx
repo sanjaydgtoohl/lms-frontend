@@ -14,7 +14,7 @@ import DesignationMaster from './pages/DesignationMaster';
 import DepartmentMaster from './pages/DepartmentMaster';
 import { MissCampaignView, MissCampaignCreate } from './pages/MissCampaign';
 import { AllLeads, CreateLead, EditLead, ViewLead, Pending, Interested, MeetingScheduled, MeetingDone, MeetingSchedule, BriefStatus } from './pages/LeadManagement';
-import { AllPermissions, CreatePermission, ViewPermission, AllRoles, CreateRole, ViewRole, AllUsers, CreateUser, ViewUser } from './pages/UserManagement';
+import { AllPermissions, CreatePermission, EditPermission, ViewPermission, AllRoles, CreateRole, EditRole, ViewRole, AllUsers, CreateUser, EditUser, ViewUser } from './pages/UserManagement';
 import Layout from './components/layout/Layout';
 import BriefPipeline from './pages/Brief/BriefPipeline';
 import ErrorBoundary from './components/ui/ErrorBoundary';
@@ -148,15 +148,15 @@ function App() {
             <Route index element={<AllPermissions />} />
             <Route path="permission" element={<AllPermissions />} />
             <Route path="permission/create" element={<CreatePermission />} />
-            <Route path="permission/edit/:id" element={<CreatePermission />} />
+            <Route path="permission/edit/:id" element={<EditPermission />} />
             <Route path="permission/:id" element={<ViewPermission />} />
             <Route path="role" element={<AllRoles />} />
             <Route path="role/create" element={<CreateRole />} />
-            <Route path="role/edit/:id" element={<CreateRole />} />
+            <Route path="role/edit/:id" element={<EditRole />} />
             <Route path="role/:id" element={<ViewRole />} />
             <Route path="user" element={<AllUsers />} />
             <Route path="user/create" element={<CreateUser />} />
-            <Route path="user/edit/:id" element={<CreateUser />} />
+            <Route path="user/edit/:id" element={<EditUser />} />
             <Route path="user/:id" element={<ViewUser />} />
           </Route>
         </Route>

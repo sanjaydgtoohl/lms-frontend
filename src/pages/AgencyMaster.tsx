@@ -3,13 +3,13 @@ import MainContent from '../components/layout/MainContent';
 
 import CreateAgencyForm from './CreateAgencyForm';
 import MasterView from '../components/ui/MasterView';
-import MasterEdit from '../components/ui/MasterEdit';
 import type { Agency } from '../components/layout/MainContent';
-import { listAgencies as fetchAgencies, deleteAgency } from '../services/AgencyMaster';
+import { listAgencies as fetchAgencies, deleteAgency, getAgency } from '../services/AgencyMaster';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants';
 import { getItem } from '../data/masterData';
 import { MasterHeader } from '../components/ui';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
 import { showSuccess, showError } from '../utils/notifications';
 
 // Helpers to parse API date strings like "19-11-2025 10:35:57" or ISO strings
@@ -45,6 +45,10 @@ const AgencyMaster: React.FC = () => {
   const [page, setPage] = useState(1);
   const perPage = 10;
   const [totalItems, setTotalItems] = useState<number | undefined>(undefined);
+  const [searchValue, setSearchValue] = useState<string>('');
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [confirmDeleteLabel, setConfirmDeleteLabel] = useState<string>('');
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   const navigate = useNavigate();
   const params = useParams();
@@ -54,10 +58,10 @@ const AgencyMaster: React.FC = () => {
     navigate(`${ROUTES.AGENCY_MASTER}/create`);
   };
 
-  const loadAgencies = async (p = 1) => {
+  const loadAgencies = async (p = 1, search?: string) => {
     setLoadingList(true);
     try {
-      const res = await fetchAgencies(p, perPage);
+      const res = await fetchAgencies(p, perPage, search);
       // map service Agency -> MainContent Agency shape
       const mapped = (res.data || []).map((a: any) => {
         // API can return parent info either in `is_parent` (object) or `agency_group`.
@@ -74,8 +78,8 @@ const AgencyMaster: React.FC = () => {
         };
       });
       setAgenciesList(mapped);
-  // attempt to read pagination meta if present
-  const total = res.meta?.pagination?.total;
+      // attempt to read pagination meta if present
+      const total = res.meta?.pagination?.total;
   if (typeof total === 'number') setTotalItems(total);
     } catch (err) {
       // handled by service error handler
@@ -105,25 +109,27 @@ const AgencyMaster: React.FC = () => {
     navigate(ROUTES.AGENCY_MASTER);
   };
 
-  const handleDelete = async (item: Agency): Promise<void> => {
-    if (!item.id) {
-      showError('Agency ID is missing');
-      return;
-    }
+  const handleDelete = (item: Agency): void => {
+    if (!item.id) return showError('Agency ID is missing');
+    setConfirmDeleteId(item.id);
+    setConfirmDeleteLabel(item.agencyName || item.id);
+  };
 
-    // Confirm deletion
-    if (!window.confirm(`Are you sure you want to delete agency "${item.agencyName}"?`)) {
-      return;
-    }
-
+  const confirmDelete = async () => {
+    if (!confirmDeleteId) return;
+    setConfirmLoading(true);
     try {
-      await deleteAgency(item.id);
+      await deleteAgency(confirmDeleteId);
       showSuccess('Agency deleted successfully');
       // Refresh the list
-      loadAgencies(page);
+      loadAgencies(page, searchValue);
     } catch (err) {
       console.error('Delete failed:', err);
       showError((err as any)?.message || 'Failed to delete agency');
+    } finally {
+      setConfirmLoading(false);
+      setConfirmDeleteId(null);
+      setConfirmDeleteLabel('');
     }
   };
 
@@ -140,12 +146,20 @@ const AgencyMaster: React.FC = () => {
     }
 
     if (location.pathname.endsWith('/edit') && id) {
-      // Try to load full agency data from in-memory sample data
-      const fetched = getItem('agency', id);
-      if (fetched) setEditItem(fetched as Agency);
-      else setEditItem({ id } as Agency);
-      setViewItem(null);
-      setShowCreate(false);
+      // Fetch full agency data from API for edit mode
+      getAgency(id)
+        .then(data => {
+          setEditItem(data as any);
+          setViewItem(null);
+          setShowCreate(false);
+        })
+        .catch(() => {
+          // Fallback to locally stored data if API fails
+          const fetched = getItem('agency', id);
+          setEditItem((fetched || { id }) as any);
+          setViewItem(null);
+          setShowCreate(false);
+        });
       return;
     }
 
@@ -166,7 +180,7 @@ const AgencyMaster: React.FC = () => {
   // load list when on list page and when page changes
   useEffect(() => {
     if (!location.pathname.endsWith('/create') && !location.pathname.endsWith('/edit')) {
-      loadAgencies(page);
+      loadAgencies(page, searchValue);
     }
   }, [page, location.pathname]);
 
@@ -179,13 +193,28 @@ const AgencyMaster: React.FC = () => {
       ) : viewItem ? (
         <MasterView item={viewItem} onClose={() => navigate(ROUTES.AGENCY_MASTER)} />
       ) : editItem ? (
-        <MasterEdit item={editItem} onClose={() => navigate(ROUTES.AGENCY_MASTER)} onSave={handleSaveEdit} />
+        <CreateAgencyForm
+          mode="edit"
+          initialData={editItem}
+          onClose={() => navigate(ROUTES.AGENCY_MASTER)}
+          onSave={handleSaveEdit}
+        />
       ) : (
         <>
           <MasterHeader
             onCreateClick={handleCreateAgency}
             createButtonLabel="Create Agency"
             showBreadcrumb={true}
+          />
+          <ConfirmDialog
+            isOpen={!!confirmDeleteId}
+            title={`Are you sure you want to delete agency "${confirmDeleteLabel}"?`}
+            message="This action will permanently remove the agency. This cannot be undone."
+            confirmLabel="Delete"
+            cancelLabel="Cancel"
+            loading={confirmLoading}
+            onCancel={() => setConfirmDeleteId(null)}
+            onConfirm={confirmDelete}
           />
           <MainContent<Agency>
             title="Agency Master" 
@@ -194,6 +223,7 @@ const AgencyMaster: React.FC = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             data={agenciesList}
+            onSearch={(q: string) => { setSearchValue(q); setPage(1); loadAgencies(1, q); }}
             loading={loadingList}
             totalItems={totalItems}
             currentPage={page}

@@ -154,7 +154,7 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({
         crumbs.push({ label: 'Create', isActive: true });
       } else if (pathname.includes('/edit/')) {
         const id = pathname.split('/edit/')[1];
-        crumbs.push({ label: `ID: ${id}`, path: `/lead-management` });
+        crumbs.push({ label: `ID: ${id}`, path: `/lead-management/${id}` });
         crumbs.push({ label: 'Edit', isActive: true });
       } else if (sub && subLabelMap[sub]) {
         crumbs.push({ label: subLabelMap[sub], isActive: true });

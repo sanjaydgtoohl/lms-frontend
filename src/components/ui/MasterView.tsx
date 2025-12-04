@@ -53,10 +53,16 @@ const MasterView: React.FC<Props> = ({ title, item, onClose }) => {
             // special casing
             const label = title.toLowerCase() === 'datetime' || title.toLowerCase() === 'date time' ? 'Date & Time' : title;
 
+            // Handle objects with 'name' property
+            let displayValue = String(v);
+            if (typeof v === 'object' && v !== null && 'name' in v) {
+              displayValue = v.name;
+            }
+
             return (
               <div key={k} className="flex justify-between">
                 <div className="text-sm text-[var(--text-secondary)]">{label}</div>
-                <div className="text-sm font-medium text-[var(--text-primary)]">{String(v)}</div>
+                <div className="text-sm font-medium text-[var(--text-primary)]">{displayValue}</div>
               </div>
             );
           })}

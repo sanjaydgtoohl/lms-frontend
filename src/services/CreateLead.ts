@@ -84,9 +84,9 @@ export const fetchCities = async (params?: { state_id?: string | number; country
 };
 
 // Fetch states for dropdown
-export const fetchStates = async () => {
+export const fetchStates = async (params?: { country_id?: string | number }) => {
   try {
-    const data = await listStates();
+    const data = await listStates(params);
     return { data, error: null };
   } catch (error: any) {
     return { data: [], error: error?.message || 'Network error' };
@@ -100,5 +100,18 @@ export const fetchCountries = async () => {
     return { data, error: null };
   } catch (error: any) {
     return { data: [], error: error?.message || 'Network error' };
+  }
+};
+
+// Create lead API
+export const createLead = async (payload: any) => {
+  try {
+    const response = await http.post(`${API_BASE_URL}/leads`, payload);
+    if (response.data && response.data.success) {
+      return { data: response.data.data, error: null };
+    }
+    return { data: null, error: response.data?.message || 'Unknown error' };
+  } catch (error: any) {
+    return { data: null, error: error?.response?.data?.message || error.message || 'Network error' };
   }
 };

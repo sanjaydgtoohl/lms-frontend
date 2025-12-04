@@ -51,10 +51,26 @@ export async function listMissCampaigns(page = 1, perPage = 10, search?: string)
   const res = await apiClient.get<MissCampaign[]>(`${ENDPOINTS.LIST}?${params.toString()}`);
   const items = (res.data || []).map((it: any, idx: number) => {
     const id = it.id ?? `#MC${String(idx + 1).padStart(5, '0')}`;
-    const brandName = it.brand?.name ?? it.brand_name ?? it.brandName ?? '';
+    // Handle brand name from nested object or flat fields
+    const brandName = it.brand?.name ?? 
+                     it.brand_name ?? 
+                     (it.brand && typeof it.brand === 'object' ? Object.values(it.brand).join(', ') : '') ?? 
+                     it.brandName ?? 
+                     '';
     const productName = it.name ?? it.product_name ?? it.productName ?? '';
-    const source = it.lead_source?.name ?? it.source ?? '';
-    const subSource = it.lead_sub_source?.name ?? it.sub_source ?? it.subSource ?? '';
+    // Handle source from nested object or flat fields
+    const source = it.lead_source?.name ?? 
+                  it.lead_source?.source ?? 
+                  it.source ?? 
+                  (it.lead_source && typeof it.lead_source === 'object' ? Object.values(it.lead_source).join(', ') : '') ?? 
+                  '';
+    // Handle sub source from nested object or flat fields
+    const subSource = it.lead_sub_source?.name ?? 
+                     it.lead_sub_source?.subSource ?? 
+                     it.sub_source ?? 
+                     (it.lead_sub_source && typeof it.lead_sub_source === 'object' ? Object.values(it.lead_sub_source).join(', ') : '') ?? 
+                     it.subSource ?? 
+                     '';
     const proof = it.image_path ?? it.proof ?? '';
     const dateTime = it.created_at ?? it.date_time ?? it.dateTime ?? '';
     
@@ -75,9 +91,15 @@ export async function listMissCampaigns(page = 1, perPage = 10, search?: string)
   };
 }
 
-export async function getMissCampaign(id: string): Promise<MissCampaign> {
-  const res = await apiClient.get<MissCampaign>(ENDPOINTS.DETAIL(id));
-  return handleResponse<MissCampaign>(res);
+export async function getMissCampaign(id: string): Promise<any> {
+  const res = await apiClient.get<any>(ENDPOINTS.DETAIL(id));
+  if (!res || !res.success) {
+    const error = new Error((res && (res.message || 'Request failed')) || 'Request failed');
+    try { handleApiError(error); } catch {}
+    throw error;
+  }
+  // Return raw data with all fields (including IDs) for editing
+  return res.data as any;
 }
 
 export async function createMissCampaign(payload: Partial<MissCampaign>): Promise<MissCampaign> {

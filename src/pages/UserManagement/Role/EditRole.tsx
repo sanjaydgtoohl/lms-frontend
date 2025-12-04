@@ -1,17 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
 import { MasterFormHeader, NotificationPopup } from '../../../components/ui';
-// removed static rolePermissionsData import to use dynamic API data only
+import { rolePermissionsData } from '../../../data/rolePermissionsData';
 import type { Permission } from '../../../data/rolePermissionsData';
-import { fetchPermissionsAsModulePermissions, createRole as apiCreateRole } from '../../../services/CreateRole';
 import RolePermissionTree from '../../../components/ui/RolePermissionTree';
-
-type Props = {
-  mode?: 'create' | 'edit';
-  initialData?: Record<string, any>;
-};
 
 interface ModulePermissions {
   [moduleName: string]: {
@@ -19,50 +13,55 @@ interface ModulePermissions {
   };
 }
 
-const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
+const EditRole: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  
   const [form, setForm] = useState({
     name: '',
     description: '',
     parentPermission: '',
   });
 
-  // start with an empty permissions object; will be populated from API
-  const [modulePermissions, setModulePermissions] = useState<ModulePermissions>({});
+  const [modulePermissions, setModulePermissions] = useState<ModulePermissions>(() => {
+    const initial: ModulePermissions = {};
+    rolePermissionsData.forEach((module) => {
+      initial[module.name] = {};
+      module.submodules.forEach((submodule) => {
+        initial[module.name][submodule.name] = { ...submodule.permissions };
+      });
+    });
+    return initial;
+  });
 
+  const [isLoading, setIsLoading] = useState(true);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
-  const [showErrorToast, setShowErrorToast] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
+  // Fetch initial role data
   useEffect(() => {
-    if (initialData) {
-      setForm((prev) => ({ ...prev, ...initialData }));
-      if (initialData.permissions) {
-        setModulePermissions(initialData.permissions);
-      }
-    }
-  }, [initialData]);
-
-  // Fetch permissions from API and replace the default/static permissions if available
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
+    const fetchRole = async () => {
       try {
-        const perms = await fetchPermissionsAsModulePermissions();
-        if (mounted && perms && Object.keys(perms).length > 0) {
-          setModulePermissions(perms);
-        }
-      } catch (err) {
-        // ignore, fallback to static data is already in place
-        console.error('Error loading permissions:', err);
+        setIsLoading(true);
+        // TODO: Replace with actual API call to fetch role by ID
+        // This is a placeholder - replace with your actual API endpoint
+        // const response = await getRoleById(id);
+        // setForm with response data
+        
+        // For now, setting empty state - update with actual API call
+      } catch (error) {
+        console.error('Error fetching role:', error);
+        setErrors({ submit: 'Failed to load role data' });
+      } finally {
+        setIsLoading(false);
       }
-    })();
-    return () => {
-      mounted = false;
     };
-  }, []);
+
+    if (id) {
+      fetchRole();
+    }
+  }, [id]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -77,21 +76,16 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
     submoduleName: string,
     permissionType: keyof Permission
   ) => {
-    setModulePermissions((prev) => {
-      const moduleEntry = prev[moduleName] || {};
-      const submoduleEntry = moduleEntry[submoduleName] || { read: false, create: false, update: false, delete: false };
-
-      return {
-        ...prev,
-        [moduleName]: {
-          ...moduleEntry,
-          [submoduleName]: {
-            ...submoduleEntry,
-            [permissionType]: !submoduleEntry[permissionType],
-          },
+    setModulePermissions((prev) => ({
+      ...prev,
+      [moduleName]: {
+        ...prev[moduleName],
+        [submoduleName]: {
+          ...prev[moduleName][submoduleName],
+          [permissionType]: !prev[moduleName][submoduleName][permissionType],
         },
-      };
-    });
+      },
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -110,37 +104,23 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
         ...form,
         permissions: modulePermissions,
       } as Record<string, any>;
-      if (initialData && initialData.id) payload.id = initialData.id;
 
-      // Call API: create or update depending on mode
-      if (mode === 'edit' && initialData && initialData.id) {
-        // user can add updateRole call here if needed (AllRoles service)
-        await apiCreateRole(payload); // fallback to same endpoint if update is not separated
-      } else {
-        await apiCreateRole(payload);
+      if (id) {
+        payload.id = id;
+        // TODO: Make API call to update role
+        console.log('Updating role:', payload);
       }
-
+      
+      // Mock API success
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      
       setShowSuccessToast(true);
       setTimeout(() => {
         setShowSuccessToast(false);
         navigate(ROUTES.ROLE.ROOT);
       }, 1200);
-    } catch (err: any) {
-      console.error('Error saving role:', err);
-
-      const respData = err?.responseData || err?.response?.data || null;
-      if (respData && respData.errors && typeof respData.errors === 'object') {
-        const nextErrs: Record<string, string> = {};
-        Object.keys(respData.errors).forEach((k) => {
-          const v = respData.errors[k];
-          nextErrs[k] = Array.isArray(v) ? String(v[0]) : String(v);
-        });
-        setErrors((prev) => ({ ...prev, ...nextErrs }));
-      } else {
-        const msg = respData?.message || err?.message || 'Failed to save role';
-        setErrorMessage(String(msg));
-        setShowErrorToast(true);
-      }
+    } catch (err) {
+      console.error('Error updating role:', err);
     } finally {
       setSaving(false);
     }
@@ -149,6 +129,16 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
   const handleBack = () => {
     navigate(ROUTES.ROLE.ROOT);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 p-6">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-lg text-gray-500">Loading...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -160,22 +150,13 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
     >
       <MasterFormHeader 
         onBack={handleBack} 
-        title={mode === 'edit' ? 'Edit Role' : 'Create Role'} 
+        title="Edit Role" 
       />
       <NotificationPopup
         isOpen={showSuccessToast}
         onClose={() => setShowSuccessToast(false)}
-        message={mode === 'edit' ? 'Role updated successfully' : 'Role created successfully'}
+        message="Role updated successfully"
         type="success"
-      />
-      <NotificationPopup
-        isOpen={showErrorToast}
-        onClose={() => {
-          setShowErrorToast(false);
-          setErrorMessage('');
-        }}
-        message={errorMessage || 'Failed to save role'}
-        type="error"
       />
 
       <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
@@ -250,7 +231,6 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
 
             {/* Role Permission Section - Tree Style */}
             <div className="mt-8">
-              
               <RolePermissionTree
                 modulePermissions={modulePermissions}
                 onToggle={handlePermissionToggle}
@@ -271,7 +251,7 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
                 className="px-4 py-2 rounded-lg btn-primary text-white shadow-sm disabled:opacity-60"
                 disabled={saving}
               >
-                {saving ? 'Saving...' : mode === 'edit' ? 'Update' : 'Save'}
+                {saving ? 'Updating...' : 'Update'}
               </button>
             </div>
           </form>
@@ -281,4 +261,4 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
   );
 };
 
-export default CreateRole;
+export default EditRole;

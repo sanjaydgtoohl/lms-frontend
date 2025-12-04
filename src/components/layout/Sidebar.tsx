@@ -1,25 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import {
-  LayoutGrid,
-  ChevronDown,
-  ChevronRight,
-  Globe,
-  Settings,
-  Search,
-  Radio,
-} from "lucide-react";
-import File02Icon from "../../assets/icons/File02Icon";
-import AgencyMasterIcon from "../../assets/icons/AgencyMasterIcon";
-import BrandMasterIcon from "../../assets/icons/BrandMasterIcon";
-import DepartmentMasterIcon from "../../assets/icons/DepartmentMasterIcon";
-import DesignationMasterIcon from "../../assets/icons/DesignationMasterIcon";
-import UserManagementIcon from "../../assets/icons/UserManagementIcon";
-import LeadManagementIcon from "../../assets/icons/LeadManagementIcon";
-import CampaignManagementIcon from "../../assets/icons/CampaignManagementIcon";
-import FinanceIcon from "../../assets/icons/FinanceIcon";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import LogoutIcon from "../../assets/icons/LogoutIcon";
-import Brief2Icon from "../../assets/icons/Brief2Icon";
 import HelpIcon from "../../assets/icons/HelpIcon";
 import { useAuthStore } from "../../store/auth";
 import { sidebarItems as navigationItems } from "../../services/Sidebar";

@@ -60,8 +60,7 @@ export async function listPermissions(page = 1, perPage = 10, search?: string): 
 }
 
 export async function getPermission(id: string): Promise<Permission> {
-  // remove leading # if present before sending to backend
-  const cleanId = id.replace(/^#/, '');
+  const cleanId = normalizeIdForBackend(id);
   const res = await apiClient.get<any>(ENDPOINTS.DETAIL(cleanId));
   return handleResponse<Permission>(res);
 }
@@ -72,13 +71,30 @@ export async function createPermission(payload: Partial<Permission>): Promise<Pe
 }
 
 export async function updatePermission(id: string, payload: Partial<Permission>): Promise<Permission> {
-  const cleanId = id.replace(/^#/, '');
+  const cleanId = normalizeIdForBackend(id);
   const res = await apiClient.put<any>(ENDPOINTS.UPDATE(cleanId), payload);
   return handleResponse<Permission>(res);
 }
 
 export async function deletePermission(id: string): Promise<void> {
-  const cleanId = id.replace(/^#/, '');
+  const cleanId = normalizeIdForBackend(id);
   const res = await apiClient.delete<unknown>(ENDPOINTS.DELETE(cleanId));
   await handleResponse<unknown>(res);
+}
+
+/**
+ * Convert an UI-facing id (like "#PM001" or "PM001") to a backend id.
+ * If the id contains digits, return the numeric value without padding (e.g. "#PM001" -> "1").
+ * Otherwise fall back to stripping a leading '#'.
+ */
+function normalizeIdForBackend(id: string): string {
+  if (!id) return String(id);
+  // Extract digits from the id (handles formats like "#PM001", "PM001", "#123").
+  const digits = String(id).replace(/\D/g, '');
+  if (digits) {
+    // Convert to a non-padded numeric string (001 -> 1)
+    return String(Number(digits));
+  }
+  // fallback: remove a leading # if present
+  return id.replace(/^#/, '');
 }

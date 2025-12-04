@@ -40,6 +40,23 @@ export async function listUsers(page = 1, perPage = 10, search?: string): Promis
   if (search && String(search).trim()) params.set('search', String(search).trim());
 
   const res = await apiClient.get<any>(`${ENDPOINTS.LIST}?${params.toString()}`);
+  const normalizeApiDate = (raw?: any) => {
+    if (!raw) return '';
+    try {
+      let s = String(raw).trim();
+      // If API returns microseconds (6+ fractional digits) like 2025-12-02T05:38:19.000000Z
+      // trim to milliseconds which JS Date understands: keep first 3 fractional digits
+      s = s.replace(/\.(\d{3})\d*Z$/, '.$1Z');
+      // Some servers may return fractional seconds without a trailing Z, ensure proper ISO
+      if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(s)) s = `${s}Z`;
+      const d = new Date(s);
+      if (isNaN(d.getTime())) return String(raw);
+      return d.toLocaleString();
+    } catch {
+      return String(raw);
+    }
+  };
+
   const items = (res.data || []).map((it: any, idx: number) => {
     const rawId = it.id ?? idx + 1;
     let idStr = String(rawId);
@@ -66,7 +83,8 @@ export async function listUsers(page = 1, perPage = 10, search?: string): Promis
     }
 
     const lastLogin = it.last_login ?? it.lastLogin ?? '';
-    const created = it.created_at ?? it.created ?? '';
+    const rawCreated = it.created_at ?? it.created ?? '';
+    const created = normalizeApiDate(rawCreated);
 
     return {
       id: String(idStr),

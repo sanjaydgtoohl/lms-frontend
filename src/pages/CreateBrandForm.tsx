@@ -9,6 +9,7 @@ import { fetchIndustries } from '../services/CreateIndustryForm';
 import type { Industry } from '../services/CreateIndustryForm';
 import { showSuccess, showError } from '../utils/notifications';
 import { apiClient } from '../utils/apiClient';
+import { updateBrand } from '../services/BrandMaster';
 
 type Props = {
   onClose: () => void;
@@ -71,6 +72,8 @@ const CitySelect: React.FC<CitySelectProps> = ({ state, value, onChange, presele
 };
 
 const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create' }) => {
+  // ...existing code...
+  // ...existing code...
   const [form, setForm] = useState({
     brandName: '',
     brandType: '',
@@ -83,6 +86,24 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
     city: '',
     zone: '',
   });
+  // Fetch states when country changes
+  useEffect(() => {
+    if (!form.country || form.country === 'Please Select Country') {
+      setStates([]);
+      setForm(prev => ({ ...prev, state: '', city: '' }));
+      return;
+    }
+    let mounted = true;
+    (async () => {
+      try {
+        const statesData = await listStates({ country_id: form.country });
+        if (mounted) setStates(statesData || []);
+      } catch {
+        if (mounted) setStates([]);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [form.country]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [zones, setZones] = useState<Zone[]>([]);
   const [states, setStates] = useState<State[]>([]);
@@ -120,7 +141,20 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
       const payload = {
         name: form.brandName,
         website: form.website,
-        brand_type_id: form.brandType,
+        // Ensure we send the brand type id when possible. The SelectField shows the name
+        // as label but the form value may be either an id or a free-text name. Try to
+        // resolve to an id using the loaded `brandTypes` list.
+        brand_type_id: (() => {
+          const asString = String(form.brandType || '');
+          // prefer exact id match
+          const byId = brandTypes.find(b => String(b.id) === asString);
+          if (byId) return byId.id;
+          // fallback: try match by name (case-insensitive)
+          const byName = brandTypes.find(b => String(b.name).toLowerCase() === asString.toLowerCase());
+          if (byName) return byName.id;
+          // otherwise return whatever value the form has (server may accept name)
+          return form.brandType;
+        })(),
         industry_id: form.industry,
         country_id: form.country,
         state_id: form.state,
@@ -130,18 +164,69 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
         agency_id: form.agency,
       };
 
-      const res = await apiClient.post('/brands', payload);
-
-      if (res && res.success) {
-        showSuccess('Brand created successfully');
-        onClose();
-        // Auto-reload Brand Master page after successful creation
-        window.location.reload();
+      let res;
+      if (mode === 'edit' && initialData?.id) {
+        // Update existing brand
+        res = await updateBrand(initialData.id, payload);
+        if (res) {
+          showSuccess('Brand updated successfully');
+          onClose();
+          // Auto-reload Brand Master page after successful update
+          window.location.reload();
+        }
       } else {
-        throw new Error(res?.message || 'Failed to create brand');
+        // Create new brand
+        res = await apiClient.post('/brands', payload);
+
+        if (res && res.success) {
+          showSuccess('Brand created successfully');
+          onClose();
+          // Auto-reload Brand Master page after successful creation
+          window.location.reload();
+        } else {
+          throw new Error(res?.message || 'Failed to create brand');
+        }
       }
     } catch (err: any) {
-      showError(err?.message || 'Failed to save brand');
+      // Handle server-side validation errors
+      const responseData = err?.responseData;
+      if (responseData?.errors && typeof responseData.errors === 'object') {
+        // Map server field names to form field names
+        const fieldErrorMap: Record<string, string> = {
+          'name': 'brandName',
+          'brand_type_id': 'brandType',
+          'industry_id': 'industry',
+          'country_id': 'country',
+          'state_id': 'state',
+          'city_id': 'city',
+          'zone_id': 'zone',
+          'postal_code': 'postalCode',
+          'agency_id': 'agency',
+          'website': 'website',
+        };
+
+        const newErrors: Record<string, string> = {};
+        
+        // Process each error from the server response
+        Object.entries(responseData.errors).forEach(([serverField, messages]: [string, any]) => {
+          const formField = fieldErrorMap[serverField] || serverField;
+          // Get the first error message if it's an array
+          const errorMessage = Array.isArray(messages) ? messages[0] : String(messages);
+          newErrors[formField] = errorMessage;
+        });
+
+        setErrors(newErrors);
+        
+        // Show only the first error in a notification
+        const firstError = Object.values(newErrors)[0];
+        // Don't show popup for "already been taken" errors - only show on form field
+        if (firstError && !firstError.toLowerCase().includes('already been taken')) {
+          showError(firstError);
+        }
+      } else {
+        // Show general error if not a validation error
+        showError(err?.message || `Failed to ${mode === 'edit' ? 'update' : 'save'} brand`);
+      }
     }
   };
 
@@ -222,31 +307,29 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
     if (initialData) {
       setForm(prev => ({
         ...prev,
-        brandName: initialData.brandName ?? initialData.name ?? prev.brandName,
-        brandType: initialData.brandType ?? String(initialData.brandType ?? '') ?? prev.brandType,
+        brandName: initialData.name ?? initialData.brandName ?? prev.brandName,
+        brandType: String(initialData.brand_type_id ?? initialData.brandType ?? initialData.brand_type ?? ''),
         website: initialData.website ?? prev.website,
-        agency: initialData.agency ?? initialData.agencyName ?? prev.agency,
-        industry: initialData.industry ?? prev.industry,
-        country: initialData.country ?? prev.country,
-        postalCode: initialData.postalCode ?? initialData.pinCode ?? prev.postalCode,
-        state: initialData.state ?? prev.state,
-        city: initialData.city ?? prev.city,
-        zone: initialData.zone ?? prev.zone,
+        agency: String(initialData.agency_id ?? initialData.agency ?? initialData.agencyName ?? ''),
+        industry: String(initialData.industry_id ?? initialData.industry ?? ''),
+        country: String(initialData.country_id ?? initialData.country ?? ''),
+        postalCode: initialData.postal_code ?? initialData.postalCode ?? initialData.pinCode ?? prev.postalCode,
+        state: String(initialData.state_id ?? initialData.state ?? ''),
+        city: String(initialData.city_id ?? initialData.city ?? ''),
+        zone: String(initialData.zone_id ?? initialData.zone ?? ''),
       }));
     }
 
     let mounted = true;
     Promise.all([
       listZones(),
-      listStates(),
       listCountries(),
       listBrandTypes(),
       // fetch a large page so SelectDropdown can client-side search
       listAgencies(1, 1000)
-    ]).then(([zonesData, statesData, countriesData, brandTypesData, agenciesResp]) => {
+    ]).then(([zonesData, countriesData, brandTypesData, agenciesResp]) => {
       if (!mounted) return;
       setZones(zonesData || []);
-      setStates(statesData || []);
       setCountries(countriesData || []);
       setBrandTypes(brandTypesData || []);
       // agenciesResp is AgencyListResponse { data, meta }
@@ -280,6 +363,79 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
     }).catch(() => {
       // Errors are handled by UI store
     });
+
+    // Fallback/debug: if brand types didn't populate (empty array), try fetching directly
+    // from the API via `apiClient` so we can recover from any service-wrapper mismatch.
+    (async () => {
+      try {
+        // wait a tick to allow the Promise.all to complete first
+        await new Promise(r => setTimeout(r, 50));
+        if ((brandTypes || []).length === 0) {
+          const raw = await apiClient.get<any>('/brand-types');
+          const items = raw && raw.data ? raw.data : [];
+          if (items && items.length) {
+            const normalized = (items || []).map((it: any) => ({ id: it.id ?? it._id ?? String(it.name || ''), name: it.name ?? it.title ?? it.label ?? '' }));
+            setBrandTypes(normalized);
+            // eslint-disable-next-line no-console
+            console.warn('Brand types loaded via fallback apiClient.get', normalized);
+          } else {
+            // eslint-disable-next-line no-console
+            console.warn('Brand types: no items returned from fallback');
+          }
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('Brand types fallback fetch failed', e);
+      }
+    })();
+
+    // Fallback/debug for agencies: if agencies array is empty, try fetching a large page directly
+    (async () => {
+      try {
+        await new Promise(r => setTimeout(r, 50));
+        if ((agencies || []).length === 0) {
+          // Request many items so the dropdown can search client-side
+          const raw = await apiClient.get<any>(`/agencies?page=1&per_page=1000`);
+          const items = raw && raw.data ? raw.data : [];
+          if (items && items.length) {
+            const normalized = (items || []).map((it: any) => ({ id: it.id ?? it._id ?? String(it.slug || ''), name: it.name ?? it.title ?? it.label ?? '' }));
+            setAgencies(normalized as Agency[]);
+            // eslint-disable-next-line no-console
+            console.warn('Agencies loaded via fallback apiClient.get', normalized);
+          } else {
+            // eslint-disable-next-line no-console
+            console.warn('Agencies: no items returned from fallback');
+          }
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('Agencies fallback fetch failed', e);
+      }
+    })();
+
+    // Fallback/debug for countries: if countries didn't populate (empty array), try fetching
+    // directly from the API via `apiClient.get('/countries/list')` and normalize results.
+    (async () => {
+      try {
+        await new Promise(r => setTimeout(r, 50));
+        if ((countries || []).length === 0) {
+          const raw = await apiClient.get<any>('/countries/list');
+          const items = raw && raw.data ? raw.data : [];
+          if (items && items.length) {
+            const normalized = (items || []).map((it: any) => ({ id: it.id ?? it._id ?? String(it.slug || ''), name: it.name ?? it.title ?? it.label ?? '' }));
+            setCountries(normalized);
+            // eslint-disable-next-line no-console
+            console.warn('Countries loaded via fallback apiClient.get', normalized);
+          } else {
+            // eslint-disable-next-line no-console
+            console.warn('Countries: no items returned from fallback');
+          }
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('Countries fallback fetch failed', e);
+      }
+    })();
 
     // Fetch industries for the Industry dropdown. Request many per page to get a full list.
     fetchIndustries(1, 1000).then((resp) => {

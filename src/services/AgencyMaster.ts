@@ -49,9 +49,11 @@ export type AgencyListResponse = {
   };
 };
 
-export async function listAgencies(page = 1, perPage = 10): Promise<AgencyListResponse> {
+export async function listAgencies(page = 1, perPage = 10, search?: string): Promise<AgencyListResponse> {
   try {
-    const res = await apiClient.get<Agency[]>(ENDPOINTS.LIST + `?page=${page}&per_page=${perPage}`);
+    const qs = new URLSearchParams({ page: String(page), per_page: String(perPage) });
+    if (search && String(search).trim() !== '') qs.set('search', String(search));
+    const res = await apiClient.get<Agency[]>(ENDPOINTS.LIST + `?${qs.toString()}`);
     const json = res;
     if (!json || !json.success) {
       const message = (json as any)?.message || (json as any)?.error || 'Request failed';

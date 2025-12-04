@@ -5,7 +5,9 @@ import SearchBar from '../../../components/ui/SearchBar';
 import { MasterHeader } from '../../../components/ui';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
-import { listPermissions } from '../../../services/AllPermissions';
+import { listPermissions, deletePermission } from '../../../services/AllPermissions';
+import { showSuccess, showError } from '../../../utils/notifications';
+import ConfirmDialog from '../../../components/ui/ConfirmDialog';
 
 interface Permission {
   id: string;
@@ -22,6 +24,9 @@ const AllPermissions: React.FC = () => {
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(false);
   const [totalItems, setTotalItems] = useState(0);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [confirmDeleteLabel, setConfirmDeleteLabel] = useState<string>('');
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   // Fetch permissions from API
   const fetchPermissions = async () => {
@@ -56,14 +61,46 @@ const AllPermissions: React.FC = () => {
 
   const handleCreatePermission = () => navigate(ROUTES.PERMISSION.CREATE);
   
+  const extractNumericId = (id: string) => {
+    if (!id) return id;
+    const digits = String(id).replace(/\D/g, '');
+    return digits ? String(Number(digits)) : id.replace(/^#/, '');
+  };
+
   const handleEdit = (id: string) => {
-    const cleanId = id.replace('#', '');
+    const cleanId = extractNumericId(id);
     navigate(ROUTES.PERMISSION.EDIT(cleanId));
   };
 
   const handleView = (id: string) => {
-    const cleanId = id.replace('#', '');
+    const cleanId = extractNumericId(id);
     navigate(ROUTES.PERMISSION.DETAIL(cleanId));
+  };
+
+  const handleDelete = async (id: string) => {
+    const found = permissions.find(p => p.id === id);
+    setConfirmDeleteId(id);
+    setConfirmDeleteLabel(found ? (found.display_name || found.name || String(found.id)) : id);
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmDeleteId) return;
+    setConfirmLoading(true);
+    try {
+      await deletePermission(confirmDeleteId);
+      showSuccess('Permission deleted successfully');
+      setCurrentPage(1);
+      // Reload the table from API
+      await fetchPermissions();
+    } catch (err: any) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to delete permission', err);
+      showError(err?.message || 'Failed to delete permission');
+    } finally {
+      setConfirmLoading(false);
+      setConfirmDeleteId(null);
+      setConfirmDeleteLabel('');
+    }
   };
 
   const columns = ([
@@ -79,13 +116,23 @@ const AllPermissions: React.FC = () => {
 
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
+      <ConfirmDialog
+        isOpen={!!confirmDeleteId}
+        title={`Delete permission "${confirmDeleteLabel}"?`}
+        message="This action will permanently remove the permission. This cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        loading={confirmLoading}
+        onCancel={() => setConfirmDeleteId(null)}
+        onConfirm={confirmDelete}
+      />
       <MasterHeader
         onCreateClick={handleCreatePermission}
         createButtonLabel="Create Permission"
       />
-      <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-        <div className="bg-gray-50 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[var(--text-primary)]">All Permissions</h2>
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-200">
+          <h2 className="text-base font-semibold text-gray-900">All Permissions</h2>
           <div className="ml-4">
             <SearchBar
               placeholder="Search permissions..."
@@ -98,15 +145,19 @@ const AllPermissions: React.FC = () => {
           </div>
         </div>
 
-        <Table
-          data={permissions}
-          startIndex={(currentPage - 1) * itemsPerPage}
-          loading={loading}
-          keyExtractor={(it: Permission) => it.id}
-          columns={columns}
-          onEdit={(it: Permission) => handleEdit(it.id)}
-          onView={(it: Permission) => handleView(it.id)}
-        />
+        <div className="pt-0 overflow-visible">
+          <Table
+            data={permissions}
+            startIndex={(currentPage - 1) * itemsPerPage}
+            loading={loading}
+            desktopOnMobile={true}
+            keyExtractor={(it: Permission) => it.id}
+            columns={columns}
+            onEdit={(it: Permission) => handleEdit(it.id)}
+            onView={(it: Permission) => handleView(it.id)}
+            onDelete={(it: Permission) => handleDelete(it.id)}
+          />
+        </div>
       </div>
 
       <Pagination

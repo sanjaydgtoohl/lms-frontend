@@ -7,6 +7,7 @@ import { fetchCallStatuses } from '../../../services/CallStatus';
 
 interface AssignPriorityCardProps {
   assignTo?: string;
+  assignedLabel?: string;
   priority?: string;
   callFeedback?: string;
   onChange?: (values: { assignTo?: string; priority?: string; callFeedback?: string }) => void;
@@ -14,6 +15,7 @@ interface AssignPriorityCardProps {
 
 const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
   assignTo,
+  assignedLabel,
   priority,
   callFeedback,
   onChange
@@ -63,16 +65,22 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
         setUserError(error);
         setUserOptions([]);
       } else {
-        setUserOptions(
-          Array.isArray(data)
-            ? data.map((item: any) => ({ value: String(item.id), label: item.name }))
-            : []
-        );
+        const fetched = Array.isArray(data)
+          ? data.map((item: any) => ({ value: String(item.id), label: item.name }))
+          : [];
+        // If assignTo prop exists but is not in fetched options, prepend it using assignedLabel if available
+        if (assignTo) {
+          const exists = fetched.find((o: any) => String(o.value) === String(assignTo));
+          if (!exists) {
+            fetched.unshift({ value: String(assignTo), label: String((assignedLabel) ? assignedLabel : assignTo) });
+          }
+        }
+        setUserOptions(fetched);
       }
       setUserLoading(false);
     });
     return () => { isMounted = false; };
-  }, []);
+  }, [assignTo, assignedLabel]);
 
   useEffect(() => {
     let isMounted = true;
@@ -84,16 +92,22 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
         setPriorityError(error);
         setPriorityOptions([]);
       } else {
-        setPriorityOptions(
-          Array.isArray(data)
-            ? data.map((item: any) => ({ value: String(item.id), label: item.name }))
-            : []
-        );
+        const fetched = Array.isArray(data)
+          ? data.map((item: any) => ({ value: String(item.id), label: item.name }))
+          : [];
+        // If a priority is passed in props but not in fetched options, prepend it
+        if (priority) {
+          const exists = fetched.find((o: any) => String(o.value) === String(priority) || String(o.label) === String(priority));
+          if (!exists) {
+            fetched.unshift({ value: String(priority), label: String(priority) });
+          }
+        }
+        setPriorityOptions(fetched);
       }
       setPriorityLoading(false);
     });
     return () => { isMounted = false; };
-  }, []);
+  }, [priority]);
 
   return (
     <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)]">

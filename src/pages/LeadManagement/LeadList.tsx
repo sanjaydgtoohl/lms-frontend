@@ -147,7 +147,6 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
       l.brandName.toLowerCase().includes(q) ||
       l.contactPerson.toLowerCase().includes(q) ||
       l.phoneNumber.toLowerCase().includes(q) ||
-      l.source.toLowerCase().includes(q) ||
       l.callStatus.toLowerCase().includes(q)
     );
   });
@@ -191,7 +190,6 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
     { key: 'brandName', header: 'Brand Name', render: (it: Lead) => it.brandName, className: 'max-w-[180px] overflow-hidden text-ellipsis whitespace-nowrap' },
     { key: 'contactPerson', header: 'Contact Person', render: (it: Lead) => it.contactPerson, className: 'max-w-[160px] overflow-hidden text-ellipsis whitespace-nowrap' },
     { key: 'phoneNumber', header: 'Phone Number', render: (it: Lead) => it.phoneNumber, className: 'whitespace-nowrap' },
-    { key: 'source', header: 'Source', render: (it: Lead) => it.source, className: 'whitespace-nowrap' },
     { key: 'subSource', header: 'Sub-Source', render: (it: Lead) => it.subSource, className: 'whitespace-nowrap' },
     { key: 'assignBy', header: 'Assign By', render: (it: Lead) => it.assignBy, className: 'whitespace-nowrap' },
     {
@@ -268,9 +266,9 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
         onCreateClick={handleCreateLead}
         createButtonLabel="Create Lead"
       />
-      <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-        <div className="bg-gray-50 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[var(--text-primary)]">{title}</h2>
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-200">
+          <h2 className="text-base font-semibold text-gray-900">{title}</h2>
           <div className="ml-4">
             <SearchBar
               placeholder="Search leads..."
@@ -283,14 +281,17 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
           </div>
         </div>
 
-        <Table
-          data={currentData}
-          startIndex={startIndex}
-          loading={false}
-          keyExtractor={(it: Lead) => it.id}
-          columns={columns}
-          onEdit={(it: Lead) => handleEdit(it.id)}
-        />
+        <div className="pt-0 overflow-visible">
+          <Table
+            data={currentData}
+            startIndex={startIndex}
+            loading={false}
+            desktopOnMobile={true}
+            keyExtractor={(it: Lead) => it.id}
+            columns={columns}
+            onEdit={(it: Lead) => handleEdit(it.id)}
+          />
+        </div>
       </div>
 
       <Pagination
