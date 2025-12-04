@@ -66,7 +66,48 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
 
   useEffect(() => {
     if (initialData) {
-      setForm(prev => ({ ...prev, ...initialData }));
+      let patched = { ...initialData };
+      // Autofill 'type' from mediaType or media_type
+      if (!patched.type && (patched.mediaType || patched.media_type)) {
+        let mediaTypeVal = patched.mediaType || patched.media_type;
+        if (typeof mediaTypeVal === 'object' && mediaTypeVal !== null && 'value' in mediaTypeVal) {
+          mediaTypeVal = mediaTypeVal.value;
+        }
+        if (typeof mediaTypeVal === 'string') {
+          const upper = mediaTypeVal.toUpperCase();
+          if (["DOOH", "OOH", "CTV"].includes(upper)) {
+            patched.type = upper;
+          } else if (upper === 'DOOH' || upper === 'OOH' || upper === 'CTV') {
+            patched.type = upper;
+          } else {
+            patched.type = mediaTypeVal.charAt(0).toUpperCase() + mediaTypeVal.slice(1).toLowerCase();
+          }
+        }
+      }
+      // Autofill 'briefDetail' from comment if not already set
+      if (!patched.briefDetail && patched.comment) {
+        patched.briefDetail = patched.comment;
+      }
+      // Normalize priority when initial data provides an object or id
+      if (patched.priority) {
+        const pr = patched.priority as any;
+        // If priority is an object with a name, use the name
+        if (typeof pr === 'object' && pr !== null) {
+          if ('name' in pr) patched.priority = String(pr.name ?? '');
+          else if ('id' in pr) {
+            const rev: Record<number | string, string> = { 1: 'High', 2: 'Medium', 3: 'Low' };
+            patched.priority = String(rev[pr.id] ?? pr.id ?? '');
+          }
+        } else {
+          // If priority is a numeric id in string form, map it back to label when possible
+          const n = Number(pr);
+          if (!Number.isNaN(n)) {
+            const rev: Record<number, string> = { 1: 'High', 2: 'Medium', 3: 'Low' };
+            patched.priority = String(rev[n] ?? pr);
+          }
+        }
+      }
+      setForm(prev => ({ ...prev, ...patched }));
     }
   }, [initialData]);
 
@@ -111,10 +152,20 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
         const opts = (res.data || []).map(a => ({ value: String(a.id), label: String(a.name) }));
         setAgencies(opts);
 
-        // if initialData had a createdBy value, try to reconcile to id
-        if (initialData && initialData.createdBy) {
-          const foundById = opts.find(o => o.value === String(initialData.createdBy));
-          const foundByName = opts.find(o => o.label === String(initialData.createdBy));
+        // Autofill Agency Name field for edit mode
+        let agencyVal = initialData?.createdBy || initialData?.agency;
+        if (agencyVal) {
+          let agencyId = '';
+          let agencyName = '';
+          if (typeof agencyVal === 'object' && agencyVal !== null) {
+            agencyId = String(agencyVal.id);
+            agencyName = String(agencyVal.name);
+          } else {
+            agencyId = String(agencyVal);
+            agencyName = String(agencyVal);
+          }
+          const foundById = opts.find(o => o.value === agencyId);
+          const foundByName = opts.find(o => o.label === agencyName);
           if (foundById) setForm(prev => ({ ...prev, createdBy: foundById.value }));
           else if (foundByName) setForm(prev => ({ ...prev, createdBy: foundByName.value }));
         }
@@ -141,10 +192,16 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
         const opts = (res.data || []).map(u => ({ value: String(u.id), label: String(u.name) }));
         setUsers(opts);
 
-        // if initialData had an assignTo value, try to reconcile to id
+        // Autofill Assign To field for edit mode
         if (initialData && initialData.assignTo) {
-          const foundById = opts.find(o => o.value === String(initialData.assignTo));
-          const foundByName = opts.find(o => o.label === String(initialData.assignTo));
+          let assignId = '';
+          if (typeof initialData.assignTo === 'object' && initialData.assignTo !== null && 'id' in initialData.assignTo) {
+            assignId = String(initialData.assignTo.id);
+          } else {
+            assignId = String(initialData.assignTo);
+          }
+          const foundById = opts.find(o => o.value === assignId);
+          const foundByName = opts.find(o => o.label === String(initialData.assignTo.name || initialData.assignTo));
           if (foundById) setForm(prev => ({ ...prev, assignTo: foundById.value }));
           else if (foundByName) setForm(prev => ({ ...prev, assignTo: foundByName.value }));
         }
@@ -171,10 +228,20 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
         const opts = (res.data || []).map((l) => ({ value: String(l.id), label: String(l.name || l.contact_person || l.email || `Lead ${l.id}`) }));
         setContactPersons(opts);
 
-        // if initialData had a contactPerson value, try to reconcile to id or name
-        if (initialData && initialData.contactPerson) {
-          const foundById = opts.find(o => o.value === String(initialData.contactPerson));
-          const foundByLabel = opts.find(o => o.label === String(initialData.contactPerson));
+        // Autofill Contact Person field for edit mode
+        let contactVal = initialData?.contactPerson || initialData?.contact_person;
+        if (contactVal) {
+          let contactId = '';
+          let contactName = '';
+          if (typeof contactVal === 'object' && contactVal !== null) {
+            contactId = String(contactVal.id);
+            contactName = String(contactVal.name);
+          } else {
+            contactId = String(contactVal);
+            contactName = String(contactVal);
+          }
+          const foundById = opts.find(o => o.value === contactId);
+          const foundByLabel = opts.find(o => o.label === contactName);
           if (foundById) setForm(prev => ({ ...prev, contactPerson: foundById.value }));
           else if (foundByLabel) setForm(prev => ({ ...prev, contactPerson: foundByLabel.value }));
         }
@@ -267,6 +334,8 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
 
     try {
       setSaving(true);
+      // Debug: log form state before submission
+      console.log('Form state before submit:', form);
       // Build payload matching backend expected field names
       const payload: Record<string, any> = {};
       // Basic fields
@@ -275,7 +344,17 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
       const toInt = (val: any) => {
         if (val === null || val === undefined) return undefined;
         const raw = typeof val === 'object' ? (val.value ?? val.id ?? '') : String(val);
-        const n = parseInt(String(raw), 10);
+        const rawStr = String(raw).trim();
+        
+        // Handle formatted IDs like #USR001, #AGN045, #LEAD010 - extract the numeric part
+        const formatMatch = rawStr.match(/#[A-Z]+(\d+)/);
+        if (formatMatch && formatMatch[1]) {
+          const n = parseInt(formatMatch[1], 10);
+          return Number.isNaN(n) ? undefined : n;
+        }
+        
+        // Try to parse as regular integer
+        const n = parseInt(rawStr, 10);
         return Number.isNaN(n) ? undefined : n;
       };
 
@@ -286,7 +365,8 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
       const cp = toInt(form.contactPerson);
       if (cp !== undefined) payload.contact_person_id = cp;
       const assignId = toInt(form.assignTo);
-      if (assignId !== undefined) payload.assign_user_id = assignId;
+      console.log('assignTo value:', form.assignTo, 'converted to:', assignId);
+      payload.assign_user_id = assignId || null;
       const statusId = toInt(form.status);
       if (statusId !== undefined) payload.brief_status_id = statusId;
 
@@ -327,6 +407,10 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
       }
 
       if (initialData && initialData.id) payload.id = initialData.id;
+      
+      // Debug: log the final payload
+      console.log('Final payload before submit:', payload);
+      
       // If parent provided an onSave handler, use it. Otherwise use the
       // built-in API wiring available in services/CreateBriefForm.ts
       let res: any = null;
@@ -397,7 +481,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     placeholder={brandsLoading ? 'Loading brands...' : 'Auto Select'}
                     options={brands}
                     value={form.brandName}
-                    onChange={(v) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; setForm(prev => ({ ...prev, brandName: val })); }}
+                    onChange={(v: any) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; setForm(prev => ({ ...prev, brandName: val })); }}
                     searchable
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
                     disabled={brandsLoading}
@@ -416,8 +500,12 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     name="assignTo"
                     placeholder={usersLoading ? 'Loading users...' : 'Please Assign To Planner'}
                     options={users}
-                    value={form.assignTo}
-                    onChange={(v) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; setForm(prev => ({ ...prev, assignTo: val })); }}
+                    value={String(form.assignTo || '')}
+                    onChange={(v: any) => { 
+                      const val = String(v || '').trim();
+                      console.log('Assign To onChange fired with value:', v, 'parsed as:', val);
+                      setForm(prev => ({ ...prev, assignTo: val })); 
+                    }}
                     searchable
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
                     disabled={usersLoading}
@@ -431,7 +519,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     placeholder={briefStatusesLoading ? 'Loading statuses...' : 'Select Brief Status'}
                     options={briefStatuses}
                     value={form.status}
-                    onChange={(v) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; setForm(prev => ({ ...prev, status: val })); }}
+                    onChange={(v: any) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; setForm(prev => ({ ...prev, status: val })); }}
                     searchable
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
                     disabled={briefStatusesLoading}
@@ -472,7 +560,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     placeholder="Select Type"
                     options={form.programmatic === 'Non-Programmatic' ? ['DOOH', 'OOH'] : ['DOOH', 'CTV']}
                     value={form.type}
-                    onChange={(v) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; setForm(prev => ({ ...prev, type: val })); }}
+                    onChange={(v: any) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; setForm(prev => ({ ...prev, type: val })); }}
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
                   />
                 </div>
@@ -486,7 +574,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     placeholder={contactPersonsLoading ? 'Loading contacts...' : 'Search or select contact person'}
                     options={contactPersons}
                     value={form.contactPerson}
-                    onChange={(v) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; setForm(prev => ({ ...prev, contactPerson: val })); setErrors(prev => ({ ...prev, contactPerson: '' })); }}
+                    onChange={(v: any) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; setForm(prev => ({ ...prev, contactPerson: val })); setErrors(prev => ({ ...prev, contactPerson: '' })); }}
                     searchable
                     disabled={contactPersonsLoading}
                     inputClassName={errors.contactPerson ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-[var(--border-color)] focus:ring-blue-500'}
@@ -509,7 +597,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     placeholder={agenciesLoading ? 'Loading agencies...' : 'Search or select agency'}
                     options={agencies}
                     value={form.createdBy}
-                    onChange={(v) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; setForm(prev => ({ ...prev, createdBy: val })); }}
+                    onChange={(v: any) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; setForm(prev => ({ ...prev, createdBy: val })); }}
                     searchable
                     disabled={agenciesLoading}
                   />

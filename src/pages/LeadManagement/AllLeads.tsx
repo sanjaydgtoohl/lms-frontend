@@ -5,9 +5,11 @@ import CallStatusDropdown from '../../components/ui/CallStatusDropdown';
 import Pagination from '../../components/ui/Pagination';
 import SearchBar from '../../components/ui/SearchBar';
 import { MasterHeader, StatusPill } from '../../components/ui';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
+import NotificationPopup from '../../components/ui/NotificationPopup';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants';
-import { listLeads, updateLead } from '../../services/AllLeads';
+import { listLeads, updateLead, deleteLead } from '../../services/AllLeads';
 
 interface Lead {
   id: string;
@@ -20,6 +22,7 @@ interface Lead {
   assignTo: string;
   dateTime: string;
   status: string;
+  leadStatus: string;
   callStatus: string;
   callAttempt: number;
   comment: string;
@@ -52,6 +55,8 @@ const callStatusOptions = [
   "Converted",
   "DND Requested"
 ];
+
+// (status mapping removed - not used in this file)
 
 
 const AllLeads: React.FC = () => {
@@ -161,6 +166,45 @@ const AllLeads: React.FC = () => {
     })();
   };
 
+  const [showDeleteToast, setShowDeleteToast] = useState(false);
+  const [showErrorToast, setShowErrorToast] = useState(false);
+  const [errorMessageToast, setErrorMessageToast] = useState('');
+
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [confirmDeleteLabel, setConfirmDeleteLabel] = useState<string>('');
+  const [confirmLoading, setConfirmLoading] = useState(false);
+
+  // Open confirmation dialog (used by ActionMenu)
+  const handleDelete = (leadId: string) => {
+    const found = leads.find((l) => l.id === leadId);
+    setConfirmDeleteId(leadId);
+    setConfirmDeleteLabel(found ? (found.brandName || found.contactPerson || String(found.id)) : leadId);
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmDeleteId) return;
+    setConfirmLoading(true);
+    const numericId = String(confirmDeleteId).replace('#', '');
+    try {
+      await deleteLead(numericId);
+      setLeads((prev) => prev.filter((l) => l.id !== confirmDeleteId));
+      setTotalItems((t) => Math.max(0, Number(t) - 1));
+      setShowDeleteToast(true);
+      setTimeout(() => setShowDeleteToast(false), 3000);
+
+      const isLastOnPage = currentData.length === 1;
+      if (isLastOnPage && currentPage > 1) setCurrentPage((p) => p - 1);
+    } catch (err: any) {
+      console.error('Failed to delete lead', err);
+      setErrorMessageToast(err?.message || 'Failed to delete lead');
+      setShowErrorToast(true);
+    } finally {
+      setConfirmLoading(false);
+      setConfirmDeleteId(null);
+      setConfirmDeleteLabel('');
+    }
+  };
+
   const handleCallStatusChange = (leadId: string, newStatus: string) => {
     // Update the lead status in state and increment callAttempt when status actually changes
     setLeads((prev) =>
@@ -208,7 +252,9 @@ const AllLeads: React.FC = () => {
             // Show the assigned user's name. Avoid falling back to a numeric id string.
             assignTo: it.current_assign_user_name || it.assigned_user?.name || (it.current_assign_user && typeof it.current_assign_user === 'object' ? it.current_assign_user.name : '') || it.assign_to_name || '',
             dateTime: it.created_at || it.dateTime || it.created_at_formatted || '',
-            status: it.status || it.lead_status || '',
+            status: it.status || '',
+            // Extract lead_status from API response
+            leadStatus: it.lead_status || '',
             // Normalize call status: if API returns null/empty, show 'N/A' in UI
             callStatus: (() => {
               const raw = it.call_status ?? it.callStatus ?? '';
@@ -260,16 +306,24 @@ const AllLeads: React.FC = () => {
       header: 'Status', 
       render: (it: Lead) => {
         const statusColors = {
-          'Interested': '#22c55e',
+          'Active': '#22c55e',
+          'Inactive': '#ef4444',
           'Pending': '#f59e0b',
+          'Converted': '#3b82f6',
+          'In Progress': '#8b5cf6',
+          'Rejected': '#dc2626',
+          'Interested': '#22c55e',
           'Brief Pending': '#f97316',
           'Meeting Scheduled': '#3b82f6',
           'Meeting Done': '#8b5cf6',
-          'Brief Received': '#06b6d4'
+          'Brief Received': '#06b6d4',
+          'N/A': '#6b7280'
         };
+        // Display lead_status from API (currently null for all, will show when populated)
+        const displayStatus = it.leadStatus || 'N/A';
         return <StatusPill 
-          label={it.status} 
-          color={statusColors[it.status as keyof typeof statusColors] || '#6b7280'} 
+          label={displayStatus} 
+          color={statusColors[displayStatus as keyof typeof statusColors] || '#6b7280'} 
         />;
       },
       className: 'whitespace-nowrap'
@@ -319,6 +373,36 @@ const AllLeads: React.FC = () => {
 
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
+      <NotificationPopup
+        isOpen={showDeleteToast}
+        onClose={() => setShowDeleteToast(false)}
+        message="Lead deleted successfully"
+        type="success"
+        customStyle={{
+          bg: 'bg-gradient-to-r from-red-50 to-red-100',
+          border: 'border-l-4 border-red-500',
+          text: 'text-red-800',
+          icon: 'text-red-500'
+        }}
+      />
+      <NotificationPopup
+        isOpen={showErrorToast}
+        onClose={() => setShowErrorToast(false)}
+        message={errorMessageToast}
+        type="error"
+      />
+
+      <ConfirmDialog
+        isOpen={!!confirmDeleteId}
+        title={`Delete lead "${confirmDeleteLabel}"?`}
+        message="This action will permanently remove the lead. This cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        loading={confirmLoading}
+        onCancel={() => setConfirmDeleteId(null)}
+        onConfirm={confirmDelete}
+      />
+
       <MasterHeader
         onCreateClick={handleCreateLead}
         createButtonLabel="Create Lead"
@@ -348,6 +432,7 @@ const AllLeads: React.FC = () => {
             columns={columns}
             onEdit={(it: Lead) => handleEdit(it.id)}
             onView={(it: Lead) => handleView(it.id)}
+            onDelete={(it: Lead) => handleDelete(it.id)}
           />
         </div>
       </div>

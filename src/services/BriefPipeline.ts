@@ -24,6 +24,11 @@ export interface CreatedByUser {
   email?: string;
 }
 
+export interface BriefStatus {
+  id?: number | string;
+  name?: string;
+}
+
 export interface BriefItem {
   id: string;
   briefId?: string;
@@ -38,6 +43,7 @@ export interface BriefItem {
   createdBy?: string | CreatedByUser;
   assignTo?: string | AssignedUser;
   status?: string;
+  brief_status?: BriefStatus;
   briefDetail?: string;
   comment?: string;
   submissionDate?: string;
@@ -114,6 +120,10 @@ export async function listBriefs(page = 1, perPage = 10, search?: string): Promi
       ? assignToRaw 
       : String(assignToRaw);
     const statusVal = raw['status'] ?? '';
+    const briefStatusRaw = raw['brief_status'] ?? raw['status_object'] ?? '';
+    const briefStatusVal = typeof briefStatusRaw === 'object' && briefStatusRaw !== null 
+      ? briefStatusRaw 
+      : {};
     const detailVal = raw['brief_detail'] ?? raw['detail'] ?? '';
     const commentVal = raw['comment'] ?? '';
     const submissionVal = raw['submission_date'] ?? raw['submission'] ?? raw['submitted_at'] ?? raw['dateTime'] ?? '';
@@ -132,6 +142,7 @@ export async function listBriefs(page = 1, perPage = 10, search?: string): Promi
       createdBy: createdByVal,
       assignTo: assignToVal,
       status: String(statusVal ?? ''),
+      brief_status: briefStatusVal as BriefStatus,
       briefDetail: String(detailVal ?? ''),
       comment: String(commentVal ?? ''),
       submissionDate: String(submissionVal ?? ''),
@@ -155,7 +166,65 @@ export async function getBrief(id: string): Promise<BriefItem> {
     throw new Error(message);
   }
   const raw = json.data as Record<string, unknown>;
-  return (await listBriefs(1, 1)).data.find(b => b.id === String(id)) ?? ({ id: String(id), _raw: raw } as BriefItem);
+
+  // Normalize single item similar to listBriefs mapping
+  const idVal = raw['id'] ?? raw['uuid'] ?? raw['code'] ?? id;
+  const briefNameVal = raw['brief_name'] ?? raw['name'] ?? '';
+  const briefIdVal = raw['brief_id'] ?? raw['code'] ?? String(idVal);
+  const brandRaw = raw['brand_name'] ?? raw['brand'] ?? '';
+  const brandNameVal = typeof brandRaw === 'object' && brandRaw !== null && 'name' in brandRaw
+    ? (brandRaw as any).name
+    : String(brandRaw);
+  const productNameVal = raw['product_name'] ?? raw['product'] ?? '';
+  const contactPersonRaw = raw['contact_person'] ?? raw['contact'] ?? '';
+  const contactPersonVal = typeof contactPersonRaw === 'object' && contactPersonRaw !== null
+    ? contactPersonRaw
+    : String(contactPersonRaw);
+  const modeVal = raw['mode_of_campaign'] ?? raw['mode'] ?? '';
+  const mediaTypeVal = raw['media_type'] ?? '';
+  const priorityRaw = raw['priority'] ?? '';
+  const priorityVal = typeof priorityRaw === 'object' && priorityRaw !== null
+    ? priorityRaw
+    : String(priorityRaw);
+  const budgetVal = raw['budget'] ?? raw['estimated_budget'] ?? '';
+  const createdByRaw = raw['created_by_user'] ?? raw['created_by'] ?? raw['creator'] ?? '';
+  const createdByVal = typeof createdByRaw === 'object' && createdByRaw !== null
+    ? createdByRaw
+    : String(createdByRaw);
+  const assignToRaw = raw['assign_to'] ?? raw['assigned_to'] ?? raw['assigned_user'] ?? '';
+  const assignToVal = typeof assignToRaw === 'object' && assignToRaw !== null
+    ? assignToRaw
+    : String(assignToRaw);
+  const statusVal = raw['status'] ?? '';
+  const briefStatusRaw = raw['brief_status'] ?? raw['status_object'] ?? '';
+  const briefStatusVal = typeof briefStatusRaw === 'object' && briefStatusRaw !== null
+    ? briefStatusRaw
+    : {};
+  const detailVal = raw['brief_detail'] ?? raw['detail'] ?? '';
+  const commentVal = raw['comment'] ?? '';
+  const submissionVal = raw['submission_date'] ?? raw['submission'] ?? raw['submitted_at'] ?? raw['dateTime'] ?? '';
+
+  return {
+    id: String(idVal),
+    briefId: String(briefIdVal ?? ''),
+    briefName: String(briefNameVal ?? ''),
+    brandName: String(brandNameVal ?? ''),
+    productName: String(productNameVal ?? ''),
+    contactPerson: contactPersonVal,
+    modeOfCampaign: String(modeVal ?? ''),
+    mediaType: String(mediaTypeVal ?? ''),
+    priority: priorityVal,
+    budget: String(budgetVal ?? ''),
+    createdBy: createdByVal,
+    assignTo: assignToVal,
+    status: String(statusVal ?? ''),
+    brief_status: briefStatusVal as BriefStatus,
+    briefDetail: String(detailVal ?? ''),
+    comment: String(commentVal ?? ''),
+    submissionDate: String(submissionVal ?? ''),
+    dateTime: String(raw['created_at'] ?? raw['date_time'] ?? raw['dateTime'] ?? ''),
+    _raw: raw,
+  } as BriefItem;
 }
 
 export async function createBrief(payload: Partial<BriefItem>): Promise<BriefItem> {

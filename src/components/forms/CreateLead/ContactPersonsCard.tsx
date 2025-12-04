@@ -500,14 +500,25 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                 </div>
                 <div>
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">Sub-Source <span className="text-[#FF0000]">*</span></label>
-                  <SelectField
-                    name="subSource"
-                    placeholder="Select sub-source"
-                    options={['Direct', 'Referral', 'Online', 'Event', 'Other']}
-                    value={c.subSource}
-                    onChange={(v) => updateContact(c.id, 'subSource', v)}
-                    inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
-                  />
+                  {
+                    (() => {
+                      const defaultSubSources = ['Direct', 'Referral', 'Online', 'Event', 'Other'];
+                      const opts = [...defaultSubSources];
+                      if (c.subSource && !opts.includes(c.subSource)) {
+                        opts.unshift(c.subSource);
+                      }
+                      return (
+                        <SelectField
+                          name="subSource"
+                          placeholder="Select sub-source"
+                          options={opts}
+                          value={c.subSource}
+                          onChange={(v) => updateContact(c.id, 'subSource', v)}
+                          inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
+                        />
+                      );
+                    })()
+                  }
                 </div>
                 <div>
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">Postal Code</label>

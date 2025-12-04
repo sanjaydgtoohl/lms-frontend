@@ -25,6 +25,7 @@ export const ROUTES = {
     CREATE: '/lead-management/create',
     EDIT: (id: string) => `/lead-management/edit/${id}`,
     DETAIL: (id: string) => `/lead-management/${id}`,
+    MEETING_SCHEDULE: '/meeting-schedule',
   },
   BRIEF: {
     ROOT: '/brief',

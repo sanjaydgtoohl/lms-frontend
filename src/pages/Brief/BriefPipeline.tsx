@@ -7,7 +7,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ROUTES } from '../../constants';
 import MasterHeader from '../../components/ui/MasterHeader';
 import SearchBar from '../../components/ui/SearchBar';
-import { type BriefItem as ServiceBriefItem, listBriefs, createBrief, updateBrief, deleteBrief } from '../../services/BriefPipeline';
+import { type BriefItem as ServiceBriefItem, listBriefs, getBrief, createBrief, updateBrief, deleteBrief } from '../../services/BriefPipeline';
 import StatusDropdown from '../../components/ui/StatusDropdown';
 import AssignDropdown from '../../components/ui/AssignDropdown';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
@@ -86,10 +86,32 @@ const BriefPipeline: React.FC = () => {
     }
 
     if (location.pathname.endsWith('/edit') && id) {
+      // Try to find in-memory first, otherwise fetch single brief from API
       const found = briefs.find(b => b.id === id) || null;
-      setEditItem(found);
-      setViewItem(null);
-      setShowCreate(false);
+      if (found) {
+        setEditItem(found);
+        setViewItem(null);
+        setShowCreate(false);
+        return;
+      }
+
+      let mounted = true;
+      (async () => {
+        try {
+          setLoading(true);
+          const single = await getBrief(id);
+          if (!mounted) return;
+          setEditItem(single || null);
+          setViewItem(null);
+          setShowCreate(false);
+        } catch (err) {
+          console.error('Failed to fetch brief for edit', err);
+          setEditItem(null);
+        } finally {
+          if (mounted) setLoading(false);
+        }
+      })();
+
       return;
     }
 
@@ -317,15 +339,21 @@ const BriefPipeline: React.FC = () => {
                     </div>
                   );
                 }, className: 'min-w-[140px]' },
-                { key: 'status', header: 'Status', render: (it: Brief) => (
-                  <div className="min-w-[140px]">
-                    <StatusDropdown
-                      value={String(it.status ?? '')}
-                      options={STATUS_OPTIONS}
-                      onChange={(newStatus: string) => handleSelectStatus(it.id, newStatus)}
-                    />
-                  </div>
-                ), className: 'min-w-[140px]' },
+                { key: 'status', header: 'Status', render: (it: Brief) => {
+                  // Show status name from brief_status object, fallback to '-' or 'No Status'
+                  const statusName = it.brief_status && typeof it.brief_status === 'object' && 'name' in it.brief_status
+                    ? (it.brief_status as any).name
+                    : '-';
+                  return (
+                    <div className="min-w-[140px]">
+                      <StatusDropdown
+                        value={statusName}
+                        options={STATUS_OPTIONS}
+                        onChange={(newStatus: string) => handleSelectStatus(it.id, newStatus)}
+                      />
+                    </div>
+                  );
+                }, className: 'min-w-[140px]' },
                 {
                   key: 'briefDetail',
                   header: 'Brief Detail',
