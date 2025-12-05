@@ -1,35 +1,107 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Breadcrumb from '../../components/ui/Breadcrumb';
 import { useNavigate } from 'react-router-dom';
 import SelectField from '../../components/ui/SelectField';
+import { createMeeting } from '../../services/MeetingSchedule';
+import { listUsers } from '../../services/AllUsers';
+import { listLeads } from '../../services/AllLeads';
 
 const MeetingSchedule: React.FC = () => {
   const navigate = useNavigate();
 
+  const [lead, setLead] = useState<string>('');
   const [meetingType, setMeetingType] = useState<string>('');
-  const [attendees, setAttendees] = useState<string>('');
+  const [attendees, setAttendees] = useState<string[] | []>([]);
   const [date, setDate] = useState<string>('');
   const [time, setTime] = useState<string>('');
   const [title, setTitle] = useState<string>('');
   const [agenda, setAgenda] = useState<string>('');
   const [location, setLocation] = useState<string>('');
   const [meetLink, setMeetLink] = useState<string>('');
+  const [leadOptions, setLeadOptions] = useState<Array<{ value: string; label: string }>>([]);
+  const [attendeesOptions, setAttendeesOptions] = useState<Array<{ value: string; label: string }>>([]);
 
   const meetingTypeOptions = [
     { value: 'face_to_face', label: 'Face-To-Face' },
     { value: 'online', label: 'Online' },
   ];
 
-  const attendeesOptions = [
-    { value: 'our_team', label: 'Our Team' },
-    { value: 'client_team', label: 'Client Team' },
-  ];
+  // Validate meeting type is one of allowed values
+  const isValidMeetingType = (type: string): boolean => {
+    const validTypes = ['face_to_face', 'online'];
+    return validTypes.includes(type);
+  };
 
-  const handleSave = () => {
-    // TODO: hook up to API
-    console.log('Meeting saved', { meetingType, attendees, date, time, title, agenda, location, meetLink });
-    // Navigate back to lead management list
-    navigate('/lead-management');
+  // Fetch leads and attendees from API
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch leads
+        const leadsResponse = await listLeads(1, 100);
+        const leadOpts = leadsResponse.data.map((leadItem: any) => ({
+          value: String(leadItem.id),
+          label: leadItem.name || leadItem.contact_person || `Lead ${leadItem.id}`,
+        }));
+        setLeadOptions(leadOpts);
+
+        // Fetch attendees
+        const { data: usersData } = await listUsers(1, 100);
+        const attendeeOpts = usersData.map((user: any) => ({
+          value: String(user.id),
+          label: user.name || user.email || 'Unknown',
+        }));
+        setAttendeesOptions(attendeeOpts);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        setLeadOptions([]);
+        setAttendeesOptions([]);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const handleSave = async () => {
+    try {
+      // Validate required fields
+      if (!lead || !meetingType || !attendees.length || !date || !time || !title) {
+        alert('Please fill in all required fields (Lead, Meeting Type, Attendees, Date, Time, and Title)');
+        return;
+      }
+
+      // Validate meeting type is one of allowed values
+      if (!isValidMeetingType(meetingType)) {
+        alert('Invalid meeting type. Please select either "Face-To-Face" or "Online".');
+        return;
+      }
+
+      // Prepare payload for API
+      const payload = {
+        title,
+        lead_id: String(lead),
+        attendees_id: attendees.map(String),
+        type: meetingType,
+        location,
+        agenda,
+        link: meetLink,
+        meeting_date: date,
+        meeting_time: time,
+        status: 1,
+      };
+
+      // Call the API service
+      const fixedPayload = { ...payload, attendees_id: Array.isArray(payload.attendees_id) ? payload.attendees_id[0] ?? '' : payload.attendees_id };
+      const response = await createMeeting(fixedPayload);
+      console.log('Meeting created successfully', response);
+      
+      // Show success message
+      alert('Meeting scheduled successfully!');
+      
+      // Navigate back to lead management list
+      navigate('/lead-management');
+    } catch (error: any) {
+      console.error('Error saving meeting:', error);
+      alert(`Error: ${error.message || 'Failed to save meeting'}`);
+    }
   };
 
   return (
@@ -44,9 +116,10 @@ const MeetingSchedule: React.FC = () => {
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="flex items-center space-x-2 btn-primary text-white px-3 py-1 rounded-lg"
+          className="font-semibold px-3 py-1 rounded-md flex items-center text-sm btn-primary text-white"
         >
-          <span className="text-sm font-medium">Back</span>
+          <svg className="mr-1" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          Go Back
         </button>
       </div>
 
@@ -55,6 +128,17 @@ const MeetingSchedule: React.FC = () => {
           <h3 className="text-base font-semibold text-[#344054] mb-4">Meeting Schedule</h3>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-[var(--text-secondary)] mb-1">Lead</label>
+              <SelectField
+                placeholder="Select Lead"
+                options={leadOptions}
+                value={lead}
+                onChange={(v) => setLead(String(v))}
+                inputClassName="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)]"
+              />
+            </div>
+
             <div>
               <label className="block text-sm text-[var(--text-secondary)] mb-1">Meeting Type</label>
               <SelectField
@@ -72,7 +156,8 @@ const MeetingSchedule: React.FC = () => {
                 placeholder="Select Attendees"
                 options={attendeesOptions}
                 value={attendees}
-                onChange={(v) => setAttendees(String(v))}
+                onChange={(v) => setAttendees(Array.isArray(v) ? v : [v])}
+                isMulti={true}
                 inputClassName="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)]"
               />
             </div>

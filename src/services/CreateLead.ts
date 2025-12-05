@@ -108,10 +108,16 @@ export const createLead = async (payload: any) => {
   try {
     const response = await http.post(`${API_BASE_URL}/leads`, payload);
     if (response.data && response.data.success) {
-      return { data: response.data.data, error: null };
+      return { data: response.data.data, error: null, errors: null };
     }
-    return { data: null, error: response.data?.message || 'Unknown error' };
+    // If backend returns validation errors, include them in the result
+    return { data: null, error: response.data?.message || 'Unknown error', errors: response.data?.errors || null };
   } catch (error: any) {
-    return { data: null, error: error?.response?.data?.message || error.message || 'Network error' };
+    const respErr = error?.response?.data;
+    return {
+      data: null,
+      error: respErr?.message || error.message || 'Network error',
+      errors: respErr?.errors || null,
+    };
   }
 };

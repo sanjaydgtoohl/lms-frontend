@@ -348,12 +348,12 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                 </div>
 
                 <div>
-                  <label className="block text-sm text-[#667085] mb-1">Agency Type</label>
+                  <label className="block text-sm text-[#667085] mb-1">Agency Type <span className="text-red-500">*</span></label>
                     <SelectField
                       name="parentType"
                       value={parent.type}
                       options={agencyTypes}
-                      onChange={(v) => { setParent(prev => ({ ...prev, type: v })); setParentErrors(prev => ({ ...prev, type: undefined })); }}
+                      onChange={(v) => { setParent(prev => ({ ...prev, type: typeof v === 'string' ? v : v[0] ?? '' })); setParentErrors(prev => ({ ...prev, type: undefined })); }}
                       placeholder="Please Select Agency Type"
                       inputClassName={parentErrors.type ? 'border-red-500' : 'border-[#D0D5DD]'}
                     />
@@ -363,13 +363,13 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                 </div>
 
                 <div className="mb-2">
-                  <label className="block text-sm text-[#667085] mb-1">Agency Client</label>
+                  <label className="block text-sm text-[#667085] mb-1">Agency Client <span className="text-red-500">*</span></label>
                   <div className="w-full">
                     <MultiSelectDropdown
                       name="parentClient"
                       value={parent.client}
                       options={agencyClients.map((c: any) => ({ value: String(c.id), label: c.name }))}
-                      onChange={(v) => { setParent(prev => ({ ...prev, client: v })); setParentErrors(prev => ({ ...prev, client: undefined })); }}
+                      onChange={(v) => { setParent(prev => ({ ...prev, client: Array.isArray(v) ? v : [v] })); setParentErrors(prev => ({ ...prev, client: undefined })); }}
                       placeholder={isLoading.agencyClients ? 'Loading clients...' : 'Search or select option'}
                       inputClassName={`border ${parentErrors.client ? 'border-red-500' : 'border-[#D0D5DD]'} px-3 py-2 min-h-[44px]`}
                       disabled={isLoading.agencyClients}
@@ -432,12 +432,12 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                         )}
                       </div>
                       <div>
-                        <label className="block text-sm text-[#667085] mb-1">Agency Type</label>
+                        <label className="block text-sm text-[#667085] mb-1">Agency Type <span className="text-red-500">*</span></label>
                         <SelectField
                           name={`child-${c.id}-type`}
                           value={c.type}
                           options={agencyTypes}
-                          onChange={(v) => { handleUpdateChild(c.id, 'type', v); setChildErrors(prev => ({ ...prev, [c.id]: { ...prev[c.id], type: undefined } })); }}
+                          onChange={(v) => { handleUpdateChild(c.id, 'type', typeof v === 'string' ? v : v[0] ?? ''); setChildErrors(prev => ({ ...prev, [c.id]: { ...prev[c.id], type: undefined } })); }}
                           placeholder="Please Select Agency Type"
                           inputClassName={childErrors[c.id]?.type ? 'border-red-500' : 'border-[#D0D5DD]'}
                         />
@@ -446,13 +446,13 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                         )}
                       </div>
                       <div>
-                        <label className="block text-sm text-[#667085] mb-1">Agency Client</label>
+                        <label className="block text-sm text-[#667085] mb-1">Agency Client <span className="text-red-500">*</span></label>
                         <div className="w-full">
                           <MultiSelectDropdown
                             name={`child-${c.id}-client`}
                             value={c.client}
                             options={agencyClients.map((cc: any) => ({ value: String(cc.id), label: cc.name }))}
-                            onChange={(v) => { handleUpdateChild(c.id, 'client', v); setChildErrors(prev => ({ ...prev, [c.id]: { ...prev[c.id], client: undefined } })); }}
+                            onChange={(v) => { handleUpdateChild(c.id, 'client', typeof v === 'string' ? v : v[0] ?? ''); setChildErrors(prev => ({ ...prev, [c.id]: { ...prev[c.id], client: undefined } })); }}
                             placeholder={isLoading.agencyClients ? 'Loading clients...' : 'Search or select option'}
                             inputClassName={`border ${childErrors[c.id]?.client ? 'border-red-500' : 'border-[#D0D5DD]'} px-3 py-2 min-h-[44px]`}
                             disabled={isLoading.agencyClients}

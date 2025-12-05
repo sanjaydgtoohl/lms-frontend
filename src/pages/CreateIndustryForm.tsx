@@ -47,9 +47,30 @@ const CreateIndustryForm: React.FC<Props> = ({ onClose, onSave }) => {
         onClose();
       }
     } catch (err: any) {
-      const msg = err instanceof Error ? err.message : 'Failed to create industry';
+      // Prefer field-specific validation messages when available
+      let msg = err instanceof Error ? err.message : 'Failed to create industry';
+      try {
+        const resp = err?.responseData || err?.response || err;
+        // prefer top-level message if present
+        if (resp && resp.message) msg = String(resp.message);
+        const errorsObj = resp && (resp.errors || resp.data?.errors || resp.errors);
+        if (errorsObj && typeof errorsObj === 'object') {
+          // map server field keys to UI field keys
+          const fieldMap: Record<string, string> = { title: 'name', name: 'name' };
+          for (const [k, v] of Object.entries(errorsObj)) {
+            const msgs = Array.isArray(v) ? v : [v];
+            const text = String(msgs[0]);
+            const target = fieldMap[k] ?? k;
+            if (target === 'name') {
+              msg = text;
+              break;
+            }
+          }
+        }
+      } catch (_) {}
       setError(msg);
-      showError(msg);
+      // Only show global popup when not used inline (no onSave prop)
+      if (!onSave) showError(msg);
     } finally {
       setSaving(false);
     }

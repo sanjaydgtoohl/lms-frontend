@@ -116,21 +116,9 @@ const AllLeads: React.FC = () => {
   };
   // no external open state needed for call status dropdowns (self-contained)
 
-  // Filter leads by search query (local search across a few fields)
-  const filteredLeads = leads.filter((l) => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return true;
-    return (
-      l.id.toLowerCase().includes(q) ||
-      l.brandName.toLowerCase().includes(q) ||
-      l.contactPerson.toLowerCase().includes(q) ||
-      l.phoneNumber.toLowerCase().includes(q) ||
-      l.callStatus.toLowerCase().includes(q)
-    );
-  });
-
+  // Use API paginated data directly
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentData = filteredLeads.slice(startIndex, startIndex + itemsPerPage);
+  const currentData = leads;
 
   const navigate = useNavigate();
 
@@ -166,7 +154,7 @@ const AllLeads: React.FC = () => {
     })();
   };
 
-  const [showDeleteToast, setShowDeleteToast] = useState(false);
+  
   const [showErrorToast, setShowErrorToast] = useState(false);
   const [errorMessageToast, setErrorMessageToast] = useState('');
 
@@ -189,8 +177,6 @@ const AllLeads: React.FC = () => {
       await deleteLead(numericId);
       setLeads((prev) => prev.filter((l) => l.id !== confirmDeleteId));
       setTotalItems((t) => Math.max(0, Number(t) - 1));
-      setShowDeleteToast(true);
-      setTimeout(() => setShowDeleteToast(false), 3000);
 
       const isLastOnPage = currentData.length === 1;
       if (isLastOnPage && currentPage > 1) setCurrentPage((p) => p - 1);
@@ -246,18 +232,14 @@ const AllLeads: React.FC = () => {
             contactPerson: it.contact_person || it.name || '',
             phoneNumber: Array.isArray(it.mobile_number) ? (it.mobile_number[0] || '') : (it.mobile_number || ''),
             source: it.lead_source || it.source || '',
-            // Fix: subSource should use sub_source.name if available
             subSource: it.sub_source?.name || it.lead_sub_source?.name || it.lead_sub_source_name || it.lead_sub_source || '',
-            assignBy: it.assign_by_name || it.created_by || '',
-            // Show the assigned user's name. Avoid falling back to a numeric id string.
+            assignBy: it.created_by_user?.name || it.assign_by_name || it.created_by || '',
             assignTo: it.current_assign_user_name || it.assigned_user?.name || (it.current_assign_user && typeof it.current_assign_user === 'object' ? it.current_assign_user.name : '') || it.assign_to_name || '',
             dateTime: it.created_at || it.dateTime || it.created_at_formatted || '',
             status: it.status || '',
-            // Extract lead_status from API response
-            leadStatus: it.lead_status || '',
-            // Normalize call status: if API returns null/empty, show 'N/A' in UI
+            leadStatus: it.lead_status_relation?.name || it.lead_status || '',
             callStatus: (() => {
-              const raw = it.call_status ?? it.callStatus ?? '';
+              const raw = it.call_status_relation?.name ?? it.call_status ?? it.callStatus ?? '';
               return raw === null || raw === undefined || raw === '' ? 'N/A' : raw;
             })(),
             callAttempt: Number(it.call_attempt ?? it.callAttempt ?? 0),
@@ -265,7 +247,7 @@ const AllLeads: React.FC = () => {
           } as Lead));
 
         setLeads(items);
-        // Try to read total from meta.pagination.total or meta.total
+        // Use total from API pagination
         const total = resp.meta?.pagination?.total ?? resp.meta?.total ?? items.length;
         setTotalItems(Number(total ?? items.length));
       } catch (err) {
@@ -373,18 +355,7 @@ const AllLeads: React.FC = () => {
 
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
-      <NotificationPopup
-        isOpen={showDeleteToast}
-        onClose={() => setShowDeleteToast(false)}
-        message="Lead deleted successfully"
-        type="success"
-        customStyle={{
-          bg: 'bg-gradient-to-r from-red-50 to-red-100',
-          border: 'border-l-4 border-red-500',
-          text: 'text-red-800',
-          icon: 'text-red-500'
-        }}
-      />
+      {/* Delete success popup removed to avoid showing success toast after delete */}
       <NotificationPopup
         isOpen={showErrorToast}
         onClose={() => setShowErrorToast(false)}

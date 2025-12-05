@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Table, { type Column } from '../../components/ui/Table';
 import AssignDropdown from '../../components/ui/AssignDropdown';
 import CallStatusDropdown from '../../components/ui/CallStatusDropdown';
@@ -7,31 +7,31 @@ import SearchBar from '../../components/ui/SearchBar';
 import { MasterHeader, StatusPill } from '../../components/ui';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants';
+import { listLeads, listLeadsByStatus } from '../../services/AllLeads';
 
 interface Lead {
   id: string;
-  brandName: string;
-  contactPerson: string;
-  phoneNumber: string;
-  source: string;
-  subSource: string;
-  assignBy: string;
-  assignTo: string;
-  dateTime: string;
-  status: string;
-  callStatus: string;
-  callAttempt: number;
-  comment: string;
+  brandName?: string;
+  brand_name?: string;
+  contactPerson?: string;
+  contact_person?: string;
+  phoneNumber?: string;
+  mobile_number?: string[];
+  source?: string;
+  lead_source?: string;
+  subSource?: string;
+  lead_sub_source?: string;
+  assignBy?: string;
+  assignTo?: string;
+  current_assign_user?: string | number;
+  dateTime?: string;
+  status?: string;
+  callStatus?: string;
+  callAttempt?: number;
+  comment?: string;
+  [key: string]: any;
 }
 
-const mockLeads: Lead[] = [
-  { id: '#CL001', brandName: 'Nike', contactPerson: 'Phoenix Baker', phoneNumber: '8797099888', source: 'FB', subSource: 'Website', assignBy: 'Shivika', assignTo: 'Sales Man 1', dateTime: '02-07-2025 22:23', status: 'Interested', callStatus: 'Follow Up', callAttempt: 2, comment: 'According to Form' },
-  { id: '#CL002', brandName: 'Puma', contactPerson: 'Demi Wilkinson', phoneNumber: '8797099888', source: 'PPC', subSource: 'Landing', assignBy: 'Shivika', assignTo: 'Sales Man 2', dateTime: '02-07-2025 22:21', status: 'Pending', callStatus: 'Ringing', callAttempt: 3, comment: 'Newspaper' },
-  { id: '#CL003', brandName: 'Apple', contactPerson: 'Demi Wilkinson', phoneNumber: '8797099888', source: 'Referral', subSource: 'Web', assignBy: 'Shivika', assignTo: 'Sales Man 3', dateTime: '02-07-2025 22:23', status: 'Meeting Scheduled', callStatus: 'Meeting', callAttempt: 1, comment: 'According to Form' },
-  { id: '#CL004', brandName: 'Pepsi', contactPerson: 'Candice Wu', phoneNumber: '8797099888', source: 'Website', subSource: 'Direct', assignBy: 'Shivika', assignTo: 'Sales Man 1', dateTime: '02-07-2025 22:23', status: 'Meeting Done', callStatus: 'Website', callAttempt: 3, comment: 'According to Form' },
-  { id: '#CL005', brandName: 'Coca Cola', contactPerson: 'Natal Craig', phoneNumber: '8797099888', source: 'Referral', subSource: 'Partner', assignBy: 'Shivika', assignTo: 'Sales Man 2', dateTime: '02-07-2025 22:23', status: 'Brief Received', callStatus: 'Referel', callAttempt: 6, comment: 'According to Form' },
-  { id: '#CL006', brandName: 'Adidas', contactPerson: 'Liam Turner', phoneNumber: '8797099001', source: 'Email', subSource: 'Campaign', assignBy: 'Shivika', assignTo: 'Sales Man 4', dateTime: '03-07-2025 10:00', status: 'Brief Pending', callStatus: 'Not Connected', callAttempt: 0, comment: 'Awaiting brief from client' },
-];
 
 
 const salesMen = [
@@ -66,9 +66,11 @@ const statusColors: Record<string, string> = {
   'Interested': '#22c55e',
   'Pending': '#f59e0b',
   'Brief Pending': '#f97316',
+  'Meeting Schedule': '#3b82f6',
   'Meeting Scheduled': '#3b82f6',
   'Meeting Done': '#8b5cf6',
-  'Brief Received': '#06b6d4'
+  'Brief Received': '#06b6d4',
+  'Brief Recieved': '#06b6d4'
 };
 
 interface Props {
@@ -79,8 +81,66 @@ interface Props {
 const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
   const itemsPerPage = 10;
-  const [leads, setLeads] = useState<Lead[]>(mockLeads);
+  const [leads, setLeads] = useState<Lead[]>([]);
+
+  // Fetch leads from API
+  useEffect(() => {
+    const fetchLeads = async () => {
+      try {
+        setLoading(true);
+        let response;
+        // Use server-side filtering if filterStatus is provided
+        if (filterStatus && filterStatus !== 'All') {
+          // Map status name to ID if needed (update this mapping as per your backend)
+          const statusIdMap: Record<string, number> = {
+            'Interested': 1,
+            'Pending': 2,
+            'Meeting Done': 3,
+            'Brief Pending': 4,
+            'Brief Recieved': 5,
+            'Brief Received': 5,
+            'Meeting Scheduled': 6,
+            'Meeting Schedule': 6
+          };
+          const statusId = statusIdMap[filterStatus] || undefined;
+          if (statusId) {
+            response = await listLeadsByStatus(statusId, currentPage, itemsPerPage);
+          } else {
+            response = await listLeadsByStatus(filterStatus, currentPage, itemsPerPage);
+          }
+        } else {
+          response = await listLeads(currentPage, itemsPerPage);
+        }
+        const transformedLeads = response.data.map((item: any) => ({
+          id: item.id ? String(item.id) : '',
+          brandName: item.brand_name || item.brand?.name || String(item.brand_id || ''),
+          contactPerson: item.contact_person || item.name || '',
+          phoneNumber: Array.isArray(item.mobile_number) ? (item.mobile_number[0] || '') : (item.mobile_number || item.email || ''),
+          source: item.lead_source || item.source || '',
+          subSource: item.sub_source?.name || item.lead_sub_source?.name || item.lead_sub_source_name || item.lead_sub_source || '',
+          assignBy: item.created_by_user?.name || item.assign_by_name || item.created_by || '',
+          assignTo: item.current_assign_user_name || item.assigned_user?.name || (item.current_assign_user && typeof item.current_assign_user === 'object' ? item.current_assign_user.name : '') || item.assign_to_name || '',
+          dateTime: item.created_at || new Date().toLocaleString(),
+          status: item.lead_status_relation?.name || item.lead_status || '',
+          callStatus: (() => {
+            const raw = item.call_status_relation?.name ?? item.call_status ?? item.callStatus ?? '';
+            return raw === null || raw === undefined || raw === '' ? 'N/A' : raw;
+          })(),
+          callAttempt: Number(item.call_attempt ?? item.callAttempt ?? 0),
+          comment: item.comment || item.notes || '',
+        }));
+        setLeads(transformedLeads);
+      } catch (error) {
+        console.error('Error fetching leads:', error);
+        setLeads([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLeads();
+  }, [currentPage, filterStatus]);
 
   // Tooltip state for Comment hover
   const [tooltipVisible, setTooltipVisible] = useState(false);
@@ -135,8 +195,13 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
     if (filterStatus && filterStatus !== 'All') {
       // Special handling for 'Brief' group: include both Received and Pending
       if (filterStatus === 'Brief') {
-        if (!(l.status === 'Brief Received' || l.status === 'Brief Pending')) return false;
-      } else {
+        if (!(l.status === 'Brief Recieved' || l.status === 'Brief Pending')) return false;
+      } 
+      // Special handling for 'Meeting Scheduled' group: only Meeting Schedule (not Meeting Done)
+      else if (filterStatus === 'Meeting Scheduled') {
+        if (l.status !== 'Meeting Schedule') return false;
+      }
+      else {
         if (l.status !== filterStatus) return false;
       }
     }
@@ -144,10 +209,10 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
     if (!q) return true;
     return (
       l.id.toLowerCase().includes(q) ||
-      l.brandName.toLowerCase().includes(q) ||
-      l.contactPerson.toLowerCase().includes(q) ||
-      l.phoneNumber.toLowerCase().includes(q) ||
-      l.callStatus.toLowerCase().includes(q)
+      (l.brandName ?? '').toLowerCase().includes(q) ||
+      (l.contactPerson ?? '').toLowerCase().includes(q) ||
+      (l.phoneNumber ?? '').toLowerCase().includes(q) ||
+      (l.callStatus ?? '').toLowerCase().includes(q)
     );
   });
 
@@ -156,10 +221,15 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
 
   const navigate = useNavigate();
 
+
   const handleCreateLead = () => navigate(ROUTES.LEAD.CREATE);
   const handleEdit = (id: string) => {
     const cleanId = id.replace('#', '');
     navigate(ROUTES.LEAD.EDIT(cleanId));
+  };
+  const handleView = (id: string) => {
+    const cleanId = id.replace('#', '');
+    navigate(ROUTES.LEAD.DETAIL(cleanId));
   };
 
   const handleAssignToChange = (leadId: string, newSalesMan: string) => {
@@ -197,7 +267,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
       header: 'Assign To',
       render: (it: Lead) => (
         <AssignDropdown
-          value={it.assignTo}
+          value={it.assignTo ?? ''}
           options={salesMen}
           onChange={(newSalesMan) => handleAssignToChange(it.id, newSalesMan)}
         />
@@ -210,8 +280,8 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
       header: 'Status', 
       render: (it: Lead) => (
         <StatusPill
-          label={it.status}
-          color={statusColors[it.status] || '#6b7280'}
+          label={it.status ?? ''}
+          color={statusColors[it.status ?? ''] || '#6b7280'}
         />
       ),
       className: 'whitespace-nowrap'
@@ -222,7 +292,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
       render: (it: Lead) => (
         <div className="min-w-[160px]">
           <CallStatusDropdown
-            value={it.callStatus}
+            value={it.callStatus ?? ''}
             options={callStatusOptions}
             onChange={(newStatus) => handleCallStatusChange(it.id, newStatus)}
           />
@@ -238,7 +308,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
       render: (it: Lead) => (
         <div
           className="cursor-help max-w-[220px]"
-          onMouseEnter={(e) => showTooltip(e, it.comment)}
+          onMouseEnter={(e) => showTooltip(e, it.comment ?? '')}
           onMouseLeave={() => hideTooltip()}
         >
           <div
@@ -285,11 +355,12 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
           <Table
             data={currentData}
             startIndex={startIndex}
-            loading={false}
+            loading={loading}
             desktopOnMobile={true}
             keyExtractor={(it: Lead) => it.id}
             columns={columns}
             onEdit={(it: Lead) => handleEdit(it.id)}
+            onView={(it: Lead) => handleView(it.id)}
           />
         </div>
       </div>

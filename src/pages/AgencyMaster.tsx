@@ -10,7 +10,7 @@ import { ROUTES } from '../constants';
 import { getItem } from '../data/masterData';
 import { MasterHeader } from '../components/ui';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
-import { showSuccess, showError } from '../utils/notifications';
+import { showError } from '../utils/notifications';
 
 // Helpers to parse API date strings like "19-11-2025 10:35:57" or ISO strings
 const parseApiDateToISO = (s?: string) => {
@@ -68,12 +68,17 @@ const AgencyMaster: React.FC = () => {
         // Prefer `is_parent.name` if available, otherwise fall back to `agency_group.name` or a string.
         const parentObj = a.is_parent ?? a.agency_group ?? null;
         const agencyGroupName = parentObj ? (typeof parentObj === 'object' ? (parentObj.name || String(parentObj?.id || '')) : String(parentObj)) : '';
+        const rawCount = a.contact_person_count ?? a.contactPersonCount;
+        const contactPersonValue = (typeof rawCount === 'number') ? String(rawCount)
+          : (typeof rawCount === 'string' && rawCount.trim() !== '') ? rawCount
+          : (a.contact_person ?? '') ;
+
         return {
           id: String(a.id),
           agencyGroup: agencyGroupName,
           agencyName: a.name || '',
           agencyType: a.agency_type || (a.type || ''),
-          contactPerson: a.contact_person || '',
+          contactPerson: contactPersonValue || '',
           dateTime: formatDisplayDate(a.created_at || a.updated_at || ''),
         };
       });
@@ -120,7 +125,6 @@ const AgencyMaster: React.FC = () => {
     setConfirmLoading(true);
     try {
       await deleteAgency(confirmDeleteId);
-      showSuccess('Agency deleted successfully');
       // Refresh the list
       loadAgencies(page, searchValue);
     } catch (err) {

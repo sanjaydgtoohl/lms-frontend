@@ -75,8 +75,29 @@ const CreateSourceForm: React.FC<Props> = ({ onClose, onSave, inline: _inline })
         onClose();
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to create sub-source';
-      showError(msg);
+      // Prefer field-specific validation messages when available and show inline errors when used inline
+      let msg = err instanceof Error ? err.message : 'Failed to create sub-source';
+      try {
+        const resp = (err as any)?.responseData || (err as any)?.response || err;
+        if (resp && resp.message) msg = String(resp.message);
+        const errorsObj = resp && (resp.errors || resp.data?.errors || resp.errors);
+        if (errorsObj && typeof errorsObj === 'object') {
+          // map server field keys to our UI keys
+          const fieldMap: Record<string, string> = { name: 'subSource', title: 'subSource', lead_source_id: 'source' };
+          for (const [k, v] of Object.entries(errorsObj)) {
+            const msgs = Array.isArray(v) ? v : [v];
+            const text = String(msgs[0]);
+            const target = fieldMap[k] ?? k;
+            if (target === 'subSource' || target === 'source') {
+              setErrors(prev => ({ ...prev, [target]: text }));
+              msg = text;
+              break;
+            }
+          }
+        }
+      } catch (_) {}
+      // Show global popup only when not inline
+      if (!onSave) showError(msg);
     } finally {
       setSaving(false);
     }
@@ -102,7 +123,7 @@ const CreateSourceForm: React.FC<Props> = ({ onClose, onSave, inline: _inline })
                 <SelectField
                   name="source"
                   value={source}
-                  onChange={(v) => { setSource(v); setErrors(prev => ({ ...prev, source: '' })); }}
+                  onChange={(v) => { setSource(typeof v === 'string' ? v : v[0] ?? ''); setErrors(prev => ({ ...prev, source: '' })); }}
                   options={options.map(o => ({ value: String(o.id), label: o.name }))}
                   placeholder={loading ? 'Loading...' : 'Please Select Source Name'}
                   inputClassName={errors.source || loadError ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}

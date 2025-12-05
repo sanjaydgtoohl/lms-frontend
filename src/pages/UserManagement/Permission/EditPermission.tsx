@@ -357,7 +357,7 @@ const EditPermission: React.FC = () => {
                   options={parentOptions}
                   value={form.parentPermission}
                   onChange={(v) => {
-                    setForm((prev) => ({ ...prev, parentPermission: v }));
+                    setForm((prev) => ({ ...prev, parentPermission: typeof v === 'string' ? v : v[0] ?? '' }));       
                     setErrors((prev) => ({ ...prev, parentPermission: '' }));
                   }}
                   searchable

@@ -7,7 +7,7 @@ import Pagination from '../components/ui/Pagination';
 import Table, { type Column } from '../components/ui/Table';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants';
-import { MasterHeader, MasterFormHeader, NotificationPopup } from '../components/ui';
+import { MasterHeader, MasterFormHeader } from '../components/ui';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import SearchBar from '../components/ui/SearchBar';
 import {
@@ -148,7 +148,7 @@ const CreateDepartmentForm: React.FC<{
 const DepartmentMaster: React.FC = () => {
 	const [currentPage, setCurrentPage] = useState(1);
 	const itemsPerPage = 10;
-	const [showDeleteToast, setShowDeleteToast] = useState(false);
+	
 	const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 	const [confirmLoading, setConfirmLoading] = useState(false);
 
@@ -205,8 +205,6 @@ const DepartmentMaster: React.FC = () => {
 		try {
 			await deleteDepartment(confirmDeleteId);
 			setDepartments(prev => prev.filter(d => d.id !== confirmDeleteId));
-			setShowDeleteToast(true);
-			setTimeout(() => setShowDeleteToast(false), 3000);
 		} catch (e: any) {
 			alert(e?.message || 'Failed to delete');
 		} finally {
@@ -300,18 +298,6 @@ const DepartmentMaster: React.FC = () => {
 
 	return (
 		<div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
-			<NotificationPopup
-				isOpen={showDeleteToast}
-				onClose={() => setShowDeleteToast(false)}
-				message="Department deleted successfully"
-				type="success"
-				customStyle={{
-					bg: 'bg-gradient-to-r from-red-50 to-red-100',
-					border: 'border-l-4 border-red-500',
-					text: 'text-red-800',
-					icon: 'text-red-500'
-				}}
-			/>
 			<ConfirmDialog
 				isOpen={!!confirmDeleteId}
 				title="Delete this department?"

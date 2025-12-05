@@ -6,7 +6,7 @@ import { MasterHeader } from '../../../components/ui';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
 import { listPermissions, deletePermission } from '../../../services/AllPermissions';
-import { showSuccess, showError } from '../../../utils/notifications';
+import { showError } from '../../../utils/notifications';
 import ConfirmDialog from '../../../components/ui/ConfirmDialog';
 
 interface Permission {
@@ -88,7 +88,6 @@ const AllPermissions: React.FC = () => {
     setConfirmLoading(true);
     try {
       await deletePermission(confirmDeleteId);
-      showSuccess('Permission deleted successfully');
       setCurrentPage(1);
       // Reload the table from API
       await fetchPermissions();

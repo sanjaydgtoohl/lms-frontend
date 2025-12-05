@@ -35,7 +35,7 @@ const View: React.FC = () => {
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-  const [showDeleteToast, setShowDeleteToast] = useState(false);
+  
   const [showErrorToast, setShowErrorToast] = useState(false);
   const [errorMessageToast, setErrorMessageToast] = useState('');
   // Tooltip state for Proof hover (similar to AllLeads comment tooltip)
@@ -107,8 +107,6 @@ const View: React.FC = () => {
     try {
       await deleteMissCampaign(confirmDeleteId);
       setCampaigns(prev => prev.filter(c => c.id !== confirmDeleteId));
-      setShowDeleteToast(true);
-      setTimeout(() => setShowDeleteToast(false), 3000);
     } catch (error) {
       console.error('Failed to delete campaign:', error);
       setErrorMessageToast((error as any)?.message || 'Failed to delete campaign');
@@ -230,18 +228,7 @@ const View: React.FC = () => {
         message={successMessage}
         type="success"
       />
-      <NotificationPopup
-        isOpen={showDeleteToast}
-        onClose={() => setShowDeleteToast(false)}
-        message="Campaign deleted successfully"
-        type="success"
-        customStyle={{
-          bg: 'bg-gradient-to-r from-red-50 to-red-100',
-          border: 'border-l-4 border-red-500',
-          text: 'text-red-800',
-          icon: 'text-red-500'
-        }}
-      />
+      {/* Delete success popup removed to avoid showing success toast after delete */}
       <NotificationPopup
         isOpen={showErrorToast}
         onClose={() => setShowErrorToast(false)}

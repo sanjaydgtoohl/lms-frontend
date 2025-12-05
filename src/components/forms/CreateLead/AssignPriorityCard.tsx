@@ -120,7 +120,7 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
               options={userOptions}
               placeholder="Select Team Member"
               value={assignTo}
-              onChange={(value) => onChange?.({ assignTo: value, priority, callFeedback })}
+              onChange={(value) => onChange?.({ assignTo: typeof value === 'string' ? value : value[0] ?? '', priority, callFeedback })}
               inputClassName="px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               disabled={userLoading}
             />
@@ -136,7 +136,7 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
               options={priorityOptions}
               placeholder="Select Priority"
               value={priority}
-              onChange={(value) => onChange?.({ assignTo, priority: value, callFeedback })}
+              onChange={(value) => onChange?.({ assignTo, priority: typeof value === 'string' ? value : value[0] ?? '', callFeedback })}
               inputClassName="px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               disabled={priorityLoading}
             />

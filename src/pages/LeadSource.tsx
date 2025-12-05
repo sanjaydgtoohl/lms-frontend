@@ -25,7 +25,7 @@ const LeadSource: React.FC = () => {
   const [editItem, setEditItem] = useState<LeadSourceItem | null>(null);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [successMessage, setSuccessMessage] = useState('Source updated successfully');
-  const [showDeleteToast, setShowDeleteToast] = useState(false);
+  
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmDeleteLabel, setConfirmDeleteLabel] = useState<string>('');
   const [confirmLoading, setConfirmLoading] = useState(false);
@@ -35,30 +35,29 @@ const LeadSource: React.FC = () => {
 
   useEffect(() => {
     let isMounted = true;
-    const fetchData = async () => {
+    const fetchData = async (page = currentPage, search = searchQuery) => {
       setLoading(true);
       setError(null);
       try {
-        const resp = await listLeadSources(currentPage, itemsPerPage);
-        if (isMounted) {
-          let mapped = resp.data;
-          // If search is present, filter client-side (optional)
-          if (searchQuery) {
-            const _q_ls = String(searchQuery).trim().toLowerCase();
-            mapped = mapped.filter((it) => (
-              (String(it.id || '').toLowerCase().startsWith(_q_ls)) ||
-              (String(it.source || '').toLowerCase().startsWith(_q_ls)) ||
-              (String(it.subSource || '').toLowerCase().startsWith(_q_ls))
-            ));
-          }
-          setItems(mapped);
-          // When a search is active we want the footer and pagination to reflect
-          // the filtered result set (client-side). Otherwise use server total if available.
-          if (searchQuery) {
-            setTotalItems(mapped.length);
-          } else {
-            setTotalItems(resp.meta?.pagination?.total || mapped.length);
-          }
+        const resp = await listLeadSources(page, itemsPerPage);
+        if (!isMounted) return;
+        let mapped = resp.data;
+        // If search is present, filter client-side (optional)
+        if (search) {
+          const _q_ls = String(search).trim().toLowerCase();
+          mapped = mapped.filter((it) => (
+            (String(it.id || '').toLowerCase().startsWith(_q_ls)) ||
+            (String(it.source || '').toLowerCase().startsWith(_q_ls)) ||
+            (String(it.subSource || '').toLowerCase().startsWith(_q_ls))
+          ));
+        }
+        setItems(mapped);
+        // When a search is active we want the footer and pagination to reflect
+        // the filtered result set (client-side). Otherwise use server total if available.
+        if (search) {
+          setTotalItems(mapped.length);
+        } else {
+          setTotalItems(resp.meta?.pagination?.total || mapped.length);
         }
       } catch (e: any) {
         if (isMounted) setError(e?.message || 'Failed to load lead sources');
@@ -66,9 +65,36 @@ const LeadSource: React.FC = () => {
         if (isMounted) setLoading(false);
       }
     };
-    fetchData();
+    // Expose refresh function by assigning to a stable name in outer scope via closure
+    (async () => { await fetchData(); })();
     return () => { isMounted = false; };
   }, [currentPage, searchQuery]);
+
+  // Helper so other handlers can reload the list after actions
+  const refresh = async (page = currentPage, search = searchQuery) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resp = await listLeadSources(page, itemsPerPage);
+      let mapped = resp.data;
+      if (search) {
+        const _q_ls = String(search).trim().toLowerCase();
+        mapped = mapped.filter((it) => (
+          (String(it.id || '').toLowerCase().startsWith(_q_ls)) ||
+          (String(it.source || '').toLowerCase().startsWith(_q_ls)) ||
+          (String(it.subSource || '').toLowerCase().startsWith(_q_ls))
+        ));
+        setTotalItems(mapped.length);
+      } else {
+        setTotalItems(resp.meta?.pagination?.total || mapped.length);
+      }
+      setItems(mapped);
+    } catch (e: any) {
+      setError(e?.message || 'Failed to load lead sources');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentData = items;
@@ -113,7 +139,8 @@ const LeadSource: React.FC = () => {
   };
 
   const handleSaveEdit = async (updated: Record<string, any>) => {
-    try {
+    // Let MasterEdit handle errors inline by returning a promise
+    return (async () => {
       // Map UI fields to API payload
       const name = updated.subSource ?? updated.name ?? '';
       const leadSourceName = updated.source; // UI holds name
@@ -126,18 +153,15 @@ const LeadSource: React.FC = () => {
         lead_source_id: leadSourceId,
         status: 1,
       });
-      setItems(prev => prev.map(i => (i.id === updated.id ? { ...i, subSource: name, source: leadSourceName } : i)));
+      // Refresh the list from server so table shows latest data
+      await refresh();
       // Show success toast then navigate back to listing after a short delay
       setShowSuccessToast(true);
       setTimeout(() => {
         setShowSuccessToast(false);
         navigate(ROUTES.SOURCE_MASTER);
       }, 5000);
-    } catch (e: any) {
-      alert(e?.message || 'Failed to update');
-      // preserve previous behavior of returning to listing on error
-      navigate(ROUTES.SOURCE_MASTER);
-    }
+    })();
   };
 
   // helper to refresh list is available if needed (removed because unused)
@@ -154,8 +178,6 @@ const LeadSource: React.FC = () => {
     try {
       await deleteLeadSubSource(confirmDeleteId);
       setItems(prev => prev.filter(i => i.id !== confirmDeleteId));
-      setShowDeleteToast(true);
-      setTimeout(() => setShowDeleteToast(false), 3000);
     } catch (e: any) {
       setErrorMessageToast(e?.message || 'Failed to delete');
       setShowErrorToast(true);
@@ -208,18 +230,7 @@ const LeadSource: React.FC = () => {
         message={successMessage}
         type="success"
       />
-      <NotificationPopup
-        isOpen={showDeleteToast}
-        onClose={() => setShowDeleteToast(false)}
-        message="Source deleted successfully"
-        type="success"
-        customStyle={{
-          bg: 'bg-gradient-to-r from-red-50 to-red-100',
-          border: 'border-l-4 border-red-500',
-          text: 'text-red-800',
-          icon: 'text-red-500'
-        }}
-      />
+      {/* Delete success popup removed to avoid showing success toast after delete */}
       <NotificationPopup
         isOpen={showErrorToast}
         onClose={() => setShowErrorToast(false)}
