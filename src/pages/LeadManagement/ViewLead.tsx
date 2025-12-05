@@ -6,6 +6,7 @@ import { Button } from '../../components/ui';
 import { fetchLeadById } from '../../services/ViewLead';
 import type { Lead as ApiLead } from '../../services/ViewLead';
 import Breadcrumb from '../../components/ui/Breadcrumb';
+import { FaRegCalendarAlt } from 'react-icons/fa';
 
 
 const ViewLead: React.FC = () => {
@@ -29,7 +30,7 @@ const ViewLead: React.FC = () => {
   };
   const handleMeetingSchedule = () => {
     navigate(ROUTES.LEAD.MEETING_SCHEDULE);
-  };
+  }
 
   if (isLoading) {
     return (
@@ -79,14 +80,24 @@ const ViewLead: React.FC = () => {
       {/* Breadcrumb */}
       <div className="flex items-center justify-between mb-6">
         <Breadcrumb
-          items={[
-            { label: 'Lead Management', path: ROUTES.LEAD_MANAGEMENT },
-            { label: `Lead ${lead.id}`, isActive: true },
-          ]}
+          items={[{ label: 'Lead Management', path: ROUTES.LEAD_MANAGEMENT }, { label: `Lead ${lead.id}`, isActive: true }]}
         />
-        <Button variant="primary" onClick={handleMeetingSchedule}>
-          Meeting Schedule
-        </Button>
+        <div className="flex items-center gap-6">
+          <FaRegCalendarAlt
+            size={22}
+            className="cursor-pointer text-orange-500 hover:text-orange-600"
+            title="Meeting Schedule"
+            onClick={handleMeetingSchedule}
+          />
+          <Button
+            variant="primary"
+            className="font-semibold px-3 py-1 rounded-md flex items-center text-sm"
+            onClick={handleBack}
+          >
+            <ChevronLeft size={16} className="mr-1" />
+            Go Back
+          </Button>
+        </div>
       </div>
       {/* Main Content - Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
