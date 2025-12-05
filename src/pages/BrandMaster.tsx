@@ -50,7 +50,7 @@ const BrandMaster: React.FC = () => {
 
   const handleEdit = (id: string) => navigate(`${ROUTES.BRAND_MASTER}/${encodeURIComponent(id)}/edit`);
   const handleView = (id: string) => navigate(`${ROUTES.BRAND_MASTER}/${encodeURIComponent(id)}`);
-  const [showDeleteToast, setShowDeleteToast] = useState(false);
+  
   const [showErrorToast, setShowErrorToast] = useState(false);
   const [errorMessageToast, setErrorMessageToast] = useState('');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -69,8 +69,6 @@ const BrandMaster: React.FC = () => {
     try {
       await deleteBrand(confirmDeleteId);
       setBrands(prev => prev.filter(b => b.id !== confirmDeleteId));
-      setShowDeleteToast(true);
-      setTimeout(() => setShowDeleteToast(false), 3000);
     } catch (e: any) {
       setErrorMessageToast(e?.message || 'Failed to delete');
       setShowErrorToast(true);
@@ -150,18 +148,7 @@ const BrandMaster: React.FC = () => {
 
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
-      <NotificationPopup
-        isOpen={showDeleteToast}
-        onClose={() => setShowDeleteToast(false)}
-        message="Brand deleted successfully"
-        type="success"
-        customStyle={{
-          bg: 'bg-gradient-to-r from-red-50 to-red-100',
-          border: 'border-l-4 border-red-500',
-          text: 'text-red-800',
-          icon: 'text-red-500'
-        }}
-      />
+      {/* Delete success popup removed to avoid showing success toast after delete */}
       <NotificationPopup
         isOpen={showErrorToast}
         onClose={() => setShowErrorToast(false)}
@@ -221,7 +208,22 @@ const BrandMaster: React.FC = () => {
                 { key: 'name', header: 'Brand Name', render: (it: Brand) => it.name || '-' },
                 { key: 'agencyName', header: 'Agency Name', render: (it: Brand) => it.agencyName || '-' },
                 { key: 'brandType', header: 'Brand Type', render: (it: Brand) => it.brandType || '-' },
-                { key: 'contactPerson', header: 'Contact Person', render: (it: Brand) => it.contactPerson || '-' },
+                {
+                  key: 'contactPerson',
+                  header: 'Contact Person',
+                  render: (it: Brand) => {
+                    const raw = (it as any)._raw as Record<string, unknown> | undefined;
+                    const rawCount = raw?.['contact_person_count'] ?? raw?.['contactPersonCount'];
+                    if (typeof rawCount === 'number') return String(rawCount);
+                    if (typeof rawCount === 'string' && rawCount.trim() !== '') return rawCount as string;
+
+                    const normCount = (it as any).contact_person_count ?? (it as any).contactPersonCount;
+                    if (typeof normCount === 'number') return String(normCount);
+
+                    const cp = (it as any).contactPerson ?? (it as any).contact_person;
+                    return cp ? String(cp) : '-';
+                  }
+                },
                 { key: 'industry', header: 'Industry', render: (it: Brand) => it.industry || '-' },
                 { key: 'country', header: 'Country', render: (it: Brand) => it.country || '-' },
                 { key: 'state', header: 'State', render: (it: Brand) => it.state || '-' },

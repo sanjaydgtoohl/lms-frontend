@@ -79,7 +79,8 @@ const CreateDesignationForm: React.FC<{
     } catch (err) {
       const message = (err as any)?.message || 'Failed to create designation';
       setError(message);
-      showError(message);
+      // If parent provided `onSave` (inline mode) we only show inline field error.
+      if (!onSave) showError(message);
     }
   };
 
@@ -138,7 +139,7 @@ const CreateDesignationForm: React.FC<{
 const DesignationMaster: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);
-  const [showDeleteToast, setShowDeleteToast] = useState(false);
+  
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [successMessage, setSuccessMessage] = useState('Designation created successfully');
   const itemsPerPage = 10;
@@ -182,8 +183,33 @@ const DesignationMaster: React.FC = () => {
 	  window.location.reload();
 	}, 1800);
       } catch (e: any) {
-        showError(e?.message || 'Failed to create designation');
-        throw e;
+        // Try to extract field-specific validation messages from the API error
+        let message = 'Failed to create designation';
+        try {
+          if (e) {
+            // Axios-like error with server payload on `responseData` (from our apiClient)
+            const resp = e.responseData || e.response || e;
+            // Prefer response message
+            if (resp && resp.message) message = String(resp.message);
+
+            // Look for structured `errors` object (e.g. { title: ["..."] })
+            const errorsObj = resp && (resp.errors || resp.data?.errors || resp.errors);
+            if (errorsObj && typeof errorsObj === 'object') {
+              const vals = Object.values(errorsObj)
+                .flatMap((v: any) => (Array.isArray(v) ? v : [v]))
+                .map((v: any) => String(v));
+              if (vals.length) message = vals[0];
+            }
+          }
+        } catch (ex) {
+          // fallback to generic message on any extraction error
+          message = e?.message || 'Failed to create designation';
+        }
+
+        // Rethrow an Error containing the friendly message so the inline form can display it
+        const thrown = new Error(message);
+        (thrown as any).original = e;
+        throw thrown;
       }
     })();
   };
@@ -206,8 +232,6 @@ const DesignationMaster: React.FC = () => {
     try {
       await deleteDesignation(confirmDeleteId);
       setDesignations(prev => prev.filter(d => d.id !== confirmDeleteId));
-      setShowDeleteToast(true);
-      setTimeout(() => setShowDeleteToast(false), 3000);
     } catch (e: any) {
       showError(e?.message || 'Failed to delete designation');
     } finally {
@@ -292,11 +316,31 @@ const DesignationMaster: React.FC = () => {
       try {
         // API expects `title` for update payload
 	await updateDesignation(updated.id, { title: updated.name } as any);
-        setDesignations(prev => prev.map(d => (d.id === updated.id ? { ...d, name: updated.name } as Designation : d)));
-        showSuccess('Designation updated successfully');
+	// Refresh list from server so table shows latest data
+	await refresh();
+	showSuccess('Designation updated successfully');
       } catch (e: any) {
-        showError(e?.message || 'Failed to update designation');
-        throw e;
+        // Extract field-specific validation message if available
+        let message = 'Failed to update designation';
+        try {
+          if (e) {
+            const resp = e.responseData || e.response || e;
+            if (resp && resp.message) message = String(resp.message);
+            const errorsObj = resp && (resp.errors || resp.data?.errors || resp.errors);
+            if (errorsObj && typeof errorsObj === 'object') {
+              const vals = Object.values(errorsObj)
+                .flatMap((v: any) => (Array.isArray(v) ? v : [v]))
+                .map((v: any) => String(v));
+              if (vals.length) message = vals[0];
+            }
+          }
+        } catch (_) {
+          message = e?.message || message;
+        }
+
+        const thrown = new Error(message);
+        (thrown as any).original = e;
+        throw thrown;
       }
     })();
   };
@@ -314,18 +358,7 @@ const DesignationMaster: React.FC = () => {
 
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
-      <NotificationPopup
-        isOpen={showDeleteToast}
-        onClose={() => setShowDeleteToast(false)}
-        message="Designation deleted successfully"
-        type="success"
-        customStyle={{
-          bg: 'bg-gradient-to-r from-red-50 to-red-100',
-          border: 'border-l-4 border-red-500',
-          text: 'text-red-800',
-          icon: 'text-red-500'
-        }}
-      />
+      {/* Delete success popup removed to avoid showing success toast after delete */}
       <NotificationPopup
         isOpen={showSuccessToast}
         onClose={() => setShowSuccessToast(false)}

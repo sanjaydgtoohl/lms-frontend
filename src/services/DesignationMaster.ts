@@ -22,7 +22,9 @@ const ENDPOINTS = {
 async function handleResponse<T>(res: any): Promise<T> {
   if (!res || !res.success) {
     const error = new Error((res && (res.message || 'Request failed')) || 'Request failed');
-    try { handleApiError(error); } catch {}
+    // Attach original response data so callers can extract field-level errors
+    (error as any).responseData = res;
+    try { handleApiError(error, false); } catch {}
     throw error;
   }
   return res.data as T;

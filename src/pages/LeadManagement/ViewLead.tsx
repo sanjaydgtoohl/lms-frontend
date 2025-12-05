@@ -68,16 +68,6 @@ const ViewLead: React.FC = () => {
     );
   }
 
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      '1': 'bg-blue-100 text-blue-800',
-      '2': 'bg-yellow-100 text-yellow-800',
-      '3': 'bg-green-100 text-green-800',
-      '4': 'bg-red-100 text-red-800',
-      '5': 'bg-purple-100 text-purple-800',
-    };
-    return colors[status] || 'bg-gray-100 text-gray-800';
-  };
   const getPriorityColor = (priority: string) => {
     if (priority === 'High') return 'text-red-500';
     if (priority === 'Medium') return 'text-yellow-500';
@@ -87,22 +77,16 @@ const ViewLead: React.FC = () => {
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
       {/* Breadcrumb */}
-      <div className="mb-6">
-        <Breadcrumb currentPageTitle={lead.name || 'Lead'} />
-      </div>
-      {/* Header with Back Button and Actions */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              {lead.brand?.name || 'Lead'}
-            </h1>
-            <p className="text-gray-600 mt-1">Contact: {lead.name} • Lead ID: {lead.id}</p>
-          </div>
-          <Button variant="primary" onClick={handleMeetingSchedule}>
-            Meeting Schedule
-          </Button>
-        </div>
+      <div className="flex items-center justify-between mb-6">
+        <Breadcrumb
+          items={[
+            { label: 'Lead Management', path: ROUTES.LEAD_MANAGEMENT },
+            { label: `Lead ${lead.id}`, isActive: true },
+          ]}
+        />
+        <Button variant="primary" onClick={handleMeetingSchedule}>
+          Meeting Schedule
+        </Button>
       </div>
       {/* Main Content - Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -127,15 +111,7 @@ const ViewLead: React.FC = () => {
                 <label className="text-sm font-medium text-gray-600">Type</label>
                 <p className="text-base font-semibold text-gray-900 mt-2">{lead.type}</p>
               </div>
-              {/* Status */}
-              <div>
-                <label className="text-sm font-medium text-gray-600">Status</label>
-                <div className="mt-2">
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(lead.status)}`}>
-                    {lead.status === '1' ? 'Active' : lead.status}
-                  </span>
-                </div>
-              </div>
+              {/* Status removed per request */}
               {/* Priority */}
               <div>
                 <label className="text-sm font-medium text-gray-600">Priority</label>
@@ -147,35 +123,29 @@ const ViewLead: React.FC = () => {
               {/* Lead Status */}
               <div>
                 <label className="text-sm font-medium text-gray-600">Lead Status</label>
-                <p className="text-base font-medium text-gray-900 mt-2">{lead.lead_status || '-'}</p>
-              </div>
-              {/* Call Status */}
-              <div>
-                <label className="text-sm font-medium text-gray-600">Call Status</label>
-                <p className="text-base font-medium text-gray-900 mt-2">{lead.call_status || '-'}</p>
+                <p className="text-base font-medium text-gray-900 mt-2">{lead.lead_status_relation?.name || lead.lead_status || '-'}</p>
               </div>
             </div>
           </div>
           {/* Contact Information Card */}
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-6">Contact Information</h2>
-            <div className="space-y-6">
-              {/* Name and Designation */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <div className="flex items-center text-sm font-medium text-gray-600 mb-2">
-                    <User size={16} className="mr-2" />
-                    Name
-                  </div>
-                  <p className="text-base font-medium text-gray-900">{lead.name}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Name */}
+              <div>
+                <div className="flex items-center text-sm font-medium text-gray-600 mb-2">
+                  <User size={16} className="mr-2" />
+                  Name
                 </div>
-                <div>
-                  <div className="flex items-center text-sm font-medium text-gray-600 mb-2">
-                    <Briefcase size={16} className="mr-2" />
-                    Designation
-                  </div>
-                  <p className="text-base font-medium text-gray-900">{lead.designation?.name || 'Not Set'}</p>
+                <p className="text-base font-medium text-gray-900">{lead.name}</p>
+              </div>
+              {/* Designation */}
+              <div>
+                <div className="flex items-center text-sm font-medium text-gray-600 mb-2">
+                  <Briefcase size={16} className="mr-2" />
+                  Designation
                 </div>
+                <p className="text-base font-medium text-gray-900">{lead.designation?.name || 'Not Set'}</p>
               </div>
               {/* Department */}
               <div>
@@ -196,33 +166,32 @@ const ViewLead: React.FC = () => {
                   <p className="text-base font-medium text-gray-500">Not provided</p>
                 )}
               </div>
-              {/* Phone Numbers */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Phone Number */}
+              <div>
+                <div className="flex items-center text-sm font-medium text-gray-600 mb-2">
+                  <Phone size={16} className="mr-2" />
+                  Phone Number
+                </div>
+                {lead.mobile_number && lead.mobile_number.length > 0 ? (
+                  <a href={`tel:${lead.mobile_number[0]}`} className="text-base font-medium text-orange-500 hover:text-orange-600 underline">
+                    {lead.mobile_number[0]}
+                  </a>
+                ) : (
+                  <span className="text-base font-medium text-gray-500">Not provided</span>
+                )}
+              </div>
+              {/* Secondary Phone */}
+              {lead.mobile_number && lead.mobile_number.length > 1 && (
                 <div>
                   <div className="flex items-center text-sm font-medium text-gray-600 mb-2">
                     <Phone size={16} className="mr-2" />
-                    Phone Number
+                    Secondary Phone
                   </div>
-                  {lead.mobile_number && lead.mobile_number.length > 0 ? (
-                    <a href={`tel:${lead.mobile_number[0]}`} className="text-base font-medium text-orange-500 hover:text-orange-600 underline">
-                      {lead.mobile_number[0]}
-                    </a>
-                  ) : (
-                    <span className="text-base font-medium text-gray-500">Not provided</span>
-                  )}
+                  <a href={`tel:${lead.mobile_number[1]}`} className="text-base font-medium text-orange-500 hover:text-orange-600 underline">
+                    {lead.mobile_number[1]}
+                  </a>
                 </div>
-                {lead.mobile_number && lead.mobile_number.length > 1 && (
-                  <div>
-                    <div className="flex items-center text-sm font-medium text-gray-600 mb-2">
-                      <Phone size={16} className="mr-2" />
-                      Secondary Phone
-                    </div>
-                    <a href={`tel:${lead.mobile_number[1]}`} className="text-base font-medium text-orange-500 hover:text-orange-600 underline">
-                      {lead.mobile_number[1]}
-                    </a>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
           </div>
           {/* Location Information Card */}
@@ -266,10 +235,6 @@ const ViewLead: React.FC = () => {
                   </div>
                 </div>
               )}
-              <div>
-                <label className="text-sm font-medium text-gray-600 block mb-2">UUID</label>
-                <p className="text-sm text-gray-700 font-mono break-all">{lead.uuid}</p>
-              </div>
             </div>
           </div>
         </div>
@@ -301,7 +266,7 @@ const ViewLead: React.FC = () => {
               <div>
                 <label className="text-sm font-medium text-gray-600 block mb-2">Call Status</label>
                 <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                  <p className="text-base font-medium text-gray-900">{lead.call_status || '-'}</p>
+                  <p className="text-base font-medium text-gray-900">{lead.call_status_relation?.name || lead.call_status || '-'}</p>
                 </div>
               </div>
             </div>

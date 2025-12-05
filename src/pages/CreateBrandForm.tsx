@@ -40,13 +40,22 @@ const CitySelect: React.FC<CitySelectProps> = ({ state, value, onChange, presele
     listCities(numericState ? { state_id: numericState } : undefined)
       .then((data) => {
         if (!mounted) return;
-        const normalized = (data || []).map((c: any) => ({ id: c.id, name: c.name }));
+        const normalized = (data || []).map((c: any) => ({ id: String(c.id), name: c.name }));
         // If parent provided a preselected city name that's not in the list, inject it so it appears
         if (preselectedCityName) {
           const pre = String(preselectedCityName || '').trim();
           if (pre) {
-            const exists = normalized.find((it: any) => String(it.name).toLowerCase() === pre.toLowerCase());
-            if (!exists) normalized.unshift({ id: pre, name: pre });
+            // Check if preselectedCityName is an id or a name
+            const existsById = normalized.find((it: any) => String(it.id) === pre);
+            const existsByName = normalized.find((it: any) => String(it.name).toLowerCase() === pre.toLowerCase());
+            if (!existsById && !existsByName) {
+              // If preselectedCityName is a number, treat as id, else as name
+              if (/^\d+$/.test(pre)) {
+                normalized.unshift({ id: pre, name: pre });
+              } else {
+                normalized.unshift({ id: pre, name: pre });
+              }
+            }
           }
         }
         setCities(normalized);
@@ -55,7 +64,10 @@ const CitySelect: React.FC<CitySelectProps> = ({ state, value, onChange, presele
       .finally(() => { if (mounted) setLoading(false); });
 
     return () => { mounted = false; };
-  }, [state]);
+  }, [state, preselectedCityName]);
+
+  // Find the label for the selected value (id)
+  // ...existing code...
 
   return (
     <div>
@@ -113,11 +125,22 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
   const [industries, setIndustries] = useState<Industry[]>([]);
   const [postalLoading, setPostalLoading] = useState(false);
   const [postalError, setPostalError] = useState<string>('');
+  const [postalFieldError, setPostalFieldError] = useState<string>('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
     setErrors(prev => ({ ...prev, [name]: '' }));
+
+    // Postal code validation
+    if (name === 'postalCode') {
+      const raw = String(value || '').trim();
+      if (!/^[0-9]{6}$/.test(raw)) {
+        setPostalFieldError('Postal code is invalid');
+      } else {
+        setPostalFieldError('');
+      }
+    }
   };
 
   const validate = () => {
@@ -206,7 +229,6 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
         };
 
         const newErrors: Record<string, string> = {};
-        
         // Process each error from the server response
         Object.entries(responseData.errors).forEach(([serverField, messages]: [string, any]) => {
           const formField = fieldErrorMap[serverField] || serverField;
@@ -214,13 +236,11 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
           const errorMessage = Array.isArray(messages) ? messages[0] : String(messages);
           newErrors[formField] = errorMessage;
         });
-
         setErrors(newErrors);
-        
-        // Show only the first error in a notification
+        // Do NOT show popup for website errors, only show below the field
+        // For other errors, show popup except for "already been taken"
         const firstError = Object.values(newErrors)[0];
-        // Don't show popup for "already been taken" errors - only show on form field
-        if (firstError && !firstError.toLowerCase().includes('already been taken')) {
+        if (firstError && !firstError.toLowerCase().includes('already been taken') && !newErrors.website) {
           showError(firstError);
         }
       } else {
@@ -254,46 +274,65 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
 
       // Map or inject Country
       let countryId: string = '';
+      let stateId: string = '';
+      let cityValue: string = '';
+
+      // Refresh countries
+      let newCountries = countries;
       const foundCountry = countries.find(c => String(c.name).toLowerCase() === String(countryName).toLowerCase());
       if (foundCountry) {
         countryId = String(foundCountry.id);
       } else if (countryName) {
-        // inject a temporary country option so it appears in the select
         const newC = { id: countryName, name: countryName } as Country;
-        setCountries(prev => [newC, ...prev]);
+        newCountries = [newC, ...countries];
+        setCountries(newCountries);
         countryId = countryName;
       }
 
-      // Map or inject State
-      let stateId: string = '';
-      const foundState = states.find(s => String(s.name).toLowerCase() === String(stateName).toLowerCase());
+      // Refresh states
+      let newStates: State[] = [];
+      try {
+        const statesData = await listStates({ country_id: countryId });
+        newStates = statesData || [];
+        setStates(newStates);
+      } catch {
+        newStates = [];
+        setStates([]);
+      }
+      const foundState = newStates.find(s => String(s.name).toLowerCase() === String(stateName).toLowerCase());
       if (foundState) {
         stateId = String(foundState.id);
       } else if (stateName) {
         const newS = { id: stateName, name: stateName, country_id: countryId } as any as State;
-        setStates(prev => [newS, ...prev]);
+        newStates = [newS, ...newStates];
+        setStates(newStates);
         stateId = stateName;
       }
 
-      // Try to map City by fetching cities for the state (if any)
+      // Refresh cities
+      let newCities: { id: string | number; name: string }[] = [];
       try {
         const citiesList = await listCities(stateId ? { state_id: stateId } : undefined);
-        const matched = (citiesList || []).find((c: any) => {
+        newCities = (citiesList || []).map((c: any) => ({ id: String(c.id), name: c.name }));
+        let matched = newCities.find((c: any) => {
           const nm = String(c.name || '').toLowerCase();
           return nm === String(districtOrName).toLowerCase() || nm === String(po.Name || '').toLowerCase();
         });
         if (matched) {
-          // set country/state/city using mapped ids
-          setForm(prev => ({ ...prev, country: countryId || prev.country, state: stateId || prev.state, city: String(matched.id), postalCode: code }));
+          cityValue = String(matched.id);
         } else {
-          // no matching city found — set form values and let CitySelect show the preselected city name
-          setForm(prev => ({ ...prev, country: countryId || prev.country, state: stateId || prev.state, city: districtOrName, postalCode: code }));
+          cityValue = districtOrName;
+          newCities = [{ id: districtOrName, name: districtOrName }, ...newCities];
         }
+        // Optionally, you can set a state for cities if you want to use it elsewhere
+        // setCities(newCities); // Uncomment if you want to keep cities in state
       } catch (e) {
-        // If city lookup fails, still set country/state
-        setForm(prev => ({ ...prev, country: countryId || prev.country, state: stateId || prev.state, postalCode: code }));
+        cityValue = districtOrName;
+        // setCities([{ id: districtOrName, name: districtOrName }]); // Uncomment if you want to keep cities in state
       }
 
+      // Update form with refreshed country, state, city
+      setForm(prev => ({ ...prev, country: countryId, state: stateId, city: cityValue, postalCode: code }));
       setPostalError('');
     } catch (err: any) {
       setPostalError(err?.message || 'Failed to fetch pincode data');
@@ -486,6 +525,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
             placeholder="https://"
           />
+          {errors.website && <div className="text-xs text-red-500 mt-1">{errors.website}</div>}
         </div>
 
         <div>
@@ -535,18 +575,21 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             name="postalCode"
             value={form.postalCode}
             onChange={(e) => {
-              // preserve existing handler behavior
               handleChange(e as any);
-              const raw = String(e.target.value || '').replace(/\D/g, '');
-              if (raw.length === 6) lookupPostalCode(raw);
             }}
             onBlur={() => {
               const raw = String(form.postalCode || '').trim();
-              if (/^[0-9]{6}$/.test(raw)) lookupPostalCode(raw);
+              if (/^[0-9]{6}$/.test(raw)) {
+                setPostalFieldError('');
+                lookupPostalCode(raw);
+              } else {
+                setPostalFieldError('Postal code is invalid');
+              }
             }}
             className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
             placeholder="Please Enter Postal Code"
           />
+          {postalFieldError && <div className="text-xs text-red-500 mt-1">{postalFieldError}</div>}
           {postalLoading && <div className="text-xs text-gray-500 mt-1">Looking up pincode...</div>}
           {!postalLoading && postalError && <div className="text-xs text-red-500 mt-1">{postalError}</div>}
         </div>
@@ -567,7 +610,12 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
 
         <div>
           <label className="block text-sm text-[var(--text-secondary)] mb-1">City <span className="text-[#FF0000]">*</span></label>
-          <CitySelect state={form.state} value={form.city} preselectedCityName={form.city} onChange={(val) => setForm(prev => ({ ...prev, city: val }))} />
+          <CitySelect
+            state={form.state}
+            value={form.city}
+            preselectedCityName={form.city}
+            onChange={(val) => setForm(prev => ({ ...prev, city: val }))}
+          />
           {errors.city && <div className="text-xs text-red-500 mt-1">{errors.city}</div>}
         </div>
 

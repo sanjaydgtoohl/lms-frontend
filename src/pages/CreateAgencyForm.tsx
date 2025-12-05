@@ -348,7 +348,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                 </div>
 
                 <div>
-                  <label className="block text-sm text-[#667085] mb-1">Agency Type</label>
+                  <label className="block text-sm text-[#667085] mb-1">Agency Type <span className="text-red-500">*</span></label>
                     <SelectField
                       name="parentType"
                       value={parent.type}
@@ -363,7 +363,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                 </div>
 
                 <div className="mb-2">
-                  <label className="block text-sm text-[#667085] mb-1">Agency Client</label>
+                  <label className="block text-sm text-[#667085] mb-1">Agency Client <span className="text-red-500">*</span></label>
                   <div className="w-full">
                     <MultiSelectDropdown
                       name="parentClient"
@@ -432,7 +432,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                         )}
                       </div>
                       <div>
-                        <label className="block text-sm text-[#667085] mb-1">Agency Type</label>
+                        <label className="block text-sm text-[#667085] mb-1">Agency Type <span className="text-red-500">*</span></label>
                         <SelectField
                           name={`child-${c.id}-type`}
                           value={c.type}
@@ -446,7 +446,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                         )}
                       </div>
                       <div>
-                        <label className="block text-sm text-[#667085] mb-1">Agency Client</label>
+                        <label className="block text-sm text-[#667085] mb-1">Agency Client <span className="text-red-500">*</span></label>
                         <div className="w-full">
                           <MultiSelectDropdown
                             name={`child-${c.id}-client`}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { fetchDesignations, fetchDepartments, fetchZones, fetchCities, fetchStates, fetchCountries } from '../../../services/CreateLead';
-import { Trash2, X as XIcon } from 'lucide-react';
+import { Trash2, X as XIcon, Plus } from 'lucide-react';
 import SelectField from '../../ui/SelectField';
 
 type Contact = {
@@ -46,11 +46,13 @@ const emptyContact = (id = '1'): Contact => ({
 interface ContactPersonsCardProps {
   initialContacts?: Contact[];
   onChange?: (contacts: Contact[]) => void;
+  errors?: Record<string, Partial<Record<string, string>>>;
 }
 
 const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({ 
   initialContacts,
   onChange
+  , errors
 }) => {
   const [contacts, setContacts] = useState<Contact[]>(initialContacts || [emptyContact('1')]);
 
@@ -157,8 +159,6 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
     }));
   };
 
-
-
   // Country dropdown state
   const [countryOptions, setCountryOptions] = useState<{ value: string; label: string }[]>([]);
   const [countryLoading, setCountryLoading] = useState(false);
@@ -226,6 +226,90 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
     return () => { isMounted = false; };
   }, [contacts]);
 
+  // Helper: lookup PIN code using api.postalpincode.in
+  const lookupPinCode = async (pin: string): Promise<{ countryName: string; stateName: string; cityName: string } | null> => {
+    try {
+      const resp = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
+      if (!resp.ok) return null;
+      const json = await resp.json();
+      if (!Array.isArray(json) || json.length === 0) return null;
+      const first = json[0];
+      if (first.Status !== 'Success' || !Array.isArray(first.PostOffice) || first.PostOffice.length === 0) return null;
+      const po = first.PostOffice[0];
+      return {
+        countryName: po.Country || '',
+        stateName: po.State || '',
+        cityName: po.District || po.Block || po.Name || '',
+      };
+    } catch (e) {
+      return null;
+    }
+  };
+
+  // Handle PIN code lookup in useEffect to avoid state updates during render
+  useEffect(() => {
+    const contact = contacts.find(c => c.id);
+    if (!contact || !contact.postalCode) return;
+
+    const pin = contact.postalCode.trim();
+    if (!/^\d{6}$/.test(pin)) return;
+
+    (async () => {
+      try {
+        const pinRes = await lookupPinCode(pin);
+        if (!pinRes) return;
+
+        const { countryName, stateName, cityName } = pinRes;
+
+        // Try to map country name to an existing option value
+        const countryOpt = countryOptions.find(o => o.label.toLowerCase() === countryName.toLowerCase());
+        if (countryOpt) {
+          setContacts(prev => {
+            const next = prev.map(c => c.id === contact.id ? { ...c, country: countryOpt.value } : c);
+            onChange?.(next);
+            return next;
+          });
+
+          // Fetch states for this country and try to map by name
+          const { data: statesData } = await fetchStates({ country_id: countryOpt.value });
+          if (Array.isArray(statesData)) {
+            const matchedState = statesData.find((s: any) => String(s.name).toLowerCase() === String(stateName).toLowerCase());
+            if (matchedState) {
+              const stateId = String(matchedState.id);
+              setContacts(prev => {
+                const next = prev.map(c => c.id === contact.id ? { ...c, state: stateId } : c);
+                onChange?.(next);
+                return next;
+              });
+
+              // Fetch cities for matched state and try to map by name
+              const { data: citiesData } = await fetchCities({ state_id: stateId });
+              if (Array.isArray(citiesData)) {
+                const matchedCity = citiesData.find((ct: any) => {
+                  const nm = String(ct.name || '').toLowerCase();
+                  const districtField = String(ct.district || ct.District || '').toLowerCase();
+                  const cityField = String(ct.city || '').toLowerCase();
+                  const target = String(cityName || '').toLowerCase();
+                  return nm === target || districtField === target || cityField === target;
+                });
+                if (matchedCity) {
+                  const cityId = String(matchedCity.id);
+                  setContacts(prev => {
+                    const next = prev.map(c => c.id === contact.id ? { ...c, city: cityId } : c);
+                    onChange?.(next);
+                    return next;
+                  });
+                }
+              }
+            }
+          }
+        }
+      } catch (err) {
+        // ignore lookup errors silently
+      }
+    })();
+  }, [contacts.find(c => c.id)?.postalCode, countryOptions]);
+
   // Fetch cities when any contact's state changes
   useEffect(() => {
     let isMounted = true;
@@ -289,6 +373,9 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateContact(c.id, 'fullName', e.target.value)}
                     className="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                   />
+                  {errors?.[c.id]?.fullName && (
+                    <div className="text-xs text-red-500 mt-1">{errors[c.id].fullName}</div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">Profile URL</label>
@@ -326,18 +413,20 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateContact(c.id, 'mobileNo', e.target.value)}
                           className="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                         />
+                        {errors?.[c.id]?.mobileNo && (
+                          <div className="text-xs text-red-500 mt-1">{errors[c.id].mobileNo}</div>
+                        )}
                       </div>
                       {!c.showSecondMobile && (
                         <button
                           type="button"
                           onClick={() => updateContact(c.id, 'showSecondMobile', true)}
-                          className="h-10 w-10 flex items-center justify-center rounded-lg text-white font-medium transition-colors mt-6 hover:bg-blue-700"
+                          className="px-3 py-2 flex items-center justify-center rounded-lg text-white font-medium transition-colors mt-6 hover:bg-orange-600 text-sm gap-1"
                           style={{ backgroundColor: '#ff9500' }}
                           title="Add another mobile number"
                         >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                          </svg>
+                          <Plus strokeWidth={2.5} className="w-4 h-4" />
+                         
                         </button>
                       )}
                     </div>
@@ -364,10 +453,11 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                               contact.id === c.id ? updatedContact : contact
                             ));
                           }}
-                          className="h-10 w-10 flex items-center justify-center rounded-lg text-white font-medium transition-colors duration-200 hover:bg-red-700"
+                          className="px-3 py-2 flex items-center justify-center rounded-lg text-white font-medium transition-colors duration-200 hover:bg-red-700 text-sm gap-1"
                           style={{ backgroundColor: '#D92D20' }}
                         >
                           <XIcon strokeWidth={2.5} className="w-4 h-4" />
+                       
                         </button>
                       </div>
                     )}
@@ -387,6 +477,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                     onChange={(v) => updateContact(c.id, 'type', v)}
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
                   />
+                  {errors?.[c.id]?.type && <div className="text-xs text-red-500 mt-1">{errors[c.id].type}</div>}
                 </div>
                 <div>
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">Designation <span className="text-[#FF0000]">*</span></label>
@@ -399,6 +490,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
                     disabled={designationLoading}
                   />
+                  {errors?.[c.id]?.designation && <div className="text-xs text-red-500 mt-1">{errors[c.id].designation}</div>}
                   {designationLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
                   {designationError && <div className="text-xs text-red-500 mt-1">{designationError}</div>}
                   {!designationLoading && !designationError && designationOptions.length === 0 && (
@@ -416,6 +508,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
                     disabled={departmentLoading}
                   />
+                  {errors?.[c.id]?.department && <div className="text-xs text-red-500 mt-1">{errors[c.id].department}</div>}
                   {departmentLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
                   {departmentError && <div className="text-xs text-red-500 mt-1">{departmentError}</div>}
                   {!departmentLoading && !departmentError && departmentOptions.length === 0 && (
@@ -437,6 +530,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
                     disabled={countryLoading}
                   />
+                  {errors?.[c.id]?.country && <div className="text-xs text-red-500 mt-1">{errors[c.id].country}</div>}
                   {countryLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
                   {countryError && <div className="text-xs text-red-500 mt-1">{countryError}</div>}
                   {!countryLoading && !countryError && countryOptions.length === 0 && (
@@ -508,14 +602,17 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                         opts.unshift(c.subSource);
                       }
                       return (
-                        <SelectField
-                          name="subSource"
-                          placeholder="Select sub-source"
-                          options={opts}
-                          value={c.subSource}
-                          onChange={(v) => updateContact(c.id, 'subSource', v)}
-                          inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
-                        />
+                        <>
+                          <SelectField
+                            name="subSource"
+                            placeholder="Select sub-source"
+                            options={opts}
+                            value={c.subSource}
+                            onChange={(v) => updateContact(c.id, 'subSource', v)}
+                            inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
+                          />
+                          {errors?.[c.id]?.subSource && <div className="text-xs text-red-500 mt-1">{errors[c.id].subSource}</div>}
+                        </>
                       );
                     })()
                   }

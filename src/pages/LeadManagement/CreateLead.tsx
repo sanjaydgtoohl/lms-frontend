@@ -6,7 +6,7 @@ import CommentSection from '../../components/forms/CreateLead/CommentSection';
 import { MasterFormHeader, Button } from '../../components/ui';
 import { useNavigate } from 'react-router-dom';
 import { fetchBrands, fetchAgencies, createLead } from '../../services/CreateLead';
-import { showSuccess, showError } from '../../utils/notifications';
+import { showSuccess } from '../../utils/notifications';
 
 
 const CreateLead: React.FC = () => {
@@ -20,7 +20,8 @@ const CreateLead: React.FC = () => {
   const [priority, setPriority] = useState<string | undefined>(undefined);
   const [assignTo, setAssignTo] = useState<string | undefined>(undefined);
   const [callFeedback, setCallFeedback] = useState<string | undefined>(undefined);
-  const [contacts, setContacts] = useState<any[]>([]);
+  const [contacts, setContacts] = useState<any[]>([{ id: '1', fullName: '', profileUrl: '', email: '', mobileNo: '', mobileNo2: '', showSecondMobile: false, type: '', designation: '', agencyBrand: '', subSource: '', department: '', country: '', state: '', city: '', zone: '', postalCode: '' }]);
+  const [contactErrors, setContactErrors] = useState<Record<string, Partial<Record<string, string>>>>({});
   const [comment, setComment] = useState<string>('');
   const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
@@ -57,13 +58,27 @@ const CreateLead: React.FC = () => {
   const handleSave = () => {
     // Validate minimal required fields and submit to API
     (async () => {
+      // clear previous errors
+      setContactErrors({});
+
       if (!contacts || contacts.length === 0) {
-        showError('Please add at least one contact person.');
+        // Show error under Full Name of the (first) contact card
+        setContactErrors({ '1': { fullName: 'Please add at least one contact person.' } });
         return;
       }
+
       const lead = contacts[0];
-      if (!lead.fullName || !lead.mobileNo) {
-        showError('Please provide contact name and mobile number.');
+      const firstContactId = lead.id || '1';
+
+      const newContactErrors: Record<string, Partial<Record<string, string>>> = {};
+      if (!lead.fullName) {
+        newContactErrors[firstContactId] = { ...(newContactErrors[firstContactId] || {}), fullName: 'Please provide contact name.' };
+      }
+      if (!lead.mobileNo) {
+        newContactErrors[firstContactId] = { ...(newContactErrors[firstContactId] || {}), mobileNo: 'Please provide mobile number.' };
+      }
+      if (Object.keys(newContactErrors).length > 0) {
+        setContactErrors(newContactErrors);
         return;
       }
 
@@ -105,6 +120,7 @@ const CreateLead: React.FC = () => {
         zone_id: lead.zone ? Number(lead.zone) : undefined,
         postal_code: lead.postalCode || undefined,
         comment: comment || undefined,
+        call_status_id: callFeedback ? Number(callFeedback) : undefined,
       };
 
       if (selectedOption === 'brand') payload.brand_id = dropdownValue || undefined;
@@ -114,13 +130,35 @@ const CreateLead: React.FC = () => {
         setSaving(true);
         const res = await createLead(payload);
         if (res.error) {
-          showError(typeof res.error === 'string' ? res.error : 'Failed to create lead');
+          // If server returned field errors, map them to contact fields to show inline
+          if (res.errors && typeof res.errors === 'object') {
+            const serverErrors = res.errors as Record<string, any>;
+            const mapped: Record<string, Partial<Record<string, string>>> = {};
+            const contactId = firstContactId;
+            Object.keys(serverErrors).forEach((k) => {
+              const messages = Array.isArray(serverErrors[k]) ? serverErrors[k] : [serverErrors[k]];
+              // map backend keys to contact field keys
+              const keyMap: Record<string, string> = {
+                name: 'fullName',
+                mobile_number: 'mobileNo',
+                type: 'type',
+                designation_id: 'designation',
+                department_id: 'department',
+                sub_source_id: 'subSource',
+                country_id: 'country',
+              };
+              const target = keyMap[k] || k;
+              mapped[contactId] = { ...(mapped[contactId] || {}), [target]: String(messages[0]) };
+            });
+            setContactErrors(mapped);
+            return;
+          }
           return;
         }
         showSuccess('Lead created successfully.');
         navigate('/lead-management/all-leads');
       } catch (err: any) {
-        showError(err?.message || 'Failed to create lead');
+        setError(err?.message || 'Failed to create lead');
       } finally {
         setSaving(false);
       }
@@ -143,7 +181,7 @@ const CreateLead: React.FC = () => {
           error={error}
         />
 
-        <ContactPersonsCard initialContacts={contacts.length ? contacts : undefined} onChange={(c) => setContacts(c)} />
+        <ContactPersonsCard initialContacts={contacts} onChange={(c) => setContacts(c && c.length > 0 ? c : [{ id: '1', fullName: '', profileUrl: '', email: '', mobileNo: '', mobileNo2: '', showSecondMobile: false, type: '', designation: '', agencyBrand: '', subSource: '', department: '', country: '', state: '', city: '', zone: '', postalCode: '' }])} errors={contactErrors} />
 
         <AssignPriorityCard
           assignTo={assignTo}

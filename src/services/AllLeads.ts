@@ -67,3 +67,25 @@ export default {
   listLeads,
   getLeadById,
 };
+
+/**
+ * Fetch leads by status name or ID (for pages like 'Meeting Done', 'Interested', etc.)
+ * @param status Status name (string) or ID (number)
+ * @param page Page number (default 1)
+ * @param perPage Items per page (default 15)
+ * @param extraFilters Any extra filters to apply
+ */
+export async function listLeadsByStatus(
+  status: string | number,
+  page = 1,
+  perPage = 15,
+  extraFilters?: Record<string, any>
+): Promise<LeadListResponse> {
+  let filters: Record<string, any> = { ...extraFilters };
+  if (typeof status === 'number') {
+    filters.lead_status_id = status;
+  } else {
+    filters.lead_status = status;
+  }
+  return listLeads(page, perPage, filters);
+}

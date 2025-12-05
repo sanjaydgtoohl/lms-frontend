@@ -25,6 +25,8 @@ export interface Lead {
   zone_id: number;
   postal_code: string;
   call_status: string | null;
+  call_status_relation?: { id: number; name: string } | null;
+  lead_status_relation?: { id: number; name: string } | null;
   brand: { id: number; name: string };
   agency: null | { id: number; name: string };
   assigned_user: { id: number; name: string; email: string };
