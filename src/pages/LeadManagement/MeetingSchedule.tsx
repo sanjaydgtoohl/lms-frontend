@@ -5,7 +5,6 @@ import SelectField from '../../components/ui/SelectField';
 import { createMeeting } from '../../services/MeetingSchedule';
 import { listUsers } from '../../services/AllUsers';
 import { listLeads } from '../../services/AllLeads';
-import { FaRegCalendarAlt } from 'react-icons/fa';
 
 const MeetingSchedule: React.FC = () => {
   const navigate = useNavigate();
@@ -90,7 +89,8 @@ const MeetingSchedule: React.FC = () => {
       };
 
       // Call the API service
-      const response = await createMeeting(payload);
+      const fixedPayload = { ...payload, attendees_id: Array.isArray(payload.attendees_id) ? payload.attendees_id[0] ?? '' : payload.attendees_id };
+      const response = await createMeeting(fixedPayload);
       console.log('Meeting created successfully', response);
       
       // Show success message

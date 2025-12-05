@@ -123,7 +123,7 @@ const CreateSourceForm: React.FC<Props> = ({ onClose, onSave, inline: _inline })
                 <SelectField
                   name="source"
                   value={source}
-                  onChange={(v) => { setSource(v); setErrors(prev => ({ ...prev, source: '' })); }}
+                  onChange={(v) => { setSource(typeof v === 'string' ? v : v[0] ?? ''); setErrors(prev => ({ ...prev, source: '' })); }}
                   options={options.map(o => ({ value: String(o.id), label: o.name }))}
                   placeholder={loading ? 'Loading...' : 'Please Select Source Name'}
                   inputClassName={errors.source || loadError ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}

@@ -192,7 +192,7 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
                 <SelectField
                   name={k}
                   value={String(form[k] ?? '')}
-                  onChange={(value: string) => handleChange(k, value)}
+                  onChange={(value) => handleChange(k, typeof value === 'string' ? value : value[0] ?? '')}
                   options={options.map(o => ({ value: String(o.id), label: o.name }))}
                   placeholder={loadingOptions ? 'Loading...' : 'Search or select option'}
                   disabled={loadingOptions}

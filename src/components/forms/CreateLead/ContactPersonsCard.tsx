@@ -474,7 +474,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                     placeholder="Select type"
                     options={[{ value: 'Brand', label: 'Brand' }, { value: 'Agency', label: 'Agency' }]}
                     value={c.type}
-                    onChange={(v) => updateContact(c.id, 'type', v)}
+                    onChange={(v) => updateContact(c.id, 'type', typeof v === 'string' ? v : v[0] ?? '')}
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
                   />
                   {errors?.[c.id]?.type && <div className="text-xs text-red-500 mt-1">{errors[c.id].type}</div>}
@@ -486,7 +486,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                     placeholder="Select designation"
                     options={designationOptions}
                     value={c.designation}
-                    onChange={(v) => updateContact(c.id, 'designation', v)}
+                    onChange={(v) => updateContact(c.id, 'designation', typeof v === 'string' ? v : v[0] ?? '')}      
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
                     disabled={designationLoading}
                   />
@@ -504,7 +504,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                     placeholder="Select department"
                     options={departmentOptions}
                     value={c.department}
-                    onChange={(v) => updateContact(c.id, 'department', v)}
+                    onChange={(v) => updateContact(c.id, 'department', typeof v === 'string' ? v : v[0] ?? '')}       
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
                     disabled={departmentLoading}
                   />
@@ -526,7 +526,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                     placeholder="Select country"
                     options={countryOptions}
                     value={c.country}
-                    onChange={(v) => updateContact(c.id, 'country', v)}
+                    onChange={(v) => updateContact(c.id, 'country', typeof v === 'string' ? v : v[0] ?? '')}
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
                     disabled={countryLoading}
                   />
@@ -544,7 +544,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                     placeholder="Select state"
                     options={stateOptions}
                     value={c.state}
-                    onChange={(v) => updateContact(c.id, 'state', v)}
+                    onChange={(v) => updateContact(c.id, 'state', typeof v === 'string' ? v : v[0] ?? '')}
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
                     disabled={stateLoading}
                   />
@@ -561,7 +561,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                     placeholder="Select city"
                     options={cityOptions}
                     value={c.city}
-                    onChange={(v) => updateContact(c.id, 'city', v)}
+                    onChange={(v) => updateContact(c.id, 'city', typeof v === 'string' ? v : v[0] ?? '')}
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
                     disabled={cityLoading}
                   />
@@ -582,7 +582,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                     placeholder="Select zone"
                     options={zoneOptions}
                     value={c.zone}
-                    onChange={(v) => updateContact(c.id, 'zone', v)}
+                    onChange={(v) => updateContact(c.id, 'zone', typeof v === 'string' ? v : v[0] ?? '')}
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
                     disabled={zoneLoading}
                   />
@@ -608,7 +608,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                             placeholder="Select sub-source"
                             options={opts}
                             value={c.subSource}
-                            onChange={(v) => updateContact(c.id, 'subSource', v)}
+                            onChange={(v) => updateContact(c.id, 'subSource', typeof v === 'string' ? v : v[0] ?? '')}
                             inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
                           />
                           {errors?.[c.id]?.subSource && <div className="text-xs text-red-500 mt-1">{errors[c.id].subSource}</div>}

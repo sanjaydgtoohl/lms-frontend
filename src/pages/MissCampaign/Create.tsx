@@ -283,7 +283,7 @@ const Create: React.FC<CreateProps> = ({
                 <SelectField
                   name="brandName"
                   value={formData.brandName}
-                  onChange={(v) => { setFormData(prev => ({ ...prev, brandName: v })); setErrors(prev => ({ ...prev, brandName: '' })); }}
+                  onChange={(v) => { setFormData(prev => ({ ...prev, brandName: typeof v === 'string' ? v : v[0] ?? '' })); setErrors(prev => ({ ...prev, brandName: '' })); }}
                   options={brandOptions.map(b => ({ value: String(b.id), label: b.name }))}
                   placeholder={brandLoading ? 'Loading brands...' : 'Search or select option'}
                   inputClassName={errors.brandName ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}
@@ -309,7 +309,7 @@ const Create: React.FC<CreateProps> = ({
                 <SelectField
                   name="source"
                   value={formData.source}
-                  onChange={(v) => { setFormData(prev => ({ ...prev, source: v })); setErrors(prev => ({ ...prev, source: '' })); }}
+                  onChange={(v) => { setFormData(prev => ({ ...prev, source: typeof v === 'string' ? v : v[0] ?? '' })); setErrors(prev => ({ ...prev, source: '' })); }}
                   options={sourceOptions.map(s => ({ value: String(s.id), label: s.source }))}
                   placeholder={sourceLoading ? 'Loading sources...' : 'Search or select option'}
                   inputClassName={errors.source ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}
@@ -336,7 +336,7 @@ const Create: React.FC<CreateProps> = ({
                 <SelectField
                   name="subSource"
                   value={formData.subSource}
-                  onChange={(v) => { setFormData(prev => ({ ...prev, subSource: v })); setErrors(prev => ({ ...prev, subSource: '' })); }}
+                  onChange={(v) => { setFormData(prev => ({ ...prev, subSource: typeof v === 'string' ? v : v[0] ?? '' })); setErrors(prev => ({ ...prev, subSource: '' })); }}
                   options={subSourceOptions.map(s => ({ value: String(s.id), label: s.label }))}
                   placeholder={subSourceLoading ? 'Loading sub-sources...' : (formData.source ? 'Search or select option' : 'Select a source first')}
                   inputClassName={errors.subSource ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}

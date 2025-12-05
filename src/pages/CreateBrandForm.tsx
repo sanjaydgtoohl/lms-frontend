@@ -74,7 +74,7 @@ const CitySelect: React.FC<CitySelectProps> = ({ state, value, onChange, presele
       <SelectField
         name="city"
         value={value}
-        onChange={(v) => onChange(v)}
+        onChange={(v) => onChange(typeof v === 'string' ? v : v[0] ?? '')}
         options={cities.map(c => ({ value: String(c.id), label: c.name }))}
         placeholder={loading ? 'Loading cities...' : (cities.length ? 'Select City' : 'Select State first')}
         disabled={loading}
@@ -508,7 +508,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             <SelectField
               name="brandType"
               value={form.brandType}
-              onChange={(v) => setForm(prev => ({ ...prev, brandType: v }))}
+              onChange={(v) => setForm(prev => ({ ...prev, brandType: typeof v === 'string' ? v : v[0] ?? '' }))}     
               options={brandTypes.map(t => ({ value: String(t.id), label: t.name }))}
               placeholder="Search or select option"
             />
@@ -534,7 +534,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             <SelectField
               name="agency"
               value={form.agency}
-              onChange={(v) => setForm(prev => ({ ...prev, agency: v }))}
+              onChange={(v) => setForm(prev => ({ ...prev, agency: typeof v === 'string' ? v : v[0] ?? '' }))}        
               options={agencies.map(a => ({ value: String(a.id), label: a.name }))}
               placeholder={agencies.length ? 'Search or select option' : 'Loading agencies...'}
             />
@@ -547,7 +547,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             <SelectField
               name="industry"
               value={form.industry}
-              onChange={(v) => setForm(prev => ({ ...prev, industry: v }))}
+              onChange={(v) => setForm(prev => ({ ...prev, industry: typeof v === 'string' ? v : v[0] ?? '' }))}      
               options={industries.length ? industries.map(it => ({ value: String(it.id), label: it.name })) : []}
               placeholder={industries.length ? 'Search or select option' : 'No industries available'}
             />
@@ -561,7 +561,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             <SelectField
               name="country"
               value={form.country}
-              onChange={(v) => setForm(prev => ({ ...prev, country: v }))}
+              onChange={(v) => setForm(prev => ({ ...prev, country: typeof v === 'string' ? v : v[0] ?? '' }))}       
               options={countries.map(c => ({ value: String(c.id), label: c.name }))}
               placeholder="Search or select option"
             />
@@ -600,7 +600,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             <SelectField
               name="state"
               value={form.state}
-              onChange={(v) => setForm(prev => ({ ...prev, state: v }))}
+              onChange={(v) => setForm(prev => ({ ...prev, state: typeof v === 'string' ? v : v[0] ?? '' }))}
               options={states.map(s => ({ value: String(s.id), label: s.name }))}
               placeholder="Search or select option"
             />
@@ -625,7 +625,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             <SelectField
               name="zone"
               value={form.zone}
-              onChange={(v) => setForm(prev => ({ ...prev, zone: v }))}
+              onChange={(v) => setForm(prev => ({ ...prev, zone: typeof v === 'string' ? v : v[0] ?? '' }))}
               options={zones.map(z => ({ value: String(z.id), label: z.name }))}
               placeholder="Search or select option"
             />
