@@ -102,8 +102,26 @@ const BriefPipeline: React.FC = () => {
     if (location.pathname.endsWith('/edit') && id) {
       // Try to find in-memory first, otherwise fetch single brief from API
       const found = briefs.find(b => b.id === id) || null;
+      const patchSubmissionFields = (item: any) => {
+        // If item.submission_date exists, parse and add submissionDate/submissionTime
+        if (item && item.submission_date) {
+          try {
+            const dateObj = new Date(item.submission_date);
+            if (!isNaN(dateObj.getTime())) {
+              const dd = String(dateObj.getDate()).padStart(2, '0');
+              const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+              const yyyy = dateObj.getFullYear();
+              const hh = String(dateObj.getHours()).padStart(2, '0');
+              const min = String(dateObj.getMinutes()).padStart(2, '0');
+              item.submissionDate = `${dd}-${mm}-${yyyy}`;
+              item.submissionTime = `${hh}:${min}`;
+            }
+          } catch {}
+        }
+        return item;
+      };
       if (found) {
-        setEditItem(found);
+        setEditItem(patchSubmissionFields(found));
         setViewItem(null);
         setShowCreate(false);
         return;
@@ -115,7 +133,7 @@ const BriefPipeline: React.FC = () => {
           setLoading(true);
           const single = await getBrief(id);
           if (!mounted) return;
-          setEditItem(single || null);
+          setEditItem(single ? patchSubmissionFields(single) : null);
           setViewItem(null);
           setShowCreate(false);
         } catch (err) {

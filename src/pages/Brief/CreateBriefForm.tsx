@@ -19,6 +19,9 @@ type Props = {
 };
 
 const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode = 'create' }) => {
+    useEffect(() => {
+      console.log('CreateBriefForm initialData:', initialData);
+    }, [initialData]);
   const [form, setForm] = useState({
     briefId: '',
     briefName: '',
@@ -114,7 +117,37 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
           }
         }
       }
+
+      // Autofill Submission Date and Time from initialData.submission_date or initialData.submissionDate
+      let dateObj: Date | null = null;
+      let isoDateStr = initialData.submission_date || initialData.submissionDate;
+      if (isoDateStr && typeof isoDateStr === 'string' && isoDateStr.includes('T')) {
+        try {
+          dateObj = new Date(isoDateStr);
+          if (!isNaN(dateObj.getTime())) {
+            const dd = String(dateObj.getDate()).padStart(2, '0');
+            const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const yyyy = dateObj.getFullYear();
+            const hh = String(dateObj.getHours()).padStart(2, '0');
+            const min = String(dateObj.getMinutes()).padStart(2, '0');
+            patched.submissionDate = `${dd}-${mm}-${yyyy}`;
+            patched.submissionTime = `${hh}:${min}`;
+            console.log('Parsed submissionDate:', patched.submissionDate, 'submissionTime:', patched.submissionTime);
+          }
+        } catch {}
+      }
+
       setForm(prev => ({ ...prev, ...patched }));
+      // Always update calendarDate and calendarTime from initialData
+      if (patched.submissionDate && patched.submissionTime) {
+        // Convert DD-MM-YYYY and HH:mm to Date object
+        const [dd, mm, yyyy] = patched.submissionDate.split('-');
+        const [hh, min] = patched.submissionTime.split(':');
+        const dateObj2 = new Date(Number(yyyy), Number(mm) - 1, Number(dd), Number(hh), Number(min));
+        setCalendarDate(dateObj2);
+        setCalendarTime(dateObj2);
+        console.log('Set calendarDate/calendarTime:', dateObj2);
+      }
     }
   }, [initialData]);
 
