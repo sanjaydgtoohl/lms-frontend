@@ -121,7 +121,8 @@ export async function updateUser(id: string, payload: Partial<User>): Promise<Us
 }
 
 export async function deleteUser(id: string): Promise<void> {
-  const cleanId = id.replace(/^#/, '');
-  const res = await apiClient.delete<unknown>(ENDPOINTS.DELETE(cleanId));
+  // Extract numeric ID from any decorated format (e.g., #USR005 -> 5)
+  const numericId = String(id).replace(/\D/g, '');
+  const res = await apiClient.delete<unknown>(ENDPOINTS.DELETE(numericId));
   await handleResponse<unknown>(res);
 }

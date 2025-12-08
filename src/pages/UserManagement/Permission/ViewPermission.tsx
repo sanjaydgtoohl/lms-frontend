@@ -1,26 +1,16 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MasterFormHeader } from '../../../components/ui';
 import { ROUTES } from '../../../constants';
+import { getPermission } from '../../../services/AllPermissions';
 
 interface Permission {
   id: string;
   name: string;
-  description: string;
+  display_name?: string;
+  description?: string;
 }
-
-const mockPermissions: Permission[] = [
-  { id: '#PM001', name: 'User Read', description: 'Allows viewing user information and profiles' },
-  { id: '#PM002', name: 'User Create', description: 'Allows creating new user accounts' },
-  { id: '#PM003', name: 'User Update', description: 'Allows updating user information' },
-  { id: '#PM004', name: 'User Delete', description: 'Allows deleting user accounts' },
-  { id: '#PM005', name: 'Profile Read', description: 'Allows viewing user profile details' },
-  { id: '#PM006', name: 'Permission Read', description: 'Allows viewing permission information' },
-  { id: '#PM007', name: 'Permission Create', description: 'Allows creating new permissions' },
-  { id: '#PM008', name: 'Permission Update', description: 'Allows updating permissions' },
-  { id: '#PM009', name: 'Permission Delete', description: 'Allows deleting permissions' },
-  { id: '#PM010', name: 'Role Read', description: 'Allows viewing role information' },
-];
 
 const ViewPermission: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -32,21 +22,20 @@ const ViewPermission: React.FC = () => {
     const fetchPermission = async () => {
       try {
         setIsLoading(true);
-        // TODO: Replace with actual API call
-        // Mock data for now
-        const permissionId = `#${id}`;
-        const mockPermission = mockPermissions.find(p => p.id === permissionId);
-        setPermission(mockPermission || null);
+        if (id) {
+          const data = await getPermission(id);
+          setPermission(data);
+        } else {
+          setPermission(null);
+        }
       } catch (error) {
         console.error('Error fetching permission:', error);
+        setPermission(null);
       } finally {
         setIsLoading(false);
       }
     };
-
-    if (id) {
-      fetchPermission();
-    }
+    fetchPermission();
   }, [id]);
 
   if (isLoading) {
@@ -58,6 +47,7 @@ const ViewPermission: React.FC = () => {
       </div>
     );
   }
+
 
   if (!permission) {
     return (
@@ -83,7 +73,7 @@ const ViewPermission: React.FC = () => {
             </div>
             <div>
               <div className="text-sm text-gray-600">Permission Name</div>
-              <div className="text-base text-[var(--text-primary)]">{permission.name}</div>
+              <div className="text-base text-[var(--text-primary)]">{permission.display_name}</div>
             </div>
           </div>
 

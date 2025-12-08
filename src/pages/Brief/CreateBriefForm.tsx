@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { listBrands } from '../../services/BrandMaster';
 import { listAgencies } from '../../services/AgencyMaster';
 import { listUsers } from '../../services/AllUsers';
 import { listLeads } from '../../services/AllLeads';
 import { fetchBriefStatuses } from '../../services/BriefStatus';
 import { motion } from 'framer-motion';
-import { MasterFormHeader, NotificationPopup, Button, SelectField } from '../../components/ui';
+import { MasterFormHeader, NotificationPopup, SelectField } from '../../components/ui';
 // Dropdown UI uses SelectField component
 
 type Props = {
@@ -17,6 +19,9 @@ type Props = {
 };
 
 const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode = 'create' }) => {
+    useEffect(() => {
+      console.log('CreateBriefForm initialData:', initialData);
+    }, [initialData]);
   const [form, setForm] = useState({
     briefId: '',
     briefName: '',
@@ -31,10 +36,15 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
     assignTo: '',
     status: '',
     briefDetail: '',
-    submissionDate: '',
+    submissionDate: '', // will store date as string (DD-MM-YYYY)
+    submissionTime: '', // will store time as string (HH:mm)
     programmatic: 'Programmatic',
     type: '',
   });
+
+  // State for calendar pickers
+  const [calendarDate, setCalendarDate] = useState<Date | null>(null); // For date only
+  const [calendarTime, setCalendarTime] = useState<Date | null>(null); // For time only
 
   // Contact person dropdown state (loaded from API - leads list)
   const [contactPersons, setContactPersons] = useState<Array<string | { value: string; label: string }>>([]);
@@ -107,7 +117,37 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
           }
         }
       }
+
+      // Autofill Submission Date and Time from initialData.submission_date or initialData.submissionDate
+      let dateObj: Date | null = null;
+      let isoDateStr = initialData.submission_date || initialData.submissionDate;
+      if (isoDateStr && typeof isoDateStr === 'string' && isoDateStr.includes('T')) {
+        try {
+          dateObj = new Date(isoDateStr);
+          if (!isNaN(dateObj.getTime())) {
+            const dd = String(dateObj.getDate()).padStart(2, '0');
+            const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const yyyy = dateObj.getFullYear();
+            const hh = String(dateObj.getHours()).padStart(2, '0');
+            const min = String(dateObj.getMinutes()).padStart(2, '0');
+            patched.submissionDate = `${dd}-${mm}-${yyyy}`;
+            patched.submissionTime = `${hh}:${min}`;
+            console.log('Parsed submissionDate:', patched.submissionDate, 'submissionTime:', patched.submissionTime);
+          }
+        } catch {}
+      }
+
       setForm(prev => ({ ...prev, ...patched }));
+      // Always update calendarDate and calendarTime from initialData
+      if (patched.submissionDate && patched.submissionTime) {
+        // Convert DD-MM-YYYY and HH:mm to Date object
+        const [dd, mm, yyyy] = patched.submissionDate.split('-');
+        const [hh, min] = patched.submissionTime.split(':');
+        const dateObj2 = new Date(Number(yyyy), Number(mm) - 1, Number(dd), Number(hh), Number(min));
+        setCalendarDate(dateObj2);
+        setCalendarTime(dateObj2);
+        console.log('Set calendarDate/calendarTime:', dateObj2);
+      }
     }
   }, [initialData]);
 
@@ -609,62 +649,79 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     placeholder="Please Enter Est. Budget"
                     className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white" />
                 </div>
-                <div>
-                  <label className="block text-sm text-[var(--text-secondary)] mb-1">Submission Date & Time</label>
-                  <div className="flex gap-2">
-                    <input
-                      name="submissionDate"
-                      value={form.submissionDate}
-                      onChange={handleChange}
-                      placeholder="DD-MM-YYYY"
-                      className="w-1/2 px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white"
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Submission Date</label>
+                    <DatePicker
+                      selected={calendarDate}
+                      onChange={date => {
+                        setCalendarDate(date);
+                        if (date) {
+                          const d = date;
+                          const dd = String(d.getDate()).padStart(2, '0');
+                          const mm = String(d.getMonth() + 1).padStart(2, '0');
+                          const yyyy = d.getFullYear();
+                          setForm(prev => ({
+                            ...prev,
+                            submissionDate: `${dd}-${mm}-${yyyy}`
+                          }));
+                        }
+                      }}
+                      dateFormat="dd-MM-yyyy"
+                      placeholderText="DD-MM-YYYY"
+                      className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white"
                     />
-                    <input
-                      name="submissionTime"
-                      type="time"
-                      onChange={handleChange}
-                      className="w-1/2 px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white"
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Submission Time</label>
+                    <DatePicker
+                      selected={calendarTime}
+                      onChange={date => {
+                        setCalendarTime(date);
+                        if (date) {
+                          const d = date;
+                          const hh = String(d.getHours()).padStart(2, '0');
+                          const min = String(d.getMinutes()).padStart(2, '0');
+                          setForm(prev => ({
+                            ...prev,
+                            submissionTime: `${hh}:${min}`
+                          }));
+                        }
+                      }}
+                      showTimeSelect
+                      showTimeSelectOnly
+                      timeIntervals={15}
+                      timeCaption="Time"
+                      dateFormat="HH:mm"
+                      placeholderText="HH:mm"
+                      className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white"
                     />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">Priority</label>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {(['Low', 'Medium', 'High'] as const).map((p) => {
-                      const active = form.priority === p;
-                      const colorMap: Record<string, { base: string; border: string; focus: string }> = {
-                        Low: { base: 'bg-blue-600', border: 'border-blue-400 text-blue-600', focus: 'focus:ring-blue-300' },
-                        Medium: { base: 'bg-orange-500', border: 'border-orange-300 text-orange-500', focus: 'focus:ring-orange-300' },
-                        High: { base: 'bg-red-600', border: 'border-red-400 text-red-600', focus: 'focus:ring-red-300' },
-                      };
-
-                      const colors = colorMap[p];
-
-                      // inactive: transparent background, colored border and text
-                      const inactiveClasses = `bg-transparent ${colors.border}`;
-                      // active: filled background, white text
-                      const activeClasses = `${colors.base} text-white border-transparent`;
-
-                      return (
-                        <Button
-                          key={p}
-                          variant="priority"
-                          size="sm"
-                          className={`px-5 py-1.5 text-sm font-medium leading-none min-h-[32px] ${active ? activeClasses : inactiveClasses} ${colors.focus}`}
-                          onClick={() => { setForm(prev => ({ ...prev, priority: p })); setPriorityAutoSet(false); }}
-                          aria-pressed={active}
-                        >
-                          {p}
-                        </Button>
-                      );
-                    })}
-                  </div>
+                  <SelectField
+                    name="priority"
+                    placeholder="Select Priority"
+                    options={[{ value: 'Low', label: 'Low' }, { value: 'Medium', label: 'Medium' }, { value: 'High', label: 'High' }]}
+                    value={form.priority}
+                    onChange={(v: any) => {
+                      const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v;
+                      setForm(prev => ({ ...prev, priority: val }));
+                    }}
+                    inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">Brief Detail</label>
-                  <textarea name="briefDetail" value={form.briefDetail} onChange={handleChange} rows={4}
+                  <textarea
+                    name="briefDetail"
+                    value={form.briefDetail}
+                    onChange={handleChange}
+                    rows={4}
                     placeholder="Show all data regarding to Brief"
-                    className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white" />
+                    className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white resize-none"
+                  />
                 </div>
               </div>
             </div>

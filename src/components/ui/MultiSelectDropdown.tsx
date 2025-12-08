@@ -38,6 +38,9 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   const normalized = options.map(normalize);
   const filtered = query ? normalized.filter(o => o.label.toLowerCase().includes(query.toLowerCase())) : normalized;
 
+  // Defensive: ensure value is always an array
+  const safeValue = Array.isArray(value) ? value : [];
+
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
@@ -77,9 +80,9 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
       <div className="w-full">
   <div className={`flex items-center flex-wrap gap-2 w-full min-h-[40px] px-3 rounded-[10px] bg-white border border-[#DDE1E7] ${inputClassName} ${disabled ? 'opacity-60' : ''}`} onClick={() => { if (disabled) return; setOpen(prev => !prev); }}>
           {/* tags */}
-          {value && value.length > 0 && (
+          {safeValue.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
-              {value.map((v) => {
+              {safeValue.map((v) => {
                 const label = normalized.find(n => String(n.value) === String(v))?.label ?? v;
                 return (
                   <span key={v} className="msd-tag inline-flex items-center gap-2 px-2 py-1 rounded-md text-xs">
@@ -92,7 +95,7 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                       aria-label={`Remove ${label}`}
                       className="ml-1 leading-none text-gray-600 hover:text-gray-900 cursor-pointer select-none"
                     >
-                      ×
+                      
                     </span>
                   </span>
                 );

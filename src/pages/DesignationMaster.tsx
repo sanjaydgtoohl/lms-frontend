@@ -315,10 +315,12 @@ const DesignationMaster: React.FC = () => {
     return (async () => {
       try {
         // API expects `title` for update payload
-	await updateDesignation(updated.id, { title: updated.name } as any);
-	// Refresh list from server so table shows latest data
-	await refresh();
-	showSuccess('Designation updated successfully');
+        await updateDesignation(updated.id, { title: updated.name } as any);
+        // Refresh list from server so table shows latest data
+        await refresh();
+        showSuccess('Designation updated successfully');
+        // Navigate back to listing immediately
+        navigate(ROUTES.DESIGNATION_MASTER);
       } catch (e: any) {
         // Extract field-specific validation message if available
         let message = 'Failed to update designation';

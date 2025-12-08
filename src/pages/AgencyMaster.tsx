@@ -167,12 +167,22 @@ const AgencyMaster: React.FC = () => {
       return;
     }
 
+
     if (id) {
-      const fetched = getItem('agency', id);
-      if (fetched) setViewItem(fetched as Agency);
-      else setViewItem({ id } as Agency);
-      setShowCreate(false);
-      setEditItem(null);
+      // Try to fetch from API first, fallback to local if fails
+      getAgency(id)
+        .then(data => {
+          setViewItem(data as any);
+          setEditItem(null);
+          setShowCreate(false);
+        })
+        .catch(() => {
+          const fetched = getItem('agency', id);
+          if (fetched) setViewItem(fetched as Agency);
+          else setViewItem({ id } as Agency);
+          setEditItem(null);
+          setShowCreate(false);
+        });
       return;
     }
 

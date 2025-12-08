@@ -155,12 +155,12 @@ const LeadSource: React.FC = () => {
       });
       // Refresh the list from server so table shows latest data
       await refresh();
-      // Show success toast then navigate back to listing after a short delay
+      // Show success toast and navigate back to listing immediately
       setShowSuccessToast(true);
       setTimeout(() => {
         setShowSuccessToast(false);
-        navigate(ROUTES.SOURCE_MASTER);
-      }, 5000);
+      }, 1800);
+      navigate(ROUTES.SOURCE_MASTER);
     })();
   };
 
@@ -177,7 +177,8 @@ const LeadSource: React.FC = () => {
     setConfirmLoading(true);
     try {
       await deleteLeadSubSource(confirmDeleteId);
-      setItems(prev => prev.filter(i => i.id !== confirmDeleteId));
+      // Refetch the lead sources list after delete
+      await refresh();
     } catch (e: any) {
       setErrorMessageToast(e?.message || 'Failed to delete');
       setShowErrorToast(true);

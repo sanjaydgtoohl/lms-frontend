@@ -240,7 +240,13 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
         // Do NOT show popup for website errors, only show below the field
         // For other errors, show popup except for "already been taken"
         const firstError = Object.values(newErrors)[0];
-        if (firstError && !firstError.toLowerCase().includes('already been taken') && !newErrors.website) {
+        // Only show popup for errors except city id integer error
+        if (
+          firstError &&
+          !firstError.toLowerCase().includes('already been taken') &&
+          !newErrors.website &&
+          !(newErrors.city && newErrors.city.toLowerCase().includes('must be an integer'))
+        ) {
           showError(firstError);
         }
       } else {
@@ -499,7 +505,9 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
             placeholder="Please Enter Brand Name"
           />
-          {errors.brandName && <div className="text-xs text-red-500 mt-1">{errors.brandName}</div>}
+            {errors.brandName && !form.brandName.trim() && (
+              <div className="text-xs text-red-500 mt-1">{errors.brandName}</div>
+            )}
         </div>
 
         <div>
@@ -513,7 +521,9 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
               placeholder="Search or select option"
             />
           </div>
-          {errors.brandType && <div className="text-xs text-red-500 mt-1">{errors.brandType}</div>}
+            {errors.brandType && !form.brandType && (
+              <div className="text-xs text-red-500 mt-1">{errors.brandType}</div>
+            )}
         </div>
 
         <div>
@@ -525,7 +535,9 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
             placeholder="https://"
           />
-          {errors.website && <div className="text-xs text-red-500 mt-1">{errors.website}</div>}
+            {errors.website && !form.website.trim() && (
+              <div className="text-xs text-red-500 mt-1">{errors.website}</div>
+            )}
         </div>
 
         <div>
@@ -552,7 +564,9 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
               placeholder={industries.length ? 'Search or select option' : 'No industries available'}
             />
           </div>
-          {errors.industry && <div className="text-xs text-red-500 mt-1">{errors.industry}</div>}
+            {errors.industry && !form.industry && (
+              <div className="text-xs text-red-500 mt-1">{errors.industry}</div>
+            )}
         </div>
 
         <div>
@@ -561,12 +575,17 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             <SelectField
               name="country"
               value={form.country}
-              onChange={(v) => setForm(prev => ({ ...prev, country: typeof v === 'string' ? v : v[0] ?? '' }))}       
+              onChange={(v) => {
+                const newCountry = typeof v === 'string' ? v : v[0] ?? '';
+                setForm(prev => ({ ...prev, country: newCountry, state: '', city: '' }));
+              }}
               options={countries.map(c => ({ value: String(c.id), label: c.name }))}
               placeholder="Search or select option"
             />
           </div>
-          {errors.country && <div className="text-xs text-red-500 mt-1">{errors.country}</div>}
+            {errors.country && (!form.country || form.country === 'Please Select Country') && (
+              <div className="text-xs text-red-500 mt-1">{errors.country}</div>
+            )}
         </div>
 
         <div>
@@ -576,6 +595,11 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             value={form.postalCode}
             onChange={(e) => {
               handleChange(e as any);
+              const raw = String(e.target.value || '').trim();
+              if (/^[0-9]{6}$/.test(raw)) {
+                setPostalFieldError('');
+                lookupPostalCode(raw);
+              }
             }}
             onBlur={() => {
               const raw = String(form.postalCode || '').trim();
@@ -605,7 +629,9 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
               placeholder="Search or select option"
             />
           </div>
-          {errors.state && <div className="text-xs text-red-500 mt-1">{errors.state}</div>}
+            {errors.state && !form.state && (
+              <div className="text-xs text-red-500 mt-1">{errors.state}</div>
+            )}
         </div>
 
         <div>
@@ -616,7 +642,9 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             preselectedCityName={form.city}
             onChange={(val) => setForm(prev => ({ ...prev, city: val }))}
           />
-          {errors.city && <div className="text-xs text-red-500 mt-1">{errors.city}</div>}
+            {(errors.city && (!form.city || (errors.city.toLowerCase().includes('must be an integer') && isNaN(Number(form.city))))) && (
+              <div className="text-xs text-red-500 mt-1">{errors.city}</div>
+            )}
         </div>
 
         <div>
@@ -630,7 +658,9 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
               placeholder="Search or select option"
             />
           </div>
-          {errors.zone && <div className="text-xs text-red-500 mt-1">{errors.zone}</div>}
+            {errors.zone && !form.zone && (
+              <div className="text-xs text-red-500 mt-1">{errors.zone}</div>
+            )}
         </div>
       </div>
 

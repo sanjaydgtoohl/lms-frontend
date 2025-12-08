@@ -266,7 +266,10 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
         form.append('type[]', typeVal);
       });
 
-      const allClients = [parent.client, ...children.map(c => c.client)];
+      const allClients = [
+        Array.isArray(parent.client) ? parent.client : (parent.client ? [parent.client] : []),
+        ...children.map(c => Array.isArray(c.client) ? c.client : (c.client ? [c.client] : []))
+      ];
       allClients.forEach((clientsForAgency, idx) => {
         (clientsForAgency || []).forEach((clientId) => {
           // Append as client[<index>][] to create nested arrays: client[0][], client[1][], ...
@@ -276,8 +279,10 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
 
       // Call appropriate API based on mode
       if (mode === 'edit' && initialData?.id) {
-        // Update existing agency
-        await updateAgency(initialData.id, Object.fromEntries(form.entries()));
+        // Add _method: 'PUT' for Laravel-style REST update
+        form.append('_method', 'PUT');
+        // Pass FormData directly if updateAgency supports it
+        await updateAgency(initialData.id, form);
       } else {
         // Create new agency
         await createGroupAgency(form);
@@ -323,7 +328,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
     >
       {/* global notification used via showSuccess/showError; local popup removed */}
 
-      <div className="space-y-6 p-6">
+      <div className="">
         <MasterFormHeader onBack={onClose} title={mode === 'edit' ? 'Edit Group Agency' : 'Create Group Agency'} />
 
   <div className="w-full max-w-full mx-auto bg-white rounded-2xl shadow-lg border border-[#E3E8EF] overflow-hidden">
@@ -369,7 +374,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                       name="parentClient"
                       value={parent.client}
                       options={agencyClients.map((c: any) => ({ value: String(c.id), label: c.name }))}
-                      onChange={(v) => { setParent(prev => ({ ...prev, client: Array.isArray(v) ? v : [v] })); setParentErrors(prev => ({ ...prev, client: undefined })); }}
+                       onChange={(v) => { setParent(prev => ({ ...prev, client: Array.isArray(v) ? v : [v] })); setParentErrors(prev => ({ ...prev, client: undefined })); }}
                       placeholder={isLoading.agencyClients ? 'Loading clients...' : 'Search or select option'}
                       inputClassName={`border ${parentErrors.client ? 'border-red-500' : 'border-[#D0D5DD]'} px-3 py-2 min-h-[44px]`}
                       disabled={isLoading.agencyClients}
@@ -450,9 +455,9 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                         <div className="w-full">
                           <MultiSelectDropdown
                             name={`child-${c.id}-client`}
-                            value={c.client}
+                            value={Array.isArray(c.client) ? c.client : (c.client ? [c.client] : [])}
                             options={agencyClients.map((cc: any) => ({ value: String(cc.id), label: cc.name }))}
-                            onChange={(v) => { handleUpdateChild(c.id, 'client', typeof v === 'string' ? v : v[0] ?? ''); setChildErrors(prev => ({ ...prev, [c.id]: { ...prev[c.id], client: undefined } })); }}
+                             onChange={(v) => { handleUpdateChild(c.id, 'client', Array.isArray(v) ? v : [v]); setChildErrors(prev => ({ ...prev, [c.id]: { ...prev[c.id], client: undefined } })); }}
                             placeholder={isLoading.agencyClients ? 'Loading clients...' : 'Search or select option'}
                             inputClassName={`border ${childErrors[c.id]?.client ? 'border-red-500' : 'border-[#D0D5DD]'} px-3 py-2 min-h-[44px]`}
                             disabled={isLoading.agencyClients}

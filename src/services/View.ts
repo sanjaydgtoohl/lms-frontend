@@ -108,7 +108,16 @@ export async function createMissCampaign(payload: Partial<MissCampaign>): Promis
 }
 
 export async function updateMissCampaign(id: string, payload: Partial<MissCampaign>): Promise<MissCampaign> {
-  const res = await apiClient.put<MissCampaign>(ENDPOINTS.UPDATE(id), payload);
+  // Use POST with _method: 'PUT' for method spoofing (backend expects this)
+  const formData = new FormData();
+  // Append all payload fields to formData
+  Object.entries(payload || {}).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      formData.append(key, value as any);
+    }
+  });
+  formData.append('_method', 'PUT');
+  const res = await apiClient.post<MissCampaign>(ENDPOINTS.UPDATE(id), formData);
   return handleResponse<MissCampaign>(res);
 }
 

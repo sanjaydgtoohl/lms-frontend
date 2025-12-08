@@ -55,20 +55,30 @@ class Http {
                 const data = resp.data;
                 if (data && data.success && data.data) {
                   const access = data.data.token;
-                  const refresh = data.data.refreshToken;
+                  // Only update refresh if present in response
                   const expiresIn = data.data.expires_in;
-                  const refreshExpiresIn = data.data.refresh_expires_in || null;
-
-                  // store tokens in cookies and also store expiry timestamps
                   const now = Date.now();
                   if (access) {
                     setCookie('auth_token', access, { expires: expiresIn, secure: true, sameSite: 'Lax' });
                     setCookie('auth_token_expires', String(now + expiresIn * 1000), { expires: expiresIn, secure: true, sameSite: 'Lax' });
                   }
-                  if (refresh) {
-                    const rExp = refreshExpiresIn || 7 * 24 * 3600; // fallback 7 days
-                    setCookie('refresh_token', refresh, { expires: rExp, secure: true, sameSite: 'Lax' });
-                    setCookie('refresh_token_expires', String(now + rExp * 1000), { expires: rExp, secure: true, sameSite: 'Lax' });
+                  // If refreshToken is present in response, update it; otherwise, keep the old one
+                  if ('refreshToken' in data.data && data.data.refreshToken) {
+                    const refresh = data.data.refreshToken;
+                    const refreshExpiresIn = data.data.refresh_expires_in || 7 * 24 * 3600;
+                    setCookie('refresh_token', refresh, { expires: refreshExpiresIn, secure: true, sameSite: 'Lax' });
+                    setCookie('refresh_token_expires', String(now + refreshExpiresIn * 1000), { expires: refreshExpiresIn, secure: true, sameSite: 'Lax' });
+                  } else {
+                    // Re-save the old refresh_token and its expiry
+                    const oldRefresh = getCookie('refresh_token');
+                    const oldRefreshExp = getCookie('refresh_token_expires');
+                    if (oldRefresh && oldRefreshExp) {
+                      // Calculate remaining TTL
+                      const remainingMs = parseInt(oldRefreshExp, 10) - now;
+                      const remainingSec = Math.max(Math.floor(remainingMs / 1000), 1);
+                      setCookie('refresh_token', oldRefresh, { expires: remainingSec, secure: true, sameSite: 'Lax' });
+                      setCookie('refresh_token_expires', oldRefreshExp, { expires: remainingSec, secure: true, sameSite: 'Lax' });
+                    }
                   }
 
                   // Drain queue

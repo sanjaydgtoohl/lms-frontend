@@ -11,11 +11,11 @@ import Create from './Create';
 import { 
   listMissCampaigns, 
   createMissCampaign, 
-  updateMissCampaign, 
   deleteMissCampaign,
   getMissCampaign,
   type MissCampaign 
 } from '../../services/View';
+import { updateMissCampaign } from '../../services/Edit';
 import { useRef } from 'react';
 
 const View: React.FC = () => {
@@ -203,8 +203,8 @@ const View: React.FC = () => {
 
   const handleSaveEdited = async (updated: Record<string, any>) => {
     try {
-      const updatedCampaign = await updateMissCampaign(updated.id, updated);
-      setCampaigns(prev => prev.map(c => (c.id === updated.id ? updatedCampaign : c)));
+      await updateMissCampaign(updated.id, updated);
+      await fetchCampaigns(currentPage); // Refresh table from server
       setSuccessMessage('Campaign updated successfully');
       setShowSuccessToast(true);
       setTimeout(() => setShowSuccessToast(false), 1800);

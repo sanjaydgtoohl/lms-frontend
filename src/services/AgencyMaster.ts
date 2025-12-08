@@ -83,8 +83,11 @@ export async function createAgency(payload: Partial<Agency>): Promise<Agency> {
   return handleResponse<Agency>(res);
 }
 
-export async function updateAgency(id: string | number, payload: Partial<Agency>): Promise<Agency> {
-  const res = await apiClient.put<Agency>(ENDPOINTS.UPDATE(id), payload);
+// For Laravel-style update, use POST with _method: 'PUT' and FormData
+export async function updateAgency(id: string | number, payload: FormData): Promise<Agency> {
+  // Ensure _method is set (should be set by caller, but double-check)
+  if (!payload.has('_method')) payload.append('_method', 'PUT');
+  const res = await apiClient.post<Agency>(ENDPOINTS.UPDATE(id), payload);
   return handleResponse<Agency>(res);
 }
 

@@ -68,7 +68,11 @@ const BrandMaster: React.FC = () => {
     setConfirmLoading(true);
     try {
       await deleteBrand(confirmDeleteId);
-      setBrands(prev => prev.filter(b => b.id !== confirmDeleteId));
+      // Refetch the brand list after delete
+      const res = await listBrands(currentPage, itemsPerPage, searchQuery);
+      setBrands(res.data as Brand[]);
+      const total = res.meta?.pagination?.total ?? res.data.length;
+      setTotalItems(total);
     } catch (e: any) {
       setErrorMessageToast(e?.message || 'Failed to delete');
       setShowErrorToast(true);

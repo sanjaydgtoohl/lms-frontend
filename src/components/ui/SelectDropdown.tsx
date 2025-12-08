@@ -55,11 +55,13 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
   const selectedValues = isMulti ? (Array.isArray(value) ? value : []) : [String(value)];
   const selectedLabels = normalized.filter(n => selectedValues.includes(String(n.value)));
 
+  // Determine if error border should be shown
+  const errorBorderClass = inputClassName && inputClassName.includes('border-red-500') ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-[#DDE1E7]';
   return (
     <div ref={ref} className={`relative ${className}`}>
       <div className="w-full relative">
         <div
-          className={`flex flex-wrap items-center min-h-[40px] px-2 py-1 border border-[#DDE1E7] rounded-[10px] bg-white relative ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+          className={`flex flex-wrap items-center min-h-[40px] px-2 py-1 border rounded-[10px] bg-white relative ${errorBorderClass} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
           style={{ gap: '6px', paddingRight: '32px' }}
           onClick={() => !disabled && setOpen(true)}
         >
@@ -114,7 +116,8 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
       <div
         role="listbox"
         aria-hidden={!open}
-        className={`absolute z-50 left-0 right-0 mt-2 bg-white border border-[var(--border-color)] rounded-lg shadow-lg max-h-[180px] overflow-y-auto transition-all duration-150 ${open ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
+        className={`absolute z-50 left-0 right-0 mt-2 bg-white border border-[var(--border-color)] rounded-lg shadow-lg overflow-y-auto transition-all duration-150 ${open ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
+        style={{ maxHeight: '80px' }} // Show only 2 options (each ~40px)
       >
         {filtered.length === 0 ? (
           <div className="px-4 py-2 text-gray-500">No matches found</div>
