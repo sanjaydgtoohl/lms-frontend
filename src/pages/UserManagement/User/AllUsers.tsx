@@ -5,7 +5,8 @@ import SearchBar from '../../../components/ui/SearchBar';
 import { MasterHeader } from '../../../components/ui';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
-import { listUsers, type User } from '../../../services/AllUsers';
+import { listUsers, deleteUser, type User } from '../../../services/AllUsers';
+import ConfirmDialog from '../../../components/ui/ConfirmDialog';
 
 const AllUsers: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -14,6 +15,11 @@ const AllUsers: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [totalItems, setTotalItems] = useState(0);
+
+  // ConfirmDialog state
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -29,12 +35,41 @@ const AllUsers: React.FC = () => {
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('Failed to fetch users', err);
-      setUsers([]);
-      setTotalItems(0);
+      alert('Failed to fetch users.');
     } finally {
       setLoading(false);
     }
   };
+
+  // Show confirm dialog instead of window.confirm
+  const handleDeleteRequest = (user: User) => {
+    setDeleteTarget(user);
+    setConfirmOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    try {
+      await deleteUser(deleteTarget.id);
+      setConfirmOpen(false);
+      setDeleteTarget(null);
+      fetchUsers();
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to delete user', err);
+      alert('Failed to delete user.');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setConfirmOpen(false);
+    setDeleteTarget(null);
+    setDeleteLoading(false);
+  };
+      // ...existing code...
 
   useEffect(() => {
     fetchUsers();
@@ -170,6 +205,18 @@ const AllUsers: React.FC = () => {
             columns={columns}
             onEdit={(it: User) => handleEdit(it.id)}
             onView={(it: User) => handleView(it.id)}
+            onDelete={(it: User) => handleDeleteRequest(it)}
+          />
+          {/* ConfirmDialog for delete */}
+          <ConfirmDialog
+            isOpen={confirmOpen}
+            title="Delete User?"
+            message={deleteTarget ? `Are you sure you want to delete user \"${deleteTarget.name}\"? This action cannot be undone.` : ''}
+            confirmLabel="Delete"
+            cancelLabel="Cancel"
+            loading={deleteLoading}
+            onCancel={handleDeleteCancel}
+            onConfirm={handleDeleteConfirm}
           />
         </div>
       </div>

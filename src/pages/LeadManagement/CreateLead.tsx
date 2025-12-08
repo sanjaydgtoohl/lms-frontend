@@ -15,6 +15,10 @@ const CreateLead: React.FC = () => {
   const [options, setOptions] = useState<{ value: string; label: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Helper to clear error for dropdownValue (brand/agency)
+  const clearDropdownError = (val: string) => {
+    setError(prev => (prev && val ? null : prev));
+  };
 
   // Priority state
   const [priority, setPriority] = useState<string | undefined>(undefined);
@@ -22,6 +26,31 @@ const CreateLead: React.FC = () => {
   const [callFeedback, setCallFeedback] = useState<string | undefined>(undefined);
   const [contacts, setContacts] = useState<any[]>([{ id: '1', fullName: '', profileUrl: '', email: '', mobileNo: '', mobileNo2: '', showSecondMobile: false, type: '', designation: '', agencyBrand: '', subSource: '', department: '', country: '', state: '', city: '', zone: '', postalCode: '' }]);
   const [contactErrors, setContactErrors] = useState<Record<string, Partial<Record<string, string>>>>({});
+
+  // Helper to clear error for a field as soon as it is valid
+  const clearContactFieldError = (contactId: string, field: string, value: any) => {
+    setContactErrors(prev => {
+      if (!prev[contactId] || !prev[contactId][field]) return prev;
+      let valid = true;
+      if (field === 'mobileNo') {
+        const str = String(value);
+        valid = !!str && /^[0-9]+$/.test(str) && str.length === 10;
+      } else {
+        valid = !!value;
+      }
+      if (valid) {
+        const { [field]: omit, ...restFields } = prev[contactId] || {};
+        const updated = { ...prev, [contactId]: restFields };
+        // Remove contactId if no errors left
+        if (Object.keys(updated[contactId] || {}).length === 0) {
+          const { [contactId]: omitId, ...rest } = updated;
+          return rest;
+        }
+        return updated;
+      }
+      return prev;
+    });
+  };
   const [comment, setComment] = useState<string>('');
   const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
@@ -71,11 +100,43 @@ const CreateLead: React.FC = () => {
       const firstContactId = lead.id || '1';
 
       const newContactErrors: Record<string, Partial<Record<string, string>>> = {};
+      // Required fields validation for all * fields
       if (!lead.fullName) {
         newContactErrors[firstContactId] = { ...(newContactErrors[firstContactId] || {}), fullName: 'Please provide contact name.' };
       }
+      // Mobile number validation: only numbers, exactly 10 digits, no alphabets or special characters
       if (!lead.mobileNo) {
         newContactErrors[firstContactId] = { ...(newContactErrors[firstContactId] || {}), mobileNo: 'Please provide mobile number.' };
+      } else {
+        const mobileNoStr = String(lead.mobileNo);
+        if (!/^[0-9]+$/.test(mobileNoStr)) {
+          newContactErrors[firstContactId] = { ...(newContactErrors[firstContactId] || {}), mobileNo: 'Mobile number must contain only digits.' };
+        } else if (mobileNoStr.length !== 10) {
+          newContactErrors[firstContactId] = { ...(newContactErrors[firstContactId] || {}), mobileNo: 'Mobile number must be exactly 10 digits.' };
+        }
+      }
+      if (!lead.type) {
+        newContactErrors[firstContactId] = { ...(newContactErrors[firstContactId] || {}), type: 'Please select type.' };
+      }
+      if (!lead.designation) {
+        newContactErrors[firstContactId] = { ...(newContactErrors[firstContactId] || {}), designation: 'Please select designation.' };
+      }
+      if (!lead.department) {
+        newContactErrors[firstContactId] = { ...(newContactErrors[firstContactId] || {}), department: 'Please select department.' };
+      }
+      if (!lead.country) {
+        newContactErrors[firstContactId] = { ...(newContactErrors[firstContactId] || {}), country: 'Please select country.' };
+      }
+      if (!lead.subSource) {
+        newContactErrors[firstContactId] = { ...(newContactErrors[firstContactId] || {}), subSource: 'Please select sub-source.' };
+      }
+      // Validate dropdownValue (brand/agency)
+      if (!dropdownValue) {
+        setError(selectedOption === 'brand' ? 'Please select a brand.' : 'Please select an agency.');
+        setContactErrors(newContactErrors);
+        return;
+      } else {
+        setError(null);
       }
       if (Object.keys(newContactErrors).length > 0) {
         setContactErrors(newContactErrors);
@@ -175,13 +236,33 @@ const CreateLead: React.FC = () => {
           selectedOption={selectedOption}
           onSelectOption={setSelectedOption}
           value={dropdownValue}
-          onChange={setDropdownValue}
+          onChange={(val) => {
+            setDropdownValue(val);
+            clearDropdownError(val);
+          }}
           options={options}
           loading={loading}
           error={error}
         />
 
-        <ContactPersonsCard initialContacts={contacts} onChange={(c) => setContacts(c && c.length > 0 ? c : [{ id: '1', fullName: '', profileUrl: '', email: '', mobileNo: '', mobileNo2: '', showSecondMobile: false, type: '', designation: '', agencyBrand: '', subSource: '', department: '', country: '', state: '', city: '', zone: '', postalCode: '' }])} errors={contactErrors} />
+        <ContactPersonsCard
+          initialContacts={contacts}
+          onChange={(c) => {
+            const updated = c && c.length > 0 ? c : [{ id: '1', fullName: '', profileUrl: '', email: '', mobileNo: '', mobileNo2: '', showSecondMobile: false, type: '', designation: '', agencyBrand: '', subSource: '', department: '', country: '', state: '', city: '', zone: '', postalCode: '' }];
+            setContacts(updated);
+            // Clear errors for fields that are now valid
+            const lead = updated[0];
+            const id = lead.id || '1';
+            clearContactFieldError(id, 'fullName', lead.fullName);
+            clearContactFieldError(id, 'mobileNo', lead.mobileNo);
+            clearContactFieldError(id, 'type', lead.type);
+            clearContactFieldError(id, 'designation', lead.designation);
+            clearContactFieldError(id, 'department', lead.department);
+            clearContactFieldError(id, 'country', lead.country);
+            clearContactFieldError(id, 'subSource', lead.subSource);
+          }}
+          errors={contactErrors}
+        />
 
         <AssignPriorityCard
           assignTo={assignTo}

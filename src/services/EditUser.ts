@@ -19,13 +19,16 @@ export interface EditUserDetail {
   role?: {
     id: string | number;
     name: string;
+    description?: string;
   };
   roles?: Array<{
     id: string | number;
     name: string;
+    description?: string;
   }>;
   created_at?: string;
   updated_at?: string;
+  last_login_at?: string | null;
 }
 
 const ENDPOINTS = {

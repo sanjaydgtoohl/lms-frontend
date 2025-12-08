@@ -202,24 +202,28 @@ const EditLead: React.FC = () => {
       if (contact?.mobileNo) mobile_number.push(contact.mobileNo);
       if (contact?.mobileNo2) mobile_number.push(contact.mobileNo2);
 
-          const payload: Record<string, any> = {
-            name: contact?.fullName || undefined,
-            email: contact?.email || null,
-            profile_url: contact?.profileUrl || null,
-            mobile_number: mobile_number.length ? mobile_number : undefined,
-            current_assign_user: extractNumericId(lead.assignTo),
-            priority_id: lead.priority ? extractNumericId(lead.priority) : undefined,
-            type: contact?.type || undefined,
-            designation_id: contact?.designation ? Number(contact.designation) : undefined,
-            department_id: contact?.department ? Number(contact.department) : undefined,
-            sub_source_id: contact?.subSource ? (SUB_SOURCE_MAP[String(contact.subSource)] ?? undefined) : undefined,
-            country_id: contact?.country ? Number(contact.country) : undefined,
-            state_id: contact?.state ? Number(contact.state) : undefined,
-            city_id: contact?.city ? Number(contact.city) : undefined,
-            zone_id: contact?.zone ? Number(contact.zone) : undefined,
-            postal_code: contact?.postalCode || undefined,
-            comment: typeof lead.comment === 'string' ? lead.comment : (lead.comment ? String(lead.comment) : ''),
-          };
+      // Fix: Ensure call feedback ID is submitted
+      const callStatusId = extractNumericId(lead.callFeedback);
+
+      const payload: Record<string, any> = {
+        name: contact?.fullName || undefined,
+        email: contact?.email || null,
+        profile_url: contact?.profileUrl || null,
+        mobile_number: mobile_number.length ? mobile_number : undefined,
+        current_assign_user: extractNumericId(lead.assignTo),
+        priority_id: lead.priority ? extractNumericId(lead.priority) : undefined,
+        type: contact?.type || undefined,
+        designation_id: contact?.designation ? Number(contact.designation) : undefined,
+        department_id: contact?.department ? Number(contact.department) : undefined,
+        sub_source_id: contact?.subSource ? (SUB_SOURCE_MAP[String(contact.subSource)] ?? undefined) : undefined,
+        country_id: contact?.country ? Number(contact.country) : undefined,
+        state_id: contact?.state ? Number(contact.state) : undefined,
+        city_id: contact?.city ? Number(contact.city) : undefined,
+        zone_id: contact?.zone ? Number(contact.zone) : undefined,
+        postal_code: contact?.postalCode || undefined,
+        comment: typeof lead.comment === 'string' ? lead.comment : (lead.comment ? String(lead.comment) : ''),
+        call_status_id: callStatusId,
+      };
 
       if (selectedOption === 'brand') payload.brand_id = lead.brandId || undefined;
       else payload.agency_id = lead.agencyId || undefined;

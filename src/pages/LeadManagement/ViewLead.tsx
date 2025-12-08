@@ -112,11 +112,6 @@ const ViewLead: React.FC = () => {
                 <label className="text-sm font-medium text-gray-600">Brand</label>
                 <p className="text-base font-semibold text-gray-900 mt-2">{lead.brand?.name || '-'}</p>
               </div>
-              {/* Sub Source */}
-              <div>
-                <label className="text-sm font-medium text-gray-600">Lead Source</label>
-                <p className="text-base font-semibold text-gray-900 mt-2">{lead.sub_source?.name || '-'}</p>
-              </div>
               {/* Type */}
               <div>
                 <label className="text-sm font-medium text-gray-600">Type</label>

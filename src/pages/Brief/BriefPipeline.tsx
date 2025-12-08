@@ -15,6 +15,20 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog';
 type Brief = ServiceBriefItem;
 
 const BriefPipeline: React.FC = () => {
+    // Helper to fetch briefs (for refresh)
+    const fetchBriefs = async () => {
+      try {
+        setLoading(true);
+        const res = await listBriefs(currentPage, itemsPerPage, searchQuery || undefined);
+        setBriefs(res.data || []);
+        const total = res.meta?.pagination?.total ?? 0;
+        setTotalItems(Number(total));
+      } catch (err) {
+        console.error('Failed to load briefs', err);
+      } finally {
+        setLoading(false);
+      }
+    };
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -256,7 +270,14 @@ const BriefPipeline: React.FC = () => {
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
       {showCreate ? (
-        <CreateBriefForm inline onClose={() => navigate(ROUTES.BRIEF.PIPELINE)} onSave={handleSaveBrief} />
+        <CreateBriefForm
+          inline
+          onClose={() => {
+            navigate(ROUTES.BRIEF.PIPELINE);
+            setTimeout(() => { fetchBriefs(); }, 300);
+          }}
+          onSave={handleSaveBrief}
+        />
       ) : viewItem ? (
         <MasterView item={viewItem} onClose={() => navigate(ROUTES.BRIEF.PIPELINE)} />
       ) : editItem ? (
@@ -264,7 +285,10 @@ const BriefPipeline: React.FC = () => {
           inline
           mode="edit"
           initialData={editItem}
-          onClose={() => navigate(ROUTES.BRIEF.PIPELINE)}
+          onClose={() => {
+            navigate(ROUTES.BRIEF.PIPELINE);
+            setTimeout(() => { fetchBriefs(); }, 300);
+          }}
           onSave={(data: Record<string, unknown>) => handleSaveEdited(data as Partial<Brief>)}
         />
       ) : (
@@ -282,7 +306,7 @@ const BriefPipeline: React.FC = () => {
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
             <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-200">
               <h2 className="text-base font-semibold text-gray-900">Brief Pipeline</h2>
-              <SearchBar delay={0} onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
+              <SearchBar delay={0} placeholder="Please Search Brief" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
             </div>
 
             <div className="pt-0 overflow-visible">

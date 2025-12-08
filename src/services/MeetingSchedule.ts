@@ -6,7 +6,7 @@ export interface MeetingScheduleItem {
   uuid?: string;
   title: string;
   lead_id: string;
-  attendees_id: string;
+  attendees_id: number[];
   type: string;
   location: string;
   agenda: string;
@@ -49,7 +49,22 @@ function normalizeMeetingItem(raw: Record<string, unknown>): MeetingScheduleItem
   const idVal = raw['id'] ?? raw['uuid'] ?? '';
   const titleVal = raw['title'] ?? '';
   const leadIdVal = raw['lead_id'] ?? '';
-  const attendeesIdVal = raw['attendees_id'] ?? '';
+  let attendeesIdVal = raw['attendees_id'] ?? [];
+  // Ensure attendees_id is always an array of numbers
+  if (typeof attendeesIdVal === 'string') {
+    try {
+      const parsed = JSON.parse(attendeesIdVal);
+      if (Array.isArray(parsed)) attendeesIdVal = parsed;
+      else attendeesIdVal = [];
+    } catch {
+      attendeesIdVal = [];
+    }
+  }
+  if (Array.isArray(attendeesIdVal)) {
+    attendeesIdVal = attendeesIdVal.map((v) => Number(v));
+  } else {
+    attendeesIdVal = [];
+  }
   const typeVal = raw['type'] ?? '';
   const locationVal = raw['location'] ?? '';
   const agendaVal = raw['agenda'] ?? '';
@@ -65,7 +80,7 @@ function normalizeMeetingItem(raw: Record<string, unknown>): MeetingScheduleItem
     uuid: String(idVal),
     title: String(titleVal),
     lead_id: String(leadIdVal),
-    attendees_id: String(attendeesIdVal),
+    attendees_id: attendeesIdVal,
     type: String(typeVal),
     location: String(locationVal),
     agenda: String(agendaVal),

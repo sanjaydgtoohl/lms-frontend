@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import Breadcrumb from '../../components/ui/Breadcrumb';
+import { showSuccess } from '../../utils/notifications';
 import { useNavigate } from 'react-router-dom';
 import SelectField from '../../components/ui/SelectField';
 import { createMeeting } from '../../services/MeetingSchedule';
@@ -11,15 +14,24 @@ const MeetingSchedule: React.FC = () => {
 
   const [lead, setLead] = useState<string>('');
   const [meetingType, setMeetingType] = useState<string>('');
-  const [attendees, setAttendees] = useState<string[] | []>([]);
-  const [date, setDate] = useState<string>('');
-  const [time, setTime] = useState<string>('');
+  const [attendees, setAttendees] = useState<Array<string | { value: string }>>([]);
+  const [date, setDate] = useState<Date | null>(null);
+  const [time, setTime] = useState<Date | null>(null);
   const [title, setTitle] = useState<string>('');
   const [agenda, setAgenda] = useState<string>('');
   const [location, setLocation] = useState<string>('');
   const [meetLink, setMeetLink] = useState<string>('');
   const [leadOptions, setLeadOptions] = useState<Array<{ value: string; label: string }>>([]);
   const [attendeesOptions, setAttendeesOptions] = useState<Array<{ value: string; label: string }>>([]);
+  // Error states for each required field
+  const [errors, setErrors] = useState<{
+    lead?: string;
+    meetingType?: string;
+    attendees?: string;
+    date?: string;
+    time?: string;
+    title?: string;
+  }>({});
 
   const meetingTypeOptions = [
     { value: 'face_to_face', label: 'Face-To-Face' },
@@ -61,51 +73,63 @@ const MeetingSchedule: React.FC = () => {
   }, []);
 
   const handleSave = async () => {
+    // Validate required fields and set errors
+    const newErrors: typeof errors = {};
+    if (!lead) newErrors.lead = 'Lead is required.';
+    if (!meetingType) newErrors.meetingType = 'Meeting type is required.';
+    if (!attendees.length) newErrors.attendees = 'At least one attendee is required.';
+    if (!date) newErrors.date = 'Date is required.';
+    if (!time) newErrors.time = 'Time is required.';
+    if (!title) newErrors.title = 'Title is required.';
+
+    // Validate meeting type is one of allowed values
+    if (meetingType && !isValidMeetingType(meetingType)) {
+      newErrors.meetingType = 'Invalid meeting type. Please select either "Face-To-Face" or "Online".';
+    }
+
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      // Do not proceed if there are errors
+      return;
+    }
+
     try {
-      // Validate required fields
-      if (!lead || !meetingType || !attendees.length || !date || !time || !title) {
-        alert('Please fill in all required fields (Lead, Meeting Type, Attendees, Date, Time, and Title)');
-        return;
-      }
-
-      // Validate meeting type is one of allowed values
-      if (!isValidMeetingType(meetingType)) {
-        alert('Invalid meeting type. Please select either "Face-To-Face" or "Online".');
-        return;
-      }
-
       // Prepare payload for API
       const payload = {
         title,
         lead_id: String(lead),
-        attendees_id: attendees.map(String),
+        attendees_id: attendees
+          .map((id) => {
+            if (typeof id === 'object' && id !== null && 'value' in id) {
+              return Number(id.value);
+            }
+            return Number(id);
+          })
+          .filter((id) => Number.isInteger(id)), // Only keep valid integers
         type: meetingType,
         location,
         agenda,
         link: meetLink,
-        meeting_date: date,
-        meeting_time: time,
+        meeting_date: date ? date.toISOString().split('T')[0] : '',
+        meeting_time: time ? time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
         status: 1,
       };
 
       // Call the API service
-      const fixedPayload = { ...payload, attendees_id: Array.isArray(payload.attendees_id) ? payload.attendees_id[0] ?? '' : payload.attendees_id };
-      const response = await createMeeting(fixedPayload);
+      const response = await createMeeting(payload);
       console.log('Meeting created successfully', response);
-      
       // Show success message
-      alert('Meeting scheduled successfully!');
-      
+      showSuccess('Meeting scheduled successfully!');
       // Navigate back to lead management list
       navigate('/lead-management');
     } catch (error: any) {
       console.error('Error saving meeting:', error);
-      alert(`Error: ${error.message || 'Failed to save meeting'}`);
+      showSuccess(`Error: ${error.message || 'Failed to save meeting'}`);
     }
   };
 
   return (
-    <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
+    <div className="space-y-6">
       <div className="flex items-center justify-between mb-3">
         <Breadcrumb
           items={[
@@ -123,143 +147,159 @@ const MeetingSchedule: React.FC = () => {
         </button>
       </div>
 
-      <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)]">
+      <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
         <div className="p-6 bg-[#F9FAFB]">
-          <h3 className="text-base font-semibold text-[#344054] mb-4">Meeting Schedule</h3>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">Lead</label>
-              <SelectField
-                placeholder="Select Lead"
-                options={leadOptions}
-                value={lead}
-                onChange={(v) => setLead(String(v))}
-                inputClassName="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">Meeting Type</label>
-              <SelectField
-                placeholder="Select Type"
-                options={meetingTypeOptions}
-                value={meetingType}
-                onChange={(v) => setMeetingType(String(v))}
-                inputClassName="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">Attendees</label>
-              <SelectField
-                placeholder="Select Attendees"
-                options={attendeesOptions}
-                value={attendees}
-                onChange={(v) => setAttendees(Array.isArray(v) ? v : [v])}
-                isMulti={true}
-                inputClassName="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">Date</label>
-              <div className="relative">
+          <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Lead, Meeting Type, Attendees */}
+              <div>
+                <label className="block text-sm text-[var(--text-secondary)] mb-1">Lead <span className="text-[#FF0000]">*</span></label>
+                <SelectField
+                  placeholder="Select Lead"
+                  options={leadOptions}
+                  value={lead}
+                  onChange={(v) => {
+                    setLead(String(v));
+                    if (errors.lead && v) setErrors({ ...errors, lead: undefined });
+                  }}
+                  inputClassName="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)]"
+                />
+                {errors.lead && <div className="text-red-500 text-xs mt-1">{errors.lead}</div>}
+              </div>
+              <div>
+                <label className="block text-sm text-[var(--text-secondary)] mb-1">Meeting Type <span className="text-[#FF0000]">*</span></label>
+                <SelectField
+                  placeholder="Select Type"
+                  options={meetingTypeOptions}
+                  value={meetingType}
+                  onChange={(v) => {
+                    setMeetingType(String(v));
+                    if (errors.meetingType && v) setErrors({ ...errors, meetingType: undefined });
+                  }}
+                  inputClassName="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)]"
+                />
+                {errors.meetingType && <div className="text-red-500 text-xs mt-1">{errors.meetingType}</div>}
+              </div>
+              <div className="col-span-2">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Attendees <span className="text-[#FF0000]">*</span></label>
+                    <SelectField
+                      placeholder="Select Attendees"
+                      options={attendeesOptions}
+                      value={attendees.map(a => typeof a === 'string' ? a : a.value)}
+                      onChange={(v) => {
+                        const arr = Array.isArray(v) ? v : [v];
+                        setAttendees(arr);
+                        if (errors.attendees && arr.length) setErrors({ ...errors, attendees: undefined });
+                      }}
+                      isMulti={true}
+                      inputClassName="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)]"
+                    />
+                    {errors.attendees && <div className="text-red-500 text-xs mt-1">{errors.attendees}</div>}
+                  </div>
+                  <div>
+                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Agenda</label>
+                    <input
+                      type="text"
+                      placeholder="Meeting Agenda And Objective"
+                      value={agenda}
+                      onChange={(e) => setAgenda(e.target.value)}
+                      className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)]"
+                    />
+                  </div>
+                </div>
+              </div>
+              {/* Date and Time in one row (Date left, Time right) */}
+              <div className="col-span-2">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Date <span className="text-[#FF0000]">*</span></label>
+                    <DatePicker
+                      selected={date}
+                      onChange={(d: Date | null) => {
+                        setDate(d);
+                        if (errors.date && d) setErrors({ ...errors, date: undefined });
+                      }}
+                      dateFormat="yyyy-MM-dd"
+                      placeholderText="yyyy-mm-dd"
+                      className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] w-full"
+                      wrapperClassName="w-full"
+                      popperClassName="react-datepicker-popper"
+                      calendarClassName="react-datepicker-calendar"
+                      showMonthDropdown
+                      showYearDropdown
+                      dropdownMode="select"
+                    />
+                    {errors.date && <div className="text-red-500 text-xs mt-1">{errors.date}</div>}
+                  </div>
+                  <div>
+                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Time <span className="text-[#FF0000]">*</span></label>
+                    <DatePicker
+                      selected={time}
+                      onChange={(t: Date | null) => {
+                        setTime(t);
+                        if (errors.time && t) setErrors({ ...errors, time: undefined });
+                      }}
+                      showTimeSelect
+                      showTimeSelectOnly
+                      timeIntervals={15}
+                      timeCaption="Time"
+                      dateFormat="HH:mm"
+                      placeholderText="--:--"
+                      className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] w-full"
+                      wrapperClassName="w-full"
+                    />
+                    {errors.time && <div className="text-red-500 text-xs mt-1">{errors.time}</div>}
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm text-[var(--text-secondary)] mb-1">Add Title <span className="text-[#FF0000]">*</span></label>
                 <input
                   type="text"
-                  placeholder="dd-mm-yyyy"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)] pr-10"
+                  placeholder="Meeting Agenda And Objective"
+                  value={title}
+                  onChange={(e) => {
+                    setTitle(e.target.value);
+                    if (errors.title && e.target.value) setErrors({ ...errors, title: undefined });
+                  }}
+                  className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)]"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M7 11H9V13H7V11Z" fill="currentColor" />
-                    <path d="M11 11H13V13H11V11Z" fill="currentColor" />
-                    <path d="M15 11H17V13H15V11Z" fill="currentColor" />
-                    <path d="M7 15H9V17H7V15Z" fill="currentColor" />
-                    <path d="M11 15H13V17H11V15Z" fill="currentColor" />
-                    <path d="M15 15H17V17H15V15Z" fill="currentColor" />
-                    <path d="M19 4H18V2H16V4H8V2H6V4H5C3.9 4 3 4.9 3 6V20C3 21.1 3.9 22 5 22H19C20.1 22 21 21.1 21 20V6C21 4.9 20.1 4 19 4ZM19 20H5V9H19V20Z" fill="currentColor" />
-                  </svg>
-                </span>
+                {errors.title && <div className="text-red-500 text-xs mt-1">{errors.title}</div>}
               </div>
-            </div>
-
-            <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">Time</label>
-              <div className="relative">
+              {/* Meeting Location and Agenda side by side */}
+              <div>
+                <label className="block text-sm text-[var(--text-secondary)] mb-1">Meeting Location</label>
                 <input
                   type="text"
-                  placeholder="--:--"
-                  value={time}
-                  onChange={(e) => setTime(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)] pr-10"
+                  placeholder="In Office , out of Office. etc"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)]"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 8V12L14.5 13.75L15.25 12.48L13 11.25V8H12Z" fill="currentColor" />
-                    <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20Z" fill="currentColor" />
-                  </svg>
-                </span>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm text-[var(--text-secondary)] mb-1">Meet Link</label>
+                <input
+                  type="text"
+                  placeholder="Optional"
+                  value={meetLink}
+                  onChange={(e) => setMeetLink(e.target.value)}
+                  className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)]"
+                />
               </div>
             </div>
-
-            <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">Add Title</label>
-              <input
-                type="text"
-                placeholder="Meeting Agenda And Objective"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)]"
-              />
+            <div className="flex justify-end pt-6">
+              <button
+                type="submit"
+                className="px-6 py-2 btn-primary text-white rounded-lg shadow-sm"
+                data-btn-label="Save"
+              >
+                Save
+              </button>
             </div>
-
-            <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">Meeting Location</label>
-              <input
-                type="text"
-                placeholder="In Office , out of Office. etc"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)]"
-              />
-            </div>
-
-            <div className="lg:col-span-2">
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">Agenda</label>
-              <input
-                type="text"
-                placeholder="Meeting Agenda And Objective"
-                value={agenda}
-                onChange={(e) => setAgenda(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)]"
-              />
-            </div>
-
-            <div className="lg:col-span-2">
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">Meet Link</label>
-              <input
-                type="text"
-                placeholder="Optional"
-                value={meetLink}
-                onChange={(e) => setMeetLink(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)]"
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-end pt-6">
-            <button
-              type="button"
-              onClick={handleSave}
-              className="px-6 py-2 btn-primary text-white rounded-lg shadow-sm"
-              data-btn-label="Save"
-            >
-              Save
-            </button>
-          </div>
+          </form>
         </div>
       </div>
     </div>

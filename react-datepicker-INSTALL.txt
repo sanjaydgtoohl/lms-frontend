@@ -1,0 +1,5 @@
+// react-datepicker for date picker UI
+// https://reactdatepicker.com/
+
+// Install with:
+// npm install react-datepicker
