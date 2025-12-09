@@ -84,7 +84,7 @@ const EditLead: React.FC = () => {
           type: apiLead.type || '',
           designation: apiLead.designation?.id ? String(apiLead.designation.id) : '',
           agencyBrand: apiLead.brand?.name || (apiLead.agency ? apiLead.agency.name : ''),
-          subSource: apiLead.sub_source?.name || '',
+          subSource: apiLead.sub_source?.id ? String(apiLead.sub_source.id) : '',
           department: apiLead.department?.id ? String(apiLead.department.id) : '',
           country: apiLead.country?.id ? String(apiLead.country.id) : '',
           state: apiLead.state?.id ? String(apiLead.state.id) : '',
@@ -187,13 +187,7 @@ const EditLead: React.FC = () => {
       return digits ? Number(digits) : undefined;
     };
 
-    const SUB_SOURCE_MAP: Record<string, number> = {
-      Direct: 1,
-      Referral: 2,
-      Online: 3,
-      Event: 4,
-      Other: 5,
-    };
+    // SUB_SOURCE_MAP removed, subSource now contains the ID directly
 
     try {
       const contact = lead.contacts && lead.contacts.length ? lead.contacts[0] : null;
@@ -215,7 +209,7 @@ const EditLead: React.FC = () => {
         type: contact?.type || undefined,
         designation_id: contact?.designation ? Number(contact.designation) : undefined,
         department_id: contact?.department ? Number(contact.department) : undefined,
-        sub_source_id: contact?.subSource ? (SUB_SOURCE_MAP[String(contact.subSource)] ?? undefined) : undefined,
+        sub_source_id: contact?.subSource ? Number(contact.subSource) : undefined,
         country_id: contact?.country ? Number(contact.country) : undefined,
         state_id: contact?.state ? Number(contact.state) : undefined,
         city_id: contact?.city ? Number(contact.city) : undefined,

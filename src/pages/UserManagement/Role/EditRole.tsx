@@ -111,9 +111,10 @@ const EditRole: React.FC = () => {
 
     try {
       setSaving(true);
+      // Use 'permission' as the key to match backend API
       const payload = {
         ...form,
-        permissions: selectedPermissionIds,
+        permission: selectedPermissionIds, // key must be 'permission' (not 'permissions')
       } as Record<string, any>;
       if (id) payload.id = id;
       // Make API call to update role
