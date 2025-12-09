@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { fetchDesignations, fetchDepartments, fetchZones, fetchCities, fetchStates, fetchCountries } from '../../../services/CreateLead';
+import { fetchLeadSubSources } from '../../../services/ContactPersonsCard';
 import { Trash2, X as XIcon, Plus } from 'lucide-react';
 import SelectField from '../../ui/SelectField';
 
@@ -70,6 +71,32 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
   const [zoneOptions, setZoneOptions] = useState<{ value: string; label: string }[]>([]);
   const [zoneLoading, setZoneLoading] = useState(false);
   const [zoneError, setZoneError] = useState<string | null>(null);
+
+  // Sub-source dropdown state
+  const [subSourceOptions, setSubSourceOptions] = useState<{ value: string; label: string }[]>([]);
+  const [subSourceLoading, setSubSourceLoading] = useState(false);
+  const [subSourceError, setSubSourceError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    setSubSourceLoading(true);
+    setSubSourceError(null);
+    fetchLeadSubSources().then(({ data, error }) => {
+      if (!isMounted) return;
+      if (error) {
+        setSubSourceError(error);
+        setSubSourceOptions([]);
+      } else {
+        setSubSourceOptions(
+          Array.isArray(data)
+            ? data.map((item: any) => ({ value: String(item.id), label: item.name }))
+            : []
+        );
+      }
+      setSubSourceLoading(false);
+    });
+    return () => { isMounted = false; };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -246,13 +273,17 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
     }
   };
 
-  // Handle PIN code lookup in useEffect to avoid state updates during render
+  // Track last looked-up PIN to avoid setState during render
+  const [lastPinLookup, setLastPinLookup] = useState<string>('');
   useEffect(() => {
     const contact = contacts.find(c => c.id);
     if (!contact || !contact.postalCode) return;
 
     const pin = contact.postalCode.trim();
     if (!/^\d{6}$/.test(pin)) return;
+    if (pin === lastPinLookup) return;
+
+    setLastPinLookup(pin);
 
     (async () => {
       try {
@@ -264,6 +295,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
         // Try to map country name to an existing option value
         const countryOpt = countryOptions.find(o => o.label.toLowerCase() === countryName.toLowerCase());
         if (countryOpt) {
+          // Update country asynchronously
           setContacts(prev => {
             const next = prev.map(c => c.id === contact.id ? { ...c, country: countryOpt.value } : c);
             onChange?.(next);
@@ -308,7 +340,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
         // ignore lookup errors silently
       }
     })();
-  }, [contacts.find(c => c.id)?.postalCode, countryOptions]);
+  }, [contacts, countryOptions, lastPinLookup]);
 
   // Fetch cities when any contact's state changes
   useEffect(() => {
@@ -594,28 +626,31 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                 </div>
                 <div>
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">Sub-Source <span className="text-[#FF0000]">*</span></label>
-                  {
-                    (() => {
-                      const defaultSubSources = ['Direct', 'Referral', 'Online', 'Event', 'Other'];
-                      const opts = [...defaultSubSources];
-                      if (c.subSource && !opts.includes(c.subSource)) {
-                        opts.unshift(c.subSource);
+                  <SelectField
+                    name="subSource"
+                    placeholder={subSourceLoading ? "Loading..." : "Select sub-source"}
+                    options={subSourceOptions}
+                    value={c.subSource}
+                    onChange={(v) => {
+                      // v can be string or string[] depending on SelectField implementation
+                      if (typeof v === 'string') {
+                        updateContact(c.id, 'subSource', v);
+                      } else if (Array.isArray(v) && v.length > 0) {
+                        // Use the first value in the array
+                        updateContact(c.id, 'subSource', v[0]);
+                      } else {
+                        updateContact(c.id, 'subSource', '');
                       }
-                      return (
-                        <>
-                          <SelectField
-                            name="subSource"
-                            placeholder="Select sub-source"
-                            options={opts}
-                            value={c.subSource}
-                            onChange={(v) => updateContact(c.id, 'subSource', typeof v === 'string' ? v : v[0] ?? '')}
-                            inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
-                          />
-                          {errors?.[c.id]?.subSource && <div className="text-xs text-red-500 mt-1">{errors[c.id].subSource}</div>}
-                        </>
-                      );
-                    })()
-                  }
+                    }}
+                    inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
+                    disabled={subSourceLoading}
+                  />
+                  {errors?.[c.id]?.subSource && <div className="text-xs text-red-500 mt-1">{errors[c.id].subSource}</div>}
+                  {subSourceLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
+                  {subSourceError && <div className="text-xs text-red-500 mt-1">{subSourceError}</div>}
+                  {!subSourceLoading && !subSourceError && subSourceOptions.length === 0 && (
+                    <div className="text-xs text-gray-400 mt-1">No sub-sources found.</div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">Postal Code</label>

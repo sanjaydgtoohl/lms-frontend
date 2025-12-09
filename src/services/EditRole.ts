@@ -8,7 +8,11 @@ export const updateRoleById = async (
     // The backend expects a POST to /roles/{id} with _method=Put for updates
     const formData = new FormData();
     Object.entries(payload).forEach(([key, value]) => {
-      if (Array.isArray(value)) {
+      if (key === 'permission' && Array.isArray(value)) {
+        value.forEach(v => {
+          formData.append('permission[]', v);
+        });
+      } else if (Array.isArray(value)) {
         value.forEach(v => {
           if (typeof v === 'string' || v instanceof Blob) {
             formData.append(`${key}[]`, v);

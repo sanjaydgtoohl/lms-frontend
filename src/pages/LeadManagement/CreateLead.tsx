@@ -146,15 +146,6 @@ const CreateLead: React.FC = () => {
       const mobile_number = [lead.mobileNo].filter(Boolean);
       if (lead.mobileNo2) mobile_number.push(lead.mobileNo2);
 
-      // map known sub-source labels to numeric IDs expected by backend
-      const SUB_SOURCE_MAP: Record<string, number> = {
-        Direct: 1,
-        Referral: 2,
-        Online: 3,
-        Event: 4,
-        Other: 5,
-      };
-
       // Helper: extract numeric id from possibly-formatted id strings like "#USR001"
       const extractNumericId = (val?: string | number) => {
         if (val === undefined || val === null) return undefined;
@@ -174,7 +165,7 @@ const CreateLead: React.FC = () => {
         type: lead.type || undefined,
         designation_id: lead.designation ? Number(lead.designation) : undefined,
         department_id: lead.department ? Number(lead.department) : undefined,
-        sub_source_id: lead.subSource ? (SUB_SOURCE_MAP[String(lead.subSource)] ?? undefined) : undefined,
+        sub_source_id: lead.subSource ? Number(lead.subSource) : undefined,
         country_id: lead.country ? Number(lead.country) : undefined,
         state_id: lead.state ? Number(lead.state) : undefined,
         city_id: lead.city ? Number(lead.city) : undefined,

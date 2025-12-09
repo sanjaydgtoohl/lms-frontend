@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Table from '../../components/ui/Table';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { listBrands } from '../../services/BrandMaster';
@@ -736,40 +737,30 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
       </div>
       {/* When editing a brief, show call history / pipeline table similar to design */}
       {mode === 'edit' && (
-        <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
+        <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden mt-6">
           <div className="p-4">
-            <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-3">History</h3>
+            <h3 className="text-base font-semibold text-gray-900 mb-3">History</h3>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead>
-                  <tr className="text-xs text-[var(--text-secondary)] border-b border-[var(--border-color)]">
-                    <th className="py-3 px-4">Assigned TO</th>
-                    <th className="py-3 px-4">Call Status</th>
-                    <th className="py-3 px-4">FollowUp Date &amp; Time</th>
-                    <th className="py-3 px-4">Last Call Status</th>
-                    <th className="py-3 px-4">Submission Date &amp; Time</th>
-                    <th className="py-3 px-4">Comment</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {([
-                    { assignedTo: 'Planner 1', callStatus: 'Not Interested', followUp: '-', lastCall: '02-07-2025 22:23', submission: '02-07-2025 22:23', comment: 'According to Client Email' },
-                    { assignedTo: 'Planner 1', callStatus: 'Submission', followUp: '02-07-2025 22:23', lastCall: '02-07-2025 22:23', submission: '02-07-2025 22:23', comment: 'According to Client Email' },
-                    { assignedTo: 'Planner 1', callStatus: 'Negotiation', followUp: '02-07-2025 22:23', lastCall: '02-07-2025 22:23', submission: '02-07-2025 22:23', comment: 'According to Client Email' },
-                    { assignedTo: 'Planner 1', callStatus: 'Approve', followUp: '02-07-2025 22:23', lastCall: '02-07-2025 22:23', submission: '02-07-2025 22:23', comment: 'According to Client Email' },
-                    { assignedTo: 'Planner 1', callStatus: 'Closed', followUp: '-', lastCall: '02-07-2025 22:23', submission: '02-07-2025 22:23', comment: 'According to Client Email' },
-                  ] as const).map((r, idx) => (
-                    <tr key={idx} className={`border-b border-[var(--border-color)]`}>
-                      <td className="py-3 px-4 align-top">{r.assignedTo}</td>
-                      <td className="py-3 px-4 align-top">{r.callStatus}</td>
-                      <td className="py-3 px-4 align-top">{r.followUp}</td>
-                      <td className="py-3 px-4 align-top">{r.lastCall}</td>
-                      <td className="py-3 px-4 align-top">{r.submission}</td>
-                      <td className="py-3 px-4 align-top">{r.comment}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              {/* Use the Table component for consistent design */}
+              <Table
+                data={[
+                  { assignedTo: 'Planner 1', callStatus: 'Not Interested', followUp: '-', lastCall: '02-07-2025 22:23', submission: '02-07-2025 22:23', comment: 'According to Client Email' },
+                  { assignedTo: 'Planner 1', callStatus: 'Submission', followUp: '02-07-2025 22:23', lastCall: '02-07-2025 22:23', submission: '02-07-2025 22:23', comment: 'According to Client Email' },
+                  { assignedTo: 'Planner 1', callStatus: 'Negotiation', followUp: '02-07-2025 22:23', lastCall: '02-07-2025 22:23', submission: '02-07-2025 22:23', comment: 'According to Client Email' },
+                  { assignedTo: 'Planner 1', callStatus: 'Approve', followUp: '02-07-2025 22:23', lastCall: '02-07-2025 22:23', submission: '02-07-2025 22:23', comment: 'According to Client Email' },
+                  { assignedTo: 'Planner 1', callStatus: 'Closed', followUp: '-', lastCall: '02-07-2025 22:23', submission: '02-07-2025 22:23', comment: 'According to Client Email' },
+                ]}
+                columns={[
+                  { key: 'assignedTo', header: 'Assigned TO', className: 'whitespace-nowrap overflow-hidden truncate' },
+                  { key: 'callStatus', header: 'Call Status', className: 'whitespace-nowrap overflow-hidden truncate' },
+                  { key: 'followUp', header: 'FollowUp Date & Time', className: 'whitespace-nowrap overflow-hidden truncate' },
+                  { key: 'lastCall', header: 'Last Call Status', className: 'whitespace-nowrap overflow-hidden truncate' },
+                  { key: 'submission', header: 'Submission Date & Time', className: 'whitespace-nowrap overflow-hidden truncate' },
+                  { key: 'comment', header: 'Comment', className: 'whitespace-nowrap overflow-hidden truncate' },
+                ]}
+                desktopOnMobile={true}
+                keyExtractor={(_, idx) => `history-row-${idx}`}
+              />
             </div>
           </div>
         </div>
