@@ -1,17 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { updateRoleById } from '../../../services/EditRole';
 import { motion } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
 import { MasterFormHeader, NotificationPopup } from '../../../components/ui';
-import { rolePermissionsData } from '../../../data/rolePermissionsData';
-import type { Permission } from '../../../data/rolePermissionsData';
-import RolePermissionTree from '../../../components/ui/RolePermissionTree';
+import PermissionTree from '../../../components/ui/PermissionTree';
 
-interface ModulePermissions {
-  [moduleName: string]: {
-    [submoduleName: string]: Permission;
-  };
-}
+
 
 const EditRole: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -23,44 +18,75 @@ const EditRole: React.FC = () => {
     parentPermission: '',
   });
 
-  const [modulePermissions, setModulePermissions] = useState<ModulePermissions>(() => {
-    const initial: ModulePermissions = {};
-    rolePermissionsData.forEach((module) => {
-      initial[module.name] = {};
-      module.submodules.forEach((submodule) => {
-        initial[module.name][submodule.name] = { ...submodule.permissions };
-      });
-    });
-    return initial;
-  });
+
+  // Permission tree data from API
+  const [permissionTreeData, setPermissionTreeData] = useState<any[]>([]);
+  const [selectedPermissionIds, setSelectedPermissionIds] = useState<number[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
-  // Fetch initial role data
+
+  // Fetch permission tree and role data from API
   useEffect(() => {
-    const fetchRole = async () => {
+    const fetchData = async () => {
+      setIsLoading(true);
       try {
-        setIsLoading(true);
-        // TODO: Replace with actual API call to fetch role by ID
-        // This is a placeholder - replace with your actual API endpoint
-        // const response = await getRoleById(id);
-        // setForm with response data
-        
-        // For now, setting empty state - update with actual API call
+        // Get token from localStorage (same as CreateRole)
+        let token = '';
+        const authStorage = localStorage.getItem('auth-storage');
+        if (authStorage) {
+          try {
+            const parsed = JSON.parse(authStorage);
+            token = parsed?.state?.token || '';
+          } catch (e) {
+            console.error('Failed to parse auth-storage', e);
+          }
+        }
+        // Fetch permission tree
+        const permRes = await fetch('https://apislms.dgtoohl.com/api/v1/permissions/all-permission-tree', {
+          headers: {
+            'Authorization': token ? `Bearer ${token}` : '',
+            'Content-Type': 'application/json',
+          },
+        });
+        const permJson = await permRes.json();
+        if (permJson && permJson.success && Array.isArray(permJson.data)) {
+          setPermissionTreeData(permJson.data);
+        }
+        // Fetch role data by ID
+        if (id) {
+          // Ensure only the numeric ID is sent to the API
+          const numericId = id.replace(/[^\d]/g, '');
+          const roleRes = await fetch(`https://apislms.dgtoohl.com/api/v1/roles/${numericId}`, {
+            headers: {
+              'Authorization': token ? `Bearer ${token}` : '',
+              'Content-Type': 'application/json',
+            },
+          });
+          const roleJson = await roleRes.json();
+          if (roleJson && roleJson.success && roleJson.data) {
+            setForm({
+              name: roleJson.data.name || '',
+              description: roleJson.data.description || '',
+              parentPermission: roleJson.data.parentPermission || '',
+            });
+            // If permissions are stored as array of IDs
+            if (Array.isArray(roleJson.data.permissions)) {
+              setSelectedPermissionIds(roleJson.data.permissions);
+            }
+          }
+        }
       } catch (error) {
-        console.error('Error fetching role:', error);
+        console.error('Error fetching data:', error);
         setErrors({ submit: 'Failed to load role data' });
       } finally {
         setIsLoading(false);
       }
     };
-
-    if (id) {
-      fetchRole();
-    }
+    fetchData();
   }, [id]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -71,22 +97,7 @@ const EditRole: React.FC = () => {
     }
   };
 
-  const handlePermissionToggle = (
-    moduleName: string,
-    submoduleName: string,
-    permissionType: keyof Permission
-  ) => {
-    setModulePermissions((prev) => ({
-      ...prev,
-      [moduleName]: {
-        ...prev[moduleName],
-        [submoduleName]: {
-          ...prev[moduleName][submoduleName],
-          [permissionType]: !prev[moduleName][submoduleName][permissionType],
-        },
-      },
-    }));
-  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,18 +113,12 @@ const EditRole: React.FC = () => {
       setSaving(true);
       const payload = {
         ...form,
-        permissions: modulePermissions,
+        permissions: selectedPermissionIds,
       } as Record<string, any>;
-
-      if (id) {
-        payload.id = id;
-        // TODO: Make API call to update role
-        console.log('Updating role:', payload);
-      }
-      
-      // Mock API success
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      
+      if (id) payload.id = id;
+      // Make API call to update role
+      const numericId = id ? id.replace(/[^\d]/g, '') : '';
+      await updateRoleById(numericId, payload);
       setShowSuccessToast(true);
       setTimeout(() => {
         setShowSuccessToast(false);
@@ -231,10 +236,13 @@ const EditRole: React.FC = () => {
 
             {/* Role Permission Section - Tree Style */}
             <div className="mt-8">
-              <RolePermissionTree
-                modulePermissions={modulePermissions}
-                onToggle={handlePermissionToggle}
+              <label className="block text-sm text-[var(--text-secondary)] mb-1">Role Permission</label>
+              <PermissionTree
+                data={permissionTreeData}
+                selectedPermissionIds={selectedPermissionIds}
+                onChange={setSelectedPermissionIds}
               />
+              <div className="mt-2 text-xs text-gray-500">Selected IDs: {selectedPermissionIds.join(', ')}</div>
             </div>
 
             {/* Form Actions */}

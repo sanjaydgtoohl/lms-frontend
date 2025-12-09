@@ -1,21 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MasterFormHeader } from '../../../components/ui';
 import { ROUTES } from '../../../constants';
+import { getRoleById } from '../../../services/ViewRole';
 
 interface Role {
-  id: string;
+  id: string | number;
   name: string;
   description: string;
 }
-
-const mockRoles: Role[] = [
-  { id: '#RL001', name: 'Admin', description: 'Full system access with all permissions and settings control' },
-  { id: '#RL002', name: 'BDM', description: 'Business Development Manager with lead and campaign management access' },
-  { id: '#RL003', name: 'Manager', description: 'Manager with team oversight and reporting access' },
-  { id: '#RL004', name: 'User', description: 'Standard user with basic access to assigned features' },
-  { id: '#RL005', name: 'Super Admin', description: 'Super Administrator with system-wide control and user management access' },
-];
 
 const ViewRole: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -27,18 +21,25 @@ const ViewRole: React.FC = () => {
     const fetchRole = async () => {
       try {
         setIsLoading(true);
-        // TODO: Replace with actual API call
-        // Mock data for now
-        const roleId = `#${id}`;
-        const mockRole = mockRoles.find(r => r.id === roleId);
-        setRole(mockRole || null);
+        if (id) {
+          // Ensure only the numeric ID is sent to the API
+          const numericId = id.replace(/[^\d]/g, '');
+          const data = await getRoleById(numericId);
+          // Type assertion for data
+          const roleData = data as { id: string; name: string; description?: string };
+          setRole({
+            id: roleData.id,
+            name: roleData.name,
+            description: roleData.description || '',
+          });
+        }
       } catch (error) {
+        setRole(null);
         console.error('Error fetching role:', error);
       } finally {
         setIsLoading(false);
       }
     };
-
     if (id) {
       fetchRole();
     }

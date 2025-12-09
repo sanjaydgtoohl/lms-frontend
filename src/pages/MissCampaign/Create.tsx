@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { MasterCreateHeader } from '../../components/ui/MasterCreateHeader';
 import { Upload, Loader, Trash2 } from 'lucide-react';
 import { SelectField } from '../../components/ui';
+import { apiClient } from '../../utils/apiClient';
 import { createMissCampaign } from '../../services/Create';
 import { updateMissCampaign } from '../../services/View';
 import { listBrands } from '../../services/BrandMaster';
-import { listLeadSources, listLeadSubSourcesBySourceId } from '../../services/LeadSource';
+// Removed LeadSource import as per request
 import { showSuccess, showError } from '../../utils/notifications';
 
 interface CreateProps {
@@ -70,11 +71,13 @@ const Create: React.FC<CreateProps> = ({
     const fetchSources = async () => {
       try {
         setSourceLoading(true);
-        const response = await listLeadSources(1, 1000); // fetch all sources (large perPage)
-        const options = (response.data || []).map(source => ({
-          id: source.id,
-          source: source.source,
-        }));
+        // API call for lead sources
+          const response = await apiClient.get('/lead-sources');
+          const data = Array.isArray(response.data) ? response.data : [];
+          const options = data.map((source: { id: string; name: string }) => ({
+            id: source.id,
+            source: source.name,
+          }));
         setSourceOptions(options);
       } catch (err) {
         console.error('Failed to fetch lead sources:', err);
@@ -112,48 +115,21 @@ const Create: React.FC<CreateProps> = ({
     const fetchSubSources = async () => {
       try {
         setSubSourceLoading(true);
-        const response = await listLeadSubSourcesBySourceId(formData.source, 1, 1000);
-        const options = (response.data || []).map(subSource => ({
+        // API call for sub sources by source id
+        const response = await apiClient.get(`/lead-sub-sources/by-source/${formData.source}`);
+        const data = Array.isArray(response.data) ? response.data : [];
+        const options = data.map((subSource: { id: string; name: string }) => ({
           id: subSource.id,
-          // Some API shapes use `name`, others `subSource` — prefer `name` then fallback
-          label: (subSource as any).name ?? (subSource as any).subSource ?? '',
+          label: subSource.name,
         }));
-        
-        // Merge with any existing options and inject initial sub-source if available
-        setSubSourceOptions(prev => {
-          const merged = [...options];
-          
-          // Ensure initial nested sub-source is always in the list
-          if (initialSubSourceRef.current) {
-            const { id: initialId, label: initialLabel } = initialSubSourceRef.current;
-            if (!merged.find(m => String(m.id) === String(initialId))) {
-              merged.unshift({ id: initialId, label: initialLabel });
-            }
-          }
-          
-          // Merge with any existing options
-          prev.forEach(p => {
-            if (!merged.find(m => String(m.id) === String(p.id))) merged.push(p);
-          });
-          return merged;
-        });
+        setSubSourceOptions(options);
       } catch (err) {
         console.error('Failed to fetch lead sub-sources:', err);
-        // Still inject initial option even if fetch fails
-        if (initialSubSourceRef.current) {
-          setSubSourceOptions(prev => {
-            const { id: initialId, label: initialLabel } = initialSubSourceRef.current!;
-            if (!prev.find(p => String(p.id) === String(initialId))) {
-              return [{ id: initialId, label: initialLabel }, ...prev];
-            }
-            return prev;
-          });
-        }
+        setSubSourceOptions([]);
       } finally {
         setSubSourceLoading(false);
       }
     };
-
     fetchSubSources();
   }, [formData.source]);
 

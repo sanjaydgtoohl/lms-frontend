@@ -505,9 +505,9 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
             placeholder="Please Enter Brand Name"
           />
-            {errors.brandName && !form.brandName.trim() && (
-              <div className="text-xs text-red-500 mt-1">{errors.brandName}</div>
-            )}
+          {errors.brandName && (
+            <div className="text-xs text-red-500 mt-1">{errors.brandName}</div>
+          )}
         </div>
 
         <div>

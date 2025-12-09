@@ -4,20 +4,16 @@ import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
 import { MasterFormHeader, NotificationPopup } from '../../../components/ui';
 // removed static rolePermissionsData import to use dynamic API data only
-import type { Permission } from '../../../data/rolePermissionsData';
-import { fetchPermissionsAsModulePermissions, createRole as apiCreateRole } from '../../../services/CreateRole';
-import RolePermissionTree from '../../../components/ui/RolePermissionTree';
+import { createRole as apiCreateRole } from '../../../services/CreateRole';
+
+import PermissionTree from '../../../components/ui/PermissionTree';
 
 type Props = {
   mode?: 'create' | 'edit';
   initialData?: Record<string, any>;
 };
 
-interface ModulePermissions {
-  [moduleName: string]: {
-    [submoduleName: string]: Permission;
-  };
-}
+
 
 const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
   const navigate = useNavigate();
@@ -25,10 +21,43 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
     name: '',
     description: '',
     parentPermission: '',
+    
   });
 
-  // start with an empty permissions object; will be populated from API
-  const [modulePermissions, setModulePermissions] = useState<ModulePermissions>({});
+
+  // Permission tree data from API
+  const [permissionTreeData, setPermissionTreeData] = useState<any[]>([]);
+    // Fetch permission tree from API on mount
+    useEffect(() => {
+      const fetchPermissionTree = async () => {
+        try {
+          let token = '';
+          const authStorage = localStorage.getItem('auth-storage');
+          if (authStorage) {
+            try {
+              const parsed = JSON.parse(authStorage);
+              token = parsed?.state?.token || '';
+            } catch (e) {
+              console.error('Failed to parse auth-storage', e);
+            }
+          }
+          const res = await fetch('https://apislms.dgtoohl.com/api/v1/permissions/all-permission-tree', {
+            headers: {
+              'Authorization': token ? `Bearer ${token}` : '',
+              'Content-Type': 'application/json',
+            },
+          });
+          const json = await res.json();
+          if (json && json.success && Array.isArray(json.data)) {
+            setPermissionTreeData(json.data);
+          }
+        } catch (err) {
+          console.error('Failed to fetch permission tree', err);
+        }
+      };
+      fetchPermissionTree();
+    }, []);
+  const [selectedPermissionIds, setSelectedPermissionIds] = useState<number[]>([]);
 
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [showErrorToast, setShowErrorToast] = useState(false);
@@ -36,33 +65,15 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
+
   useEffect(() => {
     if (initialData) {
       setForm((prev) => ({ ...prev, ...initialData }));
-      if (initialData.permissions) {
-        setModulePermissions(initialData.permissions);
-      }
+      // Optionally, set selectedPermissionIds from initialData.permissions if needed
     }
   }, [initialData]);
 
-  // Fetch permissions from API and replace the default/static permissions if available
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const perms = await fetchPermissionsAsModulePermissions();
-        if (mounted && perms && Object.keys(perms).length > 0) {
-          setModulePermissions(perms);
-        }
-      } catch (err) {
-        // ignore, fallback to static data is already in place
-        console.error('Error loading permissions:', err);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -72,27 +83,7 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
     }
   };
 
-  const handlePermissionToggle = (
-    moduleName: string,
-    submoduleName: string,
-    permissionType: keyof Permission
-  ) => {
-    setModulePermissions((prev) => {
-      const moduleEntry = prev[moduleName] || {};
-      const submoduleEntry = moduleEntry[submoduleName] || { read: false, create: false, update: false, delete: false };
 
-      return {
-        ...prev,
-        [moduleName]: {
-          ...moduleEntry,
-          [submoduleName]: {
-            ...submoduleEntry,
-            [permissionType]: !submoduleEntry[permissionType],
-          },
-        },
-      };
-    });
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,9 +97,10 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
 
     try {
       setSaving(true);
+
       const payload = {
         ...form,
-        permissions: modulePermissions,
+        permissions: selectedPermissionIds,
       } as Record<string, any>;
       if (initialData && initialData.id) payload.id = initialData.id;
 
@@ -250,11 +242,13 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
 
             {/* Role Permission Section - Tree Style */}
             <div className="mt-8">
-              
-              <RolePermissionTree
-                modulePermissions={modulePermissions}
-                onToggle={handlePermissionToggle}
+              <label className="block text-sm text-[var(--text-secondary)] mb-1">Role Permission</label>
+              <PermissionTree
+                data={permissionTreeData}
+                selectedPermissionIds={selectedPermissionIds}
+                onChange={setSelectedPermissionIds}
               />
+              <div className="mt-2 text-xs text-gray-500">Selected IDs: {selectedPermissionIds.join(', ')}</div>
             </div>
 
             {/* Form Actions */}

@@ -260,7 +260,6 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
 
       const allTypes = [parent.type, ...children.map(c => c.type)];
       allTypes.forEach(t => {
-        // t might be either the id string or the label (depending on previous state).
         const match = agencyTypes.find(a => String(a.value) === String(t) || String(a.label) === String(t));
         const typeVal = match ? String(match.value) : String(t);
         form.append('type[]', typeVal);
@@ -272,23 +271,18 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
       ];
       allClients.forEach((clientsForAgency, idx) => {
         (clientsForAgency || []).forEach((clientId) => {
-          // Append as client[<index>][] to create nested arrays: client[0][], client[1][], ...
           form.append(`client[${idx}][]`, clientId);
         });
       });
 
       // Call appropriate API based on mode
       if (mode === 'edit' && initialData?.id) {
-        // Add _method: 'PUT' for Laravel-style REST update
         form.append('_method', 'PUT');
-        // Pass FormData directly if updateAgency supports it
         await updateAgency(initialData.id, form);
       } else {
-        // Create new agency
         await createGroupAgency(form);
       }
       
-      // Also call custom onSave callback if provided (for additional processing)
       if (onSave && typeof onSave === 'function') {
         const payload = {
           parent: { ...parent, name: parent.name.trim() },
@@ -298,21 +292,45 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
         if (customRes && typeof customRes.then === 'function') await customRes;
       }
 
-      // show global success notification (same behaviour as Brand Master)
       showSuccess(mode === 'edit' ? 'Agency updated successfully' : 'Agency created successfully');
-      // close the form and refresh listing after a short delay so user can see the toast
       setTimeout(() => {
         onClose();
         window.location.reload();
       }, 1200);
-    } catch (err) {
+    } catch (err: any) {
+      // Handle API validation errors for parent and child agency names (name.0, name.1, ...)
+      const responseData = err?.responseData;
+      if (responseData?.errors && typeof responseData.errors === 'object') {
+        const newParentErrors: { name?: string; type?: string; client?: string } = {};
+        const newChildErrors: Record<string, { name?: string; type?: string; client?: string }> = {};
+        // Map 'name.0' to parent agency name error, 'name.1' to first child, etc.
+        Object.keys(responseData.errors).forEach((key) => {
+          const match = key.match(/^name\.(\d+)$/);
+          if (match) {
+            const idx = parseInt(match[1], 10);
+            if (idx === 0) {
+              newParentErrors.name = Array.isArray(responseData.errors[key]) ? responseData.errors[key].join(' ') : String(responseData.errors[key]);
+            } else {
+              // idx-1 because children array starts after parent
+              const child = children[idx - 1];
+              if (child) {
+                newChildErrors[child.id] = {
+                  ...(newChildErrors[child.id] || {}),
+                  name: Array.isArray(responseData.errors[key]) ? responseData.errors[key].join(' ') : String(responseData.errors[key]),
+                };
+              }
+            }
+          }
+        });
+        setParentErrors(prev => ({ ...prev, ...newParentErrors }));
+        setChildErrors(prev => ({ ...prev, ...newChildErrors }));
+        // Do not show global error toast for this case
+        return;
+      }
       console.error('Submit failed', err);
-      // Show an error toast as well
       try {
         showError((err as any)?.message || `Failed to ${mode === 'edit' ? 'update' : 'create'} agency`);
-      } catch (e) {
-        // ignore notification errors
-      }
+      } catch (e) {}
     } finally {
       setSubmitting(false);
     }
