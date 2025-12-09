@@ -11,7 +11,7 @@ export interface LeadSourceItem {
 // Infer a few common API wrappers without hard-coding endpoint constants yet
 const ENDPOINTS = {
   // Use proxy in vite.config.ts to inject '/v1'
-  LIST: '/lead-sources',
+  LIST: '/lead-sub-sources',
   DETAIL: (id: string) => `/lead-sub-sources/${id}`,
   CREATE: '/lead-sub-sources',
   UPDATE: (id: string) => `/lead-sub-sources/${id}`,
@@ -48,9 +48,9 @@ export async function listLeadSources(page = 1, perPage = 10): Promise<LeadSourc
   const res = await apiClient.get<LeadSourceItem[]>(`${ENDPOINTS.LIST}?page=${page}&per_page=${perPage}`);
   const items = (res.data || []).map((it: any, idx: number) => {
     const id = it.id ?? `LS${String(idx + 1).padStart(3, '0')}`;
-    // Use 'name' for the source label as per API response
-    const source = it.name ?? '';
-    const subSource = it.subSource ?? '';
+    // For sub-sources, 'name' is the sub-source name, 'lead_source' is the parent source name (if available)
+    const subSource = it.name ?? '';
+    const source = it.lead_source ?? '';
     const rawCreated = it.created_at ?? '';
     let dateTime = '';
     if (rawCreated) {

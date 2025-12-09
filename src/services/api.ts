@@ -12,6 +12,10 @@ import { getCookie } from '../utils/cookies';
 import { handleApiError } from '../utils/apiErrorHandler';
 
 class ApiClient {
+    // Public method to allow custom requests
+    async customRequest<T>(endpoint: string, options: { method?: string; data?: any } = {}): Promise<ApiResponse<T>> {
+      return this.request<T>(endpoint, options);
+    }
   private baseURL: string;
 
   constructor(baseURL: string) {
