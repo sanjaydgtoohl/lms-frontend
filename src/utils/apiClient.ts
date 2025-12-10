@@ -83,29 +83,27 @@ class EnhancedApiClient {
     try {
       const authStore = useAuthStore.getState();
       const { refreshTokenValue } = authStore;
-      
-      if (!refreshTokenValue) {
+      // fallback: try to get from cookies if not in store
+      const refreshToken = refreshTokenValue || getCookie('refresh_token');
+      if (!refreshToken) {
         return false;
       }
-      // Use axios http instance to call the refresh endpoint so it benefits from the same baseURL and cookie handling
-      const resp = await http.post(API_ENDPOINTS.AUTH.REFRESH, { refreshToken: refreshTokenValue });
+      // Always send as 'refresh_token' for backend compatibility
+      const resp = await http.post(API_ENDPOINTS.AUTH.REFRESH, { refresh_token: refreshToken });
       const data = resp.data;
-      if (data && data.success && data.data?.token) {
-        authStore.login('', ''); // Update token in store (store may be updated elsewhere as well)
+      if (data && data.success && data.data?.token && data.data?.refresh_token) {
         // Use cookie helper behavior: set cookies via document.cookie here (server should set HttpOnly in production)
         const now = Date.now();
         const access = data.data.token;
-        const refresh = data.data.refreshToken;
+        const refresh = data.data.refresh_token;
         const expiresIn = data.data.expires_in || 3600;
-        const refreshExpiresIn = data.data.refresh_expires_in || null;
+        // If backend provides refresh_expires_in, use it, else default to 7 days
+        const refreshExpiresIn = data.data.refresh_expires_in || 7 * 24 * 3600;
 
         document.cookie = `auth_token=${encodeURIComponent(access)}; Path=/; Max-Age=${expiresIn}; Secure; SameSite=Lax`;
         document.cookie = `auth_token_expires=${String(now + expiresIn * 1000)}; Path=/; Max-Age=${expiresIn}; Secure; SameSite=Lax`;
-        if (refresh) {
-          const rExp = refreshExpiresIn || 7 * 24 * 3600;
-          document.cookie = `refresh_token=${encodeURIComponent(refresh)}; Path=/; Max-Age=${rExp}; Secure; SameSite=Lax`;
-          document.cookie = `refresh_token_expires=${String(now + rExp * 1000)}; Path=/; Max-Age=${rExp}; Secure; SameSite=Lax`;
-        }
+        document.cookie = `refresh_token=${encodeURIComponent(refresh)}; Path=/; Max-Age=${refreshExpiresIn}; Secure; SameSite=Lax`;
+        document.cookie = `refresh_token_expires=${String(now + refreshExpiresIn * 1000)}; Path=/; Max-Age=${refreshExpiresIn}; Secure; SameSite=Lax`;
         return true;
       }
 
@@ -167,16 +165,19 @@ class EnhancedApiClient {
 
         // Handle 401 Unauthorized - try token refresh
         if (response.status === 401 && !skipAuth && attempt === 0) {
-            const refreshed = await this.handleTokenRefresh();
-            if (refreshed) {
-              // Retry with new token
-              (headers as any).Authorization = `Bearer ${getCookie('auth_token')}`;
-              continue;
-            } else {
-            // Refresh failed, logout user
-            useAuthStore.getState().logout();
-            window.location.href = '/login';
-            throw new Error('Session expired. Please login again.');
+          const refreshed = await this.handleTokenRefresh();
+          if (refreshed) {
+            // Get the new token from cookies after refresh
+            const newToken = getCookie('auth_token');
+            if (newToken) {
+              // Update headers for retried request
+              (headers as Record<string, string>)["Authorization"] = `Bearer ${newToken}`;
+            }
+            // Recreate controller for retried request
+            continue;
+          } else {
+            // Refresh failed, but do not auto-logout or redirect
+            throw new Error('Session expired. Unable to refresh token.');
           }
         }
 

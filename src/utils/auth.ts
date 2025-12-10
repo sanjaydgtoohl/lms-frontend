@@ -30,21 +30,19 @@ export const isTokenExpired = (token: string | null | undefined): boolean => {
 
 export const handleTokenExpiration = async () => {
   const authStore = useAuthStore.getState();
-  const { token, refreshTokenValue, logout, refreshToken } = authStore;
+  const { token, refreshTokenValue, refreshToken } = authStore;
 
   if (isTokenExpired(token)) {
     try {
       if (refreshTokenValue && !isTokenExpired(refreshTokenValue)) {
         await refreshToken();
       } else {
-        // If refresh token is also expired or doesn't exist, logout
-        await logout();
-        window.location.href = '/login';
+        // If refresh token is also expired or doesn't exist, logout (user-initiated only)
+        // Optionally, set a flag or notify the user, but do not auto-logout or redirect
       }
     } catch (error) {
       console.error('Token refresh failed:', error);
-      await logout();
-      window.location.href = '/login';
+      // Optionally, set a flag or notify the user, but do not auto-logout or redirect
     }
   }
 };

@@ -1,8 +1,9 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, User, LogOut, Settings, UserRound, LifeBuoy, ChevronDown, Menu } from 'lucide-react';
 import ApiErrorNotification from '../ui/ApiErrorNotification';
 import { Button } from '../ui';
-import { useAuthStore } from '../../store/auth';
+import { fetchCurrentUser } from '../../services/Header';
 
 interface HeaderProps {
   onCreateClick?: () => void;
@@ -19,7 +20,16 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const [isUserMenuOpen, setIsUserMenuOpen] = React.useState(false);
   const userMenuRef = React.useRef<HTMLDivElement | null>(null);
-  const { user, logout } = useAuthStore();
+  const [userName, setUserName] = React.useState('');
+  const navigate = useNavigate();
+
+  React.useEffect(() => {
+    async function getUser() {
+      const user = await fetchCurrentUser();
+      setUserName(user?.name ?? '');
+    }
+    getUser();
+  }, []);
 
   React.useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
@@ -32,12 +42,8 @@ const Header: React.FC<HeaderProps> = ({
   }, []);
 
   const handleLogout = async () => {
-    try {
-      await logout();
-      window.location.href = '/login';
-    } catch (e) {
-      // noop
-    }
+    // TODO: Implement logout logic if needed
+    window.location.href = '/login';
   };
 
   return (
@@ -74,9 +80,8 @@ const Header: React.FC<HeaderProps> = ({
               </div>
               <div className="hidden sm:flex sm:flex-col sm:items-start sm:leading-tight">
                 <span className="text-sm font-medium text-[#344054]">
-                  {user ? `${user.firstName} ${user.lastName}` : 'Guest User'}
+                  {userName}
                 </span>
-                <span className="text-xs text-[#344054]">{user?.role ?? 'Member'}</span>
               </div>
               <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} />
             </Button>
@@ -90,11 +95,11 @@ const Header: React.FC<HeaderProps> = ({
                 <div className="px-4 py-4 border-b border-gray-100 bg-white">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-semibold text-lg">
-                      {user?.firstName?.[0]?.toUpperCase() || 'U'}
+                      {userName ? userName[0].toUpperCase() : ''}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-lg font-semibold text-gray-900 truncate">{user ? `${user.firstName} ${user.lastName}` : 'User'}</p>
-                      <p className="text-sm text-gray-500 truncate">{user?.email || 'user@example.com'}</p>
+                      <p className="text-lg font-semibold text-gray-900 truncate">{userName}</p>
+                      <p className="text-sm text-gray-500 truncate"></p>
                     </div>
                   </div>
                 </div>
@@ -102,7 +107,10 @@ const Header: React.FC<HeaderProps> = ({
                   <Button
                     role="menuitem"
                     variant="transparent"
-                    onClick={() => setIsUserMenuOpen(false)}
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      navigate('/profile');
+                    }}
                     className="w-full flex items-center justify-start gap-3 px-4 py-3 text-base text-gray-800 hover:bg-gray-50"
                   >
                     <UserRound className="w-5 h-5 text-gray-500" />

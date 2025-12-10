@@ -248,7 +248,6 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
                 selectedPermissionIds={selectedPermissionIds}
                 onChange={setSelectedPermissionIds}
               />
-              <div className="mt-2 text-xs text-gray-500">Selected IDs: {selectedPermissionIds.join(', ')}</div>
             </div>
 
             {/* Form Actions */}

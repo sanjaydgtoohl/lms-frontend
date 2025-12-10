@@ -8,6 +8,7 @@ export interface PermissionEditPayload {
   is_parent?: number | null;
   description: string;
   icon_text?: string;
+  order?: string | number;
   status?: string;
   icon_file?: File | null;
 }
@@ -20,6 +21,7 @@ export interface PermissionEditDetail {
   is_parent: string | number | null;
   description: string;
   icon_text: string;
+  order?: string | number;
   icon_file?: string;
   status?: string;
   created_at?: string;
@@ -105,6 +107,7 @@ export async function updatePermissionWithFile(
       formData.append('description', payload.description);
       formData.append('icon_text', payload.icon_text || '');
       formData.append('status', payload.status || '1');
+      if (payload.order !== undefined) formData.append('order', String(payload.order));
       formData.append('icon_file', payload.icon_file);
       formData.append('_method', 'PUT'); // For Laravel method spoofing if needed
 

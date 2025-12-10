@@ -45,8 +45,15 @@ export async function refreshTokens() {
   refreshInProgress = true;
   try {
     const refreshToken = getCookie('refresh_token');
+    console.log('[sessionManager] refresh_token cookie:', refreshToken);
     if (!refreshToken) throw new Error('No refresh token');
 
+    // If backend expects token in header, uncomment below and comment body
+    // const resp = await http.post(API_ENDPOINTS.AUTH.REFRESH, {}, {
+    //   headers: { Authorization: `Bearer ${refreshToken}` }
+    // });
+
+    // Default: send in body
     const resp = await http.post(API_ENDPOINTS.AUTH.REFRESH, { refreshToken });
     const data = resp.data;
     if (data && data.success && data.data) {

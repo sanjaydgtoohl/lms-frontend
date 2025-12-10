@@ -43,24 +43,8 @@ const salesMen = [
   'Sales Man 6',
 ];
 
-const callStatusOptions = [
-  "Busy",
-  "Duplicate",
-  "Fake Lead",
-  "FollowBack",
-  "Invalid Number",
-  "Not Reachable",
-  "Switched Off",
-  "Not Connected",
-  "Connected",
-  "No Response",
-  "Wrong Number",
-  "Call Back Scheduled",
-  "Interested",
-  "Not Interested",
-  "Converted",
-  "DND Requested"
-];
+import { fetchCallStatuses } from '../../services/CallStatus';
+import http from '../../services/http';
 
 const statusColors: Record<string, string> = {
   'Interested': '#22c55e',
@@ -79,6 +63,72 @@ interface Props {
 }
 
 const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
+    // Helper to fetch leads (for reload)
+    const fetchLeads = async () => {
+      try {
+        setLoading(true);
+        let response;
+        if (filterStatus && filterStatus !== 'All') {
+          const statusIdMap: Record<string, number> = {
+            'Interested': 1,
+            'Pending': 2,
+            'Meeting Done': 3,
+            'Brief Pending': 4,
+            'Brief Recieved': 5,
+            'Brief Received': 5,
+            'Meeting Scheduled': 6,
+            'Meeting Schedule': 6
+          };
+          const statusId = statusIdMap[filterStatus] || undefined;
+          if (statusId) {
+            response = await listLeadsByStatus(statusId, currentPage, itemsPerPage);
+          } else {
+            response = await listLeadsByStatus(filterStatus, currentPage, itemsPerPage);
+          }
+        } else {
+          response = await listLeads(currentPage, itemsPerPage);
+        }
+        const transformedLeads = response.data.map((item: any) => ({
+          id: item.id ? String(item.id) : '',
+          brandName: item.brand_name || item.brand?.name || String(item.brand_id || ''),
+          contactPerson: item.contact_person || item.name || '',
+          phoneNumber: Array.isArray(item.mobile_number) ? (item.mobile_number[0] || '') : (item.mobile_number || item.email || ''),
+          source: item.lead_source || item.source || '',
+          subSource: item.sub_source?.name || item.lead_sub_source?.name || item.lead_sub_source_name || item.lead_sub_source || '',
+          assignBy: item.created_by_user?.name || item.assign_by_name || item.created_by || '',
+          assignTo: item.current_assign_user_name || item.assigned_user?.name || (item.current_assign_user && typeof item.current_assign_user === 'object' ? item.current_assign_user.name : '') || item.assign_to_name || '',
+          dateTime: item.created_at || new Date().toLocaleString(),
+          status: item.lead_status_relation?.name || item.lead_status || '',
+          callStatus: (() => {
+            const raw = item.call_status_relation?.name ?? item.call_status ?? item.callStatus ?? '';
+            return raw === null || raw === undefined || raw === '' ? 'N/A' : raw;
+          })(),
+          callAttempt: Number(item.call_attempt ?? item.callAttempt ?? 0),
+          comment: item.comment || item.notes || '',
+        }));
+        setLeads(transformedLeads);
+      } catch (error) {
+        setLeads([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+  // Call status options will be fetched from API
+  const [callStatusOptions, setCallStatusOptions] = useState<string[]>([]);
+
+  // Fetch call status options from API
+  useEffect(() => {
+    const loadCallStatuses = async () => {
+      try {
+        const resp = await fetchCallStatuses();
+        const options = (resp.data || []).map((item: any) => item.name).filter(Boolean);
+        setCallStatusOptions(options);
+      } catch (err) {
+        setCallStatusOptions([]);
+      }
+    };
+    loadCallStatuses();
+  }, []);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -241,14 +291,44 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
   };
 
   const handleCallStatusChange = (leadId: string, newStatus: string) => {
-    setLeads((prev) =>
-      prev.map((lead) => {
-        if (lead.id !== leadId) return lead;
-        if (lead.callStatus === newStatus) return lead;
-        return { ...lead, callStatus: newStatus, callAttempt: (lead.callAttempt ?? 0) + 1 };
-      })
-    );
-    console.log(`Call status updated for ${leadId} to ${newStatus} — callAttempt incremented`);
+    // Use the shared axios http instance so cookies and Authorization header are handled automatically
+    const updateCallStatus = async () => {
+      try {
+        setLoading(true);
+        // Find call status id from name
+        let callStatusId: number | undefined;
+        if (Array.isArray(callStatusOptions) && callStatusOptions.length > 0 && typeof callStatusOptions[0] === 'object') {
+          // If callStatusOptions is array of objects {id, name}
+          const selected = (callStatusOptions as any[]).find((opt: any) => opt.name === newStatus);
+          callStatusId = selected?.id;
+        } else {
+          // Fallback: fetch from API
+          const resp = await fetchCallStatuses();
+          const found = (resp.data || []).find((item: any) => item.name === newStatus);
+          callStatusId = found?.id;
+        }
+        if (!callStatusId) {
+          alert('Invalid call status');
+          setLoading(false);
+          return;
+        }
+        const formData = new FormData();
+        formData.append('call_status_id', String(callStatusId));
+        formData.append('_method', 'Put');
+        const response = await http.post(`/leads/${leadId}/call-status`, formData);
+        const result = response.data;
+        if (result.success) {
+          await fetchLeads();
+        } else {
+          alert(result.message || 'Failed to update call status');
+        }
+      } catch (error) {
+        alert('Error updating call status');
+      } finally {
+        setLoading(false);
+      }
+    };
+    updateCallStatus();
   };
 
   

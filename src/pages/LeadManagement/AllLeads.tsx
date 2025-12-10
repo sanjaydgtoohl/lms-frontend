@@ -10,6 +10,7 @@ import NotificationPopup from '../../components/ui/NotificationPopup';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants';
 import { listLeads, updateLead, deleteLead } from '../../services/AllLeads';
+import { fetchCallStatuses, updateCallStatus } from '../../services/CallStatus';
 
 interface Lead {
   id: string;
@@ -28,6 +29,11 @@ interface Lead {
   comment: string;
 }
 
+interface CallStatusOption {
+  id: number;
+  name: string;
+}
+
 const salesMen = [
   'Sales Man 1',
   'Sales Man 2',
@@ -37,24 +43,7 @@ const salesMen = [
   'Sales Man 6',
 ];
 
-const callStatusOptions = [
-  "Busy",
-  "Duplicate",
-  "Fake Lead",
-  "FollowBack",
-  "Invalid Number",
-  "Not Reachable",
-  "Switched Off",
-  "Not Connected",
-  "Connected",
-  "No Response",
-  "Wrong Number",
-  "Call Back Scheduled",
-  "Interested",
-  "Not Interested",
-  "Converted",
-  "DND Requested"
-];
+// Call status options will be fetched from API
 
 // (status mapping removed - not used in this file)
 
@@ -64,6 +53,21 @@ const AllLeads: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const itemsPerPage = 15;
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [callStatusOptions, setCallStatusOptions] = useState<CallStatusOption[]>([]);
+    // Fetch call status options from API
+    useEffect(() => {
+      const loadCallStatuses = async () => {
+        try {
+          const resp = await fetchCallStatuses();
+          // Store as array of {id, name}
+          const options = (resp.data || []).map((item: any) => ({ id: item.id, name: item.name })).filter((item: any) => item.id && item.name);
+          setCallStatusOptions(options);
+        } catch (err) {
+          setCallStatusOptions([]);
+        }
+      };
+      loadCallStatuses();
+    }, []);
   const [loading, setLoading] = useState(false);
   const [totalItems, setTotalItems] = useState(0);
 
@@ -191,7 +195,7 @@ const AllLeads: React.FC = () => {
     }
   };
 
-  const handleCallStatusChange = (leadId: string, newStatus: string) => {
+  const handleCallStatusChange = async (leadId: string, newStatus: string) => {
     // Update the lead status in state and increment callAttempt when status actually changes
     setLeads((prev) =>
       prev.map((lead) => {
@@ -199,68 +203,71 @@ const AllLeads: React.FC = () => {
         // Treat 'N/A' as empty when comparing previous value
         const prevStatus = lead.callStatus === 'N/A' ? '' : lead.callStatus;
         if (prevStatus === newStatus) return lead; // no change
-        return { ...lead, callStatus: newStatus, callAttempt: (lead.callAttempt ?? 0) + 1 };
+        return { ...lead, callStatus: newStatus };
       })
     );
     // Optional: Log the change to verify it's being called
     console.log(`Call status updated for ${leadId} to ${newStatus} — callAttempt incremented`);
 
-    // Persist call status change to server (best-effort)
-    (async () => {
-      try {
-        const numericId = String(leadId).replace('#', '');
-        await updateLead(numericId, { call_status: newStatus });
-      } catch (err) {
-        console.warn('Failed to persist call status change', err);
-      }
-    })();
+    // Find the id for the selected call status name
+    const selectedOption = callStatusOptions.find(opt => opt.name === newStatus);
+    if (!selectedOption) {
+      console.warn('Call status id not found for name:', newStatus);
+      return;
+    }
+    try {
+      const numericId = String(leadId).replace('#', '');
+      await updateCallStatus(numericId, selectedOption.id);
+      // Refresh table after update
+      fetchLeads();
+    } catch (err) {
+      console.warn('Failed to persist call status change', err);
+    }
   };
 
   // Fetch leads from API
+  const fetchLeads = async () => {
+    setLoading(true);
+    try {
+      const filters: Record<string, any> = {};
+      if (searchQuery) filters.search = searchQuery;
+      const resp = await listLeads(currentPage, itemsPerPage, filters);
+      const items = (resp.data || []).map((it: any) => ({
+          id: it.id ? `#${String(it.id)}` : '#0',
+          brandName: it.brand_name || it.brand?.name || String(it.brand_id || ''),
+          contactPerson: it.contact_person || it.name || '',
+          phoneNumber: Array.isArray(it.mobile_number) ? (it.mobile_number[0] || '') : (it.mobile_number || ''),
+          source: it.lead_source || it.source || '',
+          subSource: it.sub_source?.name || it.lead_sub_source?.name || it.lead_sub_source_name || it.lead_sub_source || '',
+          assignBy: it.created_by_user?.name || it.assign_by_name || it.created_by || '',
+          assignTo: it.current_assign_user_name || it.assigned_user?.name || (it.current_assign_user && typeof it.current_assign_user === 'object' ? it.current_assign_user.name : '') || it.assign_to_name || '',
+          dateTime: it.created_at || it.dateTime || it.created_at_formatted || '',
+          status: it.status || '',
+          leadStatus: it.lead_status_relation?.name || it.lead_status || '',
+          callStatus: (() => {
+            const raw = it.call_status_relation?.name ?? it.call_status ?? it.callStatus ?? '';
+            return raw === null || raw === undefined || raw === '' ? 'N/A' : raw;
+          })(),
+          callAttempt: Number(it.call_attempt ?? it.callAttempt ?? 0),
+          comment: it.comment || it.notes || '',
+        } as Lead));
+
+      setLeads(items);
+      // Use total from API pagination
+      const total = resp.meta?.pagination?.total ?? resp.meta?.total ?? items.length;
+      setTotalItems(Number(total ?? items.length));
+    } catch (err) {
+      console.error('Failed to fetch leads', err);
+      setLeads([]);
+      setTotalItems(0);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    let mounted = true;
-    const fetchLeads = async () => {
-      setLoading(true);
-      try {
-        const filters: Record<string, any> = {};
-        if (searchQuery) filters.search = searchQuery;
-        const resp = await listLeads(currentPage, itemsPerPage, filters);
-        if (!mounted) return;
-        const items = (resp.data || []).map((it: any) => ({
-            id: it.id ? `#${String(it.id)}` : '#0',
-            brandName: it.brand_name || it.brand?.name || String(it.brand_id || ''),
-            contactPerson: it.contact_person || it.name || '',
-            phoneNumber: Array.isArray(it.mobile_number) ? (it.mobile_number[0] || '') : (it.mobile_number || ''),
-            source: it.lead_source || it.source || '',
-            subSource: it.sub_source?.name || it.lead_sub_source?.name || it.lead_sub_source_name || it.lead_sub_source || '',
-            assignBy: it.created_by_user?.name || it.assign_by_name || it.created_by || '',
-            assignTo: it.current_assign_user_name || it.assigned_user?.name || (it.current_assign_user && typeof it.current_assign_user === 'object' ? it.current_assign_user.name : '') || it.assign_to_name || '',
-            dateTime: it.created_at || it.dateTime || it.created_at_formatted || '',
-            status: it.status || '',
-            leadStatus: it.lead_status_relation?.name || it.lead_status || '',
-            callStatus: (() => {
-              const raw = it.call_status_relation?.name ?? it.call_status ?? it.callStatus ?? '';
-              return raw === null || raw === undefined || raw === '' ? 'N/A' : raw;
-            })(),
-            callAttempt: Number(it.call_attempt ?? it.callAttempt ?? 0),
-            comment: it.comment || it.notes || '',
-          } as Lead));
-
-        setLeads(items);
-        // Use total from API pagination
-        const total = resp.meta?.pagination?.total ?? resp.meta?.total ?? items.length;
-        setTotalItems(Number(total ?? items.length));
-      } catch (err) {
-        console.error('Failed to fetch leads', err);
-        setLeads([]);
-        setTotalItems(0);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-
     fetchLeads();
-    return () => { mounted = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, searchQuery]);
 
   const columns = ([
@@ -315,11 +322,11 @@ const AllLeads: React.FC = () => {
       header: 'Call Status',
       render: (it: Lead) => (
         <div className="min-w-[160px]">
-          <CallStatusDropdown
-            value={it.callStatus}
-            options={callStatusOptions}
-            onChange={(newStatus) => handleCallStatusChange(it.id, newStatus)}
-          />
+            <CallStatusDropdown
+              value={it.callStatus}
+              options={callStatusOptions.map(opt => opt.name)}
+              onChange={(newStatus) => handleCallStatusChange(it.id, newStatus)}
+            />
         </div>
       ),
       className: 'min-w-[160px]',
