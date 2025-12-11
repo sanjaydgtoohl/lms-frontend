@@ -243,7 +243,7 @@ const EditRole: React.FC = () => {
                 selectedPermissionIds={selectedPermissionIds}
                 onChange={setSelectedPermissionIds}
               />
-              <div className="mt-2 text-xs text-gray-500">Selected IDs: {selectedPermissionIds.join(', ')}</div>
+                {/* Selected IDs display removed */}
             </div>
 
             {/* Form Actions */}

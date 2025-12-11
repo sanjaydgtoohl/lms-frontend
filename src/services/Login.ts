@@ -86,18 +86,17 @@ class LoginService {
       }
 
       const successData = data as LoginApiResponse;
-      
       // Store tokens in cookies (note: HttpOnly cookies should be set by server for best security)
       const now = Date.now();
-      if (successData.data.token) {
-        const expiresIn = successData.data.expires_in || 3600;
-        setCookie('auth_token', successData.data.token, { expires: expiresIn, secure: true, sameSite: 'Lax' });
-        setCookie('auth_token_expires', String(now + expiresIn * 1000), { expires: expiresIn, secure: true, sameSite: 'Lax' });
-      }
-      if (successData.data.refreshToken) {
-        // API may return refresh expiry; fall back to 7 days
+      const token = successData.data.token;
+      // Accept both refreshToken and refresh_token for compatibility
+      const refreshToken = (successData.data as any).refresh_token || (successData.data as any).refreshToken;
+      const expiresIn = successData.data.expires_in || 3600;
+      setCookie('auth_token', token, { expires: expiresIn, secure: true, sameSite: 'Lax' });
+      setCookie('auth_token_expires', String(now + expiresIn * 1000), { expires: expiresIn, secure: true, sameSite: 'Lax' });
+      if (refreshToken) {
         const refreshExpiresIn = (successData.data as any).refresh_expires_in || 7 * 24 * 3600;
-        setCookie('refresh_token', successData.data.refreshToken, { expires: refreshExpiresIn, secure: true, sameSite: 'Lax' });
+        setCookie('refresh_token', refreshToken, { expires: refreshExpiresIn, secure: true, sameSite: 'Lax' });
         setCookie('refresh_token_expires', String(now + refreshExpiresIn * 1000), { expires: refreshExpiresIn, secure: true, sameSite: 'Lax' });
       }
 

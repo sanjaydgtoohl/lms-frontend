@@ -6,6 +6,7 @@ export interface User {
   name: string;
   email?: string;
   role?: string;
+  roles?: any[];
   status?: 'Active' | 'Inactive';
   lastLogin?: string;
   created?: string;
@@ -74,10 +75,11 @@ export async function listUsers(page = 1, perPage = 10, search?: string): Promis
       const statusStr = String(it.status).toLowerCase();
       status = (statusStr === 'inactive' || statusStr === '0' || statusStr === 'false') ? 'Inactive' : 'Active';
     }
-    // If roles is an array, get first role's name, else use role string
+    // Preserve all roles array for UI rendering
     let role = '';
-    if (Array.isArray(it.roles) && it.roles.length > 0) {
-      role = it.roles[0].name ?? it.roles[0] ?? '';
+    let roles: any[] = Array.isArray(it.roles) ? it.roles : [];
+    if (roles.length > 0) {
+      role = roles[0].name ?? roles[0] ?? '';
     } else {
       role = it.role ?? it.role_name ?? '';
     }
@@ -91,6 +93,7 @@ export async function listUsers(page = 1, perPage = 10, search?: string): Promis
       name,
       email,
       role,
+      roles,
       status,
       lastLogin,
       created,

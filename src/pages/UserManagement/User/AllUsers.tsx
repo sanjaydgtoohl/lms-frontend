@@ -96,15 +96,17 @@ const AllUsers: React.FC = () => {
       : 'bg-red-100 text-red-700';
   };
 
-  const getRoleBadgeColor = (role?: string) => {
+  // Map role name/display_name to color classes
+  const getRoleBadgeColor = (roleName?: string) => {
     const roleColorMap: Record<string, string> = {
-      'S-Admin': 'border-purple-300 text-purple-700 bg-purple-50',
-      'Admin': 'border-blue-300 text-blue-700 bg-blue-50',
+      'Manager': 'border-blue-300 text-blue-700 bg-blue-50',
+      'Super Admin': 'border-purple-300 text-purple-700 bg-purple-50',
+      'Admin': 'border-green-300 text-green-700 bg-green-50',
       'BDM': 'border-orange-300 text-orange-700 bg-orange-50',
       'S-BDM': 'border-yellow-300 text-yellow-700 bg-yellow-50',
       'Planner': 'border-pink-300 text-pink-700 bg-pink-50',
     };
-    return (role && roleColorMap[role]) || 'border-gray-300 text-gray-700 bg-gray-50';
+    return (roleName && roleColorMap[roleName]) || 'border-gray-300 text-gray-700 bg-gray-50';
   };
 
   const columns = ([
@@ -152,14 +154,19 @@ const AllUsers: React.FC = () => {
       key: 'role',
       header: 'Role',
       render: (it: User) => (
-        <div className="flex justify-center">
-          <span
-            className={`inline-flex items-center justify-center h-7 px-3 border rounded-full text-xs font-medium leading-tight whitespace-nowrap ${getRoleBadgeColor(
-              it.role
-            )}`}
-          >
-            {it.role}
-          </span>
+        <div className="flex flex-wrap gap-2 justify-center">
+          {Array.isArray(it.roles) && it.roles.length > 0 ? (
+            it.roles.map((role: any) => (
+              <span
+                key={role.id || role.name}
+                className={`inline-flex items-center justify-center h-7 px-3 border rounded-full text-xs font-medium leading-tight whitespace-nowrap ${getRoleBadgeColor(role.display_name || role.name)}`}
+              >
+                {role.display_name || role.name}
+              </span>
+            ))
+          ) : (
+            <span className="text-gray-400">-</span>
+          )}
         </div>
       ),
       className: 'text-center',
