@@ -97,10 +97,22 @@ export async function updateUserDetails(
 
     console.log('Updating user with ID:', numericId);
 
-    // role_ids is already an array, send it directly
-    const updatePayload: any = { ...payload };
+    // Build form-data payload
+    const formData = new FormData();
+    formData.append('name', payload.name);
+    formData.append('email', payload.email);
+    if (payload.phone) formData.append('phone', payload.phone);
+    if (payload.password) formData.append('password', payload.password);
+    if (payload.password_confirmation) formData.append('password_confirmation', payload.password_confirmation);
+    if (payload.role_ids && Array.isArray(payload.role_ids)) {
+      payload.role_ids.forEach((roleId) => {
+        formData.append('role[]', String(roleId));
+      });
+    }
+    formData.append('_method', 'Put');
 
-    const res = await apiClient.put<any>(ENDPOINTS.UPDATE_USER(numericId), updatePayload);
+    // Use POST for method override
+    const res = await apiClient.post<any>(ENDPOINTS.UPDATE_USER(numericId), formData);
     console.log('Update Response:', res);
 
     return handleResponse<EditUserDetail>(res);

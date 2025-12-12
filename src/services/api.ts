@@ -8,7 +8,6 @@ import type {
 } from '../types';
 import { loginService } from './Login';
 import http from './http';
-import { getCookie } from '../utils/cookies';
 import { handleApiError } from '../utils/apiErrorHandler';
 
 class ApiClient {
@@ -89,10 +88,11 @@ class ApiClient {
   }
 
   async refreshToken(): Promise<AuthResponse> {
-    const refreshToken = getCookie('refresh_token');
+
+    // Do not send refreshToken in body; rely on cookie
     const response = await this.request<AuthResponse>(API_ENDPOINTS.AUTH.REFRESH, {
       method: 'POST',
-      data: { refreshToken },
+      data: {},
     });
 
     if (response.data.token) {

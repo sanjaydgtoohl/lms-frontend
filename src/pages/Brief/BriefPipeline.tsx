@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import CreateBriefForm from './CreateBriefForm';
+import { apiClient } from '../../utils/apiClient';
 import MasterView from '../../components/ui/MasterView';
 import Pagination from '../../components/ui/Pagination';
 import Table, { type Column } from '../../components/ui/Table';
@@ -185,8 +186,22 @@ const BriefPipeline: React.FC = () => {
     return () => { mounted = false; };
   }, [currentPage, itemsPerPage, searchQuery]);
 
-  // Assign options for briefs (match planners used in dummy data)
-  const planners = ['Planner 1', 'Planner 2', 'Planner 3', 'Planner 4', 'Planner 5', 'Planner 6'];
+
+  // Assign To options state and effect (fetch from API)
+  interface UserOption { id: number | string; name: string; }
+  const [assignToOptions, setAssignToOptions] = useState<UserOption[]>([]);
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const res = await apiClient.get('/users/list');
+        const users = Array.isArray(res.data) ? res.data : [];
+        setAssignToOptions(users.map((u: any) => ({ id: u.id, name: u.name })));
+      } catch (err) {
+        setAssignToOptions([]);
+      }
+    };
+    loadUsers();
+  }, []);
 
   const handleAssignToChange = async (briefId: string, newPlanner: string) => {
     try {
@@ -375,7 +390,7 @@ const BriefPipeline: React.FC = () => {
                     <div className="min-w-[140px]">
                       <AssignDropdown
                         value={displayName}
-                        options={planners}
+                        options={assignToOptions.map(opt => opt.name)}
                         onChange={(newPlanner: string) => handleAssignToChange(it.id, newPlanner)}
                       />
                     </div>

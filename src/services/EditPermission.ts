@@ -97,35 +97,24 @@ export async function updatePermissionWithFile(
     
     console.log('Updating permission with ID:', cleanId);
     
-    // Use FormData for multipart upload if icon file is present
-    if (payload.icon_file) {
-      const formData = new FormData();
-      formData.append('display_name', payload.display_name);
-      formData.append('name', payload.name);
-      formData.append('url', payload.url || '');
-      formData.append('is_parent', String(payload.is_parent || ''));
-      formData.append('description', payload.description);
-      formData.append('icon_text', payload.icon_text || '');
-      formData.append('status', payload.status || '1');
-      if (payload.order !== undefined) formData.append('order', String(payload.order));
-      formData.append('icon_file', payload.icon_file);
-      formData.append('_method', 'PUT'); // For Laravel method spoofing if needed
+    // Always use FormData and POST with _method: 'PUT', even if no file is present
+    const formData = new FormData();
+    formData.append('display_name', payload.display_name);
+    formData.append('name', payload.name);
+    formData.append('url', payload.url || '');
+    formData.append('is_parent', String(payload.is_parent || ''));
+    formData.append('description', payload.description);
+    formData.append('icon_text', payload.icon_text || '');
+    formData.append('status', payload.status || '1');
+    if (payload.order !== undefined) formData.append('order', String(payload.order));
+    if (payload.icon_file) formData.append('icon_file', payload.icon_file);
+    formData.append('_method', 'PUT'); // For Laravel method spoofing
 
-      const res = await apiClient.post<any>(
-        ENDPOINTS.UPDATE_PERMISSION(cleanId),
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
-      return handleResponse<PermissionEditDetail>(res);
-    } else {
-      // Standard JSON update without file
-      const res = await apiClient.put<any>(ENDPOINTS.UPDATE_PERMISSION(cleanId), payload);
-      return handleResponse<PermissionEditDetail>(res);
-    }
+    const res = await apiClient.post<any>(
+      ENDPOINTS.UPDATE_PERMISSION(cleanId),
+      formData
+    );
+    return handleResponse<PermissionEditDetail>(res);
   } catch (err: any) {
     console.error('Error updating permission:', err);
     const error = new Error(err?.message || 'Failed to update permission');

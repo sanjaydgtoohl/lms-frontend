@@ -10,6 +10,7 @@ import NotificationPopup from '../../components/ui/NotificationPopup';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants';
 import { listLeads, updateLead, deleteLead } from '../../services/AllLeads';
+import { apiClient } from '../../utils/apiClient';
 import { fetchCallStatuses, updateCallStatus } from '../../services/CallStatus';
 
 interface Lead {
@@ -34,14 +35,11 @@ interface CallStatusOption {
   name: string;
 }
 
-const salesMen = [
-  'Sales Man 1',
-  'Sales Man 2',
-  'Sales Man 3',
-  'Sales Man 4',
-  'Sales Man 5',
-  'Sales Man 6',
-];
+
+interface UserOption {
+  id: number | string;
+  name: string;
+}
 
 // Call status options will be fetched from API
 
@@ -54,6 +52,7 @@ const AllLeads: React.FC = () => {
   const itemsPerPage = 15;
   const [leads, setLeads] = useState<Lead[]>([]);
   const [callStatusOptions, setCallStatusOptions] = useState<CallStatusOption[]>([]);
+  const [assignToOptions, setAssignToOptions] = useState<UserOption[]>([]);
     // Fetch call status options from API
     useEffect(() => {
       const loadCallStatuses = async () => {
@@ -67,6 +66,20 @@ const AllLeads: React.FC = () => {
         }
       };
       loadCallStatuses();
+    }, []);
+
+    // Fetch assign to (user) options from API
+    useEffect(() => {
+      const loadUsers = async () => {
+        try {
+          const res = await apiClient.get('/users/list');
+          const users = Array.isArray(res.data) ? res.data : [];
+          setAssignToOptions(users.map((u: any) => ({ id: u.id, name: u.name })));
+        } catch (err) {
+          setAssignToOptions([]);
+        }
+      };
+      loadUsers();
     }, []);
   const [loading, setLoading] = useState(false);
   const [totalItems, setTotalItems] = useState(0);
@@ -283,7 +296,7 @@ const AllLeads: React.FC = () => {
       render: (it: Lead) => (
         <AssignDropdown
           value={it.assignTo}
-          options={salesMen}
+          options={assignToOptions.map(opt => opt.name)}
           onChange={(newSalesMan) => handleAssignToChange(it.id, newSalesMan)}
         />
       ),

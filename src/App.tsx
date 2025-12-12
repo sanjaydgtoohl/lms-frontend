@@ -16,6 +16,8 @@ import { MissCampaignView, MissCampaignCreate } from './pages/MissCampaign';
 import { AllLeads, CreateLead, EditLead, ViewLead, Pending, Interested, MeetingScheduled, MeetingDone, MeetingSchedule, BriefStatus } from './pages/LeadManagement';
 import { AllPermissions, CreatePermission, EditPermission, ViewPermission, AllRoles, CreateRole, EditRole, ViewRole, AllUsers, CreateUser, EditUser, ViewUser } from './pages/UserManagement';
 import Layout from './components/layout/Layout';
+import PermissionRoute from './components/ui/PermissionRoute';
+import { SidebarMenuProvider } from './context/SidebarMenuContext';
 import BriefPipeline from './pages/Brief/BriefPipeline';
 import ErrorBoundary from './components/ui/ErrorBoundary';
 import { ROUTES } from './constants';
@@ -54,8 +56,9 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 function App() {
   return (
     <ErrorBoundary>
-      <Router>
-        <Routes>
+      <SidebarMenuProvider>
+        <Router>
+          <Routes>
         {/* Public Routes */}
         <Route 
           path={ROUTES.LOGIN} 
@@ -78,93 +81,94 @@ function App() {
           {/* Index redirects to dashboard */}
           <Route index element={<Navigate to="dashboard" replace />} />
           {/* Child routes must be relative when nested */}
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="courses" element={<Courses />} />
-          <Route path="profile" element={<Profile />} />
-          <Route path="lead-source" element={<LeadSource />} />
+          <Route path="dashboard" element={<PermissionRoute><Dashboard /></PermissionRoute>} />
+          <Route path="courses" element={<PermissionRoute><Courses /></PermissionRoute>} />
+          <Route path="profile" element={<PermissionRoute><Profile /></PermissionRoute>} />
+          <Route path="lead-source" element={<PermissionRoute><LeadSource /></PermissionRoute>} />
           {/* Master routes (support direct create/view/edit paths) */}
-          <Route path="master/brand" element={<BrandMaster />} />
-          <Route path="master/brand/create" element={<BrandMaster />} />
-          <Route path="master/brand/:id" element={<BrandMaster />} />
-          <Route path="master/brand/:id/edit" element={<BrandMaster />} />
+          <Route path="master/brand" element={<PermissionRoute><BrandMaster /></PermissionRoute>} />
+          <Route path="master/brand/create" element={<PermissionRoute><BrandMaster /></PermissionRoute>} />
+          <Route path="master/brand/:id" element={<PermissionRoute><BrandMaster /></PermissionRoute>} />
+          <Route path="master/brand/:id/edit" element={<PermissionRoute><BrandMaster /></PermissionRoute>} />
 
-          <Route path="master/agency" element={<AgencyMaster />} />
-          <Route path="master/agency/create" element={<AgencyMaster />} />
-          <Route path="master/agency/:id" element={<AgencyMaster />} />
-          <Route path="master/agency/:id/edit" element={<AgencyMaster />} />
+          <Route path="master/agency" element={<PermissionRoute><AgencyMaster /></PermissionRoute>} />
+          <Route path="master/agency/create" element={<PermissionRoute><AgencyMaster /></PermissionRoute>} />
+          <Route path="master/agency/:id" element={<PermissionRoute><AgencyMaster /></PermissionRoute>} />
+          <Route path="master/agency/:id/edit" element={<PermissionRoute><AgencyMaster /></PermissionRoute>} />
 
-          <Route path="master/industry" element={<IndustryMaster />} />
-          <Route path="master/industry/create" element={<IndustryMaster />} />
-          <Route path="master/industry/:id" element={<IndustryMaster />} />
-          <Route path="master/industry/:id/edit" element={<IndustryMaster />} />
+          <Route path="master/industry" element={<PermissionRoute><IndustryMaster /></PermissionRoute>} />
+          <Route path="master/industry/create" element={<PermissionRoute><IndustryMaster /></PermissionRoute>} />
+          <Route path="master/industry/:id" element={<PermissionRoute><IndustryMaster /></PermissionRoute>} />
+          <Route path="master/industry/:id/edit" element={<PermissionRoute><IndustryMaster /></PermissionRoute>} />
 
-          <Route path="master/designation" element={<DesignationMaster />} />
-          <Route path="master/designation/create" element={<DesignationMaster />} />
-          <Route path="master/designation/:id" element={<DesignationMaster />} />
-          <Route path="master/designation/:id/edit" element={<DesignationMaster />} />
+          <Route path="master/designation" element={<PermissionRoute><DesignationMaster /></PermissionRoute>} />
+          <Route path="master/designation/create" element={<PermissionRoute><DesignationMaster /></PermissionRoute>} />
+          <Route path="master/designation/:id" element={<PermissionRoute><DesignationMaster /></PermissionRoute>} />
+          <Route path="master/designation/:id/edit" element={<PermissionRoute><DesignationMaster /></PermissionRoute>} />
 
-          <Route path="master/department" element={<DepartmentMaster />} />
-          <Route path="master/department/create" element={<DepartmentMaster />} />
-          <Route path="master/department/:id" element={<DepartmentMaster />} />
-          <Route path="master/department/:id/edit" element={<DepartmentMaster />} />
+          <Route path="master/department" element={<PermissionRoute><DepartmentMaster /></PermissionRoute>} />
+          <Route path="master/department/create" element={<PermissionRoute><DepartmentMaster /></PermissionRoute>} />
+          <Route path="master/department/:id" element={<PermissionRoute><DepartmentMaster /></PermissionRoute>} />
+          <Route path="master/department/:id/edit" element={<PermissionRoute><DepartmentMaster /></PermissionRoute>} />
 
-          <Route path="master/source" element={<LeadSource />} />
-          <Route path="master/source/create" element={<LeadSource />} />
-          <Route path="master/source/:id" element={<LeadSource />} />
-          <Route path="master/source/:id/edit" element={<LeadSource />} />
+          <Route path="master/source" element={<PermissionRoute><LeadSource /></PermissionRoute>} />
+          <Route path="master/source/create" element={<PermissionRoute><LeadSource /></PermissionRoute>} />
+          <Route path="master/source/:id" element={<PermissionRoute><LeadSource /></PermissionRoute>} />
+          <Route path="master/source/:id/edit" element={<PermissionRoute><LeadSource /></PermissionRoute>} />
 
           {/* Lead Management Routes */}
           <Route path="lead-management">
-            <Route index element={<AllLeads />} />
-            <Route path="all-leads" element={<AllLeads />} />
-            <Route path="brief-status" element={<BriefStatus />} />
-            <Route path="pending" element={<Pending />} />
-            <Route path="interested" element={<Interested />} />
-            <Route path="meeting-scheduled" element={<MeetingScheduled />} />
-            <Route path="meeting-done" element={<MeetingDone />} />
-            <Route path="create" element={<CreateLead />} />
-            <Route path="edit/:id" element={<EditLead />} />
-            <Route path=":id" element={<ViewLead />} />
+            <Route index element={<PermissionRoute><AllLeads /></PermissionRoute>} />
+            <Route path="all-leads" element={<PermissionRoute><AllLeads /></PermissionRoute>} />
+            <Route path="brief-status" element={<PermissionRoute><BriefStatus /></PermissionRoute>} />
+            <Route path="pending" element={<PermissionRoute><Pending /></PermissionRoute>} />
+            <Route path="interested" element={<PermissionRoute><Interested /></PermissionRoute>} />
+            <Route path="meeting-scheduled" element={<PermissionRoute><MeetingScheduled /></PermissionRoute>} />
+            <Route path="meeting-done" element={<PermissionRoute><MeetingDone /></PermissionRoute>} />
+            <Route path="create" element={<PermissionRoute><CreateLead /></PermissionRoute>} />
+            <Route path="edit/:id" element={<PermissionRoute><EditLead /></PermissionRoute>} />
+            <Route path=":id" element={<PermissionRoute><ViewLead /></PermissionRoute>} />
           </Route>
 
           {/* Meeting Schedule top-level route */}
-          <Route path="meeting-schedule" element={<MeetingSchedule />} />
+          <Route path="meeting-schedule" element={<PermissionRoute><MeetingSchedule /></PermissionRoute>} />
 
           {/* Miss Campaign Routes */}
-          <Route path="miss-campaign/view" element={<MissCampaignView />} />
-          <Route path="miss-campaign/create" element={<MissCampaignCreate />} />
-          <Route path="miss-campaign/view/:id" element={<MissCampaignView />} />
-          <Route path="miss-campaign/view/:id/edit" element={<MissCampaignView />} />
+          <Route path="miss-campaign/view" element={<PermissionRoute><MissCampaignView /></PermissionRoute>} />
+          <Route path="miss-campaign/create" element={<PermissionRoute><MissCampaignCreate /></PermissionRoute>} />
+          <Route path="miss-campaign/view/:id" element={<PermissionRoute><MissCampaignView /></PermissionRoute>} />
+          <Route path="miss-campaign/view/:id/edit" element={<PermissionRoute><MissCampaignView /></PermissionRoute>} />
           {/* Brief Pipeline Routes */}
           <Route path="brief">
-            <Route path="Brief_Pipeline" element={<BriefPipeline />} />
-            <Route path="create" element={<BriefPipeline />} />
-            <Route path=":id" element={<BriefPipeline />} />
-            <Route path=":id/edit" element={<BriefPipeline />} />
+            <Route path="Brief_Pipeline" element={<PermissionRoute><BriefPipeline /></PermissionRoute>} />
+            <Route path="create" element={<PermissionRoute><BriefPipeline /></PermissionRoute>} />
+            <Route path=":id" element={<PermissionRoute><BriefPipeline /></PermissionRoute>} />
+            <Route path=":id/edit" element={<PermissionRoute><BriefPipeline /></PermissionRoute>} />
           </Route>
 
           {/* User Management Routes */}
           <Route path="user-management">
-            <Route index element={<AllPermissions />} />
-            <Route path="permission" element={<AllPermissions />} />
-            <Route path="permission/create" element={<CreatePermission />} />
-            <Route path="permission/edit/:id" element={<EditPermission />} />
-            <Route path="permission/:id" element={<ViewPermission />} />
-            <Route path="role" element={<AllRoles />} />
-            <Route path="role/create" element={<CreateRole />} />
-            <Route path="role/edit/:id" element={<EditRole />} />
-            <Route path="role/:id" element={<ViewRole />} />
-            <Route path="user" element={<AllUsers />} />
-            <Route path="user/create" element={<CreateUser />} />
-            <Route path="user/edit/:id" element={<EditUser />} />
-            <Route path="user/:id" element={<ViewUser />} />
+            <Route index element={<PermissionRoute><AllPermissions /></PermissionRoute>} />
+            <Route path="permission" element={<PermissionRoute><AllPermissions /></PermissionRoute>} />
+            <Route path="permission/create" element={<PermissionRoute><CreatePermission /></PermissionRoute>} />
+            <Route path="permission/edit/:id" element={<PermissionRoute><EditPermission /></PermissionRoute>} />
+            <Route path="permission/:id" element={<PermissionRoute><ViewPermission /></PermissionRoute>} />
+            <Route path="role" element={<PermissionRoute><AllRoles /></PermissionRoute>} />
+            <Route path="role/create" element={<PermissionRoute><CreateRole /></PermissionRoute>} />
+            <Route path="role/edit/:id" element={<PermissionRoute><EditRole /></PermissionRoute>} />
+            <Route path="role/:id" element={<PermissionRoute><ViewRole /></PermissionRoute>} />
+            <Route path="user" element={<PermissionRoute><AllUsers /></PermissionRoute>} />
+            <Route path="user/create" element={<PermissionRoute><CreateUser /></PermissionRoute>} />
+            <Route path="user/edit/:id" element={<PermissionRoute><EditUser /></PermissionRoute>} />
+            <Route path="user/:id" element={<PermissionRoute><ViewUser /></PermissionRoute>} />
           </Route>
         </Route>
         
         {/* 404 Route */}
         <Route path="*" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
-        </Routes>
-      </Router>
+          </Routes>
+        </Router>
+      </SidebarMenuProvider>
     </ErrorBoundary>
   );
 }
