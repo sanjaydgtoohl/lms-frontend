@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { MasterFormHeader } from '../../../components/ui';
+import { MasterFormHeader, PermissionDenied } from '../../../components/ui';
 import { ROUTES } from '../../../constants';
 import { getPermission } from '../../../services/AllPermissions';
 
@@ -50,11 +50,7 @@ const ViewPermission: React.FC = () => {
 
 
   if (!permission) {
-    return (
-      <div className="flex-1 p-6">
-        <div className="text-lg text-gray-500">Permission not found</div>
-      </div>
-    );
+    return <PermissionDenied />;
   }
 
   return (

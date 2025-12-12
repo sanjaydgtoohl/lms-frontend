@@ -34,16 +34,14 @@ interface Lead {
 
 
 
-const salesMen = [
-  'Sales Man 1',
-  'Sales Man 2',
-  'Sales Man 3',
-  'Sales Man 4',
-  'Sales Man 5',
-  'Sales Man 6',
-];
+
+interface UserOption {
+  id: number | string;
+  name: string;
+}
 
 import { fetchCallStatuses } from '../../services/CallStatus';
+import { apiClient } from '../../utils/apiClient';
 import http from '../../services/http';
 
 const statusColors: Record<string, string> = {
@@ -63,6 +61,20 @@ interface Props {
 }
 
 const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
+  // Assign To options state and effect (must be inside component)
+  const [assignToOptions, setAssignToOptions] = useState<UserOption[]>([]);
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const res = await apiClient.get('/users/list');
+        const users = Array.isArray(res.data) ? res.data : [];
+        setAssignToOptions(users.map((u: any) => ({ id: u.id, name: u.name })));
+      } catch (err) {
+        setAssignToOptions([]);
+      }
+    };
+    loadUsers();
+  }, []);
     // Helper to fetch leads (for reload)
     const fetchLeads = async () => {
       try {
@@ -348,7 +360,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
       render: (it: Lead) => (
         <AssignDropdown
           value={it.assignTo ?? ''}
-          options={salesMen}
+          options={assignToOptions.map(opt => opt.name)}
           onChange={(newSalesMan) => handleAssignToChange(it.id, newSalesMan)}
         />
       ),

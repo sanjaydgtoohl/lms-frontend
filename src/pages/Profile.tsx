@@ -61,8 +61,9 @@ const Profile: React.FC = () => {
     );
   }
 
-  // Format last_login_at
-  function formatDate(dateStr?: string) {
+  // Format date string or human readable
+  function formatDate(dateStr?: string, humanStr?: string) {
+    if (humanStr) return humanStr;
     if (!dateStr) return '';
     const d = new Date(dateStr);
     return d.toLocaleString();
@@ -70,7 +71,7 @@ const Profile: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div>
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <div className="px-6 py-8">
             <div className="flex items-center space-x-6">
@@ -79,18 +80,21 @@ const Profile: React.FC = () => {
                   <img src={profile.avatar_url} alt="avatar" className="w-20 h-20 object-cover rounded-full" />
                 ) : (
                   <span className="text-2xl font-bold text-white">
-                    {profile.full_name ? profile.full_name[0] : '?'}
+                    {(profile.full_name || profile.name || '?')[0]}
                   </span>
                 )}
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  {profile.full_name}
+                  {profile.full_name || profile.name}
                 </h1>
                 <p className="text-gray-600">{profile.email}</p>
                 <span className={`inline-block px-3 py-1 text-sm font-medium rounded-full mt-2 ${profile.status === '1' || profile.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-600'}`}>
                   {profile.status === '1' || profile.is_active ? 'Active' : 'Inactive'}
                 </span>
+                {profile.is_admin && (
+                  <span className="inline-block px-3 py-1 text-sm font-medium rounded-full ml-2 bg-blue-100 text-blue-800">Admin</span>
+                )}
               </div>
             </div>
           </div>
@@ -99,9 +103,7 @@ const Profile: React.FC = () => {
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Account Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Full Name
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
                 <input
                   type="text"
                   value={profile.full_name || profile.name || ''}
@@ -110,9 +112,7 @@ const Profile: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
                 <input
                   type="email"
                   value={profile.email || ''}
@@ -121,9 +121,7 @@ const Profile: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
                 <input
                   type="text"
                   value={profile.phone || 'Not Available'}
@@ -132,9 +130,7 @@ const Profile: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Last Login
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Last Login</label>
                 <input
                   type="text"
                   value={formatDate(profile.last_login_at)}
@@ -142,6 +138,42 @@ const Profile: React.FC = () => {
                   readOnly
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Account Created</label>
+                <input
+                  type="text"
+                  value={formatDate(profile.created_at, profile.created_at_human)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  readOnly
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Last Updated</label>
+                <input
+                  type="text"
+                  value={formatDate(profile.updated_at, profile.updated_at_human)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  readOnly
+                />
+              </div>
+            </div>
+            {/* Roles Section */}
+            <div className="mt-8">
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">Roles</h2>
+              {Array.isArray(profile.roles) && profile.roles.length > 0 ? (
+                <ul className="list-disc pl-5">
+                  {profile.roles.map((role: any) => (
+                    <li key={role.id} className="mb-1">
+                      <span className="font-medium text-gray-800">{role.display_name || role.name}</span>
+                      {role.description && (
+                        <span className="text-gray-500 ml-2">- {role.description}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <span className="text-gray-500">No roles assigned.</span>
+              )}
             </div>
           </div>
         </div>

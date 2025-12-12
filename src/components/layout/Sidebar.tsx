@@ -4,7 +4,11 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import LogoutIcon from "../../assets/icons/LogoutIcon";
 import HelpIcon from "../../assets/icons/HelpIcon";
 import { useAuthStore } from "../../store/auth";
-import { sidebarItems as navigationItems } from "../../services/Sidebar";
+
+// Remove static sidebar import, use dynamic API mapping
+import { mapMenu } from "../../services/Side";
+import type { NavigationItem as ApiNavigationItem } from "../../services/Side";
+import { apiClient } from "../../utils/apiClient";
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -15,12 +19,10 @@ interface SidebarProps {
   onCloseMobile?: () => void;
 }
 
-interface NavigationItem {
-  name: string;
-  path?: string;
-  icon: React.ComponentType<{ className?: string }>;
-  children?: NavigationItem[];
-}
+
+// Use the NavigationItem type from Side.ts for consistency
+type NavigationItem = ApiNavigationItem;
+
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobileOpen = false, onCloseMobile }) => {
   const location = useLocation();
@@ -29,6 +31,24 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [showMobilePopup, setShowMobilePopup] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
+  const [navigationItems, setNavigationItems] = useState<NavigationItem[]>([]);
+
+  // Fetch sidebar data from API and map it
+  useEffect(() => {
+    async function fetchSidebar() {
+      try {
+        const res = await apiClient.get<any>("/permissions/sidebar");
+        if (res && res.data && Array.isArray(res.data)) {
+          setNavigationItems(mapMenu(res.data));
+        } else {
+          setNavigationItems([]);
+        }
+      } catch (e) {
+        setNavigationItems([]);
+      }
+    }
+    fetchSidebar();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -119,23 +139,25 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
   useEffect(() => {
     const effectivePath = getEffectivePath(location.pathname);
 
-    const activeParents = navigationItems
+    let activeParents = navigationItems
       .filter((item) =>
         item.children &&
         item.children.some((child) => {
           if (!child.path) return false;
-          // consider both exact match and nested routes (startsWith)
           return effectivePath === child.path || effectivePath.startsWith(child.path + "/");
         })
       )
       .map((item) => item.name.toLowerCase().replace(/\s+/g, "-"));
 
-    // Replace expanded items with the parents active for the current route.
-    // This collapses any open parent menus when navigating to routes that
-    // don't belong to them and avoids a visible "blink" caused by
-    // clearing then immediately re-opening menus.
+    // Always expand Miss Campaign on /miss-campaign/create
+    if (location.pathname === "/miss-campaign/create") {
+      const missCampaignSlug = navigationItems.find(item => item.name === "Miss Campaign")?.name.toLowerCase().replace(/\s+/g, "-");
+      if (missCampaignSlug && !activeParents.includes(missCampaignSlug)) {
+        activeParents.push(missCampaignSlug);
+      }
+    }
     setExpandedItems(activeParents);
-  }, [location.pathname]);
+  }, [location.pathname, navigationItems]);
 
   const renderNavigationItem = (item: NavigationItem, level = 0) => {
     const hasChildren = item.children && item.children.length > 0;
@@ -143,6 +165,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
     const isExpanded = expandedItems.includes(slug);
     const isItemActive = isParentActive(item);
     const IconComponent = item.icon;
+
+    // Custom highlight for Miss Campaign, Live Campaign, Brief, and Brief Request
+    const isMissCampaignRoute = location.pathname === "/miss-campaign/create";
+    const isMissCampaign = item.name === "Miss Campaign";
+    const isLiveCampaign = item.name === "Live Campaign";
+    const isBriefCreateRoute = location.pathname === "/brief/create";
+    const isBrief = item.name.trim() === "Brief" || item.name.trim() === "Brief ";
+    const isBriefRequest = item.name === "Brief Request";
+    // Highlight parent and child when on /miss-campaign/create or /brief/create
+    const highlightClass =
+      (isMissCampaignRoute && (isMissCampaign || isLiveCampaign)) ||
+      (isBriefCreateRoute && (isBrief || isBriefRequest))
+        ? "bg-orange-100"
+        : isItemActive
+        ? "bg-orange-100"
+        : "hover:bg-orange-50";
 
     const handleCardClick = () => {
       if (hasChildren) {
@@ -163,7 +201,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
             flex items-center justify-between px-4 py-3 text-sm font-medium cursor-pointer rounded-lg
             transition-all duration-200 ease-in-out
             ${level > 0 ? "ml-6" : ""}
-            ${isItemActive ? "bg-orange-100" : "hover:bg-orange-50"}
+            ${highlightClass}
             ${isCollapsed ? "px-2 justify-center" : ""}
           `}
           onClick={handleCardClick}
@@ -173,14 +211,23 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
               isCollapsed ? "justify-center" : ""
             }`}
           >
-            <IconComponent
-              // enforce a fixed visual size and prevent flex shrinking so icons remain
-              // identical across breakpoints (w-4 = 1rem = 16px)
-              className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)] ${isCollapsed ? "" : "mr-2.5"}`}
-            />
+            {/* Show icon_file image if present, else fallback to icon component */}
+            {item.icon_file ? (
+              <img
+                src={item.icon_file}
+                alt={item.name}
+                className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] object-contain ${isCollapsed ? "" : "mr-2.5"}`}
+                style={{ display: "inline-block" }}
+              />
+            ) : (
+              IconComponent && (
+                <IconComponent
+                  className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)] ${isCollapsed ? "" : "mr-2.5"}`}
+                />
+              )
+            )}
             {!isCollapsed && <span className="text-[var(--text-primary)]">{item.name}</span>}
           </div>
-
           {hasChildren && !isCollapsed && (
             <div className="ml-auto">
               {isExpanded ? (
@@ -207,15 +254,25 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
                   setShowMobilePopup(false);
                 }}
               >
-                {React.createElement(child.icon, {
-                  className: "w-4 h-4 mr-2 text-[var(--text-primary)]",
-                })}
+                {/* Show icon_file image if present, else fallback to icon component */}
+                {child.icon_file ? (
+                  <img
+                    src={child.icon_file}
+                    alt={child.name}
+                    className="w-4 h-4 mr-2 object-contain"
+                    style={{ display: "inline-block" }}
+                  />
+                ) : (
+                  child.icon && React.createElement(child.icon, {
+                    className: "w-4 h-4 mr-2 text-[var(--text-primary)]",
+                  })
+                )}
                 <span className="text-[var(--text-primary)]">{child.name}</span>
               </Link>
             ))}
           </div>
         )}
- 
+
         {hasChildren && isExpanded && !isCollapsed && (
           <div className="mt-2 space-y-1">
             {item.children?.map((child) => renderNavigationItem(child, level + 1))}
