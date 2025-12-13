@@ -1,5 +1,6 @@
 import { jwtDecode } from "jwt-decode";
 import { useAuthStore } from '../store/auth';
+import sessionManager from '../services/sessionManager';
 
 interface JWTPayload {
   exp?: number;
@@ -106,8 +107,6 @@ export const stopProactiveTokenRefresh = () => {
  */
 export const refreshTokenProactive = async (): Promise<void> => {
   try {
-    // Import sessionManager to trigger refresh
-    const sessionManager = await import('../services/sessionManager');
     const result = await sessionManager.refreshTokens();
     console.log('[Auth] Proactive refresh succeeded:', result);
   } catch (error) {

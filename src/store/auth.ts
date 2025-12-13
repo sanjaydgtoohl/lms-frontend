@@ -76,6 +76,12 @@ export const useAuthStore = create<AuthStore>()(
           });
           // clear session manager and cookies
           sessionManager.clearSession();
+          // remove persisted auth from localStorage (zustand persist key)
+          try {
+            localStorage.removeItem('auth-storage');
+          } catch (e) {
+            // ignore if localStorage is not available
+          }
         }
       },
 

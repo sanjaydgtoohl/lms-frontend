@@ -9,6 +9,7 @@ import { listLeads } from '../../services/AllLeads';
 import { fetchBriefStatuses } from '../../services/BriefStatus';
 import { motion } from 'framer-motion';
 import { MasterFormHeader, NotificationPopup, SelectField } from '../../components/ui';
+import { apiClient } from '../../utils/apiClient';
 // Dropdown UI uses SelectField component
 
 type Props = {
@@ -68,12 +69,23 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
   const [briefStatuses, setBriefStatuses] = useState<Array<string | { value: string; label: string }>>([]);
   const [briefStatusesLoading, setBriefStatusesLoading] = useState(false);
   const [briefStatusesError, setBriefStatusesError] = useState<string | null>(null);
+  const [priorityOptions, setPriorityOptions] = useState<Array<{ value: string; label: string }>>([
+    { value: 'Low', label: 'Low' },
+    { value: 'Medium', label: 'Medium' },
+    { value: 'High', label: 'High' },
+  ]);
+  const [priorityLoading, setPriorityLoading] = useState(false);
+  const [priorityError, setPriorityError] = useState<string | null>(null);
 
   // dropdowns are handled by SelectField; it manages outside-click and blur
 
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [histories, setHistories] = useState<any[]>([]);
+  const [historiesLoading, setHistoriesLoading] = useState(false);
+  const [, setHistoriesError] = useState<string | null>(null);
+  const [, setBrandAgencyLoading] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -152,6 +164,73 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
     }
   }, [initialData]);
 
+  // Fetch assign histories for this brief when editing
+  useEffect(() => {
+    let mounted = true;
+    const fetchHistories = async () => {
+      if (mode !== 'edit') return;
+      const briefId = initialData?.id ?? initialData?.briefId ?? initialData?.brief_id;
+      if (!briefId) return;
+      try {
+        setHistoriesLoading(true);
+        setHistoriesError(null);
+        const res = await apiClient.get<any>(`/briefs/${briefId}/assign-histories`);
+        const payload = res && (res.data || res.data?.data) ? (res.data || res.data.data) : (res.data ?? []);
+        // API may return array directly or under data
+        const items = Array.isArray(payload) ? payload : (payload.data || []);
+        if (!mounted) return;
+        setHistories(items || []);
+      } catch (err: any) {
+        if (!mounted) return;
+        setHistoriesError(err?.message || 'Failed to load history');
+        setHistories([]);
+      } finally {
+        if (mounted) setHistoriesLoading(false);
+      }
+    };
+
+    fetchHistories();
+    return () => { mounted = false; };
+  }, [initialData, mode]);
+
+  // When Brand Name changes, try to auto-fill Agency Name from brand-specific endpoint
+  useEffect(() => {
+    let mounted = true;
+    const fillAgencyForBrand = async () => {
+      const raw = form.brandName;
+      if (!raw) return;
+      // If value looks like an id, call brand agencies endpoint
+      const idMatch = String(raw).match(/^\d+$/);
+      if (!idMatch) return;
+      const brandId = idMatch[0];
+      try {
+        setBrandAgencyLoading(true);
+        // endpoint example: /brands/51/agencies
+        const res = await apiClient.get<any>(`/brands/${brandId}/agencies`);
+        // API may return { success, data: {...} } or { success, data: [...] }
+        const body = res && (res.data || res.data?.data) ? (res.data || res.data.data) : (res.data ?? res);
+        let items: any[] = [];
+        if (Array.isArray(body)) items = body;
+        else if (Array.isArray(body.data)) items = body.data;
+        else if (body && typeof body === 'object') items = [body];
+        if (!mounted) return;
+        if (items.length) {
+          // Choose first agency returned and set as createdBy (agency id)
+          const first = items[0];
+          const agencyId = first.id ?? first.uuid ?? first.slug ?? first.name ?? '';
+          setForm(prev => ({ ...prev, createdBy: String(agencyId) }));
+        }
+      } catch (e) {
+        // noop — do not overwrite existing agency on failure
+      } finally {
+        if (mounted) setBrandAgencyLoading(false);
+      }
+    };
+
+    fillAgencyForBrand();
+    return () => { mounted = false; };
+  }, [form.brandName]);
+
   // Load brand options on mount
   useEffect(() => {
     let mounted = true;
@@ -221,6 +300,47 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
 
     return () => { mounted = false; };
   }, [initialData]);
+
+  // When Agency changes, fetch brands belonging to that agency and populate Brand Name dropdown
+  useEffect(() => {
+    let mounted = true;
+    const fetchBrandsForAgency = async () => {
+      const raw = form.createdBy;
+      if (!raw) return;
+      // expect agency id numeric (or string containing digits)
+      const idMatch = String(raw).match(/^\d+$/);
+      if (!idMatch) return;
+      const agencyId = idMatch[0];
+      try {
+        setBrandsLoading(true);
+        // API: GET /agencies/:id/brands (returns data.brands or data)
+        const res = await apiClient.get<any>(`/agencies/${agencyId}/brands`);
+        const body = res && (res.data || res.data?.data) ? (res.data || res.data.data) : (res.data ?? res);
+        let items: any[] = [];
+        if (Array.isArray(body)) items = body;
+        else if (Array.isArray(body.brands)) items = body.brands;
+        else if (Array.isArray(body.data)) items = body.data;
+        else if (Array.isArray(body.data?.brands)) items = body.data.brands;
+        const opts = (items || []).map((b: any) => ({ value: String(b.id), label: String(b.name) }));
+        if (!mounted) return;
+        setBrands(opts);
+        // If no brand selected, auto-select first; otherwise clear if current not found
+        if (!form.brandName && opts.length) {
+          setForm(prev => ({ ...prev, brandName: opts[0].value }));
+        } else if (form.brandName) {
+          const found = opts.find(o => o.value === String(form.brandName));
+          if (!found) setForm(prev => ({ ...prev, brandName: '' }));
+        }
+      } catch (e) {
+        // ignore errors — keep existing brands list
+      } finally {
+        if (mounted) setBrandsLoading(false);
+      }
+    };
+
+    fetchBrandsForAgency();
+    return () => { mounted = false; };
+  }, [form.createdBy]);
 
   // Load user options on mount (for Assign To)
   useEffect(() => {
@@ -352,6 +472,112 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
     }
   }, [form.status, priorityAutoSet]);
 
+  // When Priority changes, fetch brief statuses filtered by priority
+  useEffect(() => {
+    let mounted = true;
+    const fetchByPriority = async () => {
+      const raw = form.priority;
+      if (!raw) return;
+      const priorityMap: Record<string, number> = { Low: 1, Medium: 2, High: 3 };
+      let priorityId: number | undefined;
+      if (typeof raw === 'number' || (/^\d+$/.test(String(raw)))) priorityId = Number(raw);
+      else priorityId = priorityMap[String(raw)] ;
+      if (!priorityId) return;
+
+      try {
+        setBriefStatusesLoading(true);
+        setBriefStatusesError(null);
+        const res = await apiClient.get<any>(`/brief-statuses/by-priority?priority_id=${encodeURIComponent(String(priorityId))}`);
+        const body = res && (res.data || res.data?.data) ? (res.data || res.data.data) : (res.data ?? res);
+        let items: any[] = [];
+        if (Array.isArray(body)) items = body;
+        else if (Array.isArray(body.data)) items = body.data;
+        else if (Array.isArray(body.brief_statuses)) items = body.brief_statuses;
+        else if (Array.isArray(body.data?.brief_statuses)) items = body.data.brief_statuses;
+
+        const opts = (items || []).map((s: any) => ({ value: String(s.id ?? s.status_id ?? s.uuid ?? s.name), label: String(s.name ?? s.status ?? s.brief_status ?? s.label ?? s) }));
+        if (!mounted) return;
+        setBriefStatuses(opts);
+
+        // Auto-select first status if none selected; otherwise clear if current not in list
+        if (!form.status && opts.length) {
+          setForm(prev => ({ ...prev, status: opts[0].value }));
+        } else if (form.status) {
+          const found = opts.find(o => o.value === String(form.status));
+          if (!found) setForm(prev => ({ ...prev, status: '' }));
+        }
+      } catch (err: any) {
+        if (!mounted) return;
+        setBriefStatusesError(err?.message || 'Failed to load brief statuses');
+      } finally {
+        if (mounted) setBriefStatusesLoading(false);
+      }
+    };
+
+    fetchByPriority();
+    return () => { mounted = false; };
+  }, [form.priority]);
+
+  // When Brief Status changes, fetch Priority options related to that status
+  useEffect(() => {
+    let mounted = true;
+    const fetchPrioritiesForStatus = async () => {
+      const raw = form.status;
+      if (!raw) return;
+      // try to determine brief_status_id
+      let statusId: string | undefined;
+      if (/^\d+$/.test(String(raw))) statusId = String(raw);
+      else {
+        const found = (briefStatuses || []).find((b: any) => String((b as any).value ?? b) === String(raw) || String((b as any).label ?? b).toLowerCase() === String(raw).toLowerCase());
+        if (found) statusId = typeof found === 'string' ? String(found) : String((found as any).value ?? found);
+      }
+      if (!statusId) return;
+
+      try {
+        // allow auto-setting priority when status changes
+        const autoSet = true;
+        setPriorityAutoSet(autoSet);
+        setPriorityLoading(true);
+        setPriorityError(null);
+        const res = await apiClient.get<any>(`/brief-statuses/priorities?brief_status_id=${encodeURIComponent(statusId)}`);
+        const body = res && (res.data || res.data?.data) ? (res.data || res.data.data) : (res.data ?? res);
+        let items: any[] = [];
+        if (Array.isArray(body)) items = body;
+        else if (Array.isArray(body.data)) items = body.data;
+        else if (Array.isArray(body.priorities)) items = body.priorities;
+        else if (Array.isArray(body.data?.priorities)) items = body.data.priorities;
+
+        const opts = (items || []).map((p: any) => ({ value: String(p.id ?? p.priority_id ?? p.name), label: String(p.name ?? p.label ?? p) }));
+        if (!mounted) return;
+        if (opts.length) setPriorityOptions(opts);
+        else setPriorityOptions([
+          { value: 'Low', label: 'Low' },
+          { value: 'Medium', label: 'Medium' },
+          { value: 'High', label: 'High' },
+        ]);
+
+        if (opts.length) {
+          if (autoSet) {
+            setForm(prev => ({ ...prev, priority: opts[0].value }));
+          } else {
+            const found = opts.find(o => o.value === String(form.priority));
+            if (!found) setForm(prev => ({ ...prev, priority: '' }));
+          }
+        } else {
+          setForm(prev => ({ ...prev, priority: '' }));
+        }
+      } catch (err: any) {
+        if (!mounted) return;
+        setPriorityError(err?.message || 'Failed to load priorities');
+      } finally {
+        if (mounted) setPriorityLoading(false);
+      }
+    };
+
+    fetchPrioritiesForStatus();
+    return () => { mounted = false; };
+  }, [form.status, briefStatuses]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     // If programmatic mode changes, ensure the currently selected `type` is valid for the new mode.
@@ -370,6 +596,8 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
   const next: Record<string, string> = {};
   if (!form.briefName || form.briefName.trim() === '') next.briefName = 'Please Enter Brief Name';
   if (!form.contactPerson || String(form.contactPerson).trim() === '') next.contactPerson = 'Please Select Contact Person';
+  if (!form.submissionDate || String(form.submissionDate).trim() === '') next.submissionDate = 'Please Select Submission Date';
+  if (!form.submissionTime || String(form.submissionTime).trim() === '') next.submissionTime = 'Please Select Submission Time';
 
     setErrors(next);
     if (Object.keys(next).length > 0) return;
@@ -653,7 +881,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                 </div>
                 <div className="flex gap-4">
                   <div className="flex-1">
-                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Submission Date</label>
+                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Submission Date <span className="text-[#FF0000]">*</span></label>
                     <DatePicker
                       selected={calendarDate}
                       onChange={date => {
@@ -671,11 +899,19 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                       }}
                       dateFormat="dd-MM-yyyy"
                       placeholderText="DD-MM-YYYY"
-                      className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white"
+                      className={`w-full px-3 py-2 rounded-lg bg-white transition-colors ${errors.submissionDate ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-[var(--border-color)]'}`}
                     />
+                    {errors.submissionDate && (
+                      <div id="submissionDate-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                        <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                        {errors.submissionDate}
+                      </div>
+                    )}
                   </div>
                   <div className="flex-1">
-                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Submission Time</label>
+                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Submission Time <span className="text-[#FF0000]">*</span></label>
                     <DatePicker
                       selected={calendarTime}
                       onChange={date => {
@@ -696,23 +932,34 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                       timeCaption="Time"
                       dateFormat="HH:mm"
                       placeholderText="HH:mm"
-                      className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white"
+                      className={`w-full px-3 py-2 rounded-lg bg-white transition-colors ${errors.submissionTime ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-[var(--border-color)]'}`}
                     />
+                    {errors.submissionTime && (
+                      <div id="submissionTime-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                        <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                        {errors.submissionTime}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">Priority</label>
                   <SelectField
                     name="priority"
-                    placeholder="Select Priority"
-                    options={[{ value: 'Low', label: 'Low' }, { value: 'Medium', label: 'Medium' }, { value: 'High', label: 'High' }]}
+                    placeholder={priorityLoading ? 'Loading priorities...' : 'Select Priority'}
+                    options={priorityOptions}
                     value={form.priority}
                     onChange={(v: any) => {
                       const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v;
+                      setPriorityAutoSet(false);
                       setForm(prev => ({ ...prev, priority: val }));
                     }}
-                    inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
+                    inputClassName={priorityLoading ? 'border border-gray-300 bg-gray-50' : 'border border-[var(--border-color)] focus:ring-blue-500'}
+                    disabled={priorityLoading}
                   />
+                  {priorityError && <div className="text-xs text-red-600 mt-1">{priorityError}</div>}
                 </div>
                 <div>
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">Brief Detail</label>
@@ -744,13 +991,39 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
             <div className="overflow-x-auto">
               {/* Use the Table component for consistent design */}
               <Table
-                data={[
-                  { assignedTo: 'Planner 1', callStatus: 'Not Interested', followUp: '-', lastCall: '02-07-2025 22:23', submission: '02-07-2025 22:23', comment: 'According to Client Email' },
-                  { assignedTo: 'Planner 1', callStatus: 'Submission', followUp: '02-07-2025 22:23', lastCall: '02-07-2025 22:23', submission: '02-07-2025 22:23', comment: 'According to Client Email' },
-                  { assignedTo: 'Planner 1', callStatus: 'Negotiation', followUp: '02-07-2025 22:23', lastCall: '02-07-2025 22:23', submission: '02-07-2025 22:23', comment: 'According to Client Email' },
-                  { assignedTo: 'Planner 1', callStatus: 'Approve', followUp: '02-07-2025 22:23', lastCall: '02-07-2025 22:23', submission: '02-07-2025 22:23', comment: 'According to Client Email' },
-                  { assignedTo: 'Planner 1', callStatus: 'Closed', followUp: '-', lastCall: '02-07-2025 22:23', submission: '02-07-2025 22:23', comment: 'According to Client Email' },
-                ]}
+                data={
+                  historiesLoading ? [] : (histories || []).map((it: any) => {
+                    const assignedTo = it.assigned_to?.name || it.assigned_to || '-';
+                    const callStatus = it.brief_status?.name || it.brief_status || (it.status ? String(it.status) : '-');
+                    const followUp = it.brief_status_time || it.brief_status_time || '-';
+                    const lastCall = it.created_at || it.updated_at || '-';
+                    const submissionRaw = it.submission_date || it.brief?.submission_date || '-';
+                    const submission = (submissionRaw && submissionRaw !== '-') ? (
+                      // normalize common formats to DD-MM-YYYY HH:mm when possible
+                      ((): string => {
+                        try {
+                          const s = String(submissionRaw).trim();
+                          // if already in DD-MM-YYYY or contains space with time
+                          if (/^\d{2}-\d{2}-\d{4}/.test(s)) return s.replace(/T/, ' ');
+                          // if ISO like 2025-12-17 18:45 or 2025-12-17T18:45:00
+                          const iso = s.replace(/\s+/, 'T');
+                          const d = new Date(iso);
+                          if (!isNaN(d.getTime())) {
+                            const dd = String(d.getDate()).padStart(2,'0');
+                            const mm = String(d.getMonth()+1).padStart(2,'0');
+                            const yyyy = d.getFullYear();
+                            const hh = String(d.getHours()).padStart(2,'0');
+                            const min = String(d.getMinutes()).padStart(2,'0');
+                            return `${dd}-${mm}-${yyyy} ${hh}:${min}`;
+                          }
+                        } catch (e) {}
+                        return String(submissionRaw);
+                      })()
+                    ) : '-';
+                    const comment = it.comment || it.brief?.comment || '-';
+                    return { assignedTo, callStatus, followUp, lastCall, submission, comment };
+                  })
+                }
                 columns={[
                   { key: 'assignedTo', header: 'Assigned TO', className: 'whitespace-nowrap overflow-hidden truncate' },
                   { key: 'callStatus', header: 'Call Status', className: 'whitespace-nowrap overflow-hidden truncate' },
@@ -760,7 +1033,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                   { key: 'comment', header: 'Comment', className: 'whitespace-nowrap overflow-hidden truncate' },
                 ]}
                 desktopOnMobile={true}
-                keyExtractor={(_, idx) => `history-row-${idx}`}
+                keyExtractor={(row: any, idx: number) => `history-row-${row.assignedTo || idx}-${idx}`}
               />
             </div>
           </div>

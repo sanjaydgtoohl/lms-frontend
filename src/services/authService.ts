@@ -20,7 +20,9 @@ class AuthService {
    * Returns refreshed token data when successful.
    */
   async refresh() {
-    return sessionManager.refreshTokens();
+    const result = await sessionManager.refreshTokens();
+    console.log('[AuthService] Token refreshed successfully');
+    return result;
   }
 
   startSessionFromCookies() {
