@@ -9,9 +9,11 @@ import { ROUTES } from '../../constants';
 import MasterHeader from '../../components/ui/MasterHeader';
 import SearchBar from '../../components/ui/SearchBar';
 import { type BriefItem as ServiceBriefItem, listBriefs, getBrief, createBrief, updateBrief, deleteBrief } from '../../services/BriefPipeline';
+import updateAssignUser from '../../services/BriefAssignTo';
+import { fetchBriefStatuses, updateBriefStatus, type BriefStatusItem } from '../../services/BriefStatus';
 import StatusDropdown from '../../components/ui/StatusDropdown';
 import AssignDropdown from '../../components/ui/AssignDropdown';
-import ConfirmDialog from '../../components/ui/ConfirmDialog';
+ import ConfirmDialog from '../../components/ui/ConfirmDialog';
 
 type Brief = ServiceBriefItem;
 
@@ -206,8 +208,16 @@ const BriefPipeline: React.FC = () => {
   const handleAssignToChange = async (briefId: string, newPlanner: string) => {
     try {
       setLoading(true);
-      const updated = await updateBrief(briefId, { assignTo: newPlanner });
-      setBriefs(prev => prev.map(b => (b.id === updated.id ? { ...b, ...(updated as Partial<Brief>) } as Brief : b)));
+      // resolve selected name to user id from assignToOptions
+      const found = assignToOptions.find(o => o.name === newPlanner);
+      const assignId = found ? found.id : newPlanner;
+      const updated = await updateAssignUser(briefId, assignId);
+      // updated may be the brief object in response.data
+      if (updated && (updated as any).id) {
+        setBriefs(prev => prev.map(b => (b.id === (updated as any).id ? { ...b, ...(updated as Partial<Brief>) } as Brief : b)));
+        // refresh full list to reflect server state
+        setTimeout(() => { fetchBriefs(); }, 300);
+      }
     } catch (err) {
       console.error('Failed to update assignee', err);
     } finally {
@@ -221,6 +231,8 @@ const BriefPipeline: React.FC = () => {
       setLoading(true);
       const res = await updateBrief(updated.id, updated);
       setBriefs(prev => prev.map(b => (b.id === res.id ? { ...b, ...(res as Partial<Brief>) } as Brief : b)));
+      // refresh list after successful save
+      setTimeout(() => { fetchBriefs(); }, 300);
     } catch (err) {
       console.error('Failed to save edited brief', err);
     } finally {
@@ -239,8 +251,20 @@ const BriefPipeline: React.FC = () => {
   const hoverTimeout = useRef<number | null>(null);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
 
-  // Status options
-  const STATUS_OPTIONS = ['submission', 'approve', 'negotiation', 'closed', 'not-interested'];
+  // Status options state and effect (fetch from API)
+  const [statusOptions, setStatusOptions] = useState<BriefStatusItem[]>([]);
+  useEffect(() => {
+    const loadStatuses = async () => {
+      try {
+        const statuses = await fetchBriefStatuses();
+        setStatusOptions(statuses);
+      } catch (err) {
+        console.error('Failed to load statuses:', err);
+        setStatusOptions([]);
+      }
+    };
+    loadStatuses();
+  }, []);
 
   const showTooltip = (e: React.MouseEvent, content: string) => {
     if (hoverTimeout.current) {
@@ -286,12 +310,19 @@ const BriefPipeline: React.FC = () => {
 
   const handleSelectStatus = (id: string | null, newStatus: string) => {
     if (!id) return;
+    // Find status ID from statusOptions
+    const statusObj = statusOptions.find(s => s.name === newStatus);
+    const statusId = statusObj ? statusObj.id : newStatus;
     // persist status change
     (async () => {
       try {
         setLoading(true);
-        const res = await updateBrief(id, { status: newStatus });
-        setBriefs(prev => prev.map(b => (b.id === res.id ? { ...b, ...(res as Partial<Brief>) } as Brief : b)));
+        const res = await updateBriefStatus(id, statusId);
+        if (res && (res as any).id) {
+          setBriefs(prev => prev.map(b => (b.id === (res as any).id ? { ...b, ...(res as Partial<Brief>) } as Brief : b)));
+          // refresh list to show updated status
+          setTimeout(() => { fetchBriefs(); }, 300);
+        }
       } catch (err) {
         console.error('Failed to update status', err);
       } finally {
@@ -405,7 +436,7 @@ const BriefPipeline: React.FC = () => {
                     <div className="min-w-[140px]">
                       <StatusDropdown
                         value={statusName}
-                        options={STATUS_OPTIONS}
+                        options={statusOptions.map(opt => opt.name)}
                         onChange={(newStatus: string) => handleSelectStatus(it.id, newStatus)}
                       />
                     </div>

@@ -4,6 +4,7 @@ import { Plus, User, LogOut, Settings, UserRound, LifeBuoy, ChevronDown, Menu } 
 import ApiErrorNotification from '../ui/ApiErrorNotification';
 import { Button } from '../ui';
 import { fetchCurrentUser } from '../../services/Header';
+import TokenRefreshIndicator from '../ui/TokenRefreshIndicator';
 
 interface HeaderProps {
   onCreateClick?: () => void;
@@ -20,13 +21,13 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const [isUserMenuOpen, setIsUserMenuOpen] = React.useState(false);
   const userMenuRef = React.useRef<HTMLDivElement | null>(null);
-  const [userName, setUserName] = React.useState('');
+  const [user, setUser] = React.useState<any>(null);
   const navigate = useNavigate();
 
   React.useEffect(() => {
     async function getUser() {
-      const user = await fetchCurrentUser();
-      setUserName(user?.name ?? '');
+      const u = await fetchCurrentUser();
+      setUser(u ?? null);
     }
     getUser();
   }, []);
@@ -63,6 +64,8 @@ const Header: React.FC<HeaderProps> = ({
         </div>
 
         <div className="flex items-center gap-3 sm:gap-4">
+          {/* Token refresh indicator */}
+          <TokenRefreshIndicator />
           {/* API Error Notification Icon */}
           <ApiErrorNotification />
           {/* User Menu */}
@@ -79,72 +82,88 @@ const Header: React.FC<HeaderProps> = ({
                 <User className="w-4 h-4" />
               </div>
               <div className="hidden sm:flex sm:flex-col sm:items-start sm:leading-tight">
-                <span className="text-sm font-medium text-[#344054]">
-                  {userName}
-                </span>
+                <span className="text-sm font-medium text-[#344054]">{user?.name}</span>
+                {user?.email && (
+                  <span className="text-xs text-gray-500 truncate">{user.email}</span>
+                )}
               </div>
               <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} />
             </Button>
 
             {isUserMenuOpen && (
-              <div
-                role="menu"
-                aria-label="User menu"
-                className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-50"
-              >
-                <div className="px-4 py-4 border-b border-gray-100 bg-white">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-semibold text-lg">
-                      {userName ? userName[0].toUpperCase() : ''}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-lg font-semibold text-gray-900 truncate">{userName}</p>
-                      <p className="text-sm text-gray-500 truncate"></p>
+              <div className="relative">
+                {/* caret */}
+                <div className="absolute right-4 top-0 -mt-2 w-4 h-4 bg-white transform rotate-45 border-l border-t border-gray-200" aria-hidden="true" />
+                <div
+                  role="menu"
+                  aria-label="User menu"
+                  className="absolute right-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-50 ring-1 ring-black ring-opacity-5 transition transform duration-150"
+                >
+                  <div className="px-4 py-4 border-b border-gray-100 bg-white">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 text-blue-700 flex items-center justify-center font-semibold text-lg">
+                        {user?.name ? user.name[0].toUpperCase() : ''}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-lg font-semibold text-gray-900 truncate">{user?.name}</p>
+                        {user?.email && <p className="text-sm text-gray-500 truncate">{user.email}</p>}
+                        {Array.isArray(user?.roles) && user.roles.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {user.roles.slice(0,3).map((r: any) => (
+                              <span key={r.id} className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">{r.display_name || r.name}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="py-1">
-                  <Button
-                    role="menuitem"
-                    variant="transparent"
-                    onClick={() => {
-                      setIsUserMenuOpen(false);
-                      navigate('/profile');
-                    }}
-                    className="w-full flex items-center justify-start gap-3 px-4 py-3 text-base text-gray-800 hover:bg-gray-50"
-                  >
-                    <UserRound className="w-5 h-5 text-gray-500" />
-                    <span className="font-medium">Profile</span>
-                  </Button>
-                  <Button
-                    role="menuitem"
-                    variant="transparent"
-                    onClick={() => setIsUserMenuOpen(false)}
-                    className="w-full flex items-center justify-start gap-3 px-4 py-3 text-base text-gray-800 hover:bg-gray-50"
-                  >
-                    <Settings className="w-5 h-5 text-gray-500" />
-                    <span className="font-medium">Settings</span>
-                  </Button>
-                  <Button
-                    role="menuitem"
-                    variant="transparent"
-                    onClick={() => setIsUserMenuOpen(false)}
-                    className="w-full flex items-center justify-start gap-3 px-4 py-3 text-base text-gray-800 hover:bg-gray-50"
-                  >
-                    <LifeBuoy className="w-5 h-5 text-gray-500" />
-                    <span className="font-medium">Support</span>
-                  </Button>
-                </div>
-                <div className="py-1 border-t border-gray-100">
-                  <Button
-                    role="menuitem"
-                    variant="transparent"
-                    onClick={handleLogout}
-                    className="w-full flex items-center justify-start gap-3 px-4 py-3 text-base text-red-600 hover:bg-red-50 font-medium"
-                  >
-                    <LogOut className="w-5 h-5 text-red-600" />
-                    <span className="text-red-600">Logout</span>
-                  </Button>
+
+                  <div className="divide-y divide-gray-100">
+                    <div className="py-1">
+                      <Button
+                        role="menuitem"
+                        variant="transparent"
+                        onClick={() => {
+                          setIsUserMenuOpen(false);
+                          navigate('/profile');
+                        }}
+                        className="w-full flex items-center justify-start gap-3 px-4 py-3 text-base text-gray-800 hover:bg-gray-50 focus:outline-none focus:bg-gray-50"
+                      >
+                        <UserRound className="w-5 h-5 text-gray-500" />
+                        <span className="font-medium">Profile</span>
+                      </Button>
+                      <Button
+                        role="menuitem"
+                        variant="transparent"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="w-full flex items-center justify-start gap-3 px-4 py-3 text-base text-gray-800 hover:bg-gray-50 focus:outline-none focus:bg-gray-50"
+                      >
+                        <Settings className="w-5 h-5 text-gray-500" />
+                        <span className="font-medium">Settings</span>
+                      </Button>
+                      <Button
+                        role="menuitem"
+                        variant="transparent"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="w-full flex items-center justify-start gap-3 px-4 py-3 text-base text-gray-800 hover:bg-gray-50 focus:outline-none focus:bg-gray-50"
+                      >
+                        <LifeBuoy className="w-5 h-5 text-gray-500" />
+                        <span className="font-medium">Support</span>
+                      </Button>
+                    </div>
+
+                    <div className="py-1">
+                      <Button
+                        role="menuitem"
+                        variant="transparent"
+                        onClick={handleLogout}
+                        className="w-full flex items-center justify-start gap-3 px-4 py-3 text-base text-red-600 hover:bg-red-50 font-medium focus:outline-none focus:bg-red-50"
+                      >
+                        <LogOut className="w-5 h-5 text-red-600" />
+                        <span className="text-red-600">Logout</span>
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

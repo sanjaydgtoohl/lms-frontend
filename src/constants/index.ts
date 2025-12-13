@@ -137,6 +137,22 @@ export const API_ENDPOINTS = {
     REFRESH: '/auth/refresh',
     PROFILE: '/auth/profile',
   },
+  PERMISSION: {
+    ALL_TREE: '/permissions/all-permission-tree',
+    LIST: '/permissions',
+    CREATE: '/permissions',
+    DETAIL: (id: string) => `/permissions/${id}`,
+    UPDATE: (id: string) => `/permissions/${id}`,
+    DELETE: (id: string) => `/permissions/${id}`,
+  },
+  ROLE: {
+    LIST: '/roles',
+    CREATE: '/roles',
+    VIEW: '/roles',
+    DETAIL: (id: string) => `/roles/${id}`,
+    UPDATE: (id: string) => `/roles/${id}`,
+    DELETE: (id: string) => `/roles/${id}`,
+  },
   COURSES: {
     LIST: '/courses',
     CREATE: '/courses',

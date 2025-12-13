@@ -106,7 +106,10 @@ const View: React.FC = () => {
     setConfirmLoading(true);
     try {
       await deleteMissCampaign(confirmDeleteId);
-      setCampaigns(prev => prev.filter(c => c.id !== confirmDeleteId));
+      setSuccessMessage('Campaign deleted successfully');
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 1800);
+      await fetchCampaigns(currentPage); // Refresh table from server
     } catch (error) {
       console.error('Failed to delete campaign:', error);
       setErrorMessageToast((error as any)?.message || 'Failed to delete campaign');

@@ -6,7 +6,7 @@ import type {
   User, 
   Course
 } from '../types';
-import { loginService } from './Login';
+import { authService } from '.';
 import http from './http';
 import { handleApiError } from '../utils/apiErrorHandler';
 
@@ -51,8 +51,8 @@ class ApiClient {
 
   // Auth Methods
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    // Use the dedicated login service for proper API handling
-    const response = await loginService.login(credentials);
+    // Use the dedicated authService for proper API handling
+    const response = await authService.login(credentials);
     
     if (response.token) {
       this.setToken(response.token);

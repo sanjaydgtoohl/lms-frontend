@@ -1,19 +1,18 @@
 // src/services/Header.ts
-import axios from 'axios';
-import { useAuthStore } from '../store/auth';
-
+import http from './http';
 export async function fetchCurrentUser() {
-  // Get token from zustand store
-  const token = useAuthStore.getState().token;
-  if (!token) return {};
   try {
-    const response = await axios.get('https://apislms.dgtoohl.com/api/v1/auth/me', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await http.get('/auth/me');
     return response.data?.data || {};
-  } catch (error) {
+  } catch (error: any) {
+    // Log the error for debugging
+    console.error('Failed to fetch current user:', error?.response?.status, error?.message);
+    
+    // If 401, let the interceptor handle token refresh
+    if (error?.response?.status === 401) {
+      throw error;
+    }
+    
     return {};
   }
 }

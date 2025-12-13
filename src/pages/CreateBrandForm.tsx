@@ -152,6 +152,10 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
     if (!form.state) next.state = 'Please Select A State';
     if (!form.city) next.city = 'Please Select A City';
     if (!form.zone) next.zone = 'Please Select A Zone';
+    // Postal code: required and must be 6 numeric digits
+    if (!/^[0-9]{6}$/.test(String(form.postalCode || '').trim())) {
+      next.postalCode = 'Please enter a valid 6-digit postal code';
+    }
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -589,7 +593,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
         </div>
 
         <div>
-          <label className="block text-sm text-[var(--text-secondary)] mb-1">Postal Code</label>
+          <label className="block text-sm text-[var(--text-secondary)] mb-1">Postal Code <span className="text-[#FF0000]">*</span></label>
           <input
             name="postalCode"
             value={form.postalCode}
@@ -613,7 +617,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
             placeholder="Please Enter Postal Code"
           />
-          {postalFieldError && <div className="text-xs text-red-500 mt-1">{postalFieldError}</div>}
+          {(errors.postalCode || postalFieldError) && <div className="text-xs text-red-500 mt-1">{errors.postalCode || postalFieldError}</div>}
           {postalLoading && <div className="text-xs text-gray-500 mt-1">Looking up pincode...</div>}
           {!postalLoading && postalError && <div className="text-xs text-red-500 mt-1">{postalError}</div>}
         </div>
