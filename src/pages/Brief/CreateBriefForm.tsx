@@ -308,9 +308,10 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
         if (!mounted) return;
         
         // Map brief statuses to SelectField options
+        // fetchBriefStatuses now returns BriefStatusItem[] directly
         let opts: Array<string | { value: string; label: string }> = [];
-        if (res.data && Array.isArray(res.data)) {
-          opts = res.data.map((s: any) => {
+        if (Array.isArray(res)) {
+          opts = res.map((s: any) => {
             const id = String(s.id ?? s.status_id ?? '');
             const name = String(s.name ?? s.status ?? s.brief_status ?? '');
             return { value: id, label: name };

@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useAuthStore } from './store/auth';
 import { handleTokenExpiration } from './utils/auth';
+import authService from './services/authService';
 import LoginCard from './pages/Auth/LoginCard';
 import Dashboard from './pages/Dashboard';
 import Courses from './pages/Courses';
@@ -54,6 +55,11 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 function App() {
+  // Initialize session refresh scheduling if user has valid cookies (e.g., page refresh)
+  useEffect(() => {
+    authService.startSessionFromCookies();
+  }, []);
+
   return (
     <ErrorBoundary>
       <SidebarMenuProvider>

@@ -52,3 +52,66 @@ export const setupTokenExpirationCheck = () => {
   const interval = setInterval(handleTokenExpiration, 60000);
   return () => clearInterval(interval);
 };
+
+/**
+ * Get milliseconds until next scheduled token refresh (5 minutes before expiry).
+ * Returns -1 if token is expired or missing.
+ */
+export const getTimeUntilNextRefresh = (): number => {
+  const expiresStr = document.cookie.match(/(?:^|; )auth_token_expires=([^;]*)/)?.[1];
+  if (!expiresStr) return -1;
+
+  const expiryMs = parseInt(expiresStr, 10);
+  if (isNaN(expiryMs)) return -1;
+
+  const now = Date.now();
+  // Refresh is scheduled 5 minutes (300000 ms) before expiry
+  const refreshTime = expiryMs - 5 * 60 * 1000;
+  const msUntilRefresh = refreshTime - now;
+
+  return Math.max(msUntilRefresh, -1);
+};
+
+let proactiveRefreshTimer: number | null = null;
+
+/**
+ * Setup proactive token refresh timer for development/demo (exposes on window).
+ * This is a manual control separate from the automatic sessionManager schedule.
+ */
+export const setupProactiveTokenRefresh = (intervalMs: number = 60000) => {
+  if (proactiveRefreshTimer) {
+    window.clearInterval(proactiveRefreshTimer);
+  }
+  proactiveRefreshTimer = window.setInterval(() => {
+    refreshTokenProactive().catch((err) => {
+      console.warn('Proactive refresh failed:', err);
+    });
+  }, intervalMs);
+  console.log(`[Auth] Proactive token refresh setup with interval ${intervalMs}ms`);
+};
+
+/**
+ * Stop the proactive refresh timer.
+ */
+export const stopProactiveTokenRefresh = () => {
+  if (proactiveRefreshTimer) {
+    window.clearInterval(proactiveRefreshTimer);
+    proactiveRefreshTimer = null;
+    console.log('[Auth] Proactive token refresh stopped');
+  }
+};
+
+/**
+ * Manually trigger a token refresh (useful for testing/development).
+ */
+export const refreshTokenProactive = async (): Promise<void> => {
+  try {
+    // Import sessionManager to trigger refresh
+    const sessionManager = await import('../services/sessionManager');
+    const result = await sessionManager.refreshTokens();
+    console.log('[Auth] Proactive refresh succeeded:', result);
+  } catch (error) {
+    console.error('[Auth] Proactive refresh failed:', error);
+    throw error;
+  }
+};

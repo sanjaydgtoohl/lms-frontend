@@ -53,13 +53,13 @@ export async function refreshTokens() {
     //   headers: { Authorization: `Bearer ${refreshToken}` }
     // });
 
-    // Default: send in body
-    const resp = await http.post(API_ENDPOINTS.AUTH.REFRESH, { refreshToken });
+    // Default: send in body using `refresh_token` key expected by backend
+    const resp = await http.post(API_ENDPOINTS.AUTH.REFRESH, { refresh_token: refreshToken });
     const data = resp.data;
     if (data && data.success && data.data) {
       const now = Date.now();
       const access = data.data.token;
-      const refresh = data.data.refreshToken;
+      const refresh = (data.data as any).refresh_token || (data.data as any).refreshToken || null;
       const expiresIn = data.data.expires_in;
       const refreshExpiresIn = data.data.refresh_expires_in || null;
 

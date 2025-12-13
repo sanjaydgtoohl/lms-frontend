@@ -7,7 +7,8 @@ import SearchBar from '../../components/ui/SearchBar';
 import { MasterHeader, StatusPill } from '../../components/ui';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants';
-import { listLeads, listLeadsByStatus } from '../../services/AllLeads';
+import { listLeads, listLeadsByStatus, updateLead } from '../../services/AllLeads';
+import { assignUserToLead } from '../../services/leadAssignTo';
 
 interface Lead {
   id: string;
@@ -300,6 +301,19 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
         lead.id === leadId ? { ...lead, assignTo: newSalesMan } : lead
       )
     );
+    (async () => {
+      try {
+        const numericId = String(leadId).replace('#', '');
+        const found = assignToOptions.find(u => u.name === newSalesMan);
+        if (found && found.id != null) {
+          await assignUserToLead(numericId, found.id);
+        } else {
+          await updateLead(numericId, { current_assign_user: newSalesMan });
+        }
+      } catch (err) {
+        console.warn('Failed to persist assignTo change', err);
+      }
+    })();
   };
 
   const handleCallStatusChange = (leadId: string, newStatus: string) => {

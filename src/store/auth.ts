@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { User, AuthState } from '../types';
 import { apiClient } from '../services/api';
-import { loginService } from '../services/Login';
+import { authService } from '../services';
 import sessionManager from '../services/sessionManager';
 
 interface AuthStore extends AuthState {
@@ -62,7 +62,7 @@ export const useAuthStore = create<AuthStore>()(
       logout: async () => {
         set({ isLoading: true });
         try {
-          await loginService.logout();
+          await authService.logout();
         } catch (error) {
           // Even if logout API call fails, clear local state
           console.error('Logout error:', error);
