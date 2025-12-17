@@ -64,7 +64,9 @@ export const ROUTES = {
   },
   // Master Data Routes
   BRAND_MASTER: '/master/brand',
+  BRAND_CONTACTS: (id: string) => `/master/brand/${id}/contacts`,
   AGENCY_MASTER: '/master/agency',
+  AGENCY_CONTACTS: (id: string) => `/master/agency/${id}/contacts`,
   DEPARTMENT_MASTER: '/master/department',
   DESIGNATION_MASTER: '/master/designation',
   INDUSTRY_MASTER: '/master/industry',

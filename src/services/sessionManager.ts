@@ -98,9 +98,50 @@ export function startSessionFromCookies() {
   if (token) scheduleRefresh();
 }
 
+/**
+ * Check if token is missing from cookies and trigger auto-logout if needed.
+ * This handles the case where cookies are cleared externally or expired.
+ */
+export function checkAndHandleMissingToken() {
+  const token = getCookie('auth_token');
+  
+  if (!token) {
+    // Token is missing - auto logout and clear storage
+    console.warn('[sessionManager] Token missing from cookies - triggering auto logout');
+    clearSession();
+    clearLocalStorage();
+    return true; // Token was missing
+  }
+  
+  return false; // Token exists
+}
+
+/**
+ * Clear all local storage related to authentication
+ */
+export function clearLocalStorage() {
+  try {
+    localStorage.removeItem('auth-storage');
+    // Remove any other auth-related localStorage items
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.includes('auth') || key.includes('token') || key.includes('user'))) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+    console.log('[sessionManager] Local storage cleared');
+  } catch (e) {
+    console.error('Error clearing local storage:', e);
+  }
+}
+
 export default {
   scheduleRefresh,
   refreshTokens,
   clearSession,
   startSessionFromCookies,
+  checkAndHandleMissingToken,
+  clearLocalStorage,
 };

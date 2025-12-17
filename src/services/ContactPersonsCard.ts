@@ -1,22 +1,12 @@
-import axios from 'axios';
-
-const BASE_URL = 'https://apislms.dgtoohl.com';
+import http from './http';
 
 export const fetchLeadSubSources = async () => {
   try {
-    let token = null;
-    try {
-      const persisted = localStorage.getItem('auth-storage');
-      if (persisted) {
-        const parsed = JSON.parse(persisted);
-        token = parsed?.state?.token || null;
-      }
-    } catch (e) {
-      token = null;
-    }
-    const response = await axios.get(`${BASE_URL}/api/v1/lead-sub-sources/list`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    const response = await http.request({
+      url: '/lead-sub-sources/list',
+      method: 'GET'
     });
+    
     if (response.data && response.data.success && Array.isArray(response.data.data)) {
       return { data: response.data.data, error: null };
     }

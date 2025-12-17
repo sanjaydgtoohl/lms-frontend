@@ -9,7 +9,9 @@ import Courses from './pages/Courses';
 import Profile from './pages/Profile';
 import LeadSource from './pages/LeadSource';
 import AgencyMaster from './pages/AgencyMaster';
+import AgencyContactPersons from './pages/AgencyContactPersons';
 import BrandMaster from './pages/BrandMaster';
+import BrandContactPersons from './pages/BrandContactPersons';
 import IndustryMaster from './pages/IndustryMaster';
 import DesignationMaster from './pages/DesignationMaster';
 import DepartmentMaster from './pages/DepartmentMaster';
@@ -58,6 +60,17 @@ function App() {
   // Initialize session refresh scheduling if user has valid cookies (e.g., page refresh)
   useEffect(() => {
     authService.startSessionFromCookies();
+    
+    // Setup periodic check for missing token (every 30 seconds)
+    const tokenCheckInterval = setInterval(() => {
+      const isMissing = authService.checkAndHandleMissingToken();
+      if (isMissing) {
+        // Token was missing, redirect will happen in checkAndHandleMissingToken
+        clearInterval(tokenCheckInterval);
+      }
+    }, 30000); // Check every 30 seconds
+    
+    return () => clearInterval(tokenCheckInterval);
   }, []);
 
   return (
@@ -96,11 +109,13 @@ function App() {
           <Route path="master/brand/create" element={<PermissionRoute><BrandMaster /></PermissionRoute>} />
           <Route path="master/brand/:id" element={<PermissionRoute><BrandMaster /></PermissionRoute>} />
           <Route path="master/brand/:id/edit" element={<PermissionRoute><BrandMaster /></PermissionRoute>} />
+          <Route path="master/brand/:id/contacts" element={<PermissionRoute><BrandContactPersons /></PermissionRoute>} />
 
           <Route path="master/agency" element={<PermissionRoute><AgencyMaster /></PermissionRoute>} />
           <Route path="master/agency/create" element={<PermissionRoute><AgencyMaster /></PermissionRoute>} />
           <Route path="master/agency/:id" element={<PermissionRoute><AgencyMaster /></PermissionRoute>} />
           <Route path="master/agency/:id/edit" element={<PermissionRoute><AgencyMaster /></PermissionRoute>} />
+          <Route path="master/agency/:id/contacts" element={<PermissionRoute><AgencyContactPersons /></PermissionRoute>} />
 
           <Route path="master/industry" element={<PermissionRoute><IndustryMaster /></PermissionRoute>} />
           <Route path="master/industry/create" element={<PermissionRoute><IndustryMaster /></PermissionRoute>} />

@@ -33,6 +33,21 @@ class AuthService {
     return sessionManager.clearSession();
   }
 
+  /**
+   * Check if token is missing from cookies and trigger auto-logout if needed.
+   * Returns true if token was missing, false otherwise.
+   */
+  checkAndHandleMissingToken() {
+    return sessionManager.checkAndHandleMissingToken();
+  }
+
+  /**
+   * Clear all auth-related items from local storage
+   */
+  clearLocalStorage() {
+    return sessionManager.clearLocalStorage();
+  }
+
   getAccessToken(): string | null {
     return getCookie('auth_token');
   }

@@ -66,3 +66,17 @@ export const fetchLeadById = async (id: string | number): Promise<Lead | null> =
     return null;
   }
 };
+
+export const fetchLeadHistory = async (id: string | number): Promise<any[]> => {
+  try {
+    const response = await http.get(`/leads/${id}/history`);
+    // Expect API shape: { success: boolean, data: Array }
+    if (response.data && (response.data as any).success) {
+      return (response.data as any).data || [];
+    }
+    return [];
+  } catch (error) {
+    console.error('Error fetching lead history:', error);
+    return [];
+  }
+};

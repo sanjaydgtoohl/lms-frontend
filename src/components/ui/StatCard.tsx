@@ -4,21 +4,30 @@ interface StatCardProps {
   title: string;
   value: string | number;
   icon?: React.ReactNode;
+  trend?: 'up' | 'down';
+  trendValue?: string;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ title, value, icon }) => {
+const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, trendValue }) => {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4">
-      <div className="flex items-center gap-3">
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 p-5">
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{title}</p>
+          <div className="flex items-baseline gap-2 mt-2">
+            <p className="text-3xl font-bold text-gray-900">{value}</p>
+            {trendValue && (
+              <span className={`text-xs font-semibold ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
+                {trend === 'up' ? '↑' : '↓'} {trendValue}
+              </span>
+            )}
+          </div>
+        </div>
         {icon && (
-          <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600">
+          <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-indigo-50 to-indigo-100 flex items-center justify-center text-indigo-600">
             {icon}
           </div>
         )}
-        <div>
-          <p className="text-xs font-medium text-gray-500 tracking-wide">{title}</p>
-          <p className="text-2xl font-semibold text-gray-900 mt-0.5">{value}</p>
-        </div>
       </div>
     </div>
   );
