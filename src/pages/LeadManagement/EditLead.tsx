@@ -57,7 +57,6 @@ const EditLead: React.FC = () => {
   const [optionsError, setOptionsError] = useState<string | null>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
-  const [historyError, setHistoryError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchLead = async () => {
@@ -132,14 +131,12 @@ const EditLead: React.FC = () => {
     const loadHistory = async () => {
       if (!lead?.id) return;
       setHistoryLoading(true);
-      setHistoryError(null);
       try {
         const data = await fetchLeadHistory(lead.id);
         if (!mounted) return;
         setHistory(Array.isArray(data) ? data : []);
       } catch (err) {
         if (!mounted) return;
-        setHistoryError('Failed to load call history');
         setHistory([]);
       } finally {
         if (!mounted) return;

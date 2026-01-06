@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import LogoutIcon from "../../assets/icons/LogoutIcon";
 import HelpIcon from "../../assets/icons/HelpIcon";
+import logoUrl from "../../assets/DGTOOHL 360.svg";
 import { useAuthStore } from "../../store/auth";
 
 // Remove static sidebar import, use dynamic API mapping
@@ -39,7 +40,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
       try {
         const res = await apiClient.get<any>("/permissions/sidebar");
         if (res && res.data && Array.isArray(res.data)) {
-          setNavigationItems(mapMenu(res.data));
+          const mapped = mapMenu(res.data);
+          // Use sidebar items as provided by the backend mapping
+          setNavigationItems(mapped);
         } else {
           setNavigationItems([]);
         }
@@ -292,9 +295,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
       >
         {/* Render collapsed (icons-only) content inside */}
         <div className="flex h-16 items-center px-2">
-          <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
-            <span className="text-[#F5F7FA] font-semibold text-xl leading-none">L</span>
-          </div>
+            <div className="w-12 h-12 rounded-lg flex items-center justify-center">
+              <img src={logoUrl} alt="LMS logo" style={{width: 72, height: 'auto'}} />
+            </div>
         </div>
 
         <nav className="flex-1 overflow-y-auto py-2 px-1 scrolling-touch">
@@ -334,25 +337,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
       `}
     >
       {/* Logo Section */}
-      <div className="flex h-16 items-center px-4">
+      <div className="flex h-16 items-center px-4" style={{paddingLeft: '9px', paddingRight: '9px'}}>
         {isCollapsed ? (
           <div className="w-full flex items-center justify-center">
-            <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
-              <span className="text-[#F5F7FA] font-semibold text-xl leading-none">L</span>
+            <div className="w-12 h-12 rounded-lg flex items-center justify-center">
+              <img src={logoUrl} alt="LMS logo" style={{width: 80, height: 80}} />
             </div>
           </div>
         ) : (
-          <div className="flex items-center gap-3 w-full">
-            <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
-              <span className="text-[#F5F7FA] font-semibold text-xl leading-none">L</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xl font-semibold text-[var(--text-primary)] tracking-wide leading-none">
-                LMS
-              </span>
-              <span className="text-sm font-medium text-[var(--text-secondary)] tracking-wide">
-                Mobiyoung
-              </span>
+          <div className="flex items-center w-full">
+            <div className="rounded-lg flex items-center justify-start">
+              <img src={logoUrl} alt="LMS logo" style={{width: 280, height: 'auto'}} />
             </div>
           </div>
         )}

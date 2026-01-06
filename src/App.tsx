@@ -24,6 +24,9 @@ import { SidebarMenuProvider } from './context/SidebarMenuContext';
 import BriefPipeline from './pages/Brief/BriefPipeline';
 import ErrorBoundary from './components/ui/ErrorBoundary';
 import { ROUTES } from './constants';
+import GmailPanel from './components/Gmail/GmailPanel';
+import SendEmail from './components/Gmail/SendEmail';
+import ReceiveEmail from './components/Gmail/ReceiveEmail';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -103,6 +106,9 @@ function App() {
           <Route path="dashboard" element={<PermissionRoute><Dashboard /></PermissionRoute>} />
           <Route path="courses" element={<PermissionRoute><Courses /></PermissionRoute>} />
           <Route path="profile" element={<PermissionRoute><Profile /></PermissionRoute>} />
+          <Route path="gmail" element={<PermissionRoute><GmailPanel /></PermissionRoute>} />
+          <Route path="gmail/send" element={<PermissionRoute><SendEmail /></PermissionRoute>} />
+          <Route path="gmail/receive" element={<PermissionRoute><ReceiveEmail /></PermissionRoute>} />
           <Route path="lead-source" element={<PermissionRoute><LeadSource /></PermissionRoute>} />
           {/* Master routes (support direct create/view/edit paths) */}
           <Route path="master/brand" element={<PermissionRoute><BrandMaster /></PermissionRoute>} />
