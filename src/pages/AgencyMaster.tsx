@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import MainContent from '../components/layout/MainContent';
+import Table, { type Column } from '../components/ui/Table';
 
 import CreateAgencyForm from './CreateAgencyForm';
 import MasterView from '../components/ui/MasterView';
@@ -11,6 +11,8 @@ import { getItem } from '../data/masterData';
 import { MasterHeader } from '../components/ui';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import { showError } from '../utils/notifications';
+import Pagination from '../components/ui/Pagination';
+import SearchBar from '../components/ui/SearchBar';
 
 // Helpers to parse API date strings like "19-11-2025 10:35:57" or ISO strings
 const parseApiDateToISO = (s?: string) => {
@@ -220,27 +222,91 @@ const AgencyMaster: React.FC = () => {
             createButtonLabel="Create Agency"
             showBreadcrumb={true}
           />
-          <ConfirmDialog
-            isOpen={!!confirmDeleteId}
-            title={`Are you sure you want to delete agency "${confirmDeleteLabel}"?`}
-            message="This action will permanently remove the agency. This cannot be undone."
-            confirmLabel="Delete"
-            cancelLabel="Cancel"
-            loading={confirmLoading}
-            onCancel={() => setConfirmDeleteId(null)}
-            onConfirm={confirmDelete}
-          />
-          <MainContent<Agency>
-            title="Agency Master" 
-            dataType="agency" 
-            onView={handleView}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            data={agenciesList}
-            onSearch={(q: string) => { setSearchValue(q); setPage(1); loadAgencies(1, q); }}
-            loading={loadingList}
-            totalItems={totalItems}
+
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+            <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-200">
+              <h2 className="text-base font-semibold text-gray-900">Agency Master</h2>
+              <SearchBar 
+                delay={300} 
+                onSearch={(q: string) => { 
+                  setSearchValue(q); 
+                  setPage(1); 
+                  loadAgencies(1, q);
+                }} 
+              />
+            </div>
+
+            <div className="pt-0 overflow-visible">
+              <ConfirmDialog
+                isOpen={!!confirmDeleteId}
+                title={`Are you sure you want to delete agency "${confirmDeleteLabel}"?`}
+                message="This action will permanently remove the agency. This cannot be undone."
+                confirmLabel="Delete"
+                cancelLabel="Cancel"
+                loading={confirmLoading}
+                onCancel={() => setConfirmDeleteId(null)}
+                onConfirm={confirmDelete}
+              />
+              <Table<Agency>
+                data={agenciesList}
+                loading={loadingList}
+                columns={([
+                  { key: 'sr', header: 'Sr. No.', render: (it: Agency) => {
+                    const startIndex = (page - 1) * perPage;
+                    const currentData = agenciesList;
+                    return String(startIndex + currentData.indexOf(it) + 1);
+                  }},
+                  { key: 'agencyGroup', header: 'Agency Group', render: (it: Agency) => it.agencyGroup || '-' },
+                  { key: 'agencyName', header: 'Agency Name', render: (it: Agency) => it.agencyName || '-' },
+                  { key: 'agencyType', header: 'Agency Type', render: (it: Agency) => it.agencyType || '-' },
+                  {
+                    key: 'contactPerson',
+                    header: 'Contact Person',
+                    render: (it: Agency) => {
+                      const raw = (it as any)._raw as Record<string, unknown> | undefined;
+                      const rawCount = raw?.['contact_person_count'] ?? raw?.['contactPersonCount'];
+                      let count: string | number | null = null;
+                      if (typeof rawCount === 'number') count = rawCount;
+                      else if (typeof rawCount === 'string' && rawCount.trim() !== '') count = rawCount;
+
+                      const normCount = (it as any).contact_person_count ?? (it as any).contactPersonCount;
+                      if (count === null && typeof normCount === 'number') count = normCount;
+
+                      const cp = (it as any).contactPerson ?? (it as any).contact_person;
+                      if (count === null) {
+                        if (cp) count = String(cp);
+                        else count = '-';
+                      }
+
+                      // If we have a numeric or non-hyphen count, render as clickable link to contacts page
+                      if (count !== '-' && String(count).trim() !== '') {
+                        const id = encodeURIComponent(String(it.id ?? ''));
+                        return (
+                          <span
+                            onClick={() => navigate(ROUTES.AGENCY_CONTACTS(id))}
+                            className="text-gray-900 hover:underline cursor-pointer"
+                          >
+                            {String(count)}
+                          </span>
+                        );
+                      }
+
+                      return String(count ?? '-');
+                    }
+                  },
+                  { key: 'dateTime', header: 'Date & Time', render: (it: Agency) => it.dateTime ? new Date(it.dateTime).toLocaleString() : '-' },
+                ] as Column<Agency>[])}
+                desktopOnMobile={true}
+                onEdit={(it: Agency) => handleEdit(it)}
+                onView={(it: Agency) => handleView(it)}
+                onDelete={(it: Agency) => handleDelete(it)}
+              />
+            </div>
+          </div>
+
+          <Pagination
             currentPage={page}
+            totalItems={typeof totalItems === 'number' ? totalItems : agenciesList.length}
             itemsPerPage={perPage}
             onPageChange={(p) => setPage(p)}
           />

@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '../../../constants';
+import { ROUTES, API_ENDPOINTS } from '../../../constants';
 import { MasterFormHeader, NotificationPopup } from '../../../components/ui';
-// removed static rolePermissionsData import to use dynamic API data only
 import { createRole as apiCreateRole } from '../../../services/CreateRole';
-
+import http from '../../../services/http';
 import PermissionTree from '../../../components/ui/PermissionTree';
 
 type Props = {
@@ -21,42 +20,35 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
     name: '',
     description: '',
     parentPermission: '',
-    
   });
-
 
   // Permission tree data from API
   const [permissionTreeData, setPermissionTreeData] = useState<any[]>([]);
-    // Fetch permission tree from API on mount
-    useEffect(() => {
-      const fetchPermissionTree = async () => {
-        try {
-          let token = '';
-          const authStorage = localStorage.getItem('auth-storage');
-          if (authStorage) {
-            try {
-              const parsed = JSON.parse(authStorage);
-              token = parsed?.state?.token || '';
-            } catch (e) {
-              console.error('Failed to parse auth-storage', e);
-            }
-          }
-          const res = await fetch('https://apislms.dgtoohl.com/api/v1/permissions/all-permission-tree', {
-            headers: {
-              'Authorization': token ? `Bearer ${token}` : '',
-              'Content-Type': 'application/json',
-            },
-          });
-          const json = await res.json();
-          if (json && json.success && Array.isArray(json.data)) {
-            setPermissionTreeData(json.data);
-          }
-        } catch (err) {
-          console.error('Failed to fetch permission tree', err);
+  const [permissionLoading, setPermissionLoading] = useState(true);
+  const [permissionError, setPermissionError] = useState('');
+
+  // Fetch permission tree from API on mount
+  useEffect(() => {
+    const fetchPermissionTree = async () => {
+      try {
+        setPermissionLoading(true);
+        setPermissionError('');
+        const response = await http.get(API_ENDPOINTS.PERMISSION.ALL_TREE);
+        if (response.data && response.data.success && Array.isArray(response.data.data)) {
+          setPermissionTreeData(response.data.data);
+        } else {
+          setPermissionError('Failed to load permissions');
         }
-      };
-      fetchPermissionTree();
-    }, []);
+      } catch (err: any) {
+        console.error('Failed to fetch permission tree', err);
+        const errorMsg = err?.response?.data?.message || 'Failed to load permissions. Please try again.';
+        setPermissionError(errorMsg);
+      } finally {
+        setPermissionLoading(false);
+      }
+    };
+    fetchPermissionTree();
+  }, []);
   const [selectedPermissionIds, setSelectedPermissionIds] = useState<number[]>([]);
 
   const [showSuccessToast, setShowSuccessToast] = useState(false);
@@ -242,12 +234,50 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
 
             {/* Role Permission Section - Tree Style */}
             <div className="mt-8">
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">Role Permission</label>
-              <PermissionTree
-                data={permissionTreeData}
-                selectedPermissionIds={selectedPermissionIds}
-                onChange={setSelectedPermissionIds}
-              />
+              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                Role Permission <span className="text-[#FF0000]">*</span>
+              </label>
+              <p className="text-xs text-gray-500 mb-3">Select permissions for this role</p>
+              {permissionError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center gap-2">
+                  <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                  <span>{permissionError}</span>
+                </div>
+              )}
+              <div className="border border-[var(--border-color)] rounded-lg overflow-hidden bg-white shadow-sm">
+                {permissionLoading ? (
+                  <div className="p-6 flex items-center justify-center min-h-[250px]">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-6 h-6 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                      <p className="text-sm text-gray-600 font-medium">Loading permissions...</p>
+                    </div>
+                  </div>
+                ) : (
+                  <PermissionTree
+                    data={permissionTreeData}
+                    selectedPermissionIds={selectedPermissionIds}
+                    onChange={setSelectedPermissionIds}
+                  />
+                )}
+              </div>
+              {selectedPermissionIds.length > 0 && !permissionLoading && (
+                <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  {selectedPermissionIds.length} permission(s) selected
+                </p>
+              )}
+              {selectedPermissionIds.length === 0 && !permissionLoading && (
+                <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  Select at least one permission
+                </p>
+              )}
             </div>
 
             {/* Form Actions */}

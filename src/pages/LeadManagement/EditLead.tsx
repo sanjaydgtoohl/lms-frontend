@@ -7,7 +7,7 @@ import { ROUTES } from '../../constants';
 import LeadManagementSection from '../../components/forms/CreateLead/LeadManagementSection';
 import ContactPersonsCard from '../../components/forms/CreateLead/ContactPersonsCard';
 import AssignPriorityCard from '../../components/forms/CreateLead/AssignPriorityCard';
-import { fetchLeadById } from '../../services/ViewLead';
+import { fetchLeadById, fetchLeadHistory } from '../../services/ViewLead';
 import { fetchBrands, fetchAgencies } from '../../services/CreateLead';
 import { Button } from '../../components/ui';
 import { updateLead } from '../../services/AllLeads';
@@ -55,6 +55,8 @@ const EditLead: React.FC = () => {
   const [options, setOptions] = useState<{ value: string; label: string }[]>([]);
   const [optionsLoading, setOptionsLoading] = useState(false);
   const [optionsError, setOptionsError] = useState<string | null>(null);
+  const [history, setHistory] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   useEffect(() => {
     const fetchLead = async () => {
@@ -122,6 +124,29 @@ const EditLead: React.FC = () => {
       fetchLead();
     }
   }, [id]);
+
+  // Fetch lead history when lead is loaded
+  useEffect(() => {
+    let mounted = true;
+    const loadHistory = async () => {
+      if (!lead?.id) return;
+      setHistoryLoading(true);
+      try {
+        const data = await fetchLeadHistory(lead.id);
+        if (!mounted) return;
+        setHistory(Array.isArray(data) ? data : []);
+      } catch (err) {
+        if (!mounted) return;
+        setHistory([]);
+      } finally {
+        if (!mounted) return;
+        setHistoryLoading(false);
+      }
+    };
+
+    loadHistory();
+    return () => { mounted = false; };
+  }, [lead?.id]);
 
   // Fetch brand/agency options when selectedOption changes
   useEffect(() => {
@@ -255,7 +280,7 @@ const EditLead: React.FC = () => {
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
       <MasterCreateHeader
-        onClose={() => navigate(ROUTES.LEAD_MANAGEMENT)}
+        onClose={() => navigate('/lead-management/all-leads')}
       />
 
       <div className="space-y-6">
@@ -335,32 +360,57 @@ const EditLead: React.FC = () => {
         <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
           <div className="px-4 py-3">
             <div className="overflow-y-auto max-h-[280px]">
-              {/* Build table rows from lead.contacts or fallback sample */}
+              {/* Render call history rows from API (fallback to sample rows) */}
               {
                 (() => {
-                  const rows = lead.contacts && lead.contacts.length > 0 ? lead.contacts.map((c, i) => ({
-                    id: c.id,
-                    assignTo: lead.assignToName || lead.assignTo || '-',
-                    callStatus: i % 2 === 0 ? 'Not Interested' : 'Meeting Done',
-                    lastCallStatus: '02-07-2025 22:23',
-                    meetingDateTime: i % 2 === 0 ? '-' : '02-07-2025 22:23',
-                    comment: 'According to Form'
+                  const formatDateTime = (date: string | null | undefined) => {
+                    if (!date) return '-';
+                    try {
+                      return new Date(date).toLocaleString('en-IN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true
+                      });
+                    } catch {
+                      return '-';
+                    }
+                  };
+
+                  const rows = history && history.length > 0 ? history.map((h: any) => ({
+                    id: String(h.id || h.uuid),
+                    assignedTo: h.assigned_user?.name || '-',
+                    currentUser: h.current_user?.name || '-',
+                    priority: h.priority?.name || h.priority?.slug || '-',
+                    status: h.status?.name || '-',
+                    callStatus: h.call_status?.name || '-',
+                    meetingDateTime: h.meeting_date ? formatDateTime(h.meeting_date) : '-',
+                    createdAt: formatDateTime(h.created_at),
+                    comment: h.lead_comment || '-'
                   })) : Array.from({ length: 3 }).map((_, i) => ({
                     id: String(i),
-                    assignTo: lead.assignToName || lead.assignTo || '-',
+                    assignedTo: lead.assignToName || lead.assignTo || '-',
+                    currentUser: '-',
+                    priority: '-',
+                    status: '-',
                     callStatus: 'Not Interested',
-                    lastCallStatus: '02-07-2025 22:23',
                     meetingDateTime: '-',
+                    createdAt: '-',
                     comment: 'According to Form'
                   }));
 
                   type Row = typeof rows[number];
 
                   const columns: Column<Row>[] = [
-                    { key: 'assignTo', header: 'Assigned To', render: (r) => r.assignTo, className: 'text-left whitespace-nowrap' },
+                    { key: 'assignedTo', header: 'Assigned To', render: (r) => r.assignedTo, className: 'text-left whitespace-nowrap' },
+                    { key: 'currentUser', header: 'Current User', render: (r) => r.currentUser, className: 'whitespace-nowrap' },
+                    { key: 'priority', header: 'Priority', render: (r) => r.priority, className: 'whitespace-nowrap' },
+                    { key: 'status', header: 'Status', render: (r) => r.status, className: 'whitespace-nowrap' },
                     { key: 'callStatus', header: 'Call Status', render: (r) => r.callStatus, className: 'whitespace-nowrap' },
-                    { key: 'lastCallStatus', header: 'Last Call Status', render: (r) => r.lastCallStatus, className: 'whitespace-nowrap' },
                     { key: 'meetingDateTime', header: 'Meeting Date & Time', render: (r) => r.meetingDateTime, className: 'whitespace-nowrap' },
+                    { key: 'createdAt', header: 'Created At', render: (r) => r.createdAt, className: 'whitespace-nowrap' },
                     { key: 'comment', header: 'Comment', render: (r) => r.comment, className: 'max-w-[220px] overflow-hidden text-ellipsis whitespace-nowrap' },
                   ];
 
@@ -369,7 +419,7 @@ const EditLead: React.FC = () => {
                               data={rows}
                               columns={columns}
                               startIndex={0}
-                              loading={false}
+                              loading={historyLoading}
                               desktopOnMobile={true}
                               keyExtractor={(it) => it.id}
                             />

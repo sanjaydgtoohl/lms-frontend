@@ -2,6 +2,7 @@ import axios from 'axios';
 import type { AxiosResponse, AxiosInstance } from 'axios';
 import { API_BASE_URL, API_ENDPOINTS } from '../constants';
 import { getCookie, setCookie, deleteCookie } from '../utils/cookies';
+import { useAuthStore } from '../store/auth';
 
 // Single axios instance used across the app. Interceptors attach the latest token
 // from cookies and will attempt a refresh when a 401 is encountered.
@@ -23,6 +24,14 @@ class Http {
     // use any here to avoid strict axios internal types mismatch in interceptor callbacks
     this.instance.interceptors.request.use((config: any) => {
       const token = getCookie('auth_token');
+      
+      // Check if token is missing but user is authenticated
+      if (!token && useAuthStore.getState().isAuthenticated) {
+        console.warn('[http] Token missing from cookies - triggering auto logout');
+        this.autoLogoutDueToMissingToken();
+        return Promise.reject(new Error('Token missing - auto logout triggered'));
+      }
+      
       if (token && config.headers) {
         config.headers['Authorization'] = `Bearer ${token}`;
       }
@@ -50,7 +59,7 @@ class Http {
 
             // Call refresh endpoint
             this.refreshPromise = this.instance
-              .post(API_ENDPOINTS.AUTH.REFRESH, { refreshToken })
+              .post(API_ENDPOINTS.AUTH.REFRESH, { refresh_token: refreshToken })
               .then((resp: AxiosResponse<any>) => {
                 const data = resp.data;
                 if (data && data.success && data.data) {
@@ -62,18 +71,17 @@ class Http {
                     setCookie('auth_token', access, { expires: expiresIn, secure: true, sameSite: 'Lax' });
                     setCookie('auth_token_expires', String(now + expiresIn * 1000), { expires: expiresIn, secure: true, sameSite: 'Lax' });
                   }
-                  // If refreshToken is present in response, update it; otherwise, keep the old one
-                  if ('refreshToken' in data.data && data.data.refreshToken) {
-                    const refresh = data.data.refreshToken;
-                    const refreshExpiresIn = data.data.refresh_expires_in || 7 * 24 * 3600;
-                    setCookie('refresh_token', refresh, { expires: refreshExpiresIn, secure: true, sameSite: 'Lax' });
+                  // If refresh token is present in response under either key, update it; otherwise, keep the old one
+                  const refreshFromResp = (data.data as any).refresh_token || (data.data as any).refreshToken || null;
+                  if (refreshFromResp) {
+                    const refreshExpiresIn = (data.data as any).refresh_expires_in || 7 * 24 * 3600;
+                    setCookie('refresh_token', refreshFromResp, { expires: refreshExpiresIn, secure: true, sameSite: 'Lax' });
                     setCookie('refresh_token_expires', String(now + refreshExpiresIn * 1000), { expires: refreshExpiresIn, secure: true, sameSite: 'Lax' });
                   } else {
-                    // Re-save the old refresh_token and its expiry
+                    // Re-save the old refresh_token and its expiry to preserve TTL
                     const oldRefresh = getCookie('refresh_token');
                     const oldRefreshExp = getCookie('refresh_token_expires');
                     if (oldRefresh && oldRefreshExp) {
-                      // Calculate remaining TTL
                       const remainingMs = parseInt(oldRefreshExp, 10) - now;
                       const remainingSec = Math.max(Math.floor(remainingMs / 1000), 1);
                       setCookie('refresh_token', oldRefresh, { expires: remainingSec, secure: true, sameSite: 'Lax' });
@@ -81,10 +89,12 @@ class Http {
                     }
                   }
 
-                  // Drain queue
-                  this.requestQueue.forEach((cb) => cb(access));
+                  // Get fresh token from cookies to ensure latest value
+                  const freshToken = getCookie('auth_token');
+                  // Drain queue with fresh token from cookie
+                  this.requestQueue.forEach((cb) => cb(freshToken || access));
                   this.requestQueue = [];
-                  return access;
+                  return freshToken || access;
                 }
 
                 // Refresh failed
@@ -128,6 +138,23 @@ class Http {
     deleteCookie('auth_token_expires');
     deleteCookie('refresh_token_expires');
     // force navigation
+    window.location.href = '/login';
+  }
+
+  autoLogoutDueToMissingToken() {
+    // Clear all auth-related cookies
+    deleteCookie('auth_token');
+    deleteCookie('refresh_token');
+    deleteCookie('auth_token_expires');
+    deleteCookie('refresh_token_expires');
+    
+    // Clear auth store and local storage
+    const authStore = useAuthStore.getState();
+    authStore.logout().catch((err) => {
+      console.error('Error during auto logout:', err);
+    });
+    
+    // Redirect to login
     window.location.href = '/login';
   }
 }

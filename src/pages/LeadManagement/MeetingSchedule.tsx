@@ -12,6 +12,30 @@ import { listLeads } from '../../services/AllLeads';
 const MeetingSchedule: React.FC = () => {
   const navigate = useNavigate();
 
+  // Disable datepicker animations on component mount
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.innerHTML = `
+      .react-datepicker-popper {
+        animation: none !important;
+        transition: none !important;
+      }
+      .react-datepicker {
+        animation: none !important;
+      }
+      /* Fix multi-select placeholder width */
+      div[style*="gap: 6px"] input[placeholder] {
+        min-width: 120px !important;
+        flex: 1 !important;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   const [lead, setLead] = useState<string>('');
   const [meetingType, setMeetingType] = useState<string>('');
   const [attendees, setAttendees] = useState<Array<string | { value: string }>>([]);
@@ -111,7 +135,7 @@ const MeetingSchedule: React.FC = () => {
         agenda,
         link: meetLink,
         meeting_date: date ? date.toISOString().split('T')[0] : '',
-        meeting_time: time ? time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+        meeting_time: time ? `${String(time.getHours()).padStart(2, '0')}:${String(time.getMinutes()).padStart(2, '0')}` : '',
         status: 1,
       };
 
@@ -225,8 +249,7 @@ const MeetingSchedule: React.FC = () => {
                       placeholderText="yyyy-mm-dd"
                       className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] w-full"
                       wrapperClassName="w-full"
-                      popperClassName="react-datepicker-popper"
-                      calendarClassName="react-datepicker-calendar"
+                      popperPlacement="bottom-start"
                       showMonthDropdown
                       showYearDropdown
                       dropdownMode="select"
@@ -249,6 +272,7 @@ const MeetingSchedule: React.FC = () => {
                       placeholderText="--:--"
                       className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] w-full"
                       wrapperClassName="w-full"
+                      popperPlacement="bottom-start"
                     />
                     {errors.time && <div className="text-red-500 text-xs mt-1">{errors.time}</div>}
                   </div>

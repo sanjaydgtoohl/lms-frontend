@@ -59,6 +59,9 @@ const sidebarRoutes = [
   // Campaign Management
   '/campaign-management',
 
+  // Gmail / Email panel
+  '/gmail',
+
   // Finance
   '/finance',
 

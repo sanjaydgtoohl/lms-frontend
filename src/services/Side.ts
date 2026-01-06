@@ -4,11 +4,17 @@
  */
 export function extractAllPaths(apiItems: ApiSidebarItem[]): string[] {
   const paths: string[] = [];
+  
   function recurse(items: ApiSidebarItem[]) {
     for (const item of items) {
-      if (item.url && item.url !== 'javascript:void(0)') {
+      if (item.url && item.url !== 'javascript:void(0)' && item.url.trim() !== '') {
         let path = item.url.startsWith('/') ? item.url : `/${item.url}`;
-        path = path.replace(/\{id\}/g, ':id');
+        // Replace both {id} and other patterns like {accountId}, {userId}, etc.
+        path = path.replace(/\{[^}]+\}/g, ':id');
+        // Remove trailing slashes (except root)
+        if (path.length > 1 && path.endsWith('/')) {
+          path = path.slice(0, -1);
+        }
         paths.push(path);
       }
       if (item.children && item.children.length > 0) {
@@ -17,7 +23,9 @@ export function extractAllPaths(apiItems: ApiSidebarItem[]): string[] {
     }
   }
   recurse(apiItems);
-  return paths;
+  
+  // Remove duplicates
+  return [...new Set(paths)];
 }
 /**
  * Checks if a given path is permitted based on sidebar menu structure.

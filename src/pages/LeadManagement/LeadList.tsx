@@ -4,10 +4,12 @@ import AssignDropdown from '../../components/ui/AssignDropdown';
 import CallStatusDropdown from '../../components/ui/CallStatusDropdown';
 import Pagination from '../../components/ui/Pagination';
 import SearchBar from '../../components/ui/SearchBar';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { MasterHeader, StatusPill } from '../../components/ui';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants';
-import { listLeads, listLeadsByStatus } from '../../services/AllLeads';
+import { listLeads, listLeadsByStatus, updateLead, deleteLead } from '../../services/AllLeads';
+import { assignUserToLead } from '../../services/leadAssignTo';
 
 interface Lead {
   id: string;
@@ -146,6 +148,9 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
   const [loading, setLoading] = useState(true);
   const itemsPerPage = 10;
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [confirmDeleteLabel, setConfirmDeleteLabel] = useState<string>('');
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   // Fetch leads from API
   useEffect(() => {
@@ -300,6 +305,42 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
         lead.id === leadId ? { ...lead, assignTo: newSalesMan } : lead
       )
     );
+    (async () => {
+      try {
+        const numericId = String(leadId).replace('#', '');
+        const found = assignToOptions.find(u => u.name === newSalesMan);
+        if (found && found.id != null) {
+          await assignUserToLead(numericId, found.id);
+        } else {
+          await updateLead(numericId, { current_assign_user: newSalesMan });
+        }
+      } catch (err) {
+        console.warn('Failed to persist assignTo change', err);
+      }
+    })();
+  };
+
+  const handleDelete = (leadId: string) => {
+    const found = leads.find((l) => l.id === leadId);
+    setConfirmDeleteId(leadId);
+    setConfirmDeleteLabel(found ? (found.brandName || found.contactPerson || String(found.id)) : leadId);
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmDeleteId) return;
+    setConfirmLoading(true);
+    const numericId = String(confirmDeleteId).replace('#', '');
+    try {
+      await deleteLead(numericId);
+      setLeads((prev) => prev.filter((l) => l.id !== confirmDeleteId));
+    } catch (err: any) {
+      console.error('Failed to delete lead', err);
+      alert(err?.message || 'Failed to delete lead');
+    } finally {
+      setConfirmLoading(false);
+      setConfirmDeleteId(null);
+      setConfirmDeleteLabel('');
+    }
   };
 
   const handleCallStatusChange = (leadId: string, newStatus: string) => {
@@ -453,6 +494,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
             columns={columns}
             onEdit={(it: Lead) => handleEdit(it.id)}
             onView={(it: Lead) => handleView(it.id)}
+            onDelete={(it: Lead) => handleDelete(it.id)}
           />
         </div>
       </div>
@@ -464,7 +506,15 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
         onPageChange={(p: number) => setCurrentPage(p)}
       />
 
-      
+      {/* Confirmation dialog for delete */}
+      <ConfirmDialog
+        isOpen={confirmDeleteId !== null}
+        title="Delete Lead"
+        message={`Are you sure you want to delete the lead "${confirmDeleteLabel}"? This action cannot be undone.`}
+        loading={confirmLoading}
+        onCancel={() => setConfirmDeleteId(null)}
+        onConfirm={confirmDelete}
+      />
 
       {/* Tooltip popup for full comment text */}
       {tooltipVisible && (

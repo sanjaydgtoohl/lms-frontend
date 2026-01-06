@@ -10,6 +10,7 @@ import NotificationPopup from '../../components/ui/NotificationPopup';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants';
 import { listLeads, updateLead, deleteLead } from '../../services/AllLeads';
+import { assignUserToLead } from '../../services/leadAssignTo';
 import { apiClient } from '../../utils/apiClient';
 import { fetchCallStatuses, updateCallStatus } from '../../services/CallStatus';
 
@@ -164,7 +165,14 @@ const AllLeads: React.FC = () => {
       try {
         // remove leading '#' if present
         const numericId = String(leadId).replace('#', '');
-        await updateLead(numericId, { current_assign_user: newSalesMan });
+        // try to find user id from assignToOptions (we store options as {id, name})
+        const found = assignToOptions.find(u => u.name === newSalesMan);
+        if (found && found.id != null) {
+          await assignUserToLead(numericId, found.id);
+        } else {
+          // fallback to existing updateLead call if we only have the name
+          await updateLead(numericId, { current_assign_user: newSalesMan });
+        }
       } catch (err) {
         console.warn('Failed to persist assignTo change', err);
       }

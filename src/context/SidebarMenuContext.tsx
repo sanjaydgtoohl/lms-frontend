@@ -26,14 +26,18 @@ export const SidebarMenuProvider: React.FC<{ children: ReactNode }> = ({ childre
         const res = await apiClient.get<any>('/permissions/sidebar');
         if (res && res.data && Array.isArray(res.data)) {
           setSidebarMenu(mapMenu(res.data)); // 1 level for UI
-          setAllPermittedPaths(extractAllPaths(res.data as ApiSidebarItem[])); // all levels for permission checks
+          const paths = extractAllPaths(res.data as ApiSidebarItem[]); // all levels for permission checks
+          setAllPermittedPaths(paths);
+          console.log('✅ Permitted paths loaded:', paths);
         } else {
           setSidebarMenu([]);
           setAllPermittedPaths([]);
+          console.warn('⚠️ No sidebar data received from API');
         }
-      } catch {
+      } catch (err) {
         setSidebarMenu([]);
         setAllPermittedPaths([]);
+        console.error('❌ Failed to fetch permissions:', err);
       } finally {
         setLoading(false);
       }

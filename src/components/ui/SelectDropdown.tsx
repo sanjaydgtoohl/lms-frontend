@@ -57,18 +57,23 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
 
   // Determine if error border should be shown
   const errorBorderClass = inputClassName && inputClassName.includes('border-red-500') ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-[#DDE1E7]';
+  // Input classes and styles differ for multi vs single select
+  const multiInputClass = `flex-none h-full px-2 text-sm font-medium bg-transparent text-[var(--text-primary)] border-none focus:outline-none`;
+  const singleInputClass = `flex-1 h-full px-2 text-sm font-medium bg-transparent text-[var(--text-primary)] border-none focus:outline-none`;
+  const multiInputStyle: React.CSSProperties = { boxShadow: 'none', minWidth: '30px', width: '30px', height: 'auto' };
+  const singleInputStyle: React.CSSProperties = { boxShadow: 'none', minWidth: '120px', width: '100%', height: 'auto' };
   return (
     <div ref={ref} className={`relative ${className}`}>
       <div className="w-full relative">
         <div
-          className={`flex flex-wrap items-center min-h-[40px] px-2 py-1 border rounded-[10px] bg-white relative ${errorBorderClass} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
-          style={{ gap: '6px', paddingRight: '32px' }}
+          className={`flex items-center h-10 w-full px-3 py-2 border rounded-lg bg-white relative ${errorBorderClass} ${disabled ? 'opacity-60 cursor-not-allowed' : ''} ${inputClassName}`}
+          style={{ gap: '6px', paddingRight: '32px', overflowX: 'auto', overflowY: 'hidden', whiteSpace: 'nowrap' }}
           onClick={() => !disabled && setOpen(true)}
         >
-          {/* Multi-select: show tags */}
+          {/* Multi-select: show tags in a single horizontal row with scroll */}
           {isMulti && selectedLabels.length > 0 && selectedLabels.map((opt) => (
-            <span key={opt.value} className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs flex items-center" style={{ marginBottom: '2px' }}>
-              {opt.label}
+            <span key={opt.value} className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs inline-flex items-center" style={{ marginRight: '6px', display: 'inline-flex', lineHeight: '1', maxHeight: '100%', overflow: 'hidden' }}>
+              <span style={{ whiteSpace: 'nowrap', display: 'inline-block', lineHeight: '1' }}>{opt.label}</span>
               <button
                 type="button"
                 className="ml-1 text-blue-700 hover:text-red-500"
@@ -98,10 +103,10 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
               }, 0);
             }}
             placeholder={isMulti && selectedLabels.length > 0 ? '' : placeholder}
-            className={`flex-1 min-w-[120px] h-8 px-2 text-sm font-medium bg-transparent text-[var(--text-primary)] border-none focus:outline-none ${inputClassName}`}
+            className={isMulti ? multiInputClass : singleInputClass}
             disabled={disabled}
             autoComplete="off"
-            style={{ boxShadow: 'none', minWidth: '120px', marginBottom: '2px' }}
+            style={isMulti ? { ...multiInputStyle, height: '100%' } : { ...singleInputStyle, height: '100%' }}
           />
           <input type="hidden" name={name ? name : undefined} value={isMulti ? selectedValues.join(',') : value} />
           {/* dropdown arrow */}

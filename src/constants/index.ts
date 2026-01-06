@@ -64,7 +64,9 @@ export const ROUTES = {
   },
   // Master Data Routes
   BRAND_MASTER: '/master/brand',
+  BRAND_CONTACTS: (id: string) => `/master/brand/${id}/contacts`,
   AGENCY_MASTER: '/master/agency',
+  AGENCY_CONTACTS: (id: string) => `/master/agency/${id}/contacts`,
   DEPARTMENT_MASTER: '/master/department',
   DESIGNATION_MASTER: '/master/designation',
   INDUSTRY_MASTER: '/master/industry',
@@ -136,6 +138,22 @@ export const API_ENDPOINTS = {
     LOGOUT: '/auth/logout',
     REFRESH: '/auth/refresh',
     PROFILE: '/auth/profile',
+  },
+  PERMISSION: {
+    ALL_TREE: '/permissions/all-permission-tree',
+    LIST: '/permissions',
+    CREATE: '/permissions',
+    DETAIL: (id: string) => `/permissions/${id}`,
+    UPDATE: (id: string) => `/permissions/${id}`,
+    DELETE: (id: string) => `/permissions/${id}`,
+  },
+  ROLE: {
+    LIST: '/roles',
+    CREATE: '/roles',
+    VIEW: '/roles',
+    DETAIL: (id: string) => `/roles/${id}`,
+    UPDATE: (id: string) => `/roles/${id}`,
+    DELETE: (id: string) => `/roles/${id}`,
   },
   COURSES: {
     LIST: '/courses',

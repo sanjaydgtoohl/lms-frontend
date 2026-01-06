@@ -218,14 +218,33 @@ const BrandMaster: React.FC = () => {
                   render: (it: Brand) => {
                     const raw = (it as any)._raw as Record<string, unknown> | undefined;
                     const rawCount = raw?.['contact_person_count'] ?? raw?.['contactPersonCount'];
-                    if (typeof rawCount === 'number') return String(rawCount);
-                    if (typeof rawCount === 'string' && rawCount.trim() !== '') return rawCount as string;
+                    let count: string | number | null = null;
+                    if (typeof rawCount === 'number') count = rawCount;
+                    else if (typeof rawCount === 'string' && rawCount.trim() !== '') count = rawCount;
 
                     const normCount = (it as any).contact_person_count ?? (it as any).contactPersonCount;
-                    if (typeof normCount === 'number') return String(normCount);
+                    if (count === null && typeof normCount === 'number') count = normCount;
 
                     const cp = (it as any).contactPerson ?? (it as any).contact_person;
-                    return cp ? String(cp) : '-';
+                    if (count === null) {
+                      if (cp) count = String(cp);
+                      else count = '-';
+                    }
+
+                    // If we have a numeric or non-hyphen count, render as clickable link to contacts page
+                    if (count !== '-' && String(count).trim() !== '') {
+                      const id = encodeURIComponent(String(it.id ?? ''));
+                      return (
+                        <span
+                          onClick={() => navigate(ROUTES.BRAND_CONTACTS(id))}
+                          className="text-gray-900 hover:underline cursor-pointer"
+                        >
+                          {String(count)}
+                        </span>
+                      );
+                    }
+
+                    return String(count ?? '-');
                   }
                 },
                 { key: 'industry', header: 'Industry', render: (it: Brand) => it.industry || '-' },
