@@ -11,7 +11,7 @@ type Props = {
 
 const CreateIndustryForm: React.FC<Props> = ({ onClose, onSave }) => {
   const [name, setName] = useState('');
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   
 
@@ -25,10 +25,10 @@ const CreateIndustryForm: React.FC<Props> = ({ onClose, onSave }) => {
   };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) {
-      setError('Industry Name Is Required');
-      return;
-    }
+    const next: Record<string, string> = {};
+    if (!name.trim()) next.name = 'Please Enter Industry Name';
+    setErrors(next);
+    if (Object.keys(next).length > 0) return;
 
     try {
       setSaving(true);
@@ -47,29 +47,29 @@ const CreateIndustryForm: React.FC<Props> = ({ onClose, onSave }) => {
         onClose();
       }
     } catch (err: any) {
-      // Prefer field-specific validation messages when available
+
       let msg = err instanceof Error ? err.message : 'Failed to create industry';
       try {
         const resp = err?.responseData || err?.response || err;
-        // prefer top-level message if present
+
         if (resp && resp.message) msg = String(resp.message);
         const errorsObj = resp && (resp.errors || resp.data?.errors || resp.errors);
         if (errorsObj && typeof errorsObj === 'object') {
-          // map server field keys to UI field keys
+
           const fieldMap: Record<string, string> = { title: 'name', name: 'name' };
           for (const [k, v] of Object.entries(errorsObj)) {
             const msgs = Array.isArray(v) ? v : [v];
             const text = String(msgs[0]);
             const target = fieldMap[k] ?? k;
             if (target === 'name') {
+              setErrors(prev => ({ ...prev, name: text }));
               msg = text;
               break;
             }
           }
         }
       } catch (_) {}
-      setError(msg);
-      // Only show global popup when not used inline (no onSave prop)
+      // Show global popup only when not inline
       if (!onSave) showError(msg);
     } finally {
       setSaving(false);
@@ -93,11 +93,22 @@ const CreateIndustryForm: React.FC<Props> = ({ onClose, onSave }) => {
               <input
                 name="industryName"
                 value={name}
-                onChange={(e) => { setName(e.target.value); setError(''); }}
-                className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                onChange={(e) => { setName(e.target.value); setErrors(prev => ({ ...prev, name: '' })); }}
+                className={`w-full px-3 py-2 border rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
+                  errors.name ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-[var(--border-color)] focus:ring-[var(--primary)]'
+                }`}
                 placeholder="Please Enter Industry Name"
+                aria-invalid={errors.name ? 'true' : 'false'}
+                aria-describedby={errors.name ? 'name-error' : undefined}
               />
-              {error && <div className="text-xs text-red-500 mt-1">{error}</div>}
+              {errors.name && (
+                <div id="name-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.name}
+                </div>
+              )}
             </div>
 
             <div className="flex items-center justify-end">
