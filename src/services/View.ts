@@ -71,7 +71,7 @@ export async function listMissCampaigns(page = 1, perPage = 10, search?: string)
                      (it.lead_sub_source && typeof it.lead_sub_source === 'object' ? Object.values(it.lead_sub_source).join(', ') : '') ?? 
                      it.subSource ?? 
                      '';
-    const proof = it.image_path ?? it.proof ?? '';
+    const proof = it.image_url ?? it.image_path ?? it.proof ?? '';
     const dateTime = it.created_at ?? it.date_time ?? it.dateTime ?? '';
     
     return {

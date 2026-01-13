@@ -16,7 +16,6 @@ import {
   type MissCampaign 
 } from '../../services/View';
 import { updateMissCampaign } from '../../services/Edit';
-import { useRef } from 'react';
 
 const View: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -38,14 +37,28 @@ const View: React.FC = () => {
   
   const [showErrorToast, setShowErrorToast] = useState(false);
   const [errorMessageToast, setErrorMessageToast] = useState('');
-  // Tooltip state for Proof hover (similar to AllLeads comment tooltip)
-  const [tooltipVisible, setTooltipVisible] = useState(false);
-  const [tooltipContent, setTooltipContent] = useState('');
-  const [tooltipLeft, setTooltipLeft] = useState(0);
-  const [tooltipTop, setTooltipTop] = useState(0);
-  const [tooltipPlacement, setTooltipPlacement] = useState<'top' | 'bottom'>('top');
-  const hoverTimeout = useRef<number | null>(null);
-  const tooltipRef = useRef<HTMLDivElement | null>(null);
+  // Image modal (soft alert) state
+  const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [modalImageUrl, setModalImageUrl] = useState<string | null>(null);
+
+  const openImageModal = (url: string) => {
+    setModalImageUrl(url);
+    setImageModalOpen(true);
+  };
+
+  const closeImageModal = () => {
+    setImageModalOpen(false);
+    setModalImageUrl(null);
+  };
+
+  // Close modal on Escape key
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeImageModal();
+    };
+    if (imageModalOpen) window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [imageModalOpen]);
 
   const filteredCampaigns = campaigns.filter(c => {
     if (!searchQuery) return true;
@@ -164,45 +177,7 @@ const View: React.FC = () => {
     setEditItem(null);
   }, [location.pathname, params.id, campaigns]);
 
-  // Tooltip helpers
-  const showTooltip = (e: React.MouseEvent, content: string) => {
-    if (hoverTimeout.current) {
-      window.clearTimeout(hoverTimeout.current);
-      hoverTimeout.current = null;
-    }
-    const target = e.currentTarget as HTMLElement;
-    const rect = target.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const preferTop = rect.top > 140;
-    const left = Math.max(12, Math.min(window.innerWidth - 12, centerX));
-    const top = preferTop ? Math.max(12, rect.top - 8) : Math.min(window.innerHeight - 12, rect.bottom + 8);
-
-    setTooltipContent(content);
-    setTooltipLeft(left);
-    setTooltipTop(top);
-    setTooltipPlacement(preferTop ? 'top' : 'bottom');
-    setTooltipVisible(true);
-  };
-
-  const hideTooltip = () => {
-    if (hoverTimeout.current) window.clearTimeout(hoverTimeout.current);
-    hoverTimeout.current = window.setTimeout(() => {
-      setTooltipVisible(false);
-      hoverTimeout.current = null;
-    }, 100);
-  };
-
-  const onTooltipEnter = () => {
-    if (hoverTimeout.current) {
-      window.clearTimeout(hoverTimeout.current);
-      hoverTimeout.current = null;
-    }
-    setTooltipVisible(true);
-  };
-
-  const onTooltipLeave = () => {
-    hideTooltip();
-  };
+  // Tooltip helpers removed - tooltip functionality not currently in use
 
   const handleSaveEdited = async (updated: Record<string, any>) => {
     try {
@@ -287,23 +262,17 @@ const View: React.FC = () => {
                   key: 'proof',
                   header: 'Proof',
                   render: (it: MissCampaign) => (
-                    <div
-                      className="cursor-help max-w-[360px]"
-                      onMouseEnter={(e) => showTooltip(e, String(it.proof || ''))}
-                      onMouseLeave={() => hideTooltip()}
-                    >
-                      <div
-                        className="text-sm text-[var(--text-primary)]"
-                        style={{
-                          display: 'block',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          overflowWrap: 'break-word'
-                        }}
-                      >
-                        {it.proof || '-'}
-                      </div>
+                    <div className="flex items-center justify-center">
+                      {it.proof ? (
+                        <img 
+                          src={it.proof} 
+                          alt="Proof" 
+                          className="h-12 w-12 object-cover rounded border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow"
+                          onClick={() => openImageModal(it.proof)}
+                        />
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
                     </div>
                   ),
                 },
@@ -323,18 +292,33 @@ const View: React.FC = () => {
             onPageChange={handlePageChange}
           />
           {/* Tooltip popup for full proof text */}
-          {tooltipVisible && (
+          {/* Image modal (soft alert) */}
+          {imageModalOpen && modalImageUrl && (
             <div
-              ref={tooltipRef}
-              onMouseEnter={onTooltipEnter}
-              onMouseLeave={onTooltipLeave}
-              role="tooltip"
-              aria-hidden={!tooltipVisible}
-              style={{ left: tooltipLeft, top: tooltipTop }}
-              className={`fixed z-50 transform -translate-x-1/2 ${tooltipPlacement === 'top' ? '-translate-y-full' : 'translate-y-0'}`}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+              onClick={closeImageModal}
             >
-              <div className="bg-white border border-[var(--border-color)] rounded-lg shadow-md p-3 max-w-[48ch] text-sm text-[var(--text-primary)]">
-                {tooltipContent}
+              <div
+                className="relative bg-white rounded-lg shadow-lg p-4 max-w-[90vw] max-h-[90vh] flex items-center justify-center"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <img
+                  src={modalImageUrl}
+                  alt="Proof full"
+                  className="max-w-[84vw] max-h-[84vh] object-contain"
+                />
+                <div
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Close"
+                  onClick={closeImageModal}
+                  onKeyDown={(e) => { if (e.key === 'Enter') closeImageModal(); }}
+                  className="absolute top-3 right-3 bg-white/95 hover:bg-white rounded-full p-1 border z-50 cursor-pointer flex items-center justify-center"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
               </div>
             </div>
           )}

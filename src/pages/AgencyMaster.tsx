@@ -227,7 +227,8 @@ const AgencyMaster: React.FC = () => {
             <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-200">
               <h2 className="text-base font-semibold text-gray-900">Agency Master</h2>
               <SearchBar 
-                delay={300} 
+                delay={300}
+                placeholder="Please Search Agency"
                 onSearch={(q: string) => { 
                   setSearchValue(q); 
                   setPage(1); 

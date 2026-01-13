@@ -13,6 +13,7 @@ import { assignUserToLead } from '../../services/leadAssignTo';
 
 interface Lead {
   id: string;
+  agencyName?: string;
   brandName?: string;
   brand_name?: string;
   contactPerson?: string;
@@ -104,6 +105,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
         }
         const transformedLeads = response.data.map((item: any) => ({
           id: item.id ? String(item.id) : '',
+          agencyName: item.agency?.name || item.agency_name || '',
           brandName: item.brand_name || item.brand?.name || String(item.brand_id || ''),
           contactPerson: item.contact_person || item.name || '',
           phoneNumber: Array.isArray(item.mobile_number) ? (item.mobile_number[0] || '') : (item.mobile_number || item.email || ''),
@@ -182,6 +184,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
         }
         const transformedLeads = response.data.map((item: any) => ({
           id: item.id ? String(item.id) : '',
+          agencyName: item.agency?.name || item.agency_name || '',
           brandName: item.brand_name || item.brand?.name || String(item.brand_id || ''),
           contactPerson: item.contact_person || item.name || '',
           phoneNumber: Array.isArray(item.mobile_number) ? (item.mobile_number[0] || '') : (item.mobile_number || item.email || ''),
@@ -390,30 +393,35 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
 
   const columns = ([
     { key: 'sr', header: 'S.No.', render: (it: Lead) => String(startIndex + currentData.indexOf(it) + 1), className: 'text-left whitespace-nowrap' },
-    { key: 'brandName', header: 'Brand Name', render: (it: Lead) => it.brandName, className: 'max-w-[180px] overflow-hidden text-ellipsis whitespace-nowrap' },
-    { key: 'contactPerson', header: 'Contact Person', render: (it: Lead) => it.contactPerson, className: 'max-w-[160px] overflow-hidden text-ellipsis whitespace-nowrap' },
-    { key: 'phoneNumber', header: 'Phone Number', render: (it: Lead) => it.phoneNumber, className: 'whitespace-nowrap' },
-    { key: 'subSource', header: 'Sub-Source', render: (it: Lead) => it.subSource, className: 'whitespace-nowrap' },
-    { key: 'assignBy', header: 'Assign By', render: (it: Lead) => it.assignBy, className: 'whitespace-nowrap' },
+    { key: 'agencyName', header: 'Agency Name', render: (it: Lead) => it.agencyName || '-', className: 'max-w-[180px] overflow-hidden text-ellipsis whitespace-nowrap' },
+    { key: 'brandName', header: 'Brand Name', render: (it: Lead) => it.brandName || '-', className: 'max-w-[180px] overflow-hidden text-ellipsis whitespace-nowrap' },
+    { key: 'contactPerson', header: 'Contact Person', render: (it: Lead) => it.contactPerson || '-', className: 'max-w-[160px] overflow-hidden text-ellipsis whitespace-nowrap' },
+    { key: 'phoneNumber', header: 'Phone Number', render: (it: Lead) => it.phoneNumber || '-', className: 'whitespace-nowrap' },
+    { key: 'subSource', header: 'Sub-Source', render: (it: Lead) => it.subSource || '-', className: 'whitespace-nowrap' },
+    { key: 'assignBy', header: 'Assign By', render: (it: Lead) => it.assignBy || '-', className: 'whitespace-nowrap' },
     {
       key: 'assignTo',
       header: 'Assign To',
       render: (it: Lead) => (
-        <AssignDropdown
-          value={it.assignTo ?? ''}
-          options={assignToOptions.map(opt => opt.name)}
-          onChange={(newSalesMan) => handleAssignToChange(it.id, newSalesMan)}
-        />
+        it.assignTo ? (
+          <AssignDropdown
+            value={it.assignTo ?? ''}
+            options={assignToOptions.map(opt => opt.name)}
+            onChange={(newSalesMan) => handleAssignToChange(it.id, newSalesMan)}
+          />
+        ) : (
+          <span>-</span>
+        )
       ),
       className: 'min-w-[140px]',
     },
-    { key: 'dateTime', header: 'Date & Time', render: (it: Lead) => it.dateTime, className: 'whitespace-nowrap' },
+    { key: 'dateTime', header: 'Date & Time', render: (it: Lead) => it.dateTime || '-', className: 'whitespace-nowrap' },
     { 
       key: 'status', 
       header: 'Status', 
       render: (it: Lead) => (
         <StatusPill
-          label={it.status ?? ''}
+          label={it.status ?? '-'}
           color={statusColors[it.status ?? ''] || '#6b7280'}
         />
       ),
@@ -423,25 +431,29 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
       key: 'callStatus',
       header: 'Call Status',
       render: (it: Lead) => (
-        <div className="min-w-[160px]">
-          <CallStatusDropdown
-            value={it.callStatus ?? ''}
-            options={callStatusOptions}
-            onChange={(newStatus) => handleCallStatusChange(it.id, newStatus)}
-          />
-        </div>
+        (it.callStatus && it.callStatus !== 'N/A') ? (
+          <div className="min-w-[160px]">
+            <CallStatusDropdown
+              value={it.callStatus ?? ''}
+              options={callStatusOptions}
+              onChange={(newStatus) => handleCallStatusChange(it.id, newStatus)}
+            />
+          </div>
+        ) : (
+          <span>-</span>
+        )
       ),
       className: 'min-w-[160px]',
     },
-    { key: 'followUp', header: 'Follow-Up / Meeting Type', render: (it: Lead) => it.dateTime, className: 'whitespace-nowrap' },
-    { key: 'callAttempt', header: 'Call Attempt', render: (it: Lead) => String(it.callAttempt), className: 'whitespace-nowrap' },
+    { key: 'followUp', header: 'Follow-Up / Meeting Type', render: (it: Lead) => it.dateTime || '-', className: 'whitespace-nowrap' },
+    { key: 'callAttempt', header: 'Call Attempt', render: (it: Lead) => it.callAttempt ? String(it.callAttempt) : '-', className: 'whitespace-nowrap' },
     { 
       key: 'comment', 
       header: 'Comment', 
       render: (it: Lead) => (
         <div
           className="cursor-help max-w-[220px]"
-          onMouseEnter={(e) => showTooltip(e, it.comment ?? '')}
+          onMouseEnter={(e) => showTooltip(e, it.comment ?? '-')}
           onMouseLeave={() => hideTooltip()}
         >
           <div
@@ -455,7 +467,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
               overflowWrap: 'break-word'
             }}
           >
-            {it.comment}
+            {it.comment || '-'}
           </div>
         </div>
       ),

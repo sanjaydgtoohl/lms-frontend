@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Table from '../../components/ui/Table';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -7,6 +7,7 @@ import { listAgencies } from '../../services/AgencyMaster';
 import { listUsers } from '../../services/AllUsers';
 import { listLeads } from '../../services/AllLeads';
 import { fetchBriefStatuses } from '../../services/BriefStatus';
+import { fetchPriorities } from '../../services/Priority';
 import { motion } from 'framer-motion';
 import { MasterFormHeader, NotificationPopup, SelectField } from '../../components/ui';
 import { apiClient } from '../../utils/apiClient';
@@ -69,11 +70,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
   const [briefStatuses, setBriefStatuses] = useState<Array<string | { value: string; label: string }>>([]);
   const [briefStatusesLoading, setBriefStatusesLoading] = useState(false);
   const [briefStatusesError, setBriefStatusesError] = useState<string | null>(null);
-  const [priorityOptions, setPriorityOptions] = useState<Array<{ value: string; label: string }>>([
-    { value: 'Low', label: 'Low' },
-    { value: 'Medium', label: 'Medium' },
-    { value: 'High', label: 'High' },
-  ]);
+  const [priorityOptions, setPriorityOptions] = useState<Array<{ value: string; label: string }>>([]);
   const [priorityLoading, setPriorityLoading] = useState(false);
   const [priorityError, setPriorityError] = useState<string | null>(null);
 
@@ -86,6 +83,9 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
   const [historiesLoading, setHistoriesLoading] = useState(false);
   const [, setHistoriesError] = useState<string | null>(null);
   const [, setBrandAgencyLoading] = useState(false);
+
+  // Track which field was manually changed to prevent both auto-fill conditions from running
+  const lastChangedFieldRef = useRef<'brand' | 'agency' | 'status' | 'priority' | null>(null);
 
   useEffect(() => {
     if (initialData) {
@@ -194,11 +194,14 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
   }, [initialData, mode]);
 
   // When Brand Name changes, try to auto-fill Agency Name from brand-specific endpoint
+  // Only auto-fill if agency wasn't the last manually changed field
   useEffect(() => {
     let mounted = true;
     const fillAgencyForBrand = async () => {
       const raw = form.brandName;
       if (!raw) return;
+      // Skip auto-fill if agency was the last manually changed field
+      if (lastChangedFieldRef.current === 'agency') return;
       // If value looks like an id, call brand agencies endpoint
       const idMatch = String(raw).match(/^\d+$/);
       if (!idMatch) return;
@@ -219,6 +222,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
           const first = items[0];
           const agencyId = first.id ?? first.uuid ?? first.slug ?? first.name ?? '';
           setForm(prev => ({ ...prev, createdBy: String(agencyId) }));
+          lastChangedFieldRef.current = 'brand'; // Mark brand as the last changed field
         }
       } catch (e) {
         // noop — do not overwrite existing agency on failure
@@ -302,11 +306,14 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
   }, [initialData]);
 
   // When Agency changes, fetch brands belonging to that agency and populate Brand Name dropdown
+  // Only auto-fill if brand wasn't the last manually changed field
   useEffect(() => {
     let mounted = true;
     const fetchBrandsForAgency = async () => {
       const raw = form.createdBy;
       if (!raw) return;
+      // Skip auto-fill if brand was the last manually changed field
+      if (lastChangedFieldRef.current === 'brand') return;
       // expect agency id numeric (or string containing digits)
       const idMatch = String(raw).match(/^\d+$/);
       if (!idMatch) return;
@@ -327,6 +334,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
         // If no brand selected, auto-select first; otherwise clear if current not found
         if (!form.brandName && opts.length) {
           setForm(prev => ({ ...prev, brandName: opts[0].value }));
+          lastChangedFieldRef.current = 'agency'; // Mark agency as the last changed field
         } else if (form.brandName) {
           const found = opts.find(o => o.value === String(form.brandName));
           if (!found) setForm(prev => ({ ...prev, brandName: '' }));
@@ -386,23 +394,27 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
         setContactPersonsLoading(true);
         const res = await listLeads(1, 200);
         if (!mounted) return;
-        const opts = (res.data || []).map((l) => ({ value: String(l.id), label: String(l.name || l.contact_person || l.email || `Lead ${l.id}`) }));
+        const opts = (res.data || []).map((l) => {
+          const id = String(l.id);
+          const name = String(l.name || l.contact_person || l.email || `Lead ${l.id}`);
+          return { 
+            value: id, 
+            label: `${name} #${id}` // Show as "Name #ID"
+          };
+        });
         setContactPersons(opts);
 
         // Autofill Contact Person field for edit mode
         let contactVal = initialData?.contactPerson || initialData?.contact_person;
         if (contactVal) {
           let contactId = '';
-          let contactName = '';
           if (typeof contactVal === 'object' && contactVal !== null) {
             contactId = String(contactVal.id);
-            contactName = String(contactVal.name);
           } else {
             contactId = String(contactVal);
-            contactName = String(contactVal);
           }
           const foundById = opts.find(o => o.value === contactId);
-          const foundByLabel = opts.find(o => o.label === contactName);
+          const foundByLabel = opts.find(o => o.label.startsWith(contactId));
           if (foundById) setForm(prev => ({ ...prev, contactPerson: foundById.value }));
           else if (foundByLabel) setForm(prev => ({ ...prev, contactPerson: foundByLabel.value }));
         }
@@ -450,27 +462,40 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
     return () => { mounted = false; };
   }, []);
 
-  // When brief status changes, map it to a default priority
-  const [priorityAutoSet, setPriorityAutoSet] = useState(true);
-
-  // When brief status changes, map it to a default priority.
-  // Only auto-set when priority hasn't been manually changed (priorityAutoSet=true) or priority is empty.
+  // Load priority options from API on mount
   useEffect(() => {
-    const mapStatusToPriority = (status: string) => {
-      if (!status) return undefined;
-      const s = String(status).toLowerCase();
-      if (s === 'not interested') return 'Low';
-      if (s === 'submission' || s === 'negotiation') return 'Medium';
-      if (s === 'approve' || s === 'closed') return 'High';
-      return undefined;
-    };
+    let mounted = true;
+    (async () => {
+      try {
+        setPriorityLoading(true);
+        const res = await fetchPriorities();
+        if (!mounted) return;
+        
+        // Map priorities to SelectField options
+        let opts: Array<{ value: string; label: string }> = [];
+        if (res.data && Array.isArray(res.data)) {
+          opts = res.data.map((p: any) => {
+            const id = String(p.id ?? p.priority_id ?? '');
+            const name = String(p.name ?? p.priority ?? p.label ?? '');
+            return { value: id, label: name };
+          });
+        }
+        setPriorityOptions(opts);
+        if (res.error) {
+          console.error('Error loading priorities:', res.error);
+          setPriorityError(res.error);
+        }
+      } catch (err: any) {
+        console.error('Failed to load priorities', err);
+        if (!mounted) return;
+        setPriorityError(err?.message || 'Failed to load priorities');
+      } finally {
+        if (mounted) setPriorityLoading(false);
+      }
+    })();
 
-    const mapped = mapStatusToPriority(form.status as string);
-    if (mapped && (priorityAutoSet || !form.priority)) {
-      setForm(prev => ({ ...prev, priority: mapped }));
-      setPriorityAutoSet(true);
-    }
-  }, [form.status, priorityAutoSet]);
+    return () => { mounted = false; };
+  }, []);
 
   // When Priority changes, fetch brief statuses filtered by priority
   useEffect(() => {
@@ -478,36 +503,41 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
     const fetchByPriority = async () => {
       const raw = form.priority;
       if (!raw) return;
-      const priorityMap: Record<string, number> = { Low: 1, Medium: 2, High: 3 };
-      let priorityId: number | undefined;
-      if (typeof raw === 'number' || (/^\d+$/.test(String(raw)))) priorityId = Number(raw);
-      else priorityId = priorityMap[String(raw)] ;
+      // If status was manually changed last, skip auto-fill to avoid reciprocal update
+      if (lastChangedFieldRef.current === 'status') return;
+      // Priority value should already be an ID from API
+      const priorityId = String(raw);
       if (!priorityId) return;
 
       try {
         setBriefStatusesLoading(true);
         setBriefStatusesError(null);
-        const res = await apiClient.get<any>(`/brief-statuses/by-priority?priority_id=${encodeURIComponent(String(priorityId))}`);
-        const body = res && (res.data || res.data?.data) ? (res.data || res.data.data) : (res.data ?? res);
+        const res = await apiClient.get<any>(`/brief-statuses/by-priority?priority_id=${encodeURIComponent(priorityId)}`);
+        const body = res && res.data ? res.data : res;
         let items: any[] = [];
         if (Array.isArray(body)) items = body;
-        else if (Array.isArray(body.data)) items = body.data;
-        else if (Array.isArray(body.brief_statuses)) items = body.brief_statuses;
-        else if (Array.isArray(body.data?.brief_statuses)) items = body.data.brief_statuses;
+        else if (body && Array.isArray(body.data)) items = body.data;
+        else if (body && Array.isArray(body.brief_statuses)) items = body.brief_statuses;
 
-        const opts = (items || []).map((s: any) => ({ value: String(s.id ?? s.status_id ?? s.uuid ?? s.name), label: String(s.name ?? s.status ?? s.brief_status ?? s.label ?? s) }));
+        console.log('Fetched brief statuses for priority', priorityId, ':', items);
+        const opts = (items || []).map((s: any) => ({ value: String(s.id ?? s.status_id ?? s.uuid ?? ''), label: String(s.name ?? s.status ?? s.brief_status ?? s.label ?? '') })).filter(o => o.value && o.label);
         if (!mounted) return;
         setBriefStatuses(opts);
+        console.log('Set brief status options:', opts);
 
         // Auto-select first status if none selected; otherwise clear if current not in list
         if (!form.status && opts.length) {
           setForm(prev => ({ ...prev, status: opts[0].value }));
+          // mark that priority auto-filled the status to prevent immediate reciprocal fetch
+          lastChangedFieldRef.current = 'priority';
+          setTimeout(() => { if (lastChangedFieldRef.current === 'priority') lastChangedFieldRef.current = null; }, 500);
         } else if (form.status) {
           const found = opts.find(o => o.value === String(form.status));
           if (!found) setForm(prev => ({ ...prev, status: '' }));
         }
       } catch (err: any) {
         if (!mounted) return;
+        console.error('Failed to fetch brief statuses:', err);
         setBriefStatusesError(err?.message || 'Failed to load brief statuses');
       } finally {
         if (mounted) setBriefStatusesLoading(false);
@@ -524,6 +554,8 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
     const fetchPrioritiesForStatus = async () => {
       const raw = form.status;
       if (!raw) return;
+      // If priority was manually changed last, skip auto-fill to avoid reciprocal update
+      if (lastChangedFieldRef.current === 'priority') return;
       // try to determine brief_status_id
       let statusId: string | undefined;
       if (/^\d+$/.test(String(raw))) statusId = String(raw);
@@ -534,40 +566,66 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
       if (!statusId) return;
 
       try {
-        // allow auto-setting priority when status changes
-        const autoSet = true;
-        setPriorityAutoSet(autoSet);
         setPriorityLoading(true);
         setPriorityError(null);
         const res = await apiClient.get<any>(`/brief-statuses/priorities?brief_status_id=${encodeURIComponent(statusId)}`);
-        const body = res && (res.data || res.data?.data) ? (res.data || res.data.data) : (res.data ?? res);
+        console.log('Raw API response for priorities:', res);
+        
+        // API response structure: { success, message, meta, data: {id, name} OR [...] }
         let items: any[] = [];
-        if (Array.isArray(body)) items = body;
-        else if (Array.isArray(body.data)) items = body.data;
-        else if (Array.isArray(body.priorities)) items = body.priorities;
-        else if (Array.isArray(body.data?.priorities)) items = body.data.priorities;
+        let responseData = res?.data || res;
+        console.log('Response data:', responseData);
+        
+        // Check what type of data we have
+        if (Array.isArray(responseData)) {
+          // Data is already an array of priorities
+          items = responseData;
+        } else if (responseData && typeof responseData === 'object') {
+          // Check if it's a single priority object (has id and name)
+          if (responseData.id && responseData.name) {
+            // Single priority object
+            items = [responseData];
+          } else if (Array.isArray(responseData.data)) {
+            // Wrapped in .data array
+            items = responseData.data;
+          } else if (responseData.data && typeof responseData.data === 'object' && responseData.data.id) {
+            // Single object wrapped in .data
+            items = [responseData.data];
+          }
+        }
 
-        const opts = (items || []).map((p: any) => ({ value: String(p.id ?? p.priority_id ?? p.name), label: String(p.name ?? p.label ?? p) }));
+        console.log('Extracted priority items:', items);
+        const opts = (items || []).map((p: any) => {
+          const id = String(p.id ?? '').trim();
+          const label = String(p.name ?? '').trim();
+          console.log('Mapping priority:', { id, label, source: p });
+          return { value: id, label };
+        }).filter(o => o.value && o.label);
+        
+        console.log('Final filtered priority options:', opts);
+        
         if (!mounted) return;
-        if (opts.length) setPriorityOptions(opts);
-        else setPriorityOptions([
-          { value: 'Low', label: 'Low' },
-          { value: 'Medium', label: 'Medium' },
-          { value: 'High', label: 'High' },
-        ]);
+        setPriorityOptions(opts);
 
         if (opts.length) {
-          if (autoSet) {
+          // Auto-select first priority if none selected
+          if (!form.priority) {
+            console.log('Auto-selecting first priority:', opts[0]);
             setForm(prev => ({ ...prev, priority: opts[0].value }));
+            // mark that status auto-filled the priority to prevent immediate reciprocal fetch
+            lastChangedFieldRef.current = 'status';
+            setTimeout(() => { if (lastChangedFieldRef.current === 'status') lastChangedFieldRef.current = null; }, 500);
           } else {
             const found = opts.find(o => o.value === String(form.priority));
             if (!found) setForm(prev => ({ ...prev, priority: '' }));
           }
         } else {
+          console.warn('No priority options found for status:', statusId, 'responseData:', responseData);
           setForm(prev => ({ ...prev, priority: '' }));
         }
       } catch (err: any) {
         if (!mounted) return;
+        console.error('Failed to fetch priorities:', err);
         setPriorityError(err?.message || 'Failed to load priorities');
       } finally {
         if (mounted) setPriorityLoading(false);
@@ -580,6 +638,10 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    // Track which field was manually changed
+    if (name === 'brandName') lastChangedFieldRef.current = 'brand';
+    if (name === 'createdBy') lastChangedFieldRef.current = 'agency';
+    
     // If programmatic mode changes, ensure the currently selected `type` is valid for the new mode.
     if (name === 'programmatic') {
       const newProgrammatic = value;
@@ -668,12 +730,9 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
         payload.submission_date = dateStr;
       }
 
-      // Priority mapping: UI uses labels, backend expects priority_id (1/2/3)
-      const priorityMap: Record<string, number> = { Low: 1, Medium: 2, High: 3 };
+      // Priority: value is already priority_id from API
       if (form.priority) {
-        // priority may be a label like 'Low'|'Medium'|'High' - map to numeric ids when possible
-        const mapped = priorityMap[String(form.priority)];
-        payload.priority_id = mapped ?? toInt(form.priority) ?? form.priority;
+        payload.priority_id = toInt(form.priority) ?? form.priority;
       }
 
       if (initialData && initialData.id) payload.id = initialData.id;
@@ -751,7 +810,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     placeholder={brandsLoading ? 'Loading brands...' : 'Auto Select'}
                     options={brands}
                     value={form.brandName}
-                    onChange={(v: any) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; setForm(prev => ({ ...prev, brandName: val })); }}
+                    onChange={(v: any) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; lastChangedFieldRef.current = 'brand'; setForm(prev => ({ ...prev, brandName: val })); }}
                     searchable
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
                     disabled={brandsLoading}
@@ -789,7 +848,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     placeholder={briefStatusesLoading ? 'Loading statuses...' : 'Select Brief Status'}
                     options={briefStatuses}
                     value={form.status}
-                    onChange={(v: any) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; setForm(prev => ({ ...prev, status: val })); }}
+                    onChange={(v: any) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; lastChangedFieldRef.current = 'status'; setForm(prev => ({ ...prev, status: val })); setTimeout(() => { if (lastChangedFieldRef.current === 'status') lastChangedFieldRef.current = null; }, 500); }}
                     searchable
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
                     disabled={briefStatusesLoading}
@@ -867,7 +926,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     placeholder={agenciesLoading ? 'Loading agencies...' : 'Search or select agency'}
                     options={agencies}
                     value={form.createdBy}
-                    onChange={(v: any) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; setForm(prev => ({ ...prev, createdBy: val })); }}
+                    onChange={(v: any) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; lastChangedFieldRef.current = 'agency'; setForm(prev => ({ ...prev, createdBy: val })); }}
                     searchable
                     disabled={agenciesLoading}
                   />
@@ -900,6 +959,8 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                       dateFormat="dd-MM-yyyy"
                       placeholderText="DD-MM-YYYY"
                       className={`w-full px-3 py-2 rounded-lg bg-white transition-colors ${errors.submissionDate ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-[var(--border-color)]'}`}
+                      popperClassName="!duration-0 !transition-none"
+                      disabled={false}
                     />
                     {errors.submissionDate && (
                       <div id="submissionDate-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
@@ -933,6 +994,8 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                       dateFormat="HH:mm"
                       placeholderText="HH:mm"
                       className={`w-full px-3 py-2 rounded-lg bg-white transition-colors ${errors.submissionTime ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-[var(--border-color)]'}`}
+                      popperClassName="!duration-0 !transition-none"
+                      disabled={false}
                     />
                     {errors.submissionTime && (
                       <div id="submissionTime-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
@@ -953,8 +1016,9 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     value={form.priority}
                     onChange={(v: any) => {
                       const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v;
-                      setPriorityAutoSet(false);
+                      lastChangedFieldRef.current = 'priority';
                       setForm(prev => ({ ...prev, priority: val }));
+                      setTimeout(() => { if (lastChangedFieldRef.current === 'priority') lastChangedFieldRef.current = null; }, 500);
                     }}
                     inputClassName={priorityLoading ? 'border border-gray-300 bg-gray-50' : 'border border-[var(--border-color)] focus:ring-blue-500'}
                     disabled={priorityLoading}

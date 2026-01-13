@@ -224,19 +224,27 @@ const DepartmentMaster: React.FC = () => {
 		setLoading(true);
 		setError(null);
 		try {
-			const resp = await listDepartments(page, itemsPerPage);
+			// When searching, fetch all departments to search across the entire dataset
+			const pageToFetch = search ? 1 : page;
+			const perPageToFetch = search ? 1000 : itemsPerPage; // Fetch all when searching
+			
+			const resp = await listDepartments(pageToFetch, perPageToFetch);
 			let mapped: Department[] = resp.data.map((it: ApiDepartment) => ({
 				id: String(it.id),
 				name: it.name,
 				dateTime: it.created_at || '',
 			}));
 
-			// If search is present, filter client-side
+			// If search is present, filter client-side across all results
 			if (search) {
 				const _q_dept = String(search).trim().toLowerCase();
 				mapped = mapped.filter(d => (d.name || '').toLowerCase().startsWith(_q_dept));
-				// When searching, set totalItems to filtered length
 				setTotalItems(mapped.length);
+				
+				// Apply pagination to filtered results
+				const startIdx = (page - 1) * itemsPerPage;
+				const endIdx = startIdx + itemsPerPage;
+				mapped = mapped.slice(startIdx, endIdx);
 			} else {
 				// When not searching, use server total or full length
 				setTotalItems(resp.meta?.pagination?.total || mapped.length);
