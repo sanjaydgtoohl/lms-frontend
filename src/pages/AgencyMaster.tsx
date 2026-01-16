@@ -14,28 +14,65 @@ import { showError } from '../utils/notifications';
 import Pagination from '../components/ui/Pagination';
 import SearchBar from '../components/ui/SearchBar';
 
-// Helpers to parse API date strings like "19-11-2025 10:35:57" or ISO strings
-const parseApiDateToISO = (s?: string) => {
+// Robust parser: normalize various API date formats into an ISO timestamp (returns empty string on failure)
+const parseApiDateToISO = (s?: string): string => {
   if (!s) return '';
   const raw = String(s).trim();
-  // If already ISO-like, return as-is
-  if (/^\d{4}-\d{2}-\d{2}T/.test(raw)) return raw;
-  const m = raw.match(/^(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2})(?::(\d{2}))?$/);
-  if (!m) return raw;
-  const [, dd, mm, yyyy, hh, min, sec] = m;
-  return `${yyyy}-${mm}-${dd}T${hh}:${min}:${sec || '00'}`;
-};
 
-const formatDisplayDate = (s?: string) => {
-  if (!s) return '-';
-  try {
-    const iso = parseApiDateToISO(s);
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return String(s);
-    return d.toLocaleString();
-  } catch {
-    return String(s);
+  // Quick try: let Date parse it (handles many ISO-like cases)
+  const tryDate = (str: string) => {
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) return d.toISOString();
+    return null;
+  };
+
+  // Already ISO with T or timezone
+  if (/^\d{4}-\d{2}-\d{2}T/.test(raw) || /Z$/.test(raw)) {
+    const res = tryDate(raw);
+    return res ?? '';
   }
+
+  // Pattern: YYYY-MM-DD HH:MM:SS [AM|PM]
+  let m = raw.match(/^([0-9]{4})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*([AP]M)?$/i);
+  if (m) {
+    const [, yyyy, mm, dd, hhRaw, min, sec, ampm] = m;
+    let hh = parseInt(hhRaw, 10);
+    if (ampm) {
+      const upper = ampm.toUpperCase();
+      if (upper === 'AM' && hh === 12) hh = 0;
+      else if (upper === 'PM' && hh < 12) hh += 12;
+    }
+    const HH = String(hh).padStart(2, '0');
+    const SS = sec || '00';
+    return `${yyyy}-${mm}-${dd}T${HH}:${min}:${SS}`;
+  }
+
+  // Pattern: DD-MM-YYYY HH:MM:SS [AM|PM]
+  m = raw.match(/^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-([0-9]{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*([AP]M)?$/i);
+  if (m) {
+    const [, dd, mm, yyyy, hhRaw, min, sec, ampm] = m;
+    let hh = parseInt(hhRaw, 10);
+    if (ampm) {
+      const upper = ampm.toUpperCase();
+      if (upper === 'AM' && hh === 12) hh = 0;
+      else if (upper === 'PM' && hh < 12) hh += 12;
+    }
+    const HH = String(hh).padStart(2, '0');
+    const SS = sec || '00';
+    return `${yyyy}-${mm}-${dd}T${HH}:${min}:${SS}`;
+  }
+
+  // Pattern: YYYY-MM-DD HH:MM:SS (no AM/PM) — replace space with T
+  m = raw.match(/^([0-9]{4}-[0-9]{2}-[0-9]{2})\s+(\d{2}:\d{2}(?::\d{2})?)$/);
+  if (m) {
+    const isoLike = `${m[1]}T${m[2]}`;
+    const res = tryDate(isoLike);
+    return res ?? '';
+  }
+
+  // Last resort: let Date try to parse original string
+  const res = tryDate(raw) ?? tryDate(raw.replace(/\s+/, 'T'));
+  return res ?? '';
 };
 
 const AgencyMaster: React.FC = () => {
@@ -81,7 +118,7 @@ const AgencyMaster: React.FC = () => {
           agencyName: a.name || '',
           agencyType: a.agency_type || (a.type || ''),
           contactPerson: contactPersonValue || '',
-          dateTime: formatDisplayDate(a.created_at || a.updated_at || ''),
+          dateTime: parseApiDateToISO(a.created_at || a.updated_at || ''),
         };
       });
       setAgenciesList(mapped);

@@ -312,7 +312,7 @@ const View: React.FC = () => {
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
             <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-200">
               <h2 className="text-base font-semibold text-gray-900">Miss Campaign</h2>
-              <SearchBar delay={0} onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
+              <SearchBar delay={0} placeholder="Search Miss Campaign" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
             </div>
 
             <div className="pt-0 overflow-visible">
@@ -323,7 +323,7 @@ const View: React.FC = () => {
                 desktopOnMobile={true}
                 keyExtractor={(it: MissCampaign, idx: number) => `${it.id}-${idx}`}
                 columns={([
-                { key: 'sr', header: 'Sr. No.', render: (it: MissCampaign) => String(startIndex + currentData.indexOf(it) + 1) },
+                { key: 'sr', header: 'Id', render: (it: MissCampaign) => `#${it.id}` },
                 { key: 'brandName', header: 'Brand Name', render: (it: MissCampaign) => it.brandName },
                 { key: 'productName', header: 'Product Name', render: (it: MissCampaign) => it.productName },
                 { key: 'source', header: 'Source', render: (it: MissCampaign) => it.source },

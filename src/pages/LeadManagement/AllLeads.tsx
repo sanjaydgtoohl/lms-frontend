@@ -304,7 +304,7 @@ const AllLeads: React.FC = () => {
   }, [currentPage, searchQuery]);
 
   const columns = ([
-    { key: 'sr', header: 'S.No.', render: (it: Lead) => String(startIndex + currentData.indexOf(it) + 1), className: 'text-left whitespace-nowrap' },
+    { key: 'sr', header: 'Id', render: (it: Lead) => it.id, className: 'text-left whitespace-nowrap' },
     { key: 'agencyName', header: 'Agency Name', render: (it: Lead) => it.agencyName || '-', className: 'max-w-[180px] overflow-hidden text-ellipsis whitespace-nowrap' },
     { key: 'brandName', header: 'Brand Name', render: (it: Lead) => it.brandName || '-', className: 'max-w-[180px] overflow-hidden text-ellipsis whitespace-nowrap' },
     { key: 'contactPerson', header: 'Contact Person', render: (it: Lead) => it.contactPerson || '-', className: 'max-w-[160px] overflow-hidden text-ellipsis whitespace-nowrap' },

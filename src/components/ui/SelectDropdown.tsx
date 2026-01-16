@@ -66,7 +66,7 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
     <div ref={ref} className={`relative ${className}`}>
       <div className="w-full relative">
         <div
-          className={`flex items-center h-10 w-full px-3 py-2 border rounded-lg bg-white relative ${errorBorderClass} ${disabled ? 'opacity-60 cursor-not-allowed' : ''} ${inputClassName}`}
+          className={`flex items-center h-11 w-full px-3 py-2 border rounded-lg bg-white relative ${errorBorderClass} ${disabled ? 'opacity-60 cursor-not-allowed' : ''} ${inputClassName}`}
           style={{ gap: '6px', paddingRight: '32px' }}
           onClick={() => !disabled && setOpen(true)}
         >

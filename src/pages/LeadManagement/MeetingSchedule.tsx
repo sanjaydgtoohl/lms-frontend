@@ -8,6 +8,7 @@ import SelectField from '../../components/ui/SelectField';
 import { createMeeting } from '../../services/MeetingSchedule';
 import { listUsers } from '../../services/AllUsers';
 import { listLeads } from '../../services/AllLeads';
+import MultiSelectDropdown from '../../components/ui/MultiSelectDropdown';
 
 const MeetingSchedule: React.FC = () => {
   const navigate = useNavigate();
@@ -218,21 +219,17 @@ const MeetingSchedule: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm text-[var(--text-secondary)] mb-1">Attendees <span className="text-[#FF0000]">*</span></label>
-                    <SelectField
-                      placeholder="Select Attendees"
-                      options={attendeesOptions}
+                    <MultiSelectDropdown
+                      name="attendees"
                       value={attendees}
-                      onChange={(v: any) => {
-                        console.log('Attendees onChange raw value:', v);
-                        let arr: string[] = Array.isArray(v) ? v : (v ? [v] : []);
-                        // Ensure we're storing the actual values (IDs), not objects
-                        arr = arr.map(item => typeof item === 'object' && item !== null && 'value' in item ? (item as any).value : String(item));
-                        console.log('Attendees parsed array:', arr);
-                        setAttendees(arr);
-                        if (errors.attendees && arr.length) setErrors({ ...errors, attendees: undefined });
+                      onChange={(v) => {
+                        setAttendees(v);
+                        if (errors.attendees && v.length) setErrors({ ...errors, attendees: undefined });
                       }}
-                      isMulti={true}
-                      inputClassName="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)]"
+                      options={attendeesOptions}
+                      placeholder={attendeesOptions.length ? 'Search or select attendees' : 'Loading attendees...'}
+                      multi={true}
+                      horizontalScroll={true}
                     />
                     {errors.attendees && <div className="text-red-500 text-xs mt-1">{errors.attendees}</div>}
                   </div>

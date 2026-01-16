@@ -14,6 +14,7 @@ type MultiSelectDropdownProps = {
   inputClassName?: string;
   multi?: boolean; // whether multiple selection allowed
   maxVisibleOptions?: number; // how many options visible at once
+  horizontalScroll?: boolean; // whether to scroll horizontally instead of wrapping
 };
 
 const normalize = (opt: Option): { value: string; label: string } =>
@@ -30,6 +31,7 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   inputClassName = '',
   multi = true,
   maxVisibleOptions = 3,
+  horizontalScroll = false,
 }) => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -78,14 +80,14 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   return (
     <div ref={ref} className={`relative ${className}`}>
       <div className="w-full">
-  <div className={`flex items-center flex-wrap gap-2 w-full min-h-[40px] px-3 rounded-[10px] bg-white border border-[#DDE1E7] ${inputClassName} ${disabled ? 'opacity-60' : ''}`} onClick={() => { if (disabled) return; setOpen(prev => !prev); }}>
+  <div className={`flex items-center ${horizontalScroll ? 'flex-nowrap overflow-x-auto msd-scroll' : 'flex-wrap'} gap-2 w-full h-11 px-3 rounded-[10px] bg-white border border-[#DDE1E7] ${inputClassName} ${disabled ? 'opacity-60' : ''}`} onClick={() => { if (disabled) return; setOpen(prev => !prev); }}>
           {/* tags */}
           {safeValue.length > 0 && (
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className={`flex items-center gap-2 ${horizontalScroll ? 'flex-1 flex-nowrap' : 'flex-wrap'}`}>
               {safeValue.map((v) => {
                 const label = normalized.find(n => String(n.value) === String(v))?.label ?? v;
                 return (
-                  <span key={v} className="msd-tag inline-flex items-center gap-2 px-2 py-1 rounded-md text-xs">
+                  <span key={v} className="msd-tag inline-flex items-center gap-2 px-2 py-1 rounded-md text-xs flex-shrink-0">
                     <span className="truncate max-w-[180px]">{label}</span>
                     <span
                       role="button"
@@ -95,7 +97,9 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                       aria-label={`Remove ${label}`}
                       className="ml-1 leading-none text-gray-600 hover:text-gray-900 cursor-pointer select-none"
                     >
-                      
+                      <svg className="w-3 h-3" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
                     </span>
                   </span>
                 );
@@ -129,10 +133,10 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
       <div
         role="listbox"
         aria-hidden={!open}
-        className={`absolute z-50 left-0 right-0 mt-2 bg-white border border-[var(--border-color)] rounded-lg shadow-lg transition-all duration-150 ${open ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
+        className={`absolute z-50 left-0 right-0 mt-2 bg-white border border-[var(--border-color)] rounded-lg shadow-lg transition-all duration-150 hide-scrollbar ${open ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
         style={{ maxHeight: `${maxHeight}px`, overflowY: 'auto' }}
       >
-        <div className="msd-scroll msd-dropdown">
+        <div className="msd-scroll msd-dropdown hide-scrollbar">
           {filtered.length === 0 ? (
             <div className="px-4 py-2 text-gray-500">No matches found</div>
           ) : (

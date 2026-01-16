@@ -426,3 +426,12 @@ button[data-btn-label="Update"]:hover {
   outline: none !important;
   box-shadow: none !important;
 }
+
+/* Hide scrollbar utility class */
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari, Opera */
+}

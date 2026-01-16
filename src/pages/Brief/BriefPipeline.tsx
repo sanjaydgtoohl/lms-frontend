@@ -391,7 +391,7 @@ const BriefPipeline: React.FC = () => {
                 desktopOnMobile={true}
                 keyExtractor={(it: Brief, idx: number) => `${it.id}-${idx}`}
                 columns={([
-                { key: 'sr', header: 'Sr. No.', render: (it: Brief) => String(startIndex + currentData.indexOf(it) + 1), className: 'whitespace-nowrap overflow-hidden truncate' },
+                { key: 'sr', header: 'Id', render: (it: Brief) => `#${it.id}`, className: 'whitespace-nowrap overflow-hidden truncate' },
                 { key: 'briefName', header: 'Brief Name', render: (it: Brief) => it.briefName, className: 'whitespace-nowrap overflow-hidden truncate' },
                 { key: 'brandName', header: 'Brand Name', render: (it: Brief) => it.brandName, className: 'whitespace-nowrap overflow-hidden truncate' },
                 { key: 'productName', header: 'Product Name', render: (it: Brief) => it.productName, className: 'whitespace-nowrap overflow-hidden truncate' },

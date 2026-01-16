@@ -585,6 +585,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             options={agencies.map(a => ({ value: String(a.id), label: a.name }))}
             placeholder={agencies.length ? 'Search or select options' : 'Loading agencies...'}
             multi={true}
+            horizontalScroll={true}
           />
         </div>
 

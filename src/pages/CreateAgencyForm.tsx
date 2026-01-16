@@ -342,7 +342,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.22 }}
-      className="flex-1 overflow-auto w-full overflow-x-hidden bg-[#F6F8FB] min-h-screen"
+      className="flex-1 overflow-hidden w-full overflow-x-hidden bg-[#F6F8FB] min-h-screen"
     >
       {/* global notification used via showSuccess/showError; local popup removed */}
 
@@ -363,7 +363,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                       setParentErrors(prev => ({ ...prev, name: undefined }));
                     }}
                     placeholder="Please Enter Agency Name"
-                    className={`w-full px-4 py-2 text-sm border rounded-lg bg-white text-[#344054] focus:outline-none focus:ring-2 focus:ring-[#1570EF] ${parentErrors.name ? 'border-red-500' : 'border-[#D0D5DD]'}`}
+                    className={`w-full px-3 py-2 h-11 text-sm border rounded-lg bg-white text-[#344054] focus:outline-none focus:ring-2 focus:ring-[#1570EF] ${parentErrors.name ? 'border-red-500' : 'border-[#D0D5DD]'}`}
                   />
                   {parentErrors.name && (
                     <div className="text-xs text-red-500 mt-1">{parentErrors.name}</div>
@@ -378,7 +378,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                       options={agencyTypes}
                       onChange={(v) => { setParent(prev => ({ ...prev, type: typeof v === 'string' ? v : v[0] ?? '' })); setParentErrors(prev => ({ ...prev, type: undefined })); }}
                       placeholder="Please Select Agency Type"
-                      inputClassName={parentErrors.type ? 'border-red-500' : 'border-[#D0D5DD]'}
+                      inputClassName={`${parentErrors.type ? 'border-red-500' : 'border-[#D0D5DD]'} px-3 py-2 h-11`}
                     />
                   {parentErrors.type && (
                     <div className="text-xs text-red-500 mt-1">{parentErrors.type}</div>
@@ -393,11 +393,11 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                       value={parent.client}
                       options={agencyClients.map((c: any) => ({ value: String(c.id), label: c.name }))}
                        onChange={(v) => { setParent(prev => ({ ...prev, client: Array.isArray(v) ? v : [v] })); setParentErrors(prev => ({ ...prev, client: undefined })); }}
-                      placeholder={isLoading.agencyClients ? 'Loading clients...' : 'Search or select option'}
-                      inputClassName={`border ${parentErrors.client ? 'border-red-500' : 'border-[#D0D5DD]'} px-3 py-2 min-h-[44px]`}
+                      placeholder={isLoading.agencyClients ? 'Loading clients...' : 'Search or select options'}
+                      inputClassName={`border ${parentErrors.client ? 'border-red-500' : 'border-[#D0D5DD]'} px-3 py-2 h-11`}
                       disabled={isLoading.agencyClients}
                       multi={true}
-                      maxVisibleOptions={3}
+                      horizontalScroll={true}
                     />
                   </div>
                   {parentErrors.client && (
@@ -448,7 +448,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                           }}
                           placeholder="Please Enter Agency Name"
                             ref={el => { childNameRefs.current[c.id] = el }}
-                            className={`w-full px-4 py-2 text-sm border rounded-lg bg-white text-[#344054] focus:outline-none focus:ring-2 focus:ring-[#1570EF] ${childErrors[c.id]?.name ? 'border-red-500' : 'border-[#D0D5DD]'}`}
+                            className={`w-full px-3 py-2 h-11 text-sm border rounded-lg bg-white text-[#344054] focus:outline-none focus:ring-2 focus:ring-[#1570EF] ${childErrors[c.id]?.name ? 'border-red-500' : 'border-[#D0D5DD]'}`}
                         />
                         {childErrors[c.id]?.name && (
                           <div className="text-xs text-red-500 mt-1">{childErrors[c.id].name}</div>
@@ -462,7 +462,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                           options={agencyTypes}
                           onChange={(v) => { handleUpdateChild(c.id, 'type', typeof v === 'string' ? v : v[0] ?? ''); setChildErrors(prev => ({ ...prev, [c.id]: { ...prev[c.id], type: undefined } })); }}
                           placeholder="Please Select Agency Type"
-                          inputClassName={childErrors[c.id]?.type ? 'border-red-500' : 'border-[#D0D5DD]'}
+                          inputClassName={`${childErrors[c.id]?.type ? 'border-red-500' : 'border-[#D0D5DD]'} px-3 py-2 h-11`}
                         />
                         {childErrors[c.id]?.type && (
                           <div className="text-xs text-red-500 mt-1">{childErrors[c.id].type}</div>
@@ -476,11 +476,11 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                             value={Array.isArray(c.client) ? c.client : (c.client ? [c.client] : [])}
                             options={agencyClients.map((cc: any) => ({ value: String(cc.id), label: cc.name }))}
                              onChange={(v) => { handleUpdateChild(c.id, 'client', Array.isArray(v) ? v : [v]); setChildErrors(prev => ({ ...prev, [c.id]: { ...prev[c.id], client: undefined } })); }}
-                            placeholder={isLoading.agencyClients ? 'Loading clients...' : 'Search or select option'}
-                            inputClassName={`border ${childErrors[c.id]?.client ? 'border-red-500' : 'border-[#D0D5DD]'} px-3 py-2 min-h-[44px]`}
+                            placeholder={isLoading.agencyClients ? 'Loading clients...' : 'Search or select options'}
+                            inputClassName={`border ${childErrors[c.id]?.client ? 'border-red-500' : 'border-[#D0D5DD]'} px-3 py-2 h-11`}
                             disabled={isLoading.agencyClients}
                             multi={true}
-                            maxVisibleOptions={3}
+                            horizontalScroll={true}
                           />
                         </div>
                         {childErrors[c.id]?.client && (

@@ -303,7 +303,7 @@ const LeadSource: React.FC = () => {
               desktopOnMobile={true}
               keyExtractor={(it: any, idx: number) => `${it.id}-${idx}`}
               columns={([
-                { key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },
+                { key: 'sr', header: 'Id', render: (it: any) => `#${it.id}` },
                 { key: 'source', header: 'Source', render: (it: any) => it.source || '-' },
                 { key: 'subSource', header: 'Sub-Source', render: (it: any) => it.subSource || '-' },
                 { key: 'dateTime', header: 'Date & Time', render: (it: any) => {
