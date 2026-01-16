@@ -1,15 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import CallStatusButton from './CallStatusButton';
+import ConfirmDialog from './ConfirmDialog';
 
 interface CallStatusDropdownProps {
   value: string;
   options: string[];
   onChange: (newStatus: string) => void;
+  onConfirm?: (newStatus: string) => Promise<void>;
 }
 
-const CallStatusDropdown: React.FC<CallStatusDropdownProps> = ({ value, options, onChange }) => {
+const CallStatusDropdown: React.FC<CallStatusDropdownProps> = ({ value, options, onChange, onConfirm }) => {
   const [open, setOpen] = useState(false);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const portalRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ top: 0, left: 0 });
@@ -34,6 +39,41 @@ const CallStatusDropdown: React.FC<CallStatusDropdownProps> = ({ value, options,
       });
     }
     setOpen((o) => !o);
+  };
+
+  const handleOptionSelect = (opt: string) => {
+    if (onConfirm) {
+      // Show confirmation dialog before making the change
+      setSelectedOption(opt);
+      setConfirmDialogOpen(true);
+      setOpen(false);
+    } else {
+      // Direct change without confirmation
+      onChange(opt);
+      setOpen(false);
+    }
+  };
+
+  const handleConfirmChange = async () => {
+    if (!selectedOption) return;
+    setConfirmLoading(true);
+    try {
+      if (onConfirm) {
+        await onConfirm(selectedOption);
+      }
+      onChange(selectedOption);
+      setConfirmDialogOpen(false);
+      setSelectedOption(null);
+    } catch (err) {
+      console.error('Failed to confirm change:', err);
+    } finally {
+      setConfirmLoading(false);
+    }
+  };
+
+  const handleCancelChange = () => {
+    setConfirmDialogOpen(false);
+    setSelectedOption(null);
   };
 
   return (
@@ -71,8 +111,7 @@ const CallStatusDropdown: React.FC<CallStatusDropdownProps> = ({ value, options,
                   }`}
                   onClick={(e) => {
                     e.stopPropagation();
-                    onChange(opt);
-                    setOpen(false);
+                    handleOptionSelect(opt);
                   }}
                 >
                   {opt}
@@ -87,6 +126,17 @@ const CallStatusDropdown: React.FC<CallStatusDropdownProps> = ({ value, options,
           </div>,
         document.body
       )}
+      <ConfirmDialog
+        isOpen={confirmDialogOpen}
+        title="Change Call Status"
+        message={`Change call status to ${selectedOption ? `"${selectedOption}"` : 'this status'}?`}
+        confirmLabel="Confirm"
+        cancelLabel="Cancel"
+        loading={confirmLoading}
+        type="assign"
+        onConfirm={handleConfirmChange}
+        onCancel={handleCancelChange}
+      />
     </div>
   );
 };

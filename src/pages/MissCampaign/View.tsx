@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import MasterView from '../../components/ui/MasterView';
+import { motion } from 'framer-motion';
+import { ChevronLeft } from 'lucide-react';
 import Pagination from '../../components/ui/Pagination';
 import Table, { type Column } from '../../components/ui/Table';
 import MasterHeader from '../../components/ui/MasterHeader';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import SearchBar from '../../components/ui/SearchBar';
+import Breadcrumb from '../../components/ui/Breadcrumb';
 import { NotificationPopup } from '../../components/ui';
 import Create from './Create';
 import { 
@@ -13,9 +15,9 @@ import {
   createMissCampaign, 
   deleteMissCampaign,
   getMissCampaign,
+  updateMissCampaign,
   type MissCampaign 
 } from '../../services/View';
-import { updateMissCampaign } from '../../services/Edit';
 
 const View: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -226,7 +228,75 @@ const View: React.FC = () => {
       {showCreate ? (
         <Create inline onClose={() => navigate('/miss-campaign/view')} onSave={handleSave} />
       ) : viewItem ? (
-        <MasterView item={viewItem} onClose={() => navigate('/miss-campaign/view')} />
+        <>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div className="flex flex-col">
+              <Breadcrumb />
+            </div>
+            <button onClick={() => navigate('/miss-campaign/view')} className="flex items-center space-x-2 btn-primary text-white px-3 py-1 rounded-lg">
+              <ChevronLeft className="w-4 h-4" />
+              <span className="text-sm">Go Back</span>
+            </button>
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.18 }}
+            className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden"
+          >
+            <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)]">
+              <h3 className="text-lg font-semibold text-[var(--text-primary)]">Miss Campaign Details</h3>
+            </div>
+
+            <div className="p-6">
+              {/* Header Section */}
+              <div className="mb-6">
+                <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-2">{viewItem.brandName}</h1>
+                <p className="text-lg text-[var(--text-secondary)]">{viewItem.productName}</p>
+              </div>
+
+              {/* Image Section */}
+              {viewItem.proof && (
+                <div className="mb-6">
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="text-sm font-medium text-[var(--text-secondary)] mb-3">Proof Image</h4>
+                    <img 
+                      src={viewItem.proof} 
+                      alt="Campaign Proof" 
+                      className="w-full max-h-96 object-contain rounded-lg border border-gray-200"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Details Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <div className="text-sm text-[var(--text-secondary)]">Source</div>
+                    <div className="text-sm font-medium text-[var(--text-primary)]">{viewItem.source || '-'}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-[var(--text-secondary)]">Sub Source</div>
+                    <div className="text-sm font-medium text-[var(--text-primary)]">{viewItem.subSource || '-'}</div>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <div className="text-sm text-[var(--text-secondary)]">Date & Time</div>
+                    <div className="text-sm font-medium text-[var(--text-primary)]">{viewItem.dateTime || '-'}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-[var(--text-secondary)]">ID</div>
+                    <div className="text-sm font-medium text-[var(--text-primary)]">{viewItem.id}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </>
       ) : editItem ? (
         <Create
           inline
@@ -267,7 +337,7 @@ const View: React.FC = () => {
                         <img 
                           src={it.proof} 
                           alt="Proof" 
-                          className="h-12 w-12 object-cover rounded border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow"
+                          className="h-16 w-16 object-cover rounded border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow"
                           onClick={() => openImageModal(it.proof)}
                         />
                       ) : (

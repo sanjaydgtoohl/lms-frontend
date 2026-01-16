@@ -65,7 +65,10 @@ const Profile: React.FC = () => {
   function formatDate(dateStr?: string, humanStr?: string) {
     if (humanStr) return humanStr;
     if (!dateStr) return '';
-    const d = new Date(dateStr);
+    // Remove trailing AM/PM if present, as it may be invalid with 24-hour time
+    const cleanedDateStr = dateStr.replace(/\s+(AM|PM)$/i, '');
+    const d = new Date(cleanedDateStr);
+    if (isNaN(d.getTime())) return 'Invalid Date';
     return d.toLocaleString();
   }
 

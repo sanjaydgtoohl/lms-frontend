@@ -13,7 +13,57 @@ const MasterView: React.FC<Props> = ({ title, item, onClose }) => {
   if (!item) return null;
 
   // produce key/value pairs excluding internal fields if needed
-  const entries = Object.entries(item).filter(([k]) => k !== 'id');
+  const entries = Object.entries(item).filter(([k]) => k !== 'id').sort(([a], [b]) => a.localeCompare(b));
+
+  // Split entries into two columns for better layout
+  const half = Math.ceil(entries.length / 2);
+  const leftEntries = entries.slice(0, half);
+  const rightEntries = entries.slice(half);
+
+  const renderField = ([k, v]: [string, any]) => {
+    // convert camelCase / snake_case / kebab-case to Title Case
+    const spaced = k.replace(/([A-Z])/g, ' $1').replace(/[_-]/g, ' ');
+    const title = spaced
+      .split(' ')
+      .filter(Boolean)
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+
+    // special casing
+    const label = title.toLowerCase() === 'datetime' || title.toLowerCase() === 'date time' ? 'Date & Time' : title;
+
+    // Handle different value types
+    let displayValue: string;
+    let isImage = false;
+    if (v == null) {
+      displayValue = '-';
+    } else if (typeof v === 'object') {
+      if (Array.isArray(v)) {
+        displayValue = v.map(item => typeof item === 'object' && item !== null && 'name' in item ? item.name : String(item)).join(', ');
+      } else if ('name' in v) {
+        displayValue = v.name;
+      } else {
+        displayValue = '[Object]'; // Placeholder for complex objects
+      }
+    } else {
+      displayValue = String(v);
+      // Check if it's an image URL
+      isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(displayValue) && (displayValue.startsWith('http') || displayValue.startsWith('/'));
+    }
+
+    return (
+      <div key={k}>
+        <div className="text-sm text-[var(--text-secondary)]">{label}</div>
+        <div className="text-sm font-medium text-[var(--text-primary)]">
+          {isImage ? (
+            <img src={displayValue} alt={label} className="max-w-full h-auto rounded border border-gray-200" />
+          ) : (
+            displayValue
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <>
@@ -40,32 +90,15 @@ const MasterView: React.FC<Props> = ({ title, item, onClose }) => {
           </div>
         )}
 
-        <div className="p-6 bg-[#F9FAFB] space-y-4">
-          {entries.map(([k, v]) => {
-            // convert camelCase / snake_case / kebab-case to Title Case
-            const spaced = k.replace(/([A-Z])/g, ' $1').replace(/[_-]/g, ' ');
-            const title = spaced
-              .split(' ')
-              .filter(Boolean)
-              .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-              .join(' ');
-
-            // special casing
-            const label = title.toLowerCase() === 'datetime' || title.toLowerCase() === 'date time' ? 'Date & Time' : title;
-
-            // Handle objects with 'name' property
-            let displayValue = String(v);
-            if (typeof v === 'object' && v !== null && 'name' in v) {
-              displayValue = v.name;
-            }
-
-            return (
-              <div key={k} className="flex justify-between">
-                <div className="text-sm text-[var(--text-secondary)]">{label}</div>
-                <div className="text-sm font-medium text-[var(--text-primary)]">{displayValue}</div>
-              </div>
-            );
-          })}
+        <div className="p-6 bg-[#F9FAFB]">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              {leftEntries.map(renderField)}
+            </div>
+            <div className="space-y-4">
+              {rightEntries.map(renderField)}
+            </div>
+          </div>
         </div>
       </motion.div>
     </>

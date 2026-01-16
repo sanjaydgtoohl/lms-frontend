@@ -112,54 +112,73 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
         patched.briefDetail = patched.comment;
       }
       // Normalize priority when initial data provides an object or id
+      // Store the ID, not the label - the SelectField will display the label
       if (patched.priority) {
         const pr = patched.priority as any;
-        // If priority is an object with a name, use the name
+        // If priority is an object with id, extract the id
         if (typeof pr === 'object' && pr !== null) {
-          if ('name' in pr) patched.priority = String(pr.name ?? '');
-          else if ('id' in pr) {
-            const rev: Record<number | string, string> = { 1: 'High', 2: 'Medium', 3: 'Low' };
-            patched.priority = String(rev[pr.id] ?? pr.id ?? '');
+          if ('id' in pr) {
+            patched.priority = String(pr.id ?? '');
+          } else if ('name' in pr) {
+            // If only name is available, try to map it back to an id
+            const nameToId: Record<string, string> = { 'High': '1', 'Medium': '2', 'Low': '3' };
+            patched.priority = String(nameToId[pr.name] ?? pr.name ?? '');
           }
         } else {
-          // If priority is a numeric id in string form, map it back to label when possible
-          const n = Number(pr);
-          if (!Number.isNaN(n)) {
-            const rev: Record<number, string> = { 1: 'High', 2: 'Medium', 3: 'Low' };
-            patched.priority = String(rev[n] ?? pr);
-          }
+          // If priority is already a string/number, keep it as is (should be an ID)
+          patched.priority = String(pr);
         }
       }
 
       // Autofill Submission Date and Time from initialData.submission_date or initialData.submissionDate
-      let dateObj: Date | null = null;
       let isoDateStr = initialData.submission_date || initialData.submissionDate;
-      if (isoDateStr && typeof isoDateStr === 'string' && isoDateStr.includes('T')) {
+      if (isoDateStr && typeof isoDateStr === 'string') {
         try {
-          dateObj = new Date(isoDateStr);
-          if (!isNaN(dateObj.getTime())) {
-            const dd = String(dateObj.getDate()).padStart(2, '0');
-            const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
-            const yyyy = dateObj.getFullYear();
-            const hh = String(dateObj.getHours()).padStart(2, '0');
-            const min = String(dateObj.getMinutes()).padStart(2, '0');
+          // Handle both ISO format (with T) and space-separated format (YYYY-MM-DD HH:mm)
+          let parsedDate: Date | null = null;
+          
+          if (isoDateStr.includes('T')) {
+            // ISO format: 2026-01-16T22:45:00
+            parsedDate = new Date(isoDateStr);
+          } else if (isoDateStr.includes(' ')) {
+            // Space-separated format: 2026-01-16 22:45
+            parsedDate = new Date(isoDateStr.replace(' ', 'T'));
+          } else if (isoDateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            // Date only: 2026-01-16
+            parsedDate = new Date(isoDateStr + 'T00:00:00');
+          }
+          
+          if (parsedDate && !isNaN(parsedDate.getTime())) {
+            const dd = String(parsedDate.getDate()).padStart(2, '0');
+            const mm = String(parsedDate.getMonth() + 1).padStart(2, '0');
+            const yyyy = parsedDate.getFullYear();
+            const hh = String(parsedDate.getHours()).padStart(2, '0');
+            const min = String(parsedDate.getMinutes()).padStart(2, '0');
             patched.submissionDate = `${dd}-${mm}-${yyyy}`;
             patched.submissionTime = `${hh}:${min}`;
             console.log('Parsed submissionDate:', patched.submissionDate, 'submissionTime:', patched.submissionTime);
           }
-        } catch {}
+        } catch (err) {
+          console.error('Error parsing submission date:', err);
+        }
       }
 
       setForm(prev => ({ ...prev, ...patched }));
-      // Always update calendarDate and calendarTime from initialData
+      // Always update calendarDate and calendarTime from patched data
       if (patched.submissionDate && patched.submissionTime) {
         // Convert DD-MM-YYYY and HH:mm to Date object
-        const [dd, mm, yyyy] = patched.submissionDate.split('-');
-        const [hh, min] = patched.submissionTime.split(':');
-        const dateObj2 = new Date(Number(yyyy), Number(mm) - 1, Number(dd), Number(hh), Number(min));
-        setCalendarDate(dateObj2);
-        setCalendarTime(dateObj2);
-        console.log('Set calendarDate/calendarTime:', dateObj2);
+        const dateParts = patched.submissionDate.split('-');
+        const timeParts = patched.submissionTime.split(':');
+        if (dateParts.length === 3 && timeParts.length === 2) {
+          const [dd, mm, yyyy] = dateParts;
+          const [hh, min] = timeParts;
+          const dateObj2 = new Date(Number(yyyy), Number(mm) - 1, Number(dd), Number(hh), Number(min));
+          if (!isNaN(dateObj2.getTime())) {
+            setCalendarDate(dateObj2);
+            setCalendarTime(dateObj2);
+            console.log('Set calendarDate/calendarTime:', dateObj2);
+          }
+        }
       }
     }
   }, [initialData]);
@@ -246,12 +265,26 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
         const opts = (res.data || []).map(b => ({ value: String(b.id), label: String(b.name) }));
         setBrands(opts);
 
-        // if initialData had a brand name, try to reconcile to id
-        if (initialData && initialData.brandName) {
-          const foundById = opts.find(o => o.value === String(initialData.brandName));
-          const foundByName = opts.find(o => o.label === String(initialData.brandName));
-          if (foundById) setForm(prev => ({ ...prev, brandName: foundById.value }));
-          else if (foundByName) setForm(prev => ({ ...prev, brandName: foundByName.value }));
+        // if initialData had a brand ID or name, try to match and set
+        if (initialData && (initialData.brandName || initialData.brand_id)) {
+          const brandId = String(initialData.brand_id ?? initialData.brandName ?? '').trim();
+          const brandName = typeof initialData.brand === 'object' && initialData.brand?.name 
+            ? String(initialData.brand.name)
+            : String(initialData.brandName ?? '');
+          
+          // Try to find by ID first (brand_id from API)
+          const foundById = opts.find(o => o.value === brandId);
+          // Then try by name
+          const foundByName = opts.find(o => o.label === brandName);
+          
+          if (foundById) {
+            setForm(prev => ({ ...prev, brandName: foundById.value }));
+          } else if (foundByName) {
+            setForm(prev => ({ ...prev, brandName: foundByName.value }));
+          } else if (brandId && /^\d+$/.test(brandId)) {
+            // If we have an ID that looks numeric, use it directly even if not found in dropdown yet
+            setForm(prev => ({ ...prev, brandName: brandId }));
+          }
         }
       } catch (err: any) {
         console.error('Failed to load brands', err);
@@ -277,21 +310,27 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
         setAgencies(opts);
 
         // Autofill Agency Name field for edit mode
-        let agencyVal = initialData?.createdBy || initialData?.agency;
-        if (agencyVal) {
-          let agencyId = '';
-          let agencyName = '';
-          if (typeof agencyVal === 'object' && agencyVal !== null) {
-            agencyId = String(agencyVal.id);
-            agencyName = String(agencyVal.name);
-          } else {
-            agencyId = String(agencyVal);
-            agencyName = String(agencyVal);
-          }
+        // Handle both agency_id from API and the createdBy/agency object
+        const agencyId = String(initialData?.agency_id ?? '').trim();
+        const agencyObj = initialData?.createdBy || initialData?.agency;
+        const agencyName = typeof agencyObj === 'object' && agencyObj?.name 
+          ? String(agencyObj.name)
+          : String(agencyObj ?? '');
+        
+        if (agencyId || agencyObj) {
+          // Try to find by ID first
           const foundById = opts.find(o => o.value === agencyId);
+          // Then try by name
           const foundByName = opts.find(o => o.label === agencyName);
-          if (foundById) setForm(prev => ({ ...prev, createdBy: foundById.value }));
-          else if (foundByName) setForm(prev => ({ ...prev, createdBy: foundByName.value }));
+          
+          if (foundById) {
+            setForm(prev => ({ ...prev, createdBy: foundById.value }));
+          } else if (foundByName) {
+            setForm(prev => ({ ...prev, createdBy: foundByName.value }));
+          } else if (agencyId && /^\d+$/.test(agencyId)) {
+            // If we have an ID that looks numeric, use it directly
+            setForm(prev => ({ ...prev, createdBy: agencyId }));
+          }
         }
       } catch (err: any) {
         console.error('Failed to load agencies', err);
@@ -362,17 +401,27 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
         setUsers(opts);
 
         // Autofill Assign To field for edit mode
-        if (initialData && initialData.assignTo) {
-          let assignId = '';
-          if (typeof initialData.assignTo === 'object' && initialData.assignTo !== null && 'id' in initialData.assignTo) {
-            assignId = String(initialData.assignTo.id);
-          } else {
-            assignId = String(initialData.assignTo);
+        // Handle both assign_user_id from API and the assignTo object/ID
+        const assignUserId = String(initialData?.assign_user_id ?? '').trim();
+        const assignToVal = initialData?.assignTo || initialData?.assigned_user;
+        const assignToName = typeof assignToVal === 'object' && assignToVal?.name 
+          ? String(assignToVal.name)
+          : String(assignToVal ?? '');
+        
+        if (assignUserId || assignToVal) {
+          // Try to find by ID first
+          const foundById = opts.find(o => o.value === assignUserId);
+          // Then try by name
+          const foundByName = opts.find(o => o.label === assignToName);
+          
+          if (foundById) {
+            setForm(prev => ({ ...prev, assignTo: foundById.value }));
+          } else if (foundByName) {
+            setForm(prev => ({ ...prev, assignTo: foundByName.value }));
+          } else if (assignUserId && /^\d+$/.test(assignUserId)) {
+            // If we have an ID that looks numeric, use it directly
+            setForm(prev => ({ ...prev, assignTo: assignUserId }));
           }
-          const foundById = opts.find(o => o.value === assignId);
-          const foundByName = opts.find(o => o.label === String(initialData.assignTo.name || initialData.assignTo));
-          if (foundById) setForm(prev => ({ ...prev, assignTo: foundById.value }));
-          else if (foundByName) setForm(prev => ({ ...prev, assignTo: foundByName.value }));
         }
       } catch (err: any) {
         console.error('Failed to load users', err);
@@ -405,18 +454,27 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
         setContactPersons(opts);
 
         // Autofill Contact Person field for edit mode
-        let contactVal = initialData?.contactPerson || initialData?.contact_person;
-        if (contactVal) {
-          let contactId = '';
-          if (typeof contactVal === 'object' && contactVal !== null) {
-            contactId = String(contactVal.id);
-          } else {
-            contactId = String(contactVal);
+        // Handle both contact_person_id from API and the contactPerson object/ID
+        const contactPersonId = String(initialData?.contact_person_id ?? '').trim();
+        const contactVal = initialData?.contactPerson || initialData?.contact_person;
+        const contactName = typeof contactVal === 'object' && contactVal?.name 
+          ? String(contactVal.name)
+          : String(contactVal ?? '');
+        
+        if (contactPersonId || contactVal) {
+          // Try to find by ID first
+          const foundById = opts.find(o => o.value === contactPersonId);
+          // Then try by label containing contact name or ID
+          const foundByLabel = opts.find(o => o.label.includes(contactName) || o.label.endsWith(contactPersonId));
+          
+          if (foundById) {
+            setForm(prev => ({ ...prev, contactPerson: foundById.value }));
+          } else if (foundByLabel) {
+            setForm(prev => ({ ...prev, contactPerson: foundByLabel.value }));
+          } else if (contactPersonId && /^\d+$/.test(contactPersonId)) {
+            // If we have an ID that looks numeric, use it directly
+            setForm(prev => ({ ...prev, contactPerson: contactPersonId }));
           }
-          const foundById = opts.find(o => o.value === contactId);
-          const foundByLabel = opts.find(o => o.label.startsWith(contactId));
-          if (foundById) setForm(prev => ({ ...prev, contactPerson: foundById.value }));
-          else if (foundByLabel) setForm(prev => ({ ...prev, contactPerson: foundByLabel.value }));
         }
       } catch (err: any) {
         console.error('Failed to load contact persons', err);
@@ -450,6 +508,29 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
           });
         }
         setBriefStatuses(opts);
+        
+        // Autofill Brief Status field if initialData provides it
+        if (initialData && (initialData.brief_status_id || initialData.status || initialData.brief_status)) {
+          const statusId = String(initialData.brief_status_id ?? '').trim();
+          const statusObj = initialData.brief_status;
+          const statusName = typeof statusObj === 'object' && statusObj?.name 
+            ? String(statusObj.name)
+            : String(initialData.status ?? '');
+          
+          // Try to find by ID first
+          const foundById = opts.find((o: any) => o.value === statusId);
+          // Then try by name
+          const foundByName = opts.find((o: any) => o.label === statusName);
+          
+          if (foundById) {
+            setForm(prev => ({ ...prev, status: (foundById as any).value }));
+          } else if (foundByName) {
+            setForm(prev => ({ ...prev, status: (foundByName as any).value }));
+          } else if (statusId && /^\d+$/.test(statusId)) {
+            // If we have an ID that looks numeric, use it directly
+            setForm(prev => ({ ...prev, status: statusId }));
+          }
+        }
       } catch (err: any) {
         console.error('Failed to load brief statuses', err);
         if (!mounted) return;
@@ -460,7 +541,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
     })();
 
     return () => { mounted = false; };
-  }, []);
+  }, [initialData]);
 
   // Load priority options from API on mount
   useEffect(() => {
@@ -481,6 +562,30 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
           });
         }
         setPriorityOptions(opts);
+        
+        // Autofill Priority field if initialData provides it
+        if (initialData && (initialData.priority_id || initialData.priority)) {
+          const priorityId = String(initialData.priority_id ?? '').trim();
+          const priorityObj = initialData.priority;
+          const priorityName = typeof priorityObj === 'object' && priorityObj?.name 
+            ? String(priorityObj.name)
+            : String(priorityObj ?? '');
+          
+          // Try to find by ID first
+          const foundById = opts.find(o => o.value === priorityId);
+          // Then try by name
+          const foundByName = opts.find(o => o.label === priorityName);
+          
+          if (foundById) {
+            setForm(prev => ({ ...prev, priority: foundById.value }));
+          } else if (foundByName) {
+            setForm(prev => ({ ...prev, priority: foundByName.value }));
+          } else if (priorityId && /^\d+$/.test(priorityId)) {
+            // If we have an ID that looks numeric, use it directly
+            setForm(prev => ({ ...prev, priority: priorityId }));
+          }
+        }
+        
         if (res.error) {
           console.error('Error loading priorities:', res.error);
           setPriorityError(res.error);
@@ -495,7 +600,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
     })();
 
     return () => { mounted = false; };
-  }, []);
+  }, [initialData]);
 
   // When Priority changes, fetch brief statuses filtered by priority
   useEffect(() => {
@@ -956,6 +1061,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                           }));
                         }
                       }}
+                      minDate={new Date()}
                       dateFormat="dd-MM-yyyy"
                       placeholderText="DD-MM-YYYY"
                       className={`w-full px-3 py-2 rounded-lg bg-white transition-colors ${errors.submissionDate ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-[var(--border-color)]'}`}

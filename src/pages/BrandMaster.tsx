@@ -15,6 +15,27 @@ import { listBrands, getBrand, type BrandItem as ServiceBrandItem } from '../ser
 
 type Brand = ServiceBrandItem;
 
+// Helpers to parse API date strings like "19-11-2025 10:35:57"
+const parseApiDateToISO = (s?: string) => {
+  if (!s) return '';
+  const m = String(s).trim().match(/^(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2})(?::(\d{2}))?$/);
+  if (!m) return s;
+  const [, dd, mm, yyyy, hh, min, sec] = m;
+  return `${yyyy}-${mm}-${dd}T${hh}:${min}:${sec || '00'}`;
+};
+
+const formatDisplayDate = (s?: string) => {
+  if (!s) return '-';
+  try {
+    const iso = parseApiDateToISO(s);
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return String(s);
+    return d.toLocaleString();
+  } catch {
+    return String(s);
+  }
+};
+
 const BrandMaster: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -237,7 +258,7 @@ const BrandMaster: React.FC = () => {
                       return (
                         <span
                           onClick={() => navigate(ROUTES.BRAND_CONTACTS(id))}
-                          className="text-gray-900 hover:underline cursor-pointer"
+                          className="text-blue-600 underline cursor-pointer"
                         >
                           {String(count)}
                         </span>
@@ -253,7 +274,7 @@ const BrandMaster: React.FC = () => {
                 { key: 'city', header: 'City', render: (it: Brand) => it.city || '-' },
                 { key: 'zone', header: 'Zone', render: (it: Brand) => it.zone || '-' },
                 { key: 'pinCode', header: 'Pin Code', render: (it: Brand) => it.pinCode || '-' },
-                { key: 'dateTime', header: 'Date & Time', render: (it: Brand) => it.dateTime ? new Date(it.dateTime).toLocaleString() : '-' },
+                { key: 'dateTime', header: 'Date & Time', render: (it: Brand) => formatDisplayDate(it.dateTime) },
               ] as Column<Brand>[])}
               desktopOnMobile={true}
               onEdit={(it: Brand) => handleEdit(it.id)}

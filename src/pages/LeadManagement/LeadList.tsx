@@ -323,6 +323,11 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
     })();
   };
 
+  const handleAssignConfirm = async (_newSalesMan: string) => {
+    // This is called when user confirms the assignment in the dialog
+    // The actual API call happens after confirmation in handleAssignToChange
+  };
+
   const handleDelete = (leadId: string) => {
     const found = leads.find((l) => l.id === leadId);
     setConfirmDeleteId(leadId);
@@ -387,6 +392,11 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
     updateCallStatus();
   };
 
+  const handleCallStatusConfirm = async (_newStatus: string) => {
+    // This is called when user confirms the call status change in the dialog
+    // The actual API call happens after confirmation in handleCallStatusChange
+  };
+
   
 
   // Status is rendered as a non-clickable pill (same as AllLeads)
@@ -403,15 +413,13 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
       key: 'assignTo',
       header: 'Assign To',
       render: (it: Lead) => (
-        it.assignTo ? (
-          <AssignDropdown
-            value={it.assignTo ?? ''}
-            options={assignToOptions.map(opt => opt.name)}
-            onChange={(newSalesMan) => handleAssignToChange(it.id, newSalesMan)}
-          />
-        ) : (
-          <span>-</span>
-        )
+        <AssignDropdown
+          value={it.assignTo ?? ''}
+          options={assignToOptions.map(opt => opt.name)}
+          onChange={(newSalesMan) => handleAssignToChange(it.id, newSalesMan)}
+          onConfirm={handleAssignConfirm}
+          context="lead"
+        />
       ),
       className: 'min-w-[140px]',
     },
@@ -431,17 +439,14 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
       key: 'callStatus',
       header: 'Call Status',
       render: (it: Lead) => (
-        (it.callStatus && it.callStatus !== 'N/A') ? (
-          <div className="min-w-[160px]">
-            <CallStatusDropdown
-              value={it.callStatus ?? ''}
-              options={callStatusOptions}
-              onChange={(newStatus) => handleCallStatusChange(it.id, newStatus)}
-            />
-          </div>
-        ) : (
-          <span>-</span>
-        )
+        <div className="min-w-[160px]">
+          <CallStatusDropdown
+            value={(it.callStatus && it.callStatus !== 'N/A') ? it.callStatus : ''}
+            options={callStatusOptions}
+            onChange={(newStatus) => handleCallStatusChange(it.id, newStatus)}
+            onConfirm={handleCallStatusConfirm}
+          />
+        </div>
       ),
       className: 'min-w-[160px]',
     },

@@ -180,6 +180,11 @@ const AllLeads: React.FC = () => {
     })();
   };
 
+  const handleAssignConfirm = async (_newSalesMan: string) => {
+    // This is called when user confirms the assignment in the dialog
+    // The actual API call happens after confirmation in handleAssignToChange
+  };
+
   
   const [showErrorToast, setShowErrorToast] = useState(false);
   const [errorMessageToast, setErrorMessageToast] = useState('');
@@ -247,6 +252,11 @@ const AllLeads: React.FC = () => {
     }
   };
 
+  const handleCallStatusConfirm = async (_newStatus: string) => {
+    // This is called when user confirms the call status change in the dialog
+    // The actual API call happens after confirmation in handleCallStatusChange
+  };
+
   // Fetch leads from API
   const fetchLeads = async () => {
     setLoading(true);
@@ -305,15 +315,13 @@ const AllLeads: React.FC = () => {
       key: 'assignTo',
       header: 'Assign To',
       render: (it: Lead) => (
-        it.assignTo ? (
-          <AssignDropdown
-            value={it.assignTo}
-            options={assignToOptions.map(opt => opt.name)}
-            onChange={(newSalesMan) => handleAssignToChange(it.id, newSalesMan)}
-          />
-        ) : (
-          <span>-</span>
-        )
+        <AssignDropdown
+          value={it.assignTo ?? ''}
+          options={assignToOptions.map(opt => opt.name)}
+          onChange={(newSalesMan) => handleAssignToChange(it.id, newSalesMan)}
+          onConfirm={handleAssignConfirm}
+          context="lead"
+        />
       ),
       className: 'min-w-[140px]',
     },
@@ -349,17 +357,14 @@ const AllLeads: React.FC = () => {
       key: 'callStatus',
       header: 'Call Status',
       render: (it: Lead) => (
-        (it.callStatus && it.callStatus !== 'N/A') ? (
-          <div className="min-w-[160px]">
-              <CallStatusDropdown
-                value={it.callStatus}
-                options={callStatusOptions.map(opt => opt.name)}
-                onChange={(newStatus) => handleCallStatusChange(it.id, newStatus)}
-              />
-          </div>
-        ) : (
-          <span>-</span>
-        )
+        <div className="min-w-[160px]">
+            <CallStatusDropdown
+              value={(it.callStatus && it.callStatus !== 'N/A') ? it.callStatus : ''}
+              options={callStatusOptions.map(opt => opt.name)}
+              onChange={(newStatus) => handleCallStatusChange(it.id, newStatus)}
+              onConfirm={handleCallStatusConfirm}
+            />
+        </div>
       ),
       className: 'min-w-[160px]',
     },

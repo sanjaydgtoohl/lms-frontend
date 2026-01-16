@@ -3,7 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { MasterCreateHeader } from '../../components/ui/MasterCreateHeader';
 import Table, { type Column } from '../../components/ui/Table';
 import { Mail, Eye } from 'lucide-react';
-import { ROUTES } from '../../constants';
 import LeadManagementSection from '../../components/forms/CreateLead/LeadManagementSection';
 import ContactPersonsCard from '../../components/forms/CreateLead/ContactPersonsCard';
 import AssignPriorityCard from '../../components/forms/CreateLead/AssignPriorityCard';
@@ -250,7 +249,7 @@ const EditLead: React.FC = () => {
       await updateLead(id || '', payload);
       // Assume updateLead throws on error or returns the updated item
       showSuccess('Lead updated successfully.');
-      navigate(ROUTES.LEAD_MANAGEMENT);
+      navigate('/lead-management/all-leads');
     } catch (error: any) {
       console.error('Error updating lead:', error);
       showError(error?.message || 'Failed to update lead');
@@ -327,7 +326,7 @@ const EditLead: React.FC = () => {
 
         <div className="flex justify-end space-x-4 pt-2">
           <Button 
-            onClick={() => navigate(ROUTES.LEAD_MANAGEMENT)}
+            onClick={() => navigate('/lead-management/all-leads')}
           >
             Cancel
           </Button>

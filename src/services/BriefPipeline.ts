@@ -171,35 +171,56 @@ export async function getBrief(id: string): Promise<BriefItem> {
   const idVal = raw['id'] ?? raw['uuid'] ?? raw['code'] ?? id;
   const briefNameVal = raw['brief_name'] ?? raw['name'] ?? '';
   const briefIdVal = raw['brief_id'] ?? raw['code'] ?? String(idVal);
+  
+  // Brand: store ID for form dropdown
   const brandRaw = raw['brand_name'] ?? raw['brand'] ?? '';
   const brandNameVal = typeof brandRaw === 'object' && brandRaw !== null && 'name' in brandRaw
     ? (brandRaw as any).name
     : String(brandRaw);
+  
   const productNameVal = raw['product_name'] ?? raw['product'] ?? '';
+  
+  // Contact Person: store ID for form dropdown
+  const contactPersonIdVal = raw['contact_person_id'] ?? (typeof raw['contact_person'] === 'object' ? (raw['contact_person'] as any)?.id : '') ?? '';
   const contactPersonRaw = raw['contact_person'] ?? raw['contact'] ?? '';
   const contactPersonVal = typeof contactPersonRaw === 'object' && contactPersonRaw !== null
     ? contactPersonRaw
     : String(contactPersonRaw);
+  
   const modeVal = raw['mode_of_campaign'] ?? raw['mode'] ?? '';
   const mediaTypeVal = raw['media_type'] ?? '';
+  
+  // Priority: store ID and object for proper mapping
+  const priorityIdVal = raw['priority_id'] ?? (typeof raw['priority'] === 'object' ? (raw['priority'] as any)?.id : '') ?? '';
   const priorityRaw = raw['priority'] ?? '';
   const priorityVal = typeof priorityRaw === 'object' && priorityRaw !== null
     ? priorityRaw
-    : String(priorityRaw);
+    : (priorityIdVal ? String(priorityIdVal) : String(priorityRaw));
+  
   const budgetVal = raw['budget'] ?? raw['estimated_budget'] ?? '';
-  const createdByRaw = raw['created_by_user'] ?? raw['created_by'] ?? raw['creator'] ?? '';
+  
+  // Agency (createdBy): store ID for form dropdown
+  const agencyIdVal = raw['agency_id'] ?? (typeof raw['agency'] === 'object' ? (raw['agency'] as any)?.id : '') ?? '';
+  const createdByRaw = raw['created_by_user'] ?? raw['created_by'] ?? raw['creator'] ?? raw['agency'] ?? '';
   const createdByVal = typeof createdByRaw === 'object' && createdByRaw !== null
     ? createdByRaw
-    : String(createdByRaw);
+    : (agencyIdVal ? String(agencyIdVal) : String(createdByRaw));
+  
+  // Assigned User (assignTo): store ID for form dropdown
+  const assignUserIdVal = raw['assign_user_id'] ?? (typeof raw['assigned_user'] === 'object' ? (raw['assigned_user'] as any)?.id : '') ?? '';
   const assignToRaw = raw['assign_to'] ?? raw['assigned_to'] ?? raw['assigned_user'] ?? '';
   const assignToVal = typeof assignToRaw === 'object' && assignToRaw !== null
     ? assignToRaw
-    : String(assignToRaw);
-  const statusVal = raw['status'] ?? '';
+    : (assignUserIdVal ? String(assignUserIdVal) : String(assignToRaw));
+  
+  // Brief Status: store ID and object for proper mapping
+  const briefStatusIdVal = raw['brief_status_id'] ?? (typeof raw['brief_status'] === 'object' ? (raw['brief_status'] as any)?.id : '') ?? '';
+  const statusVal = raw['status'] ?? String(briefStatusIdVal);
   const briefStatusRaw = raw['brief_status'] ?? raw['status_object'] ?? '';
   const briefStatusVal = typeof briefStatusRaw === 'object' && briefStatusRaw !== null
     ? briefStatusRaw
     : {};
+  
   const detailVal = raw['brief_detail'] ?? raw['detail'] ?? '';
   const commentVal = raw['comment'] ?? '';
   const submissionVal = raw['submission_date'] ?? raw['submission'] ?? raw['submitted_at'] ?? raw['dateTime'] ?? '';
@@ -208,15 +229,15 @@ export async function getBrief(id: string): Promise<BriefItem> {
     id: String(idVal),
     briefId: String(briefIdVal ?? ''),
     briefName: String(briefNameVal ?? ''),
-    brandName: String(brandNameVal ?? ''),
+    brandName: String(brandNameVal ?? ''),  // Store name for display
     productName: String(productNameVal ?? ''),
-    contactPerson: contactPersonVal,
+    contactPerson: typeof contactPersonVal === 'object' ? contactPersonVal : String(contactPersonIdVal ?? ''),  // Store ID for dropdown
     modeOfCampaign: String(modeVal ?? ''),
     mediaType: String(mediaTypeVal ?? ''),
-    priority: priorityVal,
+    priority: priorityVal,  // Store ID or object
     budget: String(budgetVal ?? ''),
-    createdBy: createdByVal,
-    assignTo: assignToVal,
+    createdBy: createdByVal,  // Store ID or object for agency
+    assignTo: assignToVal,  // Store ID or object
     status: String(statusVal ?? ''),
     brief_status: briefStatusVal as BriefStatus,
     briefDetail: String(detailVal ?? ''),

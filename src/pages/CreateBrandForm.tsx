@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { MasterFormHeader, SelectField } from '../components/ui';
+import { MasterFormHeader, SelectField, MultiSelectDropdown } from '../components/ui';
 import { listZones, listStates, listCountries, listBrandTypes, listCities } from '../services/CreateBrandForm';
 import type { Zone, State, Country, BrandType } from '../services/CreateBrandForm';
 import { listAgencies } from '../services/AgencyMaster';
@@ -90,7 +90,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
     brandName: '',
     brandType: '',
     website: '',
-    agency: '',
+    agency: [] as string[],
     industry: '',
     country: 'Please Select Country',
     postalCode: '',
@@ -188,7 +188,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
         city_id: form.city,
         zone_id: form.zone,
         postal_code: form.postalCode,
-        agency_id: form.agency,
+        agency_ids: form.agency.length > 0 ? form.agency.map(id => parseInt(id, 10)) : [],
       };
 
       let res;
@@ -229,6 +229,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
           'zone_id': 'zone',
           'postal_code': 'postalCode',
           'agency_id': 'agency',
+          'agency_ids': 'agency',
           'website': 'website',
         };
 
@@ -359,7 +360,14 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
         brandName: initialData.name ?? initialData.brandName ?? prev.brandName,
         brandType: String(initialData.brand_type_id ?? initialData.brandType ?? initialData.brand_type ?? ''),
         website: initialData.website ?? prev.website,
-        agency: String(initialData.agency_id ?? initialData.agency ?? initialData.agencyName ?? ''),
+        agency: (() => {
+          const raw = initialData.agency_id ?? initialData.agency ?? initialData.agencyName ?? null;
+          if (!raw) return [];
+          if (Array.isArray(raw)) {
+            return raw.map(a => String(typeof a === 'object' ? a.id : a));
+          }
+          return [String(raw)];
+        })(),
         industry: String(initialData.industry_id ?? initialData.industry ?? ''),
         country: String(initialData.country_id ?? initialData.country ?? ''),
         postalCode: initialData.postal_code ?? initialData.postalCode ?? initialData.pinCode ?? prev.postalCode,
@@ -386,23 +394,47 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
         const items = (agenciesResp && agenciesResp.data) ? agenciesResp.data : [];
         setAgencies(items);
 
-        // If initialData provided and contains agency name/id, try to preselect the matching id
+        // If initialData provided and contains agency name/id, try to preselect the matching id(s)
         if (mounted && initialData) {
-          const rawAgency = initialData.agency ?? initialData.agencyName ?? null;
+          const rawAgency = initialData.agency_id ?? initialData.agency ?? initialData.agencyName ?? null;
           if (rawAgency) {
-            let rawVal = '';
-            if (typeof rawAgency === 'object' && rawAgency !== null) rawVal = String((rawAgency as any).id ?? (rawAgency as any).name ?? '');
-            else rawVal = String(rawAgency);
-
-            // Try to find by id first
-            const byId = items.find(a => String(a.id) === rawVal);
-            if (byId) {
-              setForm(prev => ({ ...prev, agency: String(byId.id) }));
+            const agencyIds: string[] = [];
+            
+            if (Array.isArray(rawAgency)) {
+              rawAgency.forEach(a => {
+                const rawVal = String(typeof a === 'object' ? (a.id ?? a.name ?? '') : a);
+                if (rawVal) {
+                  // Try to find by id first
+                  const byId = items.find(ag => String(ag.id) === rawVal);
+                  if (byId) {
+                    agencyIds.push(String(byId.id));
+                  } else {
+                    // Try to find by name (case-insensitive)
+                    const byName = items.find(ag => String(ag.name).toLowerCase() === String(rawVal).toLowerCase());
+                    if (byName) agencyIds.push(String(byName.id));
+                    else agencyIds.push(rawVal);
+                  }
+                }
+              });
             } else {
-              // Try to find by name (case-insensitive)
-              const byName = items.find(a => String(a.name).toLowerCase() === String(rawVal).toLowerCase());
-              if (byName) setForm(prev => ({ ...prev, agency: String(byName.id) }));
-              else setForm(prev => ({ ...prev, agency: rawVal }));
+              let rawVal = '';
+              if (typeof rawAgency === 'object' && rawAgency !== null) rawVal = String((rawAgency as any).id ?? (rawAgency as any).name ?? '');
+              else rawVal = String(rawAgency);
+
+              // Try to find by id first
+              const byId = items.find(a => String(a.id) === rawVal);
+              if (byId) {
+                agencyIds.push(String(byId.id));
+              } else {
+                // Try to find by name (case-insensitive)
+                const byName = items.find(a => String(a.name).toLowerCase() === String(rawVal).toLowerCase());
+                if (byName) agencyIds.push(String(byName.id));
+                else agencyIds.push(rawVal);
+              }
+            }
+            
+            if (agencyIds.length > 0) {
+              setForm(prev => ({ ...prev, agency: agencyIds }));
             }
           }
         }
@@ -546,15 +578,14 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
 
         <div>
           <label className="block text-sm text-[var(--text-secondary)] mb-1">Select Existing Agency</label>
-          <div>
-            <SelectField
-              name="agency"
-              value={form.agency}
-              onChange={(v) => setForm(prev => ({ ...prev, agency: typeof v === 'string' ? v : v[0] ?? '' }))}        
-              options={agencies.map(a => ({ value: String(a.id), label: a.name }))}
-              placeholder={agencies.length ? 'Search or select option' : 'Loading agencies...'}
-            />
-          </div>
+          <MultiSelectDropdown
+            name="agency"
+            value={form.agency}
+            onChange={(v) => setForm(prev => ({ ...prev, agency: v }))}
+            options={agencies.map(a => ({ value: String(a.id), label: a.name }))}
+            placeholder={agencies.length ? 'Search or select options' : 'Loading agencies...'}
+            multi={true}
+          />
         </div>
 
         <div>

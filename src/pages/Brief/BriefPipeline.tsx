@@ -225,6 +225,11 @@ const BriefPipeline: React.FC = () => {
     }
   };
 
+  const handleAssignConfirm = async (_newPlanner: string) => {
+    // This is called when user confirms the assignment in the dialog
+    // The actual API call happens after confirmation in handleAssignToChange
+  };
+
   const handleSaveEdited = async (updated: Partial<Brief>) => {
     if (!updated.id) return;
     try {
@@ -331,6 +336,11 @@ const BriefPipeline: React.FC = () => {
     })();
   };
 
+  const handleStatusConfirm = async (_newStatus: string) => {
+    // This is called when user confirms the status change in the dialog
+    // The actual API call happens after confirmation in handleSelectStatus
+  };
+
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
       {showCreate ? (
@@ -423,6 +433,7 @@ const BriefPipeline: React.FC = () => {
                         value={displayName}
                         options={assignToOptions.map(opt => opt.name)}
                         onChange={(newPlanner: string) => handleAssignToChange(it.id, newPlanner)}
+                        onConfirm={handleAssignConfirm}
                       />
                     </div>
                   );
@@ -438,6 +449,7 @@ const BriefPipeline: React.FC = () => {
                         value={statusName}
                         options={statusOptions.map(opt => opt.name)}
                         onChange={(newStatus: string) => handleSelectStatus(it.id, newStatus)}
+                        onConfirm={handleStatusConfirm}
                       />
                     </div>
                   );

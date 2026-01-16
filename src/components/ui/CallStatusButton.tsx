@@ -15,12 +15,12 @@ const CallStatusButton: React.FC<CallStatusButtonProps> = ({ value, onClick, isA
       onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
       className={`
         group flex items-center justify-center w-full cursor-pointer
-        font-medium text-gray-600 hover:text-blue-600
+        font-medium text-blue-600 hover:text-blue-700 underline
         transition-colors duration-200
-        ${isActive ? 'text-blue-600' : ''}
+        ${isActive ? 'text-blue-700' : ''}
       `}
     >
-      <span className="truncate">{value}</span>
+      <span className="truncate">{value || '-'}</span>
     </div>
   );
 };

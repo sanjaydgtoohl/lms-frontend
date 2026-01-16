@@ -285,7 +285,7 @@ const AgencyMaster: React.FC = () => {
                         return (
                           <span
                             onClick={() => navigate(ROUTES.AGENCY_CONTACTS(id))}
-                            className="text-gray-900 hover:underline cursor-pointer"
+                            className="text-blue-600 underline cursor-pointer"
                           >
                             {String(count)}
                           </span>

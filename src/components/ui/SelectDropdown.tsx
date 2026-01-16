@@ -67,28 +67,32 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
       <div className="w-full relative">
         <div
           className={`flex items-center h-10 w-full px-3 py-2 border rounded-lg bg-white relative ${errorBorderClass} ${disabled ? 'opacity-60 cursor-not-allowed' : ''} ${inputClassName}`}
-          style={{ gap: '6px', paddingRight: '32px', overflowX: 'auto', overflowY: 'hidden', whiteSpace: 'nowrap' }}
+          style={{ gap: '6px', paddingRight: '32px' }}
           onClick={() => !disabled && setOpen(true)}
         >
-          {/* Multi-select: show tags in a single horizontal row with scroll */}
-          {isMulti && selectedLabels.length > 0 && selectedLabels.map((opt) => (
-            <span key={opt.value} className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs inline-flex items-center" style={{ marginRight: '6px', display: 'inline-flex', lineHeight: '1', maxHeight: '100%', overflow: 'hidden' }}>
-              <span style={{ whiteSpace: 'nowrap', display: 'inline-block', lineHeight: '1' }}>{opt.label}</span>
-              <button
-                type="button"
-                className="ml-1 text-blue-700 hover:text-red-500"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const newVals = selectedValues.filter((v) => v !== opt.value);
-                  onChange(newVals);
-                }}
-                aria-label="Remove"
-                style={{ fontSize: '14px', lineHeight: '1' }}
-              >
-                ×
-              </button>
-            </span>
-          ))}
+          {/* Multi-select: show tags in a scrollable container */}
+          {isMulti && (
+            <div className="flex items-center flex-1 overflow-x-auto overflow-y-hidden" style={{ gap: '6px', whiteSpace: 'nowrap', maxHeight: '100%' }}>
+              {selectedLabels.map((opt) => (
+                <span key={opt.value} className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs inline-flex items-center flex-shrink-0" style={{ lineHeight: '1', maxHeight: '100%', overflow: 'hidden' }}>
+                  <span style={{ whiteSpace: 'nowrap', display: 'inline-block', lineHeight: '1' }}>{opt.label}</span>
+                  <button
+                    type="button"
+                    className="ml-1 text-blue-700 hover:text-red-500"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const newVals = selectedValues.filter((v) => v !== opt.value);
+                      onChange(newVals);
+                    }}
+                    aria-label="Remove"
+                    style={{ fontSize: '14px', lineHeight: '1' }}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
           <input
             name={name}
             value={open && searchable ? query : (!isMulti ? (selectedLabels[0]?.label || '') : '')}

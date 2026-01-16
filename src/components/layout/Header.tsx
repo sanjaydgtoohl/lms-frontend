@@ -4,7 +4,7 @@ import { Plus, User, LogOut, Settings, UserRound, LifeBuoy, ChevronDown, Menu } 
 import ApiErrorNotification from '../ui/ApiErrorNotification';
 import { Button } from '../ui';
 import { fetchCurrentUser } from '../../services/Header';
-import TokenRefreshIndicator from '../ui/TokenRefreshIndicator';
+import { useAuthStore } from '../../store/auth';
 
 interface HeaderProps {
   onCreateClick?: () => void;
@@ -42,9 +42,15 @@ const Header: React.FC<HeaderProps> = ({
     return () => document.removeEventListener('mousedown', onDocClick);
   }, []);
 
+  const { logout } = useAuthStore();
+
   const handleLogout = async () => {
-    // TODO: Implement logout logic if needed
-    window.location.href = '/login';
+    try {
+      await logout();
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   return (
@@ -64,8 +70,6 @@ const Header: React.FC<HeaderProps> = ({
         </div>
 
         <div className="flex items-center gap-3 sm:gap-4">
-          {/* Token refresh indicator */}
-          <TokenRefreshIndicator />
           {/* API Error Notification Icon */}
           <ApiErrorNotification />
           {/* User Menu */}
