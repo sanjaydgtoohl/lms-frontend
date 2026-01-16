@@ -103,8 +103,11 @@ const IndustryMaster: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      // For now, search is not sent to backend, only pagination
-      const resp = await listIndustries(page, itemsPerPage);
+      // When searching, fetch a large page so we can search across the full dataset
+      const pageToFetch = search ? 1 : page;
+      const perPageToFetch = search ? 1000 : itemsPerPage;
+
+      const resp = await listIndustries(pageToFetch, perPageToFetch);
       // Helper to parse API date strings. API returns 'DD-MM-YYYY HH:mm:ss' currently.
       const parseCreatedAt = (val?: string | null) => {
         if (!val) return '';
@@ -131,16 +134,20 @@ const IndustryMaster: React.FC = () => {
         name: it.name,
         dateTime: parseCreatedAt(it.created_at),
       }));
-      // If search is present, filter client-side
+
       if (search) {
         const _q_ind = String(search).trim().toLowerCase();
-        mapped = mapped.filter(i => (i.name || '').toLowerCase().startsWith(_q_ind));
-        // When searching, set totalItems to filtered length
-        setTotalItems(mapped.length);
+        const filtered = mapped.filter(i => (i.name || '').toLowerCase().startsWith(_q_ind));
+        setTotalItems(filtered.length);
+
+        // Apply client-side pagination to filtered results
+        const startIdx = (page - 1) * itemsPerPage;
+        const endIdx = startIdx + itemsPerPage;
+        mapped = filtered.slice(startIdx, endIdx);
       } else {
-        // When not searching, use server total or full length
         setTotalItems(resp.meta?.pagination?.total || mapped.length);
       }
+
       setIndustries(mapped);
     } catch (e: any) {
       setError(e?.message || 'Failed to load industries');

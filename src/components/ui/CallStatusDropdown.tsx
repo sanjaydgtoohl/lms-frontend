@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { createPortal } from 'react-dom';
 import CallStatusButton from './CallStatusButton';
 
 interface CallStatusDropdownProps {
@@ -11,32 +11,50 @@ interface CallStatusDropdownProps {
 const CallStatusDropdown: React.FC<CallStatusDropdownProps> = ({ value, options, onChange }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const portalRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (ref.current && !ref.current.contains(target) && portalRef.current && !portalRef.current.contains(target)) {
+        setOpen(false);
+      }
     };
     if (open) document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [open]);
 
+  const handleToggle = () => {
+    if (!open && ref.current) {
+      const rect = ref.current.getBoundingClientRect();
+      setPosition({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+      });
+    }
+    setOpen((o) => !o);
+  };
+
   return (
     <div ref={ref} className="relative inline-block w-full">
       <CallStatusButton
         value={value}
-        onClick={() => setOpen((o) => !o)}
+        onClick={handleToggle}
         isActive={open}
       />
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            transition={{ duration: 0.18 }}
-            className="absolute z-20 left-0 mt-2 w-44 bg-white shadow-lg rounded-xl border border-gray-200 transition-all"
-          >
+      {open && createPortal(
+        <div
+          ref={portalRef}
+          className="fixed z-50 bg-white shadow-lg rounded-xl border border-gray-200"
+          style={{
+            top: position.top + 8,
+            left: position.left,
+            width: 'auto',
+            minWidth: '180px',
+          }}
+        >
             <ul
               tabIndex={-1}
               role="listbox"
@@ -66,9 +84,9 @@ const CallStatusDropdown: React.FC<CallStatusDropdownProps> = ({ value, options,
               ul::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 4px; }
               ul::-webkit-scrollbar-track { background: #fff; }
             `}</style>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>,
+        document.body
+      )}
     </div>
   );
 };

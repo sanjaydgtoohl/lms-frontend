@@ -44,6 +44,28 @@ const Create: React.FC<CreateProps> = ({
   const [sourceLoading, setSourceLoading] = useState(false);
   const [subSourceOptions, setSubSourceOptions] = useState<{ id: string; label: string }[]>([]);
   const [subSourceLoading, setSubSourceLoading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string>(''); // for newly selected image preview
+  const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [modalImageUrl, setModalImageUrl] = useState<string | null>(null);
+
+  const openImageModal = (url: string) => {
+    setModalImageUrl(url);
+    setImageModalOpen(true);
+  };
+
+  const closeImageModal = () => {
+    setImageModalOpen(false);
+    setModalImageUrl(null);
+  };
+
+  // Close modal on Escape key
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeImageModal();
+    };
+    if (imageModalOpen) window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [imageModalOpen]);
 
   // Fetch brands on component mount
   useEffect(() => {
@@ -103,6 +125,9 @@ const Create: React.FC<CreateProps> = ({
         }
       }
     }
+
+    // Clear image preview when mode changes
+    setImagePreview('');
   }, [mode, initialData]);
 
   // Fetch lead sub-sources when source selection changes
@@ -184,12 +209,20 @@ const Create: React.FC<CreateProps> = ({
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
       setFormData(prev => ({
         ...prev,
-        image: e.target.files![0],
+        image: file,
         image_url: '', // clear preview if uploading new
         remove_image: false,
       }));
+
+      // Create a preview URL using FileReader
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -373,39 +406,84 @@ const Create: React.FC<CreateProps> = ({
             {/* Image Upload & Preview */}
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                {(formData.image_url && !formData.remove_image) ? 'Uploaded Image' : 'Upload Image'}
+                {(formData.image_url && !formData.remove_image) || imagePreview ? 'Uploaded Image' : 'Upload Image'}
               </label>
               <div>
-                {/* Uploaded image card redesign */}
-                {formData.image_url && !formData.remove_image && (
-                  <div className="flex flex-col items-start mb-3">
-                    <div className="border border-gray-200 rounded-2xl p-5 shadow-sm bg-gray-50 flex flex-col items-center" style={{ width: 320 }}>
-                      <div className="flex items-center justify-center w-full" style={{ height: 140 }}>
+                {/* Uploaded image card (existing image_url preview) */}
+                {formData.image_url && !formData.remove_image && !imagePreview && (
+                  <div className="flex flex-col items-start mb-4">
+                    <div className="border border-gray-200 rounded-xl p-6 shadow-md bg-white flex flex-col items-center w-full max-w-md">
+                      <div className="flex items-center justify-center w-full mb-4" style={{ height: 200 }}>
                         <img
                           src={formData.image_url}
-                          alt=""
-                          style={{ width: 240, height: 120, objectFit: 'contain', border: '1px solid #e5e7eb', background: '#f3f4f6', borderRadius: 8, display: 'block' }}
+                          alt="Preview"
+                          style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', display: 'block', cursor: 'pointer' }}
+                          onClick={() => openImageModal(formData.image_url)}
+                          title="Click to view full image"
                         />
                       </div>
-                      <div className="flex items-center justify-between w-full mt-3">
-                        <span className="text-base text-gray-900 font-semibold truncate" style={{ maxWidth: 180 }}>{formData.image?.name || initialData?.image_path?.split('/').pop() || 'image.jpg'}</span>
-                        <button
-                          type="button"
-                          className="ml-2 p-2 rounded-full border border-red-200 hover:bg-red-100"
-                          title="Delete"
-                          onClick={() => setFormData(prev => ({ ...prev, image_url: '', remove_image: true, image: null }))}
-                        >
-                            <Trash2 className="w-5 h-5 text-red-500" />
-                        </button>
-                      </div>
-                      <div className="w-full mt-2">
-                        <span className="text-xs text-gray-600 break-all">Path: {initialData?.image_path || ''}</span>
+                      <div className="w-full border-t border-gray-100 pt-4">
+                        <div className="flex items-center justify-between gap-2 mb-3">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-gray-500 font-medium mb-1">File Name</p>
+                            <p className="text-sm text-gray-900 font-semibold truncate">{formData.image?.name || initialData?.image_path?.split('/').pop() || 'image.jpg'}</p>
+                          </div>
+                          <div
+                            className="flex-shrink-0 cursor-pointer"
+                            title="Delete"
+                            onClick={() => setFormData(prev => ({ ...prev, image_url: '', remove_image: true, image: null }))}
+                          >
+                              <Trash2 className="w-5 h-5 text-red-600" />
+                          </div>
+                        </div>
+                        {initialData?.image_path && (
+                          <div>
+                            <p className="text-xs text-gray-500 font-medium mb-1">Path</p>
+                            <p className="text-xs text-gray-600 break-all bg-gray-50 p-2 rounded border border-gray-100">{initialData.image_path}</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
                 )}
+
+                {/* Newly uploaded image preview */}
+                {imagePreview && (
+                  <div className="flex flex-col items-start mb-4">
+                    <div className="border border-gray-200 rounded-xl p-6 shadow-md bg-white flex flex-col items-center w-full max-w-md">
+                      <div className="flex items-center justify-center w-full mb-4" style={{ height: 200 }}>
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', display: 'block', cursor: 'pointer' }}
+                          onClick={() => openImageModal(imagePreview)}
+                          title="Click to view full image"
+                        />
+                      </div>
+                      <div className="w-full border-t border-gray-100 pt-4">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-gray-500 font-medium mb-1">File Name</p>
+                            <p className="text-sm text-gray-900 font-semibold truncate">{formData.image?.name || 'image.jpg'}</p>
+                          </div>
+                          <div
+                            className="flex-shrink-0 cursor-pointer"
+                            title="Delete"
+                            onClick={() => {
+                              setFormData(prev => ({ ...prev, image: null }));
+                              setImagePreview('');
+                            }}
+                          >
+                              <Trash2 className="w-5 h-5 text-red-600" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Upload UI if no preview */}
-                {(!formData.image_url || formData.remove_image) && (
+                {!imagePreview && (!formData.image_url || formData.remove_image) && (
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
                     <input
                       type="file"
@@ -420,25 +498,12 @@ const Create: React.FC<CreateProps> = ({
                       className={`cursor-pointer flex flex-col items-center ${saving ? 'pointer-events-none opacity-60' : ''}`}
                     >
                       <Upload className="w-8 h-8 text-gray-400 mb-2" />
-                      {formData.image ? (
-                        <div className="flex flex-col items-center w-full">
-                          <span className="text-xs text-green-600 font-medium text-center mb-1">{formData.image.name}</span>
-                          <span className="flex items-center justify-center text-sm text-green-700 font-medium text-center gap-2">
-                            <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                            </svg>
-                            Image Is Add Successfully
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-sm text-gray-500">
-                          Supported format: JPEG, PNG, SVG
-                        </span>
-                      )}
+                      <span className="text-sm text-gray-500">
+                        Supported format: JPEG, PNG, SVG
+                      </span>
                     </label>
                   </div>
                 )}
-                {/* Removed duplicate file name and success message below the upload card */}
               </div>
             </div>
           </div>
@@ -455,6 +520,37 @@ const Create: React.FC<CreateProps> = ({
           </div>
         </form>
       </div>
+
+      {/* Image modal (soft alert) */}
+      {imageModalOpen && modalImageUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={closeImageModal}
+        >
+          <div
+            className="relative bg-white rounded-lg shadow-lg p-4 max-w-[90vw] max-h-[90vh] flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={modalImageUrl}
+              alt="Full preview"
+              className="max-w-[84vw] max-h-[84vh] object-contain"
+            />
+            <div
+              role="button"
+              tabIndex={0}
+              aria-label="Close"
+              onClick={closeImageModal}
+              onKeyDown={(e) => { if (e.key === 'Enter') closeImageModal(); }}
+              className="absolute top-3 right-3 bg-white/95 hover:bg-white rounded-full p-1 border z-50 cursor-pointer flex items-center justify-center"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

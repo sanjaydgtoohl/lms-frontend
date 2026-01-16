@@ -251,24 +251,30 @@ const DesignationMaster: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const resp = await listDesignations(page, itemsPerPage);
+      // When searching, fetch a large page to allow searching across whole dataset
+      const pageToFetch = search ? 1 : page;
+      const perPageToFetch = search ? 1000 : itemsPerPage;
+
+      const resp = await listDesignations(pageToFetch, perPageToFetch);
       let mapped: Designation[] = resp.data.map((it: ApiDesignation) => ({
         id: String(it.id),
         name: it.name,
         dateTime: it.created_at || '',
       }));
-      
-      // If search is present, filter client-side
+
       if (search) {
         const _q_des = String(search).trim().toLowerCase();
-        mapped = mapped.filter(d => (d.name || '').toLowerCase().startsWith(_q_des));
-        // When searching, set totalItems to filtered length
-        setTotalItems(mapped.length);
+        const filtered = mapped.filter(d => (d.name || '').toLowerCase().startsWith(_q_des));
+        setTotalItems(filtered.length);
+
+        // Apply client-side pagination to filtered results
+        const startIdx = (page - 1) * itemsPerPage;
+        const endIdx = startIdx + itemsPerPage;
+        mapped = filtered.slice(startIdx, endIdx);
       } else {
-        // When not searching, use server total or full length
         setTotalItems(resp.meta?.pagination?.total || mapped.length);
       }
-      
+
       setDesignations(mapped);
     } catch (e: any) {
       setError(e?.message || 'Failed to load designations');

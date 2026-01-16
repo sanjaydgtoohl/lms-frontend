@@ -16,6 +16,7 @@ import { fetchCallStatuses, updateCallStatus } from '../../services/CallStatus';
 
 interface Lead {
   id: string;
+  agencyName: string;
   brandName: string;
   contactPerson: string;
   phoneNumber: string;
@@ -255,6 +256,7 @@ const AllLeads: React.FC = () => {
       const resp = await listLeads(currentPage, itemsPerPage, filters);
       const items = (resp.data || []).map((it: any) => ({
           id: it.id ? `#${String(it.id)}` : '#0',
+          agencyName: it.agency?.name || it.agency_name || '',
           brandName: it.brand_name || it.brand?.name || String(it.brand_id || ''),
           contactPerson: it.contact_person || it.name || '',
           phoneNumber: Array.isArray(it.mobile_number) ? (it.mobile_number[0] || '') : (it.mobile_number || ''),
@@ -293,24 +295,29 @@ const AllLeads: React.FC = () => {
 
   const columns = ([
     { key: 'sr', header: 'S.No.', render: (it: Lead) => String(startIndex + currentData.indexOf(it) + 1), className: 'text-left whitespace-nowrap' },
-    { key: 'brandName', header: 'Brand Name', render: (it: Lead) => it.brandName, className: 'max-w-[180px] overflow-hidden text-ellipsis whitespace-nowrap' },
-    { key: 'contactPerson', header: 'Contact Person', render: (it: Lead) => it.contactPerson, className: 'max-w-[160px] overflow-hidden text-ellipsis whitespace-nowrap' },
-    { key: 'phoneNumber', header: 'Phone Number', render: (it: Lead) => it.phoneNumber, className: 'whitespace-nowrap' },
-    { key: 'subSource', header: 'Sub-Source', render: (it: Lead) => it.subSource, className: 'whitespace-nowrap' },
-    { key: 'assignBy', header: 'Assign By', render: (it: Lead) => it.assignBy, className: 'whitespace-nowrap' },
+    { key: 'agencyName', header: 'Agency Name', render: (it: Lead) => it.agencyName || '-', className: 'max-w-[180px] overflow-hidden text-ellipsis whitespace-nowrap' },
+    { key: 'brandName', header: 'Brand Name', render: (it: Lead) => it.brandName || '-', className: 'max-w-[180px] overflow-hidden text-ellipsis whitespace-nowrap' },
+    { key: 'contactPerson', header: 'Contact Person', render: (it: Lead) => it.contactPerson || '-', className: 'max-w-[160px] overflow-hidden text-ellipsis whitespace-nowrap' },
+    { key: 'phoneNumber', header: 'Phone Number', render: (it: Lead) => it.phoneNumber || '-', className: 'whitespace-nowrap' },
+    { key: 'subSource', header: 'Sub-Source', render: (it: Lead) => it.subSource || '-', className: 'whitespace-nowrap' },
+    { key: 'assignBy', header: 'Assign By', render: (it: Lead) => it.assignBy || '-', className: 'whitespace-nowrap' },
     {
       key: 'assignTo',
       header: 'Assign To',
       render: (it: Lead) => (
-        <AssignDropdown
-          value={it.assignTo}
-          options={assignToOptions.map(opt => opt.name)}
-          onChange={(newSalesMan) => handleAssignToChange(it.id, newSalesMan)}
-        />
+        it.assignTo ? (
+          <AssignDropdown
+            value={it.assignTo}
+            options={assignToOptions.map(opt => opt.name)}
+            onChange={(newSalesMan) => handleAssignToChange(it.id, newSalesMan)}
+          />
+        ) : (
+          <span>-</span>
+        )
       ),
       className: 'min-w-[140px]',
     },
-    { key: 'dateTime', header: 'Date & Time', render: (it: Lead) => it.dateTime, className: 'whitespace-nowrap' },
+    { key: 'dateTime', header: 'Date & Time', render: (it: Lead) => it.dateTime || '-', className: 'whitespace-nowrap' },
     { 
       key: 'status', 
       header: 'Status', 
@@ -342,24 +349,28 @@ const AllLeads: React.FC = () => {
       key: 'callStatus',
       header: 'Call Status',
       render: (it: Lead) => (
-        <div className="min-w-[160px]">
-            <CallStatusDropdown
-              value={it.callStatus}
-              options={callStatusOptions.map(opt => opt.name)}
-              onChange={(newStatus) => handleCallStatusChange(it.id, newStatus)}
-            />
-        </div>
+        (it.callStatus && it.callStatus !== 'N/A') ? (
+          <div className="min-w-[160px]">
+              <CallStatusDropdown
+                value={it.callStatus}
+                options={callStatusOptions.map(opt => opt.name)}
+                onChange={(newStatus) => handleCallStatusChange(it.id, newStatus)}
+              />
+          </div>
+        ) : (
+          <span>-</span>
+        )
       ),
       className: 'min-w-[160px]',
     },
-    { key: 'callAttempt', header: 'Call Attempt', render: (it: Lead) => String(it.callAttempt), className: 'whitespace-nowrap' },
+    { key: 'callAttempt', header: 'Call Attempt', render: (it: Lead) => it.callAttempt ? String(it.callAttempt) : '-', className: 'whitespace-nowrap' },
     { 
       key: 'comment', 
       header: 'Comment', 
       render: (it: Lead) => (
         <div
           className="cursor-help max-w-[220px]"
-          onMouseEnter={(e) => showTooltip(e, it.comment)}
+          onMouseEnter={(e) => showTooltip(e, it.comment || '-')}
           onMouseLeave={() => hideTooltip()}
         >
           <div
@@ -373,7 +384,7 @@ const AllLeads: React.FC = () => {
               overflowWrap: 'break-word'
             }}
           >
-            {it.comment}
+            {it.comment || '-'}
           </div>
         </div>
       ),

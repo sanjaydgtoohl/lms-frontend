@@ -38,7 +38,7 @@ const MeetingSchedule: React.FC = () => {
 
   const [lead, setLead] = useState<string>('');
   const [meetingType, setMeetingType] = useState<string>('');
-  const [attendees, setAttendees] = useState<Array<string | { value: string }>>([]);
+  const [attendees, setAttendees] = useState<string[]>([]);
   const [date, setDate] = useState<Date | null>(null);
   const [time, setTime] = useState<Date | null>(null);
   const [title, setTitle] = useState<string>('');
@@ -76,7 +76,7 @@ const MeetingSchedule: React.FC = () => {
         const leadsResponse = await listLeads(1, 100);
         const leadOpts = leadsResponse.data.map((leadItem: any) => ({
           value: String(leadItem.id),
-          label: leadItem.name || leadItem.contact_person || `Lead ${leadItem.id}`,
+          label: `${leadItem.name || leadItem.contact_person || `Lead ${leadItem.id}`} #${leadItem.id}`,
         }));
         setLeadOptions(leadOpts);
 
@@ -84,7 +84,7 @@ const MeetingSchedule: React.FC = () => {
         const { data: usersData } = await listUsers(1, 100);
         const attendeeOpts = usersData.map((user: any) => ({
           value: String(user.id),
-          label: user.name || user.email || 'Unknown',
+          label: `${user.name || user.email || 'Unknown'} #${user.id}`,
         }));
         setAttendeesOptions(attendeeOpts);
       } catch (error) {
@@ -118,18 +118,26 @@ const MeetingSchedule: React.FC = () => {
     }
 
     try {
+      // Parse attendees - convert all to integers
+      const attendeeIds = attendees
+        .map((id: any) => {
+          // Handle format like #USR001 or #001 by extracting the numeric part
+          if (typeof id === 'string' && id.startsWith('#')) {
+            const numericPart = id.replace(/[^0-9]/g, '');
+            return Number(numericPart);
+          }
+          return Number(id);
+        })
+        .filter((id) => Number.isInteger(id) && id > 0);
+
+      console.log('Raw attendees state:', attendees);
+      console.log('Converted attendee IDs:', attendeeIds);
+
       // Prepare payload for API
       const payload = {
         title,
         lead_id: String(lead),
-        attendees_id: attendees
-          .map((id) => {
-            if (typeof id === 'object' && id !== null && 'value' in id) {
-              return Number(id.value);
-            }
-            return Number(id);
-          })
-          .filter((id) => Number.isInteger(id)), // Only keep valid integers
+        attendees_id: attendeeIds,  // Array of integer IDs
         type: meetingType,
         location,
         agenda,
@@ -139,13 +147,15 @@ const MeetingSchedule: React.FC = () => {
         status: 1,
       };
 
+      console.log('Sending payload:', JSON.stringify(payload, null, 2));
+
       // Call the API service
       const response = await createMeeting(payload);
       console.log('Meeting created successfully', response);
       // Show success message
       showSuccess('Meeting scheduled successfully!');
       // Navigate back to lead management list
-      navigate('/lead-management');
+      navigate('/lead-management/all-leads');
     } catch (error: any) {
       console.error('Error saving meeting:', error);
       showSuccess(`Error: ${error.message || 'Failed to save meeting'}`);
@@ -211,9 +221,13 @@ const MeetingSchedule: React.FC = () => {
                     <SelectField
                       placeholder="Select Attendees"
                       options={attendeesOptions}
-                      value={attendees.map(a => typeof a === 'string' ? a : a.value)}
-                      onChange={(v) => {
-                        const arr = Array.isArray(v) ? v : [v];
+                      value={attendees}
+                      onChange={(v: any) => {
+                        console.log('Attendees onChange raw value:', v);
+                        let arr: string[] = Array.isArray(v) ? v : (v ? [v] : []);
+                        // Ensure we're storing the actual values (IDs), not objects
+                        arr = arr.map(item => typeof item === 'object' && item !== null && 'value' in item ? (item as any).value : String(item));
+                        console.log('Attendees parsed array:', arr);
                         setAttendees(arr);
                         if (errors.attendees && arr.length) setErrors({ ...errors, attendees: undefined });
                       }}

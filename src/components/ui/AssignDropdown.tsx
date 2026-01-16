@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { createPortal } from 'react-dom';
 import AssignButton from './AssignButton';
 
 interface AssignDropdownProps {
@@ -10,53 +10,66 @@ interface AssignDropdownProps {
 
 const AssignDropdown: React.FC<AssignDropdownProps> = ({ value, options, onChange }) => {
   const [open, setOpen] = useState(false);
-  const [placement, setPlacement] = useState<'top' | 'bottom'>('bottom');
   const ref = useRef<HTMLDivElement>(null);
+  const portalRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (ref.current && !ref.current.contains(target) && portalRef.current && !portalRef.current.contains(target)) {
+        setOpen(false);
+      }
     };
     if (open) document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [open]);
 
   // compute placement (top or bottom) when opening based on viewport space
-  useEffect(() => {
-    if (!open) return;
+  const handleToggle = () => {
+    if (open) {
+      setOpen(false);
+      return;
+    }
+
     const el = ref.current;
     if (!el) return;
+
     const rect = el.getBoundingClientRect();
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
     const DROPDOWN_EST_HEIGHT = 220; // estimate dropdown height
+
     // prefer top if not enough space below but there is space above
-    if (spaceBelow < DROPDOWN_EST_HEIGHT && spaceAbove > spaceBelow) {
-      setPlacement('top');
-    } else {
-      setPlacement('bottom');
-    }
-  }, [open]);
+    const newPlacement = spaceBelow < DROPDOWN_EST_HEIGHT && spaceAbove > spaceBelow ? 'top' : 'bottom';
+
+    // Calculate fixed positioning
+    setPosition({
+      top: newPlacement === 'bottom' ? rect.bottom + window.scrollY + 8 : rect.top + window.scrollY - DROPDOWN_EST_HEIGHT - 8,
+      left: rect.left + window.scrollX,
+    });
+
+    setOpen(true);
+  };
 
   return (
     <div ref={ref} className="relative inline-block w-full">
       <AssignButton
         value={value}
-        onClick={() => setOpen((o) => !o)}
+        onClick={handleToggle}
         isActive={open}
       />
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: placement === 'bottom' ? 8 : -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: placement === 'bottom' ? 8 : -8 }}
-            transition={{ duration: 0.18 }}
-            className={
-              `absolute z-20 left-0 w-44 bg-white shadow-lg rounded-xl border border-gray-200 transition-all ` +
-              (placement === 'bottom' ? 'mt-2 top-full' : 'mb-2 bottom-full')
-            }
-          >
+      {open && createPortal(
+        <div
+          ref={portalRef}
+          className="fixed z-50 bg-white shadow-lg rounded-xl border border-gray-200"
+          style={{
+            top: position.top,
+            left: position.left,
+            width: 'auto',
+            minWidth: '180px',
+          }}
+        >
             <ul
               tabIndex={-1}
               role="listbox"
@@ -96,9 +109,9 @@ const AssignDropdown: React.FC<AssignDropdownProps> = ({ value, options, onChang
                 background: #fff;
               }
             `}</style>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>,
+        document.body
+      )}
     </div>
   );
 };

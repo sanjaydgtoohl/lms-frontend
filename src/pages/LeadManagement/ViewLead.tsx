@@ -26,7 +26,7 @@ const ViewLead: React.FC = () => {
   }, [id]);
 
   const handleBack = () => {
-    navigate(ROUTES.LEAD_MANAGEMENT);
+    navigate('/lead-management/all-leads');
   };
   const handleMeetingSchedule = () => {
     navigate(ROUTES.LEAD.MEETING_SCHEDULE);
