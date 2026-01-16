@@ -46,7 +46,8 @@ const ENDPOINTS = {
     DELETE: (id: string | number) => `/agencies/${id}`,
   },
   AGENCY_CLIENTS: {
-    LIST: '/brands', // Assuming clients are brands in your API
+    // backend exposes a dedicated list route for brands
+    LIST: '/brands/list', // clients mapped to brands; use `/brands/list` for full list
     DETAIL: (id: string | number) => `/brands/${id}`,
     CREATE: '/brands',
     UPDATE: (id: string | number) => `/brands/${id}`,

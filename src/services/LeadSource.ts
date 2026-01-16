@@ -21,7 +21,9 @@ const ENDPOINTS = {
 async function handleResponse<T>(res: any): Promise<T> {
   if (!res || !res.success) {
     const error = new Error((res && (res.message || 'Request failed')) || 'Request failed');
-    try { handleApiError(error); } catch {}
+    // attach original response to allow UI to extract field-level errors
+    (error as any).responseData = res;
+    try { handleApiError(error, false); } catch {}
     throw error;
   }
   return res.data as T;
@@ -46,8 +48,9 @@ export async function listLeadSources(page = 1, perPage = 10): Promise<LeadSourc
   const res = await apiClient.get<LeadSourceItem[]>(`${ENDPOINTS.LIST}?page=${page}&per_page=${perPage}`);
   const items = (res.data || []).map((it: any, idx: number) => {
     const id = it.id ?? `LS${String(idx + 1).padStart(3, '0')}`;
-    const source = it.lead_source ?? '';
+    // For sub-sources, 'name' is the sub-source name, 'lead_source' is the parent source name (if available)
     const subSource = it.name ?? '';
+    const source = it.lead_source ?? '';
     const rawCreated = it.created_at ?? '';
     let dateTime = '';
     if (rawCreated) {
@@ -126,7 +129,7 @@ export async function listLeadSubSourcesBySourceId(
   perPage = 1000
 ): Promise<LeadSourceListResponse> {
   const res = await apiClient.get<LeadSourceItem[]>(
-    `${ENDPOINTS.LIST}?lead_source_id=${sourceId}&page=${page}&per_page=${perPage}`
+    `/lead-sub-sources/list?lead_source_id=${sourceId}&page=${page}&per_page=${perPage}`
   );
   const items = (res.data || []).map((it: any, idx: number) => {
     const id = it.id ?? `LSS${String(idx + 1).padStart(3, '0')}`;

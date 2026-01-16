@@ -7,7 +7,13 @@ import { ROUTES } from '../../constants';
 import LeadManagementSection from '../../components/forms/CreateLead/LeadManagementSection';
 import ContactPersonsCard from '../../components/forms/CreateLead/ContactPersonsCard';
 import AssignPriorityCard from '../../components/forms/CreateLead/AssignPriorityCard';
+import { fetchLeadById, fetchLeadHistory } from '../../services/ViewLead';
+import { fetchBrands, fetchAgencies } from '../../services/CreateLead';
 import { Button } from '../../components/ui';
+import { updateLead } from '../../services/AllLeads';
+import { showSuccess, showError } from '../../utils/notifications';
+
+import CommentSection from '../../components/forms/CreateLead/CommentSection';
 
 interface Lead {
   id: string;
@@ -34,56 +40,78 @@ interface Lead {
     postalCode: string;
   }>;
   assignTo?: string;
-  priority?: 'high' | 'medium' | 'low';
+  assignToName?: string;
+  priority?: string;
   callFeedback?: string;
+  comment?: string;
 }
-
 const EditLead: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [lead, setLead] = useState<Lead | null>(null);
   const [selectedOption, setSelectedOption] = useState<'brand' | 'agency'>('brand');
+  const [dropdownValue, setDropdownValue] = useState<string>('');
+  const [options, setOptions] = useState<{ value: string; label: string }[]>([]);
+  const [optionsLoading, setOptionsLoading] = useState(false);
+  const [optionsError, setOptionsError] = useState<string | null>(null);
+  const [history, setHistory] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   useEffect(() => {
     const fetchLead = async () => {
       try {
         setIsLoading(true);
-        // TODO: Replace with actual API call
-        // const response = await fetch(\`/api/leads/\${id}\`);
-        // const data = await response.json();
-        
-        // Mock data for now
-        const mockLead: Lead = {
-          id: id || '',
-          selectedOption: 'brand',
-          brandId: '1',
-          contacts: [{
-            id: '1',
-            fullName: 'John Doe',
-            profileUrl: '',
-            email: 'john@example.com',
-            mobileNo: '1234567890',
-            mobileNo2: '',
-            showSecondMobile: false,
-            type: 'Primary',
-            designation: 'Manager',
-            agencyBrand: 'Nike',
-            subSource: 'Website',
-            department: 'Marketing',
-            country: 'USA',
-            state: 'CA',
-            city: 'San Francisco',
-            zone: 'West',
-            postalCode: '94105'
-          }],
-          assignTo: 'Sales Man 1',
-          priority: 'high',
-          callFeedback: 'Interested'
+
+        if (!id) {
+          setLead(null);
+          return;
+        }
+
+        const apiLead = await fetchLeadById(id);
+
+        if (!apiLead) {
+          setLead(null);
+          return;
+        }
+
+        const contact = {
+          id: String(apiLead.id),
+          fullName: apiLead.name || '',
+          profileUrl: apiLead.profile_url || '',
+          email: apiLead.email || '',
+          mobileNo: Array.isArray(apiLead.mobile_number) ? String(apiLead.mobile_number[0] || '') : '',
+          mobileNo2: Array.isArray(apiLead.mobile_number) ? String(apiLead.mobile_number[1] || '') : '',
+          showSecondMobile: Array.isArray(apiLead.mobile_number) && apiLead.mobile_number.length > 1,
+          type: apiLead.type || '',
+          designation: apiLead.designation?.id ? String(apiLead.designation.id) : '',
+          agencyBrand: apiLead.brand?.name || (apiLead.agency ? apiLead.agency.name : ''),
+          subSource: apiLead.sub_source?.id ? String(apiLead.sub_source.id) : '',
+          department: apiLead.department?.id ? String(apiLead.department.id) : '',
+          country: apiLead.country?.id ? String(apiLead.country.id) : '',
+          state: apiLead.state?.id ? String(apiLead.state.id) : '',
+          city: apiLead.city?.id ? String(apiLead.city.id) : '',
+          zone: apiLead.zone?.id ? String(apiLead.zone.id) : '',
+          postalCode: apiLead.postal_code || '',
         };
 
-        setLead(mockLead);
-        setSelectedOption(mockLead.selectedOption);
+        const mappedLead: Lead = {
+          id: String(apiLead.id),
+          selectedOption: apiLead.brand_id ? 'brand' : (apiLead.agency_id ? 'agency' : 'brand'),
+          brandId: apiLead.brand_id ? String(apiLead.brand_id) : undefined,
+          agencyId: apiLead.agency_id ? String(apiLead.agency_id) : undefined,
+          contacts: [contact],
+          assignTo: apiLead.assigned_user?.id ? String(apiLead.assigned_user.id) : undefined,
+          assignToName: apiLead.assigned_user?.name || undefined,
+          priority: apiLead.priority?.slug || (apiLead.priority?.id ? String(apiLead.priority.id) : undefined),
+          callFeedback: apiLead.call_status || undefined,
+          comment: apiLead.comment || '',
+        };
+
+        setLead(mappedLead);
+        setSelectedOption(mappedLead.selectedOption);
+        // set initial dropdownValue from mapped lead
+        setDropdownValue(mappedLead.selectedOption === 'brand' ? (mappedLead.brandId || '') : (mappedLead.agencyId || ''));
       } catch (error) {
         console.error('Error fetching lead:', error);
         // TODO: Show error notification
@@ -97,14 +125,135 @@ const EditLead: React.FC = () => {
     }
   }, [id]);
 
+  // Fetch lead history when lead is loaded
+  useEffect(() => {
+    let mounted = true;
+    const loadHistory = async () => {
+      if (!lead?.id) return;
+      setHistoryLoading(true);
+      try {
+        const data = await fetchLeadHistory(lead.id);
+        if (!mounted) return;
+        setHistory(Array.isArray(data) ? data : []);
+      } catch (err) {
+        if (!mounted) return;
+        setHistory([]);
+      } finally {
+        if (!mounted) return;
+        setHistoryLoading(false);
+      }
+    };
+
+    loadHistory();
+    return () => { mounted = false; };
+  }, [lead?.id]);
+
+  // Fetch brand/agency options when selectedOption changes
+  useEffect(() => {
+    let isMounted = true;
+    setOptionsLoading(true);
+    setOptionsError(null);
+    setOptions([]);
+
+    const fetchData = async () => {
+      const fetchFn = selectedOption === 'brand' ? fetchBrands : fetchAgencies;
+      try {
+        const { data, error } = await fetchFn();
+        if (!isMounted) return;
+        if (error) {
+          setOptionsError(error as string);
+          setOptions([]);
+        } else {
+          const fetched = Array.isArray(data) ? data.map((it: any) => ({ value: String(it.id), label: it.name })) : [];
+          // If there's an existing selected value that's not present in fetched options,
+          // add it using the lead's stored name so the select shows the current value.
+          if (dropdownValue) {
+            const exists = fetched.find((o: any) => o.value === dropdownValue);
+            if (!exists) {
+              // Try to get a label from the currently loaded lead
+              const existingLabel = selectedOption === 'brand'
+                ? (lead?.contacts?.[0]?.agencyBrand || lead?.brandId)
+                : (lead?.contacts?.[0]?.agencyBrand || lead?.agencyId);
+              fetched.unshift({ value: dropdownValue, label: String(existingLabel || dropdownValue) });
+            }
+          }
+          setOptions(fetched);
+        }
+      } catch (err) {
+        if (!isMounted) return;
+        setOptionsError('Failed to load options');
+        setOptions([]);
+      } finally {
+        if (!isMounted) return;
+        setOptionsLoading(false);
+      }
+    };
+
+    fetchData();
+
+    return () => { isMounted = false; };
+  }, [selectedOption, dropdownValue, lead]);
+
+  // Keep lead's brandId/agencyId in sync when dropdownValue changes
+  useEffect(() => {
+    setLead(prev => {
+      if (!prev) return prev;
+      return selectedOption === 'brand' ? { ...prev, brandId: dropdownValue } : { ...prev, agencyId: dropdownValue };
+    });
+  }, [dropdownValue, selectedOption]);
+
   const handleSubmit = async () => {
+    if (!lead) return;
+
+    const extractNumericId = (val?: string | number) => {
+      if (val === undefined || val === null) return undefined;
+      const s = String(val);
+      const digits = s.replace(/\D+/g, '');
+      return digits ? Number(digits) : undefined;
+    };
+
+    // SUB_SOURCE_MAP removed, subSource now contains the ID directly
+
     try {
-      // TODO: Implement actual update logic
-      console.log('Updating lead...', { id, lead });
+      const contact = lead.contacts && lead.contacts.length ? lead.contacts[0] : null;
+
+      const mobile_number: string[] = [];
+      if (contact?.mobileNo) mobile_number.push(contact.mobileNo);
+      if (contact?.mobileNo2) mobile_number.push(contact.mobileNo2);
+
+      // Fix: Ensure call feedback ID is submitted
+      const callStatusId = extractNumericId(lead.callFeedback);
+
+      const payload: Record<string, any> = {
+        name: contact?.fullName || undefined,
+        email: contact?.email || null,
+        profile_url: contact?.profileUrl || null,
+        mobile_number: mobile_number.length ? mobile_number : undefined,
+        current_assign_user: extractNumericId(lead.assignTo),
+        priority_id: lead.priority ? extractNumericId(lead.priority) : undefined,
+        type: contact?.type || undefined,
+        designation_id: contact?.designation ? Number(contact.designation) : undefined,
+        department_id: contact?.department ? Number(contact.department) : undefined,
+        sub_source_id: contact?.subSource ? Number(contact.subSource) : undefined,
+        country_id: contact?.country ? Number(contact.country) : undefined,
+        state_id: contact?.state ? Number(contact.state) : undefined,
+        city_id: contact?.city ? Number(contact.city) : undefined,
+        zone_id: contact?.zone ? Number(contact.zone) : undefined,
+        postal_code: contact?.postalCode || undefined,
+        comment: typeof lead.comment === 'string' ? lead.comment : (lead.comment ? String(lead.comment) : ''),
+        call_status_id: callStatusId,
+      };
+
+      if (selectedOption === 'brand') payload.brand_id = lead.brandId || undefined;
+      else payload.agency_id = lead.agencyId || undefined;
+
+      await updateLead(id || '', payload);
+      // Assume updateLead throws on error or returns the updated item
+      showSuccess('Lead updated successfully.');
       navigate(ROUTES.LEAD_MANAGEMENT);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating lead:', error);
-      // TODO: Show error notification
+      showError(error?.message || 'Failed to update lead');
     }
   };
 
@@ -131,22 +280,24 @@ const EditLead: React.FC = () => {
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
       <MasterCreateHeader
-        onClose={() => navigate(ROUTES.LEAD_MANAGEMENT)}
+        onClose={() => navigate('/lead-management/all-leads')}
       />
 
       <div className="space-y-6">
         <LeadManagementSection
           selectedOption={selectedOption}
-          onSelectOption={setSelectedOption}
-          value={selectedOption === 'brand' ? lead.brandId : lead.agencyId}
-          onChange={(value) => {
-            setLead(prev => {
-              if (!prev) return prev;
-              return selectedOption === 'brand'
-                ? { ...prev, brandId: value }
-                : { ...prev, agencyId: value };
-            });
+          onSelectOption={(opt) => {
+            setSelectedOption(opt);
+            // when switching, keep dropdownValue in sync with lead
+            setDropdownValue(opt === 'brand' ? (lead?.brandId || '') : (lead?.agencyId || ''));
           }}
+          value={dropdownValue}
+          onChange={(value) => {
+            setDropdownValue(value);
+          }}
+          options={options}
+          loading={optionsLoading}
+          error={optionsError}
         />
 
         <ContactPersonsCard
@@ -158,10 +309,19 @@ const EditLead: React.FC = () => {
 
         <AssignPriorityCard
           assignTo={lead.assignTo}
+          assignedLabel={lead.assignToName}
           priority={lead.priority}
           callFeedback={lead.callFeedback}
           onChange={({ assignTo, priority, callFeedback }) => {
             setLead(prev => prev ? { ...prev, assignTo, priority, ...(callFeedback !== undefined ? { callFeedback } : {}) } : null);
+          }}
+        />
+
+        {/* Comment Card Section */}
+        <CommentSection
+          value={lead.comment || ''}
+          onChange={(value) => {
+            setLead(prev => prev ? { ...prev, comment: value } : null);
           }}
         />
 
@@ -200,32 +360,57 @@ const EditLead: React.FC = () => {
         <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
           <div className="px-4 py-3">
             <div className="overflow-y-auto max-h-[280px]">
-              {/* Build table rows from lead.contacts or fallback sample */}
+              {/* Render call history rows from API (fallback to sample rows) */}
               {
                 (() => {
-                  const rows = lead.contacts && lead.contacts.length > 0 ? lead.contacts.map((c, i) => ({
-                    id: c.id,
-                    assignTo: lead.assignTo || '-',
-                    callStatus: i % 2 === 0 ? 'Not Interested' : 'Meeting Done',
-                    lastCallStatus: '02-07-2025 22:23',
-                    meetingDateTime: i % 2 === 0 ? '-' : '02-07-2025 22:23',
-                    comment: 'According to Form'
+                  const formatDateTime = (date: string | null | undefined) => {
+                    if (!date) return '-';
+                    try {
+                      return new Date(date).toLocaleString('en-IN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true
+                      });
+                    } catch {
+                      return '-';
+                    }
+                  };
+
+                  const rows = history && history.length > 0 ? history.map((h: any) => ({
+                    id: String(h.id || h.uuid),
+                    assignedTo: h.assigned_user?.name || '-',
+                    currentUser: h.current_user?.name || '-',
+                    priority: h.priority?.name || h.priority?.slug || '-',
+                    status: h.status?.name || '-',
+                    callStatus: h.call_status?.name || '-',
+                    meetingDateTime: h.meeting_date ? formatDateTime(h.meeting_date) : '-',
+                    createdAt: formatDateTime(h.created_at),
+                    comment: h.lead_comment || '-'
                   })) : Array.from({ length: 3 }).map((_, i) => ({
                     id: String(i),
-                    assignTo: lead.assignTo || '-',
+                    assignedTo: lead.assignToName || lead.assignTo || '-',
+                    currentUser: '-',
+                    priority: '-',
+                    status: '-',
                     callStatus: 'Not Interested',
-                    lastCallStatus: '02-07-2025 22:23',
                     meetingDateTime: '-',
+                    createdAt: '-',
                     comment: 'According to Form'
                   }));
 
                   type Row = typeof rows[number];
 
                   const columns: Column<Row>[] = [
-                    { key: 'assignTo', header: 'Assigned To', render: (r) => r.assignTo, className: 'text-left whitespace-nowrap' },
+                    { key: 'assignedTo', header: 'Assigned To', render: (r) => r.assignedTo, className: 'text-left whitespace-nowrap' },
+                    { key: 'currentUser', header: 'Current User', render: (r) => r.currentUser, className: 'whitespace-nowrap' },
+                    { key: 'priority', header: 'Priority', render: (r) => r.priority, className: 'whitespace-nowrap' },
+                    { key: 'status', header: 'Status', render: (r) => r.status, className: 'whitespace-nowrap' },
                     { key: 'callStatus', header: 'Call Status', render: (r) => r.callStatus, className: 'whitespace-nowrap' },
-                    { key: 'lastCallStatus', header: 'Last Call Status', render: (r) => r.lastCallStatus, className: 'whitespace-nowrap' },
                     { key: 'meetingDateTime', header: 'Meeting Date & Time', render: (r) => r.meetingDateTime, className: 'whitespace-nowrap' },
+                    { key: 'createdAt', header: 'Created At', render: (r) => r.createdAt, className: 'whitespace-nowrap' },
                     { key: 'comment', header: 'Comment', render: (r) => r.comment, className: 'max-w-[220px] overflow-hidden text-ellipsis whitespace-nowrap' },
                   ];
 
@@ -234,7 +419,8 @@ const EditLead: React.FC = () => {
                               data={rows}
                               columns={columns}
                               startIndex={0}
-                              loading={false}
+                              loading={historyLoading}
+                              desktopOnMobile={true}
                               keyExtractor={(it) => it.id}
                             />
                   );

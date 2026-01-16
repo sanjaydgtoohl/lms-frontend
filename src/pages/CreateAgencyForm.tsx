@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Plus, Trash2 } from 'lucide-react';
 import { MasterFormHeader, SelectField, MultiSelectDropdown } from '../components/ui';
 import { showSuccess, showError } from '../utils/notifications';
+import { updateAgency } from '../services/AgencyMaster';
 
 // --- Types used by this form
 interface ParentAgency {
@@ -23,6 +24,8 @@ interface ChildAgency {
 interface Props {
   onClose: () => void;
   onSave?: (payload: { parent: ParentAgency; children: Array<{ name: string; type: string; client: string[] }> }) => Promise<any> | any;
+  mode?: 'create' | 'edit';
+  initialData?: Record<string, any>;
 }
 
 // helper to create a new blank child entry
@@ -32,7 +35,7 @@ const blankChild = (): ChildAgency => ({
   type: '',
   client: [],
 });
-const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
+const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', initialData }) => {
   const [parent, setParent] = useState<ParentAgency>({ name: '', type: '', client: [] });
   const [children, setChildren] = useState<ChildAgency[]>([]);
   const childNameRefs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -75,6 +78,81 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
         if (mounted) setIsLoading(prev => ({ ...prev, agencyClients: false }));
       }
     })();
+
+    // If initialData provided (edit mode), populate the form
+    if (initialData && mode === 'edit') {
+      const parentData = initialData.parent || initialData;
+      
+      // Extract agency type - could be nested object or string
+      let parentTypeId = '';
+      const rawParentType = parentData.type || parentData.agency_type;
+      if (typeof rawParentType === 'object' && rawParentType?.id) {
+        parentTypeId = String(rawParentType.id);
+      } else if (rawParentType) {
+        parentTypeId = String(rawParentType);
+      }
+
+      // Extract agency clients - could be array of objects or array of ids
+      // Also check for brand data in the response
+      let parentClientIds: string[] = [];
+      let rawParentClient = parentData.client || parentData.clients || [];
+      
+      // If no client data but brand data exists, use brand IDs as clients
+      if ((!rawParentClient || rawParentClient.length === 0) && parentData.brand && Array.isArray(parentData.brand)) {
+        rawParentClient = parentData.brand;
+      }
+      
+      if (Array.isArray(rawParentClient)) {
+        parentClientIds = rawParentClient.map((c: any) => {
+          if (typeof c === 'object' && c?.id) return String(c.id);
+          return String(c);
+        });
+      }
+
+      setParent({
+        name: parentData.name || parentData.agencyName || '',
+        type: parentTypeId,
+        client: parentClientIds,
+      });
+
+      // Handle child agencies
+      if (Array.isArray(initialData.children)) {
+        setChildren(initialData.children.map((c: any, idx: number) => {
+          // Extract child agency type
+          let childTypeId = '';
+          const rawChildType = c.type || c.agency_type;
+          if (typeof rawChildType === 'object' && rawChildType?.id) {
+            childTypeId = String(rawChildType.id);
+          } else if (rawChildType) {
+            childTypeId = String(rawChildType);
+          }
+
+          // Extract child agency clients
+          // Also check for brand data in the response
+          let childClientIds: string[] = [];
+          let rawChildClient = c.client || c.clients || [];
+          
+          // If no client data but brand data exists, use brand IDs as clients
+          if ((!rawChildClient || rawChildClient.length === 0) && c.brand && Array.isArray(c.brand)) {
+            rawChildClient = c.brand;
+          }
+          
+          if (Array.isArray(rawChildClient)) {
+            childClientIds = rawChildClient.map((cc: any) => {
+              if (typeof cc === 'object' && cc?.id) return String(cc.id);
+              return String(cc);
+            });
+          }
+
+          return {
+            id: `child-${idx}-${Date.now()}`,
+            name: c.name || '',
+            type: childTypeId,
+            client: childClientIds,
+          };
+        }));
+      }
+    }
 
     return () => { mounted = false; };
   }, []);
@@ -182,24 +260,29 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
 
       const allTypes = [parent.type, ...children.map(c => c.type)];
       allTypes.forEach(t => {
-        // t might be either the id string or the label (depending on previous state).
         const match = agencyTypes.find(a => String(a.value) === String(t) || String(a.label) === String(t));
         const typeVal = match ? String(match.value) : String(t);
         form.append('type[]', typeVal);
       });
 
-      const allClients = [parent.client, ...children.map(c => c.client)];
+      const allClients = [
+        Array.isArray(parent.client) ? parent.client : (parent.client ? [parent.client] : []),
+        ...children.map(c => Array.isArray(c.client) ? c.client : (c.client ? [c.client] : []))
+      ];
       allClients.forEach((clientsForAgency, idx) => {
         (clientsForAgency || []).forEach((clientId) => {
-          // Append as client[<index>][] to create nested arrays: client[0][], client[1][], ...
           form.append(`client[${idx}][]`, clientId);
         });
       });
 
-      // Call API to create group agency (apiClient will send FormData as multipart)
-      await createGroupAgency(form);
+      // Call appropriate API based on mode
+      if (mode === 'edit' && initialData?.id) {
+        form.append('_method', 'PUT');
+        await updateAgency(initialData.id, form);
+      } else {
+        await createGroupAgency(form);
+      }
       
-      // Also call custom onSave callback if provided (for additional processing)
       if (onSave && typeof onSave === 'function') {
         const payload = {
           parent: { ...parent, name: parent.name.trim() },
@@ -209,21 +292,45 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
         if (customRes && typeof customRes.then === 'function') await customRes;
       }
 
-      // show global success notification (same behaviour as Brand Master)
-      showSuccess('Agency created successfully');
-      // close the form and refresh listing after a short delay so user can see the toast
+      showSuccess(mode === 'edit' ? 'Agency updated successfully' : 'Agency created successfully');
       setTimeout(() => {
         onClose();
         window.location.reload();
       }, 1200);
-    } catch (err) {
-      console.error('Submit failed', err);
-      // Show an error toast as well
-      try {
-        showError((err as any)?.message || 'Failed to create agency');
-      } catch (e) {
-        // ignore notification errors
+    } catch (err: any) {
+      // Handle API validation errors for parent and child agency names (name.0, name.1, ...)
+      const responseData = err?.responseData;
+      if (responseData?.errors && typeof responseData.errors === 'object') {
+        const newParentErrors: { name?: string; type?: string; client?: string } = {};
+        const newChildErrors: Record<string, { name?: string; type?: string; client?: string }> = {};
+        // Map 'name.0' to parent agency name error, 'name.1' to first child, etc.
+        Object.keys(responseData.errors).forEach((key) => {
+          const match = key.match(/^name\.(\d+)$/);
+          if (match) {
+            const idx = parseInt(match[1], 10);
+            if (idx === 0) {
+              newParentErrors.name = Array.isArray(responseData.errors[key]) ? responseData.errors[key].join(' ') : String(responseData.errors[key]);
+            } else {
+              // idx-1 because children array starts after parent
+              const child = children[idx - 1];
+              if (child) {
+                newChildErrors[child.id] = {
+                  ...(newChildErrors[child.id] || {}),
+                  name: Array.isArray(responseData.errors[key]) ? responseData.errors[key].join(' ') : String(responseData.errors[key]),
+                };
+              }
+            }
+          }
+        });
+        setParentErrors(prev => ({ ...prev, ...newParentErrors }));
+        setChildErrors(prev => ({ ...prev, ...newChildErrors }));
+        // Do not show global error toast for this case
+        return;
       }
+      console.error('Submit failed', err);
+      try {
+        showError((err as any)?.message || `Failed to ${mode === 'edit' ? 'update' : 'create'} agency`);
+      } catch (e) {}
     } finally {
       setSubmitting(false);
     }
@@ -239,8 +346,8 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
     >
       {/* global notification used via showSuccess/showError; local popup removed */}
 
-      <div className="space-y-6 p-6">
-        <MasterFormHeader onBack={onClose} title="Create Group Agency" />
+      <div className="">
+        <MasterFormHeader onBack={onClose} title={mode === 'edit' ? 'Edit Group Agency' : 'Create Group Agency'} />
 
   <div className="w-full max-w-full mx-auto bg-white rounded-2xl shadow-lg border border-[#E3E8EF] overflow-hidden">
           <div className="p-8 bg-[#F9FAFB] space-y-8">
@@ -264,12 +371,12 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-[#667085] mb-1">Agency Type</label>
+                  <label className="block text-sm text-[#667085] mb-1">Agency Type <span className="text-red-500">*</span></label>
                     <SelectField
                       name="parentType"
                       value={parent.type}
                       options={agencyTypes}
-                      onChange={(v) => { setParent(prev => ({ ...prev, type: v })); setParentErrors(prev => ({ ...prev, type: undefined })); }}
+                      onChange={(v) => { setParent(prev => ({ ...prev, type: typeof v === 'string' ? v : v[0] ?? '' })); setParentErrors(prev => ({ ...prev, type: undefined })); }}
                       placeholder="Please Select Agency Type"
                       inputClassName={parentErrors.type ? 'border-red-500' : 'border-[#D0D5DD]'}
                     />
@@ -279,13 +386,13 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
                 </div>
 
                 <div className="mb-2">
-                  <label className="block text-sm text-[#667085] mb-1">Agency Client</label>
+                  <label className="block text-sm text-[#667085] mb-1">Agency Client <span className="text-red-500">*</span></label>
                   <div className="w-full">
                     <MultiSelectDropdown
                       name="parentClient"
                       value={parent.client}
                       options={agencyClients.map((c: any) => ({ value: String(c.id), label: c.name }))}
-                      onChange={(v) => { setParent(prev => ({ ...prev, client: v })); setParentErrors(prev => ({ ...prev, client: undefined })); }}
+                       onChange={(v) => { setParent(prev => ({ ...prev, client: Array.isArray(v) ? v : [v] })); setParentErrors(prev => ({ ...prev, client: undefined })); }}
                       placeholder={isLoading.agencyClients ? 'Loading clients...' : 'Search or select option'}
                       inputClassName={`border ${parentErrors.client ? 'border-red-500' : 'border-[#D0D5DD]'} px-3 py-2 min-h-[44px]`}
                       disabled={isLoading.agencyClients}
@@ -348,12 +455,12 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
                         )}
                       </div>
                       <div>
-                        <label className="block text-sm text-[#667085] mb-1">Agency Type</label>
+                        <label className="block text-sm text-[#667085] mb-1">Agency Type <span className="text-red-500">*</span></label>
                         <SelectField
                           name={`child-${c.id}-type`}
                           value={c.type}
                           options={agencyTypes}
-                          onChange={(v) => { handleUpdateChild(c.id, 'type', v); setChildErrors(prev => ({ ...prev, [c.id]: { ...prev[c.id], type: undefined } })); }}
+                          onChange={(v) => { handleUpdateChild(c.id, 'type', typeof v === 'string' ? v : v[0] ?? ''); setChildErrors(prev => ({ ...prev, [c.id]: { ...prev[c.id], type: undefined } })); }}
                           placeholder="Please Select Agency Type"
                           inputClassName={childErrors[c.id]?.type ? 'border-red-500' : 'border-[#D0D5DD]'}
                         />
@@ -362,13 +469,13 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
                         )}
                       </div>
                       <div>
-                        <label className="block text-sm text-[#667085] mb-1">Agency Client</label>
+                        <label className="block text-sm text-[#667085] mb-1">Agency Client <span className="text-red-500">*</span></label>
                         <div className="w-full">
                           <MultiSelectDropdown
                             name={`child-${c.id}-client`}
-                            value={c.client}
+                            value={Array.isArray(c.client) ? c.client : (c.client ? [c.client] : [])}
                             options={agencyClients.map((cc: any) => ({ value: String(cc.id), label: cc.name }))}
-                            onChange={(v) => { handleUpdateChild(c.id, 'client', v); setChildErrors(prev => ({ ...prev, [c.id]: { ...prev[c.id], client: undefined } })); }}
+                             onChange={(v) => { handleUpdateChild(c.id, 'client', Array.isArray(v) ? v : [v]); setChildErrors(prev => ({ ...prev, [c.id]: { ...prev[c.id], client: undefined } })); }}
                             placeholder={isLoading.agencyClients ? 'Loading clients...' : 'Search or select option'}
                             inputClassName={`border ${childErrors[c.id]?.client ? 'border-red-500' : 'border-[#D0D5DD]'} px-3 py-2 min-h-[44px]`}
                             disabled={isLoading.agencyClients}
@@ -395,7 +502,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave }) => {
                 data-btn-label="Save"
                 style={{ backgroundColor: 'var(--color-orange-400)' }}
               >
-                {submitting ? 'Saving...' : 'Save'}
+                {submitting ? (mode === 'edit' ? 'Updating...' : 'Saving...') : (mode === 'edit' ? 'Update' : 'Save')}
               </button>
             </div>
           </div>

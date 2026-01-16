@@ -7,6 +7,7 @@ import Table, { type Column } from '../components/ui/Table';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants';
 import { MasterHeader, MasterFormHeader, NotificationPopup } from '../components/ui';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
 import SearchBar from '../components/ui/SearchBar';
 import {
   listDesignations,
@@ -78,7 +79,8 @@ const CreateDesignationForm: React.FC<{
     } catch (err) {
       const message = (err as any)?.message || 'Failed to create designation';
       setError(message);
-      showError(message);
+      // If parent provided `onSave` (inline mode) we only show inline field error.
+      if (!onSave) showError(message);
     }
   };
 
@@ -137,10 +139,12 @@ const CreateDesignationForm: React.FC<{
 const DesignationMaster: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);
-  const [showDeleteToast, setShowDeleteToast] = useState(false);
+  
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [successMessage, setSuccessMessage] = useState('Designation created successfully');
   const itemsPerPage = 10;
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   // Store designations in state fetched from API
   const [designations, setDesignations] = useState<Designation[]>([]);
@@ -179,8 +183,33 @@ const DesignationMaster: React.FC = () => {
 	  window.location.reload();
 	}, 1800);
       } catch (e: any) {
-        showError(e?.message || 'Failed to create designation');
-        throw e;
+        // Try to extract field-specific validation messages from the API error
+        let message = 'Failed to create designation';
+        try {
+          if (e) {
+            // Axios-like error with server payload on `responseData` (from our apiClient)
+            const resp = e.responseData || e.response || e;
+            // Prefer response message
+            if (resp && resp.message) message = String(resp.message);
+
+            // Look for structured `errors` object (e.g. { title: ["..."] })
+            const errorsObj = resp && (resp.errors || resp.data?.errors || resp.errors);
+            if (errorsObj && typeof errorsObj === 'object') {
+              const vals = Object.values(errorsObj)
+                .flatMap((v: any) => (Array.isArray(v) ? v : [v]))
+                .map((v: any) => String(v));
+              if (vals.length) message = vals[0];
+            }
+          }
+        } catch (ex) {
+          // fallback to generic message on any extraction error
+          message = e?.message || 'Failed to create designation';
+        }
+
+        // Rethrow an Error containing the friendly message so the inline form can display it
+        const thrown = new Error(message);
+        (thrown as any).original = e;
+        throw thrown;
       }
     })();
   };
@@ -193,16 +222,21 @@ const DesignationMaster: React.FC = () => {
     navigate(`${ROUTES.DESIGNATION_MASTER}/${encodeURIComponent(id)}`);
   };
 
-  const handleDelete = async (id: string) => {
-    const confirm = window.confirm('Delete this designation?');
-    if (!confirm) return;
+  const handleDelete = (id: string) => {
+    setConfirmDeleteId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmDeleteId) return;
+    setConfirmLoading(true);
     try {
-      await deleteDesignation(id);
-      setDesignations(prev => prev.filter(d => d.id !== id));
-      setShowDeleteToast(true);
-      setTimeout(() => setShowDeleteToast(false), 3000);
+      await deleteDesignation(confirmDeleteId);
+      setDesignations(prev => prev.filter(d => d.id !== confirmDeleteId));
     } catch (e: any) {
       showError(e?.message || 'Failed to delete designation');
+    } finally {
+      setConfirmLoading(false);
+      setConfirmDeleteId(null);
     }
   };
 
@@ -281,12 +315,34 @@ const DesignationMaster: React.FC = () => {
     return (async () => {
       try {
         // API expects `title` for update payload
-	await updateDesignation(updated.id, { title: updated.name } as any);
-        setDesignations(prev => prev.map(d => (d.id === updated.id ? { ...d, name: updated.name } as Designation : d)));
+        await updateDesignation(updated.id, { title: updated.name } as any);
+        // Refresh list from server so table shows latest data
+        await refresh();
         showSuccess('Designation updated successfully');
+        // Navigate back to listing immediately
+        navigate(ROUTES.DESIGNATION_MASTER);
       } catch (e: any) {
-        showError(e?.message || 'Failed to update designation');
-        throw e;
+        // Extract field-specific validation message if available
+        let message = 'Failed to update designation';
+        try {
+          if (e) {
+            const resp = e.responseData || e.response || e;
+            if (resp && resp.message) message = String(resp.message);
+            const errorsObj = resp && (resp.errors || resp.data?.errors || resp.errors);
+            if (errorsObj && typeof errorsObj === 'object') {
+              const vals = Object.values(errorsObj)
+                .flatMap((v: any) => (Array.isArray(v) ? v : [v]))
+                .map((v: any) => String(v));
+              if (vals.length) message = vals[0];
+            }
+          }
+        } catch (_) {
+          message = e?.message || message;
+        }
+
+        const thrown = new Error(message);
+        (thrown as any).original = e;
+        throw thrown;
       }
     })();
   };
@@ -304,23 +360,22 @@ const DesignationMaster: React.FC = () => {
 
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
-      <NotificationPopup
-        isOpen={showDeleteToast}
-        onClose={() => setShowDeleteToast(false)}
-        message="Designation deleted successfully"
-        type="success"
-        customStyle={{
-          bg: 'bg-gradient-to-r from-red-50 to-red-100',
-          border: 'border-l-4 border-red-500',
-          text: 'text-red-800',
-          icon: 'text-red-500'
-        }}
-      />
+      {/* Delete success popup removed to avoid showing success toast after delete */}
       <NotificationPopup
         isOpen={showSuccessToast}
         onClose={() => setShowSuccessToast(false)}
         message={successMessage}
         type="success"
+      />
+      <ConfirmDialog
+        isOpen={!!confirmDeleteId}
+        title="Delete this designation?"
+        message="This action will permanently remove the designation. This cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        loading={confirmLoading}
+        onCancel={() => setConfirmDeleteId(null)}
+        onConfirm={confirmDelete}
       />
       {showCreate ? (
         <CreateDesignationForm onClose={() => navigate(ROUTES.DESIGNATION_MASTER)} onSave={handleSaveDesignation} />
@@ -360,11 +415,12 @@ const DesignationMaster: React.FC = () => {
               </div>
             )}
 
-            <div className="p-4 overflow-visible">
+            <div className="pt-0 overflow-visible">
               <Table
               data={currentData}
               startIndex={startIndex}
               loading={loading}
+              desktopOnMobile={true}
               keyExtractor={(it: any, idx: number) => `${it.id}-${idx}`}
               columns={([
                 { key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },

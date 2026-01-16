@@ -1,22 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '../../../constants';
+import { ROUTES, API_ENDPOINTS } from '../../../constants';
 import { MasterFormHeader, NotificationPopup } from '../../../components/ui';
-import { rolePermissionsData } from '../../../data/rolePermissionsData';
-import type { Permission } from '../../../data/rolePermissionsData';
-import RolePermissionTree from '../../../components/ui/RolePermissionTree';
+import { createRole as apiCreateRole } from '../../../services/CreateRole';
+import http from '../../../services/http';
+import PermissionTree from '../../../components/ui/PermissionTree';
 
 type Props = {
   mode?: 'create' | 'edit';
   initialData?: Record<string, any>;
 };
 
-interface ModulePermissions {
-  [moduleName: string]: {
-    [submoduleName: string]: Permission;
-  };
-}
+
 
 const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
   const navigate = useNavigate();
@@ -26,29 +22,50 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
     parentPermission: '',
   });
 
-  const [modulePermissions, setModulePermissions] = useState<ModulePermissions>(() => {
-    const initial: ModulePermissions = {};
-    rolePermissionsData.forEach((module) => {
-      initial[module.name] = {};
-      module.submodules.forEach((submodule) => {
-        initial[module.name][submodule.name] = { ...submodule.permissions };
-      });
-    });
-    return initial;
-  });
+  // Permission tree data from API
+  const [permissionTreeData, setPermissionTreeData] = useState<any[]>([]);
+  const [permissionLoading, setPermissionLoading] = useState(true);
+  const [permissionError, setPermissionError] = useState('');
+
+  // Fetch permission tree from API on mount
+  useEffect(() => {
+    const fetchPermissionTree = async () => {
+      try {
+        setPermissionLoading(true);
+        setPermissionError('');
+        const response = await http.get(API_ENDPOINTS.PERMISSION.ALL_TREE);
+        if (response.data && response.data.success && Array.isArray(response.data.data)) {
+          setPermissionTreeData(response.data.data);
+        } else {
+          setPermissionError('Failed to load permissions');
+        }
+      } catch (err: any) {
+        console.error('Failed to fetch permission tree', err);
+        const errorMsg = err?.response?.data?.message || 'Failed to load permissions. Please try again.';
+        setPermissionError(errorMsg);
+      } finally {
+        setPermissionLoading(false);
+      }
+    };
+    fetchPermissionTree();
+  }, []);
+  const [selectedPermissionIds, setSelectedPermissionIds] = useState<number[]>([]);
 
   const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [showErrorToast, setShowErrorToast] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+
 
   useEffect(() => {
     if (initialData) {
       setForm((prev) => ({ ...prev, ...initialData }));
-      if (initialData.permissions) {
-        setModulePermissions(initialData.permissions);
-      }
+      // Optionally, set selectedPermissionIds from initialData.permissions if needed
     }
   }, [initialData]);
+
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -58,22 +75,7 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
     }
   };
 
-  const handlePermissionToggle = (
-    moduleName: string,
-    submoduleName: string,
-    permissionType: keyof Permission
-  ) => {
-    setModulePermissions((prev) => ({
-      ...prev,
-      [moduleName]: {
-        ...prev[moduleName],
-        [submoduleName]: {
-          ...prev[moduleName][submoduleName],
-          [permissionType]: !prev[moduleName][submoduleName][permissionType],
-        },
-      },
-    }));
-  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,25 +89,42 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
 
     try {
       setSaving(true);
+
       const payload = {
         ...form,
-        permissions: modulePermissions,
+        permissions: selectedPermissionIds,
       } as Record<string, any>;
       if (initialData && initialData.id) payload.id = initialData.id;
-      
-      // TODO: Make API call to save role
-      console.log('Saving role:', payload);
-      
-      // Mock API success
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      
+
+      // Call API: create or update depending on mode
+      if (mode === 'edit' && initialData && initialData.id) {
+        // user can add updateRole call here if needed (AllRoles service)
+        await apiCreateRole(payload); // fallback to same endpoint if update is not separated
+      } else {
+        await apiCreateRole(payload);
+      }
+
       setShowSuccessToast(true);
       setTimeout(() => {
         setShowSuccessToast(false);
         navigate(ROUTES.ROLE.ROOT);
       }, 1200);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving role:', err);
+
+      const respData = err?.responseData || err?.response?.data || null;
+      if (respData && respData.errors && typeof respData.errors === 'object') {
+        const nextErrs: Record<string, string> = {};
+        Object.keys(respData.errors).forEach((k) => {
+          const v = respData.errors[k];
+          nextErrs[k] = Array.isArray(v) ? String(v[0]) : String(v);
+        });
+        setErrors((prev) => ({ ...prev, ...nextErrs }));
+      } else {
+        const msg = respData?.message || err?.message || 'Failed to save role';
+        setErrorMessage(String(msg));
+        setShowErrorToast(true);
+      }
     } finally {
       setSaving(false);
     }
@@ -132,6 +151,15 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
         onClose={() => setShowSuccessToast(false)}
         message={mode === 'edit' ? 'Role updated successfully' : 'Role created successfully'}
         type="success"
+      />
+      <NotificationPopup
+        isOpen={showErrorToast}
+        onClose={() => {
+          setShowErrorToast(false);
+          setErrorMessage('');
+        }}
+        message={errorMessage || 'Failed to save role'}
+        type="error"
       />
 
       <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
@@ -206,11 +234,50 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
 
             {/* Role Permission Section - Tree Style */}
             <div className="mt-8">
-              
-              <RolePermissionTree
-                modulePermissions={modulePermissions}
-                onToggle={handlePermissionToggle}
-              />
+              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                Role Permission <span className="text-[#FF0000]">*</span>
+              </label>
+              <p className="text-xs text-gray-500 mb-3">Select permissions for this role</p>
+              {permissionError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center gap-2">
+                  <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                  <span>{permissionError}</span>
+                </div>
+              )}
+              <div className="border border-[var(--border-color)] rounded-lg overflow-hidden bg-white shadow-sm">
+                {permissionLoading ? (
+                  <div className="p-6 flex items-center justify-center min-h-[250px]">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-6 h-6 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                      <p className="text-sm text-gray-600 font-medium">Loading permissions...</p>
+                    </div>
+                  </div>
+                ) : (
+                  <PermissionTree
+                    data={permissionTreeData}
+                    selectedPermissionIds={selectedPermissionIds}
+                    onChange={setSelectedPermissionIds}
+                  />
+                )}
+              </div>
+              {selectedPermissionIds.length > 0 && !permissionLoading && (
+                <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  {selectedPermissionIds.length} permission(s) selected
+                </p>
+              )}
+              {selectedPermissionIds.length === 0 && !permissionLoading && (
+                <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  Select at least one permission
+                </p>
+              )}
             </div>
 
             {/* Form Actions */}

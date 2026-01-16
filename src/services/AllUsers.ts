@@ -6,6 +6,7 @@ export interface User {
   name: string;
   email?: string;
   role?: string;
+  roles?: any[];
   status?: 'Active' | 'Inactive';
   lastLogin?: string;
   created?: string;
@@ -40,6 +41,23 @@ export async function listUsers(page = 1, perPage = 10, search?: string): Promis
   if (search && String(search).trim()) params.set('search', String(search).trim());
 
   const res = await apiClient.get<any>(`${ENDPOINTS.LIST}?${params.toString()}`);
+  const normalizeApiDate = (raw?: any) => {
+    if (!raw) return '';
+    try {
+      let s = String(raw).trim();
+      // If API returns microseconds (6+ fractional digits) like 2025-12-02T05:38:19.000000Z
+      // trim to milliseconds which JS Date understands: keep first 3 fractional digits
+      s = s.replace(/\.(\d{3})\d*Z$/, '.$1Z');
+      // Some servers may return fractional seconds without a trailing Z, ensure proper ISO
+      if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(s)) s = `${s}Z`;
+      const d = new Date(s);
+      if (isNaN(d.getTime())) return String(raw);
+      return d.toLocaleString();
+    } catch {
+      return String(raw);
+    }
+  };
+
   const items = (res.data || []).map((it: any, idx: number) => {
     const rawId = it.id ?? idx + 1;
     let idStr = String(rawId);
@@ -57,22 +75,25 @@ export async function listUsers(page = 1, perPage = 10, search?: string): Promis
       const statusStr = String(it.status).toLowerCase();
       status = (statusStr === 'inactive' || statusStr === '0' || statusStr === 'false') ? 'Inactive' : 'Active';
     }
-    // If roles is an array, get first role's name, else use role string
+    // Preserve all roles array for UI rendering
     let role = '';
-    if (Array.isArray(it.roles) && it.roles.length > 0) {
-      role = it.roles[0].name ?? it.roles[0] ?? '';
+    let roles: any[] = Array.isArray(it.roles) ? it.roles : [];
+    if (roles.length > 0) {
+      role = roles[0].name ?? roles[0] ?? '';
     } else {
       role = it.role ?? it.role_name ?? '';
     }
 
     const lastLogin = it.last_login ?? it.lastLogin ?? '';
-    const created = it.created_at ?? it.created ?? '';
+    const rawCreated = it.created_at ?? it.created ?? '';
+    const created = normalizeApiDate(rawCreated);
 
     return {
       id: String(idStr),
       name,
       email,
       role,
+      roles,
       status,
       lastLogin,
       created,
@@ -103,7 +124,8 @@ export async function updateUser(id: string, payload: Partial<User>): Promise<Us
 }
 
 export async function deleteUser(id: string): Promise<void> {
-  const cleanId = id.replace(/^#/, '');
-  const res = await apiClient.delete<unknown>(ENDPOINTS.DELETE(cleanId));
+  // Extract numeric ID from any decorated format (e.g., #USR005 -> 5)
+  const numericId = String(id).replace(/\D/g, '');
+  const res = await apiClient.delete<unknown>(ENDPOINTS.DELETE(numericId));
   await handleResponse<unknown>(res);
 }

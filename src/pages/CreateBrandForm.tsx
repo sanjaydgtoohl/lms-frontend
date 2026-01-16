@@ -9,6 +9,7 @@ import { fetchIndustries } from '../services/CreateIndustryForm';
 import type { Industry } from '../services/CreateIndustryForm';
 import { showSuccess, showError } from '../utils/notifications';
 import { apiClient } from '../utils/apiClient';
+import { updateBrand } from '../services/BrandMaster';
 
 type Props = {
   onClose: () => void;
@@ -39,13 +40,22 @@ const CitySelect: React.FC<CitySelectProps> = ({ state, value, onChange, presele
     listCities(numericState ? { state_id: numericState } : undefined)
       .then((data) => {
         if (!mounted) return;
-        const normalized = (data || []).map((c: any) => ({ id: c.id, name: c.name }));
+        const normalized = (data || []).map((c: any) => ({ id: String(c.id), name: c.name }));
         // If parent provided a preselected city name that's not in the list, inject it so it appears
         if (preselectedCityName) {
           const pre = String(preselectedCityName || '').trim();
           if (pre) {
-            const exists = normalized.find((it: any) => String(it.name).toLowerCase() === pre.toLowerCase());
-            if (!exists) normalized.unshift({ id: pre, name: pre });
+            // Check if preselectedCityName is an id or a name
+            const existsById = normalized.find((it: any) => String(it.id) === pre);
+            const existsByName = normalized.find((it: any) => String(it.name).toLowerCase() === pre.toLowerCase());
+            if (!existsById && !existsByName) {
+              // If preselectedCityName is a number, treat as id, else as name
+              if (/^\d+$/.test(pre)) {
+                normalized.unshift({ id: pre, name: pre });
+              } else {
+                normalized.unshift({ id: pre, name: pre });
+              }
+            }
           }
         }
         setCities(normalized);
@@ -54,14 +64,17 @@ const CitySelect: React.FC<CitySelectProps> = ({ state, value, onChange, presele
       .finally(() => { if (mounted) setLoading(false); });
 
     return () => { mounted = false; };
-  }, [state]);
+  }, [state, preselectedCityName]);
+
+  // Find the label for the selected value (id)
+  // ...existing code...
 
   return (
     <div>
       <SelectField
         name="city"
         value={value}
-        onChange={(v) => onChange(v)}
+        onChange={(v) => onChange(typeof v === 'string' ? v : v[0] ?? '')}
         options={cities.map(c => ({ value: String(c.id), label: c.name }))}
         placeholder={loading ? 'Loading cities...' : (cities.length ? 'Select City' : 'Select State first')}
         disabled={loading}
@@ -71,6 +84,8 @@ const CitySelect: React.FC<CitySelectProps> = ({ state, value, onChange, presele
 };
 
 const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create' }) => {
+  // ...existing code...
+  // ...existing code...
   const [form, setForm] = useState({
     brandName: '',
     brandType: '',
@@ -83,6 +98,24 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
     city: '',
     zone: '',
   });
+  // Fetch states when country changes
+  useEffect(() => {
+    if (!form.country || form.country === 'Please Select Country') {
+      setStates([]);
+      setForm(prev => ({ ...prev, state: '', city: '' }));
+      return;
+    }
+    let mounted = true;
+    (async () => {
+      try {
+        const statesData = await listStates({ country_id: form.country });
+        if (mounted) setStates(statesData || []);
+      } catch {
+        if (mounted) setStates([]);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [form.country]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [zones, setZones] = useState<Zone[]>([]);
   const [states, setStates] = useState<State[]>([]);
@@ -92,11 +125,22 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
   const [industries, setIndustries] = useState<Industry[]>([]);
   const [postalLoading, setPostalLoading] = useState(false);
   const [postalError, setPostalError] = useState<string>('');
+  const [postalFieldError, setPostalFieldError] = useState<string>('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
     setErrors(prev => ({ ...prev, [name]: '' }));
+
+    // Postal code validation
+    if (name === 'postalCode') {
+      const raw = String(value || '').trim();
+      if (!/^[0-9]{6}$/.test(raw)) {
+        setPostalFieldError('Postal code is invalid');
+      } else {
+        setPostalFieldError('');
+      }
+    }
   };
 
   const validate = () => {
@@ -108,6 +152,10 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
     if (!form.state) next.state = 'Please Select A State';
     if (!form.city) next.city = 'Please Select A City';
     if (!form.zone) next.zone = 'Please Select A Zone';
+    // Postal code: required and must be 6 numeric digits
+    if (!/^[0-9]{6}$/.test(String(form.postalCode || '').trim())) {
+      next.postalCode = 'Please enter a valid 6-digit postal code';
+    }
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -120,7 +168,20 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
       const payload = {
         name: form.brandName,
         website: form.website,
-        brand_type_id: form.brandType,
+        // Ensure we send the brand type id when possible. The SelectField shows the name
+        // as label but the form value may be either an id or a free-text name. Try to
+        // resolve to an id using the loaded `brandTypes` list.
+        brand_type_id: (() => {
+          const asString = String(form.brandType || '');
+          // prefer exact id match
+          const byId = brandTypes.find(b => String(b.id) === asString);
+          if (byId) return byId.id;
+          // fallback: try match by name (case-insensitive)
+          const byName = brandTypes.find(b => String(b.name).toLowerCase() === asString.toLowerCase());
+          if (byName) return byName.id;
+          // otherwise return whatever value the form has (server may accept name)
+          return form.brandType;
+        })(),
         industry_id: form.industry,
         country_id: form.country,
         state_id: form.state,
@@ -130,18 +191,72 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
         agency_id: form.agency,
       };
 
-      const res = await apiClient.post('/brands', payload);
-
-      if (res && res.success) {
-        showSuccess('Brand created successfully');
-        onClose();
-        // Auto-reload Brand Master page after successful creation
-        window.location.reload();
+      let res;
+      if (mode === 'edit' && initialData?.id) {
+        // Update existing brand
+        res = await updateBrand(initialData.id, payload);
+        if (res) {
+          showSuccess('Brand updated successfully');
+          onClose();
+          // Auto-reload Brand Master page after successful update
+          window.location.reload();
+        }
       } else {
-        throw new Error(res?.message || 'Failed to create brand');
+        // Create new brand
+        res = await apiClient.post('/brands', payload);
+
+        if (res && res.success) {
+          showSuccess('Brand created successfully');
+          onClose();
+          // Auto-reload Brand Master page after successful creation
+          window.location.reload();
+        } else {
+          throw new Error(res?.message || 'Failed to create brand');
+        }
       }
     } catch (err: any) {
-      showError(err?.message || 'Failed to save brand');
+      // Handle server-side validation errors
+      const responseData = err?.responseData;
+      if (responseData?.errors && typeof responseData.errors === 'object') {
+        // Map server field names to form field names
+        const fieldErrorMap: Record<string, string> = {
+          'name': 'brandName',
+          'brand_type_id': 'brandType',
+          'industry_id': 'industry',
+          'country_id': 'country',
+          'state_id': 'state',
+          'city_id': 'city',
+          'zone_id': 'zone',
+          'postal_code': 'postalCode',
+          'agency_id': 'agency',
+          'website': 'website',
+        };
+
+        const newErrors: Record<string, string> = {};
+        // Process each error from the server response
+        Object.entries(responseData.errors).forEach(([serverField, messages]: [string, any]) => {
+          const formField = fieldErrorMap[serverField] || serverField;
+          // Get the first error message if it's an array
+          const errorMessage = Array.isArray(messages) ? messages[0] : String(messages);
+          newErrors[formField] = errorMessage;
+        });
+        setErrors(newErrors);
+        // Do NOT show popup for website errors, only show below the field
+        // For other errors, show popup except for "already been taken"
+        const firstError = Object.values(newErrors)[0];
+        // Only show popup for errors except city id integer error
+        if (
+          firstError &&
+          !firstError.toLowerCase().includes('already been taken') &&
+          !newErrors.website &&
+          !(newErrors.city && newErrors.city.toLowerCase().includes('must be an integer'))
+        ) {
+          showError(firstError);
+        }
+      } else {
+        // Show general error if not a validation error
+        showError(err?.message || `Failed to ${mode === 'edit' ? 'update' : 'save'} brand`);
+      }
     }
   };
 
@@ -169,46 +284,65 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
 
       // Map or inject Country
       let countryId: string = '';
+      let stateId: string = '';
+      let cityValue: string = '';
+
+      // Refresh countries
+      let newCountries = countries;
       const foundCountry = countries.find(c => String(c.name).toLowerCase() === String(countryName).toLowerCase());
       if (foundCountry) {
         countryId = String(foundCountry.id);
       } else if (countryName) {
-        // inject a temporary country option so it appears in the select
         const newC = { id: countryName, name: countryName } as Country;
-        setCountries(prev => [newC, ...prev]);
+        newCountries = [newC, ...countries];
+        setCountries(newCountries);
         countryId = countryName;
       }
 
-      // Map or inject State
-      let stateId: string = '';
-      const foundState = states.find(s => String(s.name).toLowerCase() === String(stateName).toLowerCase());
+      // Refresh states
+      let newStates: State[] = [];
+      try {
+        const statesData = await listStates({ country_id: countryId });
+        newStates = statesData || [];
+        setStates(newStates);
+      } catch {
+        newStates = [];
+        setStates([]);
+      }
+      const foundState = newStates.find(s => String(s.name).toLowerCase() === String(stateName).toLowerCase());
       if (foundState) {
         stateId = String(foundState.id);
       } else if (stateName) {
         const newS = { id: stateName, name: stateName, country_id: countryId } as any as State;
-        setStates(prev => [newS, ...prev]);
+        newStates = [newS, ...newStates];
+        setStates(newStates);
         stateId = stateName;
       }
 
-      // Try to map City by fetching cities for the state (if any)
+      // Refresh cities
+      let newCities: { id: string | number; name: string }[] = [];
       try {
         const citiesList = await listCities(stateId ? { state_id: stateId } : undefined);
-        const matched = (citiesList || []).find((c: any) => {
+        newCities = (citiesList || []).map((c: any) => ({ id: String(c.id), name: c.name }));
+        let matched = newCities.find((c: any) => {
           const nm = String(c.name || '').toLowerCase();
           return nm === String(districtOrName).toLowerCase() || nm === String(po.Name || '').toLowerCase();
         });
         if (matched) {
-          // set country/state/city using mapped ids
-          setForm(prev => ({ ...prev, country: countryId || prev.country, state: stateId || prev.state, city: String(matched.id), postalCode: code }));
+          cityValue = String(matched.id);
         } else {
-          // no matching city found — set form values and let CitySelect show the preselected city name
-          setForm(prev => ({ ...prev, country: countryId || prev.country, state: stateId || prev.state, city: districtOrName, postalCode: code }));
+          cityValue = districtOrName;
+          newCities = [{ id: districtOrName, name: districtOrName }, ...newCities];
         }
+        // Optionally, you can set a state for cities if you want to use it elsewhere
+        // setCities(newCities); // Uncomment if you want to keep cities in state
       } catch (e) {
-        // If city lookup fails, still set country/state
-        setForm(prev => ({ ...prev, country: countryId || prev.country, state: stateId || prev.state, postalCode: code }));
+        cityValue = districtOrName;
+        // setCities([{ id: districtOrName, name: districtOrName }]); // Uncomment if you want to keep cities in state
       }
 
+      // Update form with refreshed country, state, city
+      setForm(prev => ({ ...prev, country: countryId, state: stateId, city: cityValue, postalCode: code }));
       setPostalError('');
     } catch (err: any) {
       setPostalError(err?.message || 'Failed to fetch pincode data');
@@ -222,31 +356,29 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
     if (initialData) {
       setForm(prev => ({
         ...prev,
-        brandName: initialData.brandName ?? initialData.name ?? prev.brandName,
-        brandType: initialData.brandType ?? String(initialData.brandType ?? '') ?? prev.brandType,
+        brandName: initialData.name ?? initialData.brandName ?? prev.brandName,
+        brandType: String(initialData.brand_type_id ?? initialData.brandType ?? initialData.brand_type ?? ''),
         website: initialData.website ?? prev.website,
-        agency: initialData.agency ?? initialData.agencyName ?? prev.agency,
-        industry: initialData.industry ?? prev.industry,
-        country: initialData.country ?? prev.country,
-        postalCode: initialData.postalCode ?? initialData.pinCode ?? prev.postalCode,
-        state: initialData.state ?? prev.state,
-        city: initialData.city ?? prev.city,
-        zone: initialData.zone ?? prev.zone,
+        agency: String(initialData.agency_id ?? initialData.agency ?? initialData.agencyName ?? ''),
+        industry: String(initialData.industry_id ?? initialData.industry ?? ''),
+        country: String(initialData.country_id ?? initialData.country ?? ''),
+        postalCode: initialData.postal_code ?? initialData.postalCode ?? initialData.pinCode ?? prev.postalCode,
+        state: String(initialData.state_id ?? initialData.state ?? ''),
+        city: String(initialData.city_id ?? initialData.city ?? ''),
+        zone: String(initialData.zone_id ?? initialData.zone ?? ''),
       }));
     }
 
     let mounted = true;
     Promise.all([
       listZones(),
-      listStates(),
       listCountries(),
       listBrandTypes(),
       // fetch a large page so SelectDropdown can client-side search
       listAgencies(1, 1000)
-    ]).then(([zonesData, statesData, countriesData, brandTypesData, agenciesResp]) => {
+    ]).then(([zonesData, countriesData, brandTypesData, agenciesResp]) => {
       if (!mounted) return;
       setZones(zonesData || []);
-      setStates(statesData || []);
       setCountries(countriesData || []);
       setBrandTypes(brandTypesData || []);
       // agenciesResp is AgencyListResponse { data, meta }
@@ -281,6 +413,79 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
       // Errors are handled by UI store
     });
 
+    // Fallback/debug: if brand types didn't populate (empty array), try fetching directly
+    // from the API via `apiClient` so we can recover from any service-wrapper mismatch.
+    (async () => {
+      try {
+        // wait a tick to allow the Promise.all to complete first
+        await new Promise(r => setTimeout(r, 50));
+        if ((brandTypes || []).length === 0) {
+          const raw = await apiClient.get<any>('/brand-types');
+          const items = raw && raw.data ? raw.data : [];
+          if (items && items.length) {
+            const normalized = (items || []).map((it: any) => ({ id: it.id ?? it._id ?? String(it.name || ''), name: it.name ?? it.title ?? it.label ?? '' }));
+            setBrandTypes(normalized);
+            // eslint-disable-next-line no-console
+            console.warn('Brand types loaded via fallback apiClient.get', normalized);
+          } else {
+            // eslint-disable-next-line no-console
+            console.warn('Brand types: no items returned from fallback');
+          }
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('Brand types fallback fetch failed', e);
+      }
+    })();
+
+    // Fallback/debug for agencies: if agencies array is empty, try fetching a large page directly
+    (async () => {
+      try {
+        await new Promise(r => setTimeout(r, 50));
+        if ((agencies || []).length === 0) {
+          // Request many items so the dropdown can search client-side
+          const raw = await apiClient.get<any>(`/agencies?page=1&per_page=1000`);
+          const items = raw && raw.data ? raw.data : [];
+          if (items && items.length) {
+            const normalized = (items || []).map((it: any) => ({ id: it.id ?? it._id ?? String(it.slug || ''), name: it.name ?? it.title ?? it.label ?? '' }));
+            setAgencies(normalized as Agency[]);
+            // eslint-disable-next-line no-console
+            console.warn('Agencies loaded via fallback apiClient.get', normalized);
+          } else {
+            // eslint-disable-next-line no-console
+            console.warn('Agencies: no items returned from fallback');
+          }
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('Agencies fallback fetch failed', e);
+      }
+    })();
+
+    // Fallback/debug for countries: if countries didn't populate (empty array), try fetching
+    // directly from the API via `apiClient.get('/countries/list')` and normalize results.
+    (async () => {
+      try {
+        await new Promise(r => setTimeout(r, 50));
+        if ((countries || []).length === 0) {
+          const raw = await apiClient.get<any>('/countries/list');
+          const items = raw && raw.data ? raw.data : [];
+          if (items && items.length) {
+            const normalized = (items || []).map((it: any) => ({ id: it.id ?? it._id ?? String(it.slug || ''), name: it.name ?? it.title ?? it.label ?? '' }));
+            setCountries(normalized);
+            // eslint-disable-next-line no-console
+            console.warn('Countries loaded via fallback apiClient.get', normalized);
+          } else {
+            // eslint-disable-next-line no-console
+            console.warn('Countries: no items returned from fallback');
+          }
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('Countries fallback fetch failed', e);
+      }
+    })();
+
     // Fetch industries for the Industry dropdown. Request many per page to get a full list.
     fetchIndustries(1, 1000).then((resp) => {
       if (!mounted) return;
@@ -304,7 +509,9 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
             placeholder="Please Enter Brand Name"
           />
-          {errors.brandName && <div className="text-xs text-red-500 mt-1">{errors.brandName}</div>}
+          {errors.brandName && (
+            <div className="text-xs text-red-500 mt-1">{errors.brandName}</div>
+          )}
         </div>
 
         <div>
@@ -313,12 +520,14 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             <SelectField
               name="brandType"
               value={form.brandType}
-              onChange={(v) => setForm(prev => ({ ...prev, brandType: v }))}
+              onChange={(v) => setForm(prev => ({ ...prev, brandType: typeof v === 'string' ? v : v[0] ?? '' }))}     
               options={brandTypes.map(t => ({ value: String(t.id), label: t.name }))}
               placeholder="Search or select option"
             />
           </div>
-          {errors.brandType && <div className="text-xs text-red-500 mt-1">{errors.brandType}</div>}
+            {errors.brandType && !form.brandType && (
+              <div className="text-xs text-red-500 mt-1">{errors.brandType}</div>
+            )}
         </div>
 
         <div>
@@ -330,6 +539,9 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
             placeholder="https://"
           />
+            {errors.website && !form.website.trim() && (
+              <div className="text-xs text-red-500 mt-1">{errors.website}</div>
+            )}
         </div>
 
         <div>
@@ -338,7 +550,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             <SelectField
               name="agency"
               value={form.agency}
-              onChange={(v) => setForm(prev => ({ ...prev, agency: v }))}
+              onChange={(v) => setForm(prev => ({ ...prev, agency: typeof v === 'string' ? v : v[0] ?? '' }))}        
               options={agencies.map(a => ({ value: String(a.id), label: a.name }))}
               placeholder={agencies.length ? 'Search or select option' : 'Loading agencies...'}
             />
@@ -351,12 +563,14 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             <SelectField
               name="industry"
               value={form.industry}
-              onChange={(v) => setForm(prev => ({ ...prev, industry: v }))}
+              onChange={(v) => setForm(prev => ({ ...prev, industry: typeof v === 'string' ? v : v[0] ?? '' }))}      
               options={industries.length ? industries.map(it => ({ value: String(it.id), label: it.name })) : []}
               placeholder={industries.length ? 'Search or select option' : 'No industries available'}
             />
           </div>
-          {errors.industry && <div className="text-xs text-red-500 mt-1">{errors.industry}</div>}
+            {errors.industry && !form.industry && (
+              <div className="text-xs text-red-500 mt-1">{errors.industry}</div>
+            )}
         </div>
 
         <div>
@@ -365,32 +579,45 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             <SelectField
               name="country"
               value={form.country}
-              onChange={(v) => setForm(prev => ({ ...prev, country: v }))}
+              onChange={(v) => {
+                const newCountry = typeof v === 'string' ? v : v[0] ?? '';
+                setForm(prev => ({ ...prev, country: newCountry, state: '', city: '' }));
+              }}
               options={countries.map(c => ({ value: String(c.id), label: c.name }))}
               placeholder="Search or select option"
             />
           </div>
-          {errors.country && <div className="text-xs text-red-500 mt-1">{errors.country}</div>}
+            {errors.country && (!form.country || form.country === 'Please Select Country') && (
+              <div className="text-xs text-red-500 mt-1">{errors.country}</div>
+            )}
         </div>
 
         <div>
-          <label className="block text-sm text-[var(--text-secondary)] mb-1">Postal Code</label>
+          <label className="block text-sm text-[var(--text-secondary)] mb-1">Postal Code <span className="text-[#FF0000]">*</span></label>
           <input
             name="postalCode"
             value={form.postalCode}
             onChange={(e) => {
-              // preserve existing handler behavior
               handleChange(e as any);
-              const raw = String(e.target.value || '').replace(/\D/g, '');
-              if (raw.length === 6) lookupPostalCode(raw);
+              const raw = String(e.target.value || '').trim();
+              if (/^[0-9]{6}$/.test(raw)) {
+                setPostalFieldError('');
+                lookupPostalCode(raw);
+              }
             }}
             onBlur={() => {
               const raw = String(form.postalCode || '').trim();
-              if (/^[0-9]{6}$/.test(raw)) lookupPostalCode(raw);
+              if (/^[0-9]{6}$/.test(raw)) {
+                setPostalFieldError('');
+                lookupPostalCode(raw);
+              } else {
+                setPostalFieldError('Postal code is invalid');
+              }
             }}
             className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
             placeholder="Please Enter Postal Code"
           />
+          {(errors.postalCode || postalFieldError) && <div className="text-xs text-red-500 mt-1">{errors.postalCode || postalFieldError}</div>}
           {postalLoading && <div className="text-xs text-gray-500 mt-1">Looking up pincode...</div>}
           {!postalLoading && postalError && <div className="text-xs text-red-500 mt-1">{postalError}</div>}
         </div>
@@ -401,18 +628,27 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             <SelectField
               name="state"
               value={form.state}
-              onChange={(v) => setForm(prev => ({ ...prev, state: v }))}
+              onChange={(v) => setForm(prev => ({ ...prev, state: typeof v === 'string' ? v : v[0] ?? '' }))}
               options={states.map(s => ({ value: String(s.id), label: s.name }))}
               placeholder="Search or select option"
             />
           </div>
-          {errors.state && <div className="text-xs text-red-500 mt-1">{errors.state}</div>}
+            {errors.state && !form.state && (
+              <div className="text-xs text-red-500 mt-1">{errors.state}</div>
+            )}
         </div>
 
         <div>
           <label className="block text-sm text-[var(--text-secondary)] mb-1">City <span className="text-[#FF0000]">*</span></label>
-          <CitySelect state={form.state} value={form.city} preselectedCityName={form.city} onChange={(val) => setForm(prev => ({ ...prev, city: val }))} />
-          {errors.city && <div className="text-xs text-red-500 mt-1">{errors.city}</div>}
+          <CitySelect
+            state={form.state}
+            value={form.city}
+            preselectedCityName={form.city}
+            onChange={(val) => setForm(prev => ({ ...prev, city: val }))}
+          />
+            {(errors.city && (!form.city || (errors.city.toLowerCase().includes('must be an integer') && isNaN(Number(form.city))))) && (
+              <div className="text-xs text-red-500 mt-1">{errors.city}</div>
+            )}
         </div>
 
         <div>
@@ -421,12 +657,14 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             <SelectField
               name="zone"
               value={form.zone}
-              onChange={(v) => setForm(prev => ({ ...prev, zone: v }))}
+              onChange={(v) => setForm(prev => ({ ...prev, zone: typeof v === 'string' ? v : v[0] ?? '' }))}
               options={zones.map(z => ({ value: String(z.id), label: z.name }))}
               placeholder="Search or select option"
             />
           </div>
-          {errors.zone && <div className="text-xs text-red-500 mt-1">{errors.zone}</div>}
+            {errors.zone && !form.zone && (
+              <div className="text-xs text-red-500 mt-1">{errors.zone}</div>
+            )}
         </div>
       </div>
 

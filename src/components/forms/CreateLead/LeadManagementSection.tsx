@@ -1,6 +1,5 @@
 import React from 'react';
 import SelectField from '../../ui/SelectField';
-import { useNavigate } from 'react-router-dom';
 
 interface Props {
   selectedOption: 'brand' | 'agency';
@@ -21,23 +20,12 @@ const LeadManagementSection: React.FC<Props> = ({
   loading = false,
   error = null,
 }) => {
-  const navigate = useNavigate();
 
   return (
     <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)]">
       <div className="p-6 bg-[#F9FAFB]">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center mb-6">
           <h3 className="text-base font-semibold text-[#344054]">Lead Management</h3>
-          <div>
-            <button
-              type="button"
-              onClick={() => navigate('/meeting-schedule')}
-              className="px-4 py-2 rounded-lg btn-primary text-white shadow-sm"
-              aria-label="Meeting Schedule"
-            >
-              Meeting Schedule
-            </button>
-          </div>
         </div>
 
         <div className="flex items-center gap-6 mb-6">
@@ -83,7 +71,7 @@ const LeadManagementSection: React.FC<Props> = ({
               placeholder={selectedOption === 'brand' ? 'Choose Existing Brand' : 'Choose Existing Agency'}
               options={options}
               value={value}
-              onChange={onChange}
+              onChange={(v) => onChange(typeof v === 'string' ? v : v[0] ?? '')}
               inputClassName="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               disabled={loading}
             />

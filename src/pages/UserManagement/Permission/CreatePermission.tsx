@@ -21,6 +21,7 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
     description: '',
     icon: null as File | null,
     iconText: '',
+    order: '',
   });
   
 
@@ -42,6 +43,7 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
         description: (initialData as any).description ?? prev.description,
         icon: (initialData as any).icon_file ?? (initialData as any).icon ?? prev.icon,
         iconText: (initialData as any).icon_text ?? (initialData as any).iconText ?? prev.iconText,
+        order: (initialData as any).order ?? prev.order,
       }));
     }
   }, [initialData]);
@@ -93,6 +95,7 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
     if (!form.displayName || form.displayName.trim() === '') next.displayName = 'Please Enter Display Name';
     if (!form.name || form.name.trim() === '') next.name = 'Please Enter Name';
     if (!form.description || form.description.trim() === '') next.description = 'Please Enter Description';
+    if (!form.order || form.order.trim() === '') next.order = 'Please Enter Order';
 
     setErrors(next);
     if (Object.keys(next).length > 0) return;
@@ -103,9 +106,10 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
         display_name: form.displayName,
         name: form.name,
         url: form.url,
-           is_parent: form.parentPermission ? Number(String(form.parentPermission).replace(/^#/, '')) : null,
+        is_parent: form.parentPermission ? Number(String(form.parentPermission).replace(/^#/, '')) : null,
         description: form.description,
         icon_text: form.iconText,
+        order: form.order,
         status: '1',
       } as any;
 
@@ -244,8 +248,8 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
               </div>
             </div>
 
-            {/* Row 2: URL & Icon */}
-            <div className="grid grid-cols-2 gap-6">
+            {/* Row 2: URL, Order & Icon */}
+            <div className="grid grid-cols-3 gap-6">
               {/* URL */}
               <div>
                 <label className="block text-sm text-[var(--text-secondary)] mb-1">
@@ -258,6 +262,39 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
                   placeholder="Please enter URL"
                   className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors border border-[var(--border-color)] focus:ring-blue-500`}
                 />
+              </div>
+
+              {/* Order */}
+              <div>
+                <label className="block text-sm text-[var(--text-secondary)] mb-1">
+                  Order <span className="text-[#FF0000]">*</span>
+                </label>
+                <input
+                  name="order"
+                  type="number"
+                  value={form.order}
+                  onChange={handleChange}
+                  placeholder="Please enter order"
+                  className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
+                    errors.order
+                      ? 'border border-red-500 bg-red-50 focus:ring-red-500'
+                      : 'border border-[var(--border-color)] focus:ring-blue-500'
+                  }`}
+                  aria-invalid={errors.order ? 'true' : 'false'}
+                  aria-describedby={errors.order ? 'order-error' : undefined}
+                />
+                {errors.order && (
+                  <div id="order-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                    <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    {errors.order}
+                  </div>
+                )}
               </div>
 
               {/* Icon */}
@@ -334,7 +371,7 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
                   options={parentOptions}
                   value={form.parentPermission}
                   onChange={(v) => {
-                    setForm((prev) => ({ ...prev, parentPermission: v }));
+                    setForm((prev) => ({ ...prev, parentPermission: typeof v === 'string' ? v : v[0] ?? '' }));       
                     setErrors((prev) => ({ ...prev, parentPermission: '' }));
                   }}
                   searchable

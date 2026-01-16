@@ -7,6 +7,7 @@ export interface PermissionPayload {
   url?: string;
   parentPermission?: string | null;
   description: string;
+  order?: string | number;
 }
 
 export interface PermissionDetail extends PermissionPayload {

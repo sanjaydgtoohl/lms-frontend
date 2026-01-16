@@ -4,14 +4,15 @@ type Option = { value: string; label: string } | string;
 
 type SelectDropdownProps = {
   name?: string;
-  value?: string;
+  value?: string | string[];
   placeholder?: string;
   options: Option[];
-  onChange: (val: string) => void;
+  onChange: (val: string | string[]) => void;
   searchable?: boolean;
   className?: string;
   inputClassName?: string;
   disabled?: boolean;
+  isMulti?: boolean;
 };
 
 const normalize = (opt: Option): { value: string; label: string } => {
@@ -29,6 +30,7 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
   className = '',
   inputClassName = '',
   disabled = false,
+  isMulti = false,
 }) => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -49,51 +51,85 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
     if (!open) setQuery('');
   }, [open]);
 
-  const selectedLabel = normalized.find(n => String(n.value) === String(value))?.label ?? '';
+  // Multi-select: value is array, show tags
+  const selectedValues = isMulti ? (Array.isArray(value) ? value : []) : [String(value)];
+  const selectedLabels = normalized.filter(n => selectedValues.includes(String(n.value)));
 
+  // Determine if error border should be shown
+  const errorBorderClass = inputClassName && inputClassName.includes('border-red-500') ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-[#DDE1E7]';
+  // Input classes and styles differ for multi vs single select
+  const multiInputClass = `flex-none h-full px-2 text-sm font-medium bg-transparent text-[var(--text-primary)] border-none focus:outline-none`;
+  const singleInputClass = `flex-1 h-full px-2 text-sm font-medium bg-transparent text-[var(--text-primary)] border-none focus:outline-none`;
+  const multiInputStyle: React.CSSProperties = { boxShadow: 'none', minWidth: '30px', width: '30px', height: 'auto' };
+  const singleInputStyle: React.CSSProperties = { boxShadow: 'none', minWidth: '120px', width: '100%', height: 'auto' };
   return (
     <div ref={ref} className={`relative ${className}`}>
       <div className="w-full relative">
-        <input
-          name={name}
-          value={open && searchable ? query : (selectedLabel || '')}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            if (!open) setOpen(true);
-          }}
-          onFocus={() => setOpen(true)}
-          onBlur={() => {
-            // allow clicks inside dropdown; close after event loop so clicks register
-            setTimeout(() => {
-              if (ref.current && !ref.current.contains(document.activeElement as Node)) setOpen(false);
-            }, 0);
-          }}
-          placeholder={placeholder}
-          className={`w-full h-10 px-4 text-sm font-medium rounded-[10px] bg-white text-[var(--text-primary)] border border-[#DDE1E7] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#1570EF] ${inputClassName} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
-          disabled={disabled}
-          autoComplete="off"
-        />
-        <input type="hidden" name={name ? name : undefined} value={value} />
-
-        {/* dropdown arrow - same visual as Contact Person field */}
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-          <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M6 8L10 12L14 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+        <div
+          className={`flex items-center h-10 w-full px-3 py-2 border rounded-lg bg-white relative ${errorBorderClass} ${disabled ? 'opacity-60 cursor-not-allowed' : ''} ${inputClassName}`}
+          style={{ gap: '6px', paddingRight: '32px', overflowX: 'auto', overflowY: 'hidden', whiteSpace: 'nowrap' }}
+          onClick={() => !disabled && setOpen(true)}
+        >
+          {/* Multi-select: show tags in a single horizontal row with scroll */}
+          {isMulti && selectedLabels.length > 0 && selectedLabels.map((opt) => (
+            <span key={opt.value} className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs inline-flex items-center" style={{ marginRight: '6px', display: 'inline-flex', lineHeight: '1', maxHeight: '100%', overflow: 'hidden' }}>
+              <span style={{ whiteSpace: 'nowrap', display: 'inline-block', lineHeight: '1' }}>{opt.label}</span>
+              <button
+                type="button"
+                className="ml-1 text-blue-700 hover:text-red-500"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const newVals = selectedValues.filter((v) => v !== opt.value);
+                  onChange(newVals);
+                }}
+                aria-label="Remove"
+                style={{ fontSize: '14px', lineHeight: '1' }}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+          <input
+            name={name}
+            value={open && searchable ? query : (!isMulti ? (selectedLabels[0]?.label || '') : '')}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              if (!open) setOpen(true);
+            }}
+            onFocus={() => setOpen(true)}
+            onBlur={() => {
+              setTimeout(() => {
+                if (ref.current && !ref.current.contains(document.activeElement as Node)) setOpen(false);
+              }, 0);
+            }}
+            placeholder={isMulti && selectedLabels.length > 0 ? '' : placeholder}
+            className={isMulti ? multiInputClass : singleInputClass}
+            disabled={disabled}
+            autoComplete="off"
+            style={isMulti ? { ...multiInputStyle, height: '100%' } : { ...singleInputStyle, height: '100%' }}
+          />
+          <input type="hidden" name={name ? name : undefined} value={isMulti ? selectedValues.join(',') : value} />
+          {/* dropdown arrow */}
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+            <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 8L10 12L14 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
         </div>
       </div>
 
       <div
         role="listbox"
         aria-hidden={!open}
-    className={`absolute z-50 left-0 right-0 mt-2 bg-white border border-[var(--border-color)] rounded-lg shadow-lg max-h-[72px] overflow-y-auto transition-all duration-150 ${open ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
+        className={`absolute z-50 left-0 right-0 mt-2 bg-white border border-[var(--border-color)] rounded-lg shadow-lg overflow-y-auto transition-all duration-150 ${open ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
+        style={{ maxHeight: '80px' }} // Show only 2 options (each ~40px)
       >
         {filtered.length === 0 ? (
           <div className="px-4 py-2 text-gray-500">No matches found</div>
         ) : (
           filtered.map((opt) => {
             const o = normalize(opt);
-            const active = String(o.value) === String(value);
+            const active = selectedValues.includes(String(o.value));
             return (
               <div
                 key={o.value}
@@ -103,11 +139,23 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
                 className={`px-4 py-2 cursor-pointer ${active ? 'bg-blue-100 text-blue-700 font-semibold' : 'text-gray-700'} hover:bg-blue-50`}
                 onMouseDown={(e) => {
                   e.preventDefault();
-                  onChange(o.value);
-                  setOpen(false);
+                  if (isMulti) {
+                    let newVals;
+                    if (active) {
+                      newVals = selectedValues.filter((v) => v !== o.value);
+                    } else {
+                      newVals = [...selectedValues, o.value];
+                    }
+                    onChange(newVals);
+                  } else {
+                    onChange(o.value);
+                    setOpen(false);
+                  }
+                  if (!isMulti) setOpen(false);
                 }}
               >
                 {o.label}
+                {isMulti && active && <span className="ml-2 text-xs">✓</span>}
               </div>
             );
           })

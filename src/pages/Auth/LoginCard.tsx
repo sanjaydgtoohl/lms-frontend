@@ -5,6 +5,7 @@ import { Button, Input, NotificationPopup } from '../../components/ui';
 import { useState } from 'react';
 import { useAuthStore } from '../../store/auth';
 import { useUiStore } from '../../store/ui';
+import Swal from 'sweetalert2';
 
 const loginSchema = z.object({
   email: z
@@ -40,6 +41,21 @@ export default function LoginCard() {
     try {
       await login(data.email, data.password);
       setLoginError(null);
+      // Show success message
+      await Swal.fire({
+        title: 'Login Successful!',
+        text: 'Welcome back!',
+        icon: 'success',
+        confirmButtonText: 'Continue',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        background: '#f8f9fa',
+        color: '#1a1a1a',
+        confirmButtonColor: '#ff7300',
+        iconColor: '#10b981',
+      });
+      // Reload page after user confirms
+      window.location.reload();
     } catch (error: any) {
       useUiStore.getState().hideNotification();
       // Try to extract API error message if present

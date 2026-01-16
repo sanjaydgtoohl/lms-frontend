@@ -132,7 +132,7 @@ const CreateLeadForm: React.FC<CreateLeadFormProps> = ({ onSubmit, loading = fal
               <SelectField
                 name="selectBrand"
                 value={brand}
-                onChange={(v) => setBrand(v)}
+                onChange={(v) => setBrand(typeof v === 'string' ? v : v[0] ?? '')}
                 options={[]}
                 placeholder="Search or select option"
               />
@@ -146,7 +146,7 @@ const CreateLeadForm: React.FC<CreateLeadFormProps> = ({ onSubmit, loading = fal
               <SelectField
                 name="selectAgency"
                 value={agencySel}
-                onChange={(v) => setAgencySel(v)}
+                onChange={(v) => setAgencySel(typeof v === 'string' ? v : v[0] ?? '')}
                 options={[]}
                 placeholder="Search or select option"
               />
@@ -278,7 +278,7 @@ const CreateLeadForm: React.FC<CreateLeadFormProps> = ({ onSubmit, loading = fal
             <SelectField
               name="assignTo"
               value={assignTo}
-              onChange={(v) => setAssignTo(v)}
+              onChange={(v) => setAssignTo(typeof v === 'string' ? v : v[0] ?? '')}
               options={[]}
               placeholder="Search or select option"
             />
@@ -290,7 +290,7 @@ const CreateLeadForm: React.FC<CreateLeadFormProps> = ({ onSubmit, loading = fal
             <SelectField
               name="priority"
               value={priority}
-              onChange={(v) => setPriority(v)}
+              onChange={(v) => setPriority(typeof v === 'string' ? v : v[0] ?? '')}
               options={[ 'High', 'Medium', 'Low' ]}
               placeholder="Search or select option"
             />

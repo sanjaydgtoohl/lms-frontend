@@ -7,6 +7,7 @@ import Pagination from '../components/ui/Pagination';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants';
 import { MasterHeader, NotificationPopup } from '../components/ui';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
 import SearchBar from '../components/ui/SearchBar';
 import { listIndustries, deleteIndustry, updateIndustry, type Industry as ApiIndustry } from '../services/IndustryMaster';
 
@@ -19,9 +20,13 @@ interface Industry {
 const IndustryMaster: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);
-  const [showDeleteToast, setShowDeleteToast] = useState(false);
+  
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [successMessage, setSuccessMessage] = useState('Industry created successfully');
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [showErrorToast, setShowErrorToast] = useState(false);
+  const [errorMessageToast, setErrorMessageToast] = useState('');
   const itemsPerPage = 10;
 
   const [industries, setIndustries] = useState<Industry[]>([]);
@@ -67,16 +72,23 @@ const IndustryMaster: React.FC = () => {
   const handleView = (id: string) => {
     navigate(`${ROUTES.INDUSTRY_MASTER}/${encodeURIComponent(id)}`);
   };
-  const handleDelete = async (id: string) => {
-    const confirm = window.confirm('Delete this industry?');
-    if (!confirm) return;
+  // Trigger a confirmation modal (instead of browser confirm)
+  const handleDelete = (id: string) => {
+    setConfirmDeleteId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmDeleteId) return;
+    setConfirmLoading(true);
     try {
-      await deleteIndustry(id);
-      setIndustries(prev => prev.filter(i => i.id !== id));
-      setShowDeleteToast(true);
-      setTimeout(() => setShowDeleteToast(false), 3000);
+      await deleteIndustry(confirmDeleteId);
+      setIndustries(prev => prev.filter(i => i.id !== confirmDeleteId));
     } catch (e: any) {
-      alert(e?.message || 'Failed to delete');
+      setErrorMessageToast(e?.message || 'Failed to delete');
+      setShowErrorToast(true);
+    } finally {
+      setConfirmLoading(false);
+      setConfirmDeleteId(null);
     }
   };
 
@@ -173,12 +185,12 @@ const IndustryMaster: React.FC = () => {
   }, [location.pathname, params.id, industries]);
 
   const handleSaveEditedIndustry = async (updated: Record<string, any>) => {
-    try {
+    // Return a promise and allow caller (`MasterEdit`) to catch and display field errors inline.
+    return (async () => {
       await updateIndustry(updated.id, { name: updated.name });
-      setIndustries(prev => prev.map(i => (i.id === updated.id ? { ...i, name: updated.name } as Industry : i)));
-    } catch (e: any) {
-      alert(e?.message || 'Failed to update');
-    }
+      // Refresh the list from server so table shows latest data
+      await refresh();
+    })();
   };
 
   const renderPagination = () => {
@@ -200,17 +212,23 @@ const IndustryMaster: React.FC = () => {
         message={successMessage}
         type="success"
       />
+      {/* Delete success popup removed to avoid showing success toast after delete */}
       <NotificationPopup
-        isOpen={showDeleteToast}
-        onClose={() => setShowDeleteToast(false)}
-        message="Industry deleted successfully"
-        type="success"
-        customStyle={{
-          bg: 'bg-gradient-to-r from-red-50 to-red-100',
-          border: 'border-l-4 border-red-500',
-          text: 'text-red-800',
-          icon: 'text-red-500'
-        }}
+        isOpen={showErrorToast}
+        onClose={() => setShowErrorToast(false)}
+        message={errorMessageToast}
+        type="error"
+      />
+
+      <ConfirmDialog
+        isOpen={!!confirmDeleteId}
+        title="Delete this industry?"
+        message="This action will permanently remove the industry. This cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        loading={confirmLoading}
+        onCancel={() => setConfirmDeleteId(null)}
+        onConfirm={confirmDelete}
       />
       {showCreate ? (
         <CreateIndustryForm onClose={() => navigate(ROUTES.INDUSTRY_MASTER)} onSave={handleSaveIndustry} />
@@ -250,11 +268,12 @@ const IndustryMaster: React.FC = () => {
               </div>
             )}
 
-            <div className="p-4 overflow-visible">
+            <div className="pt-0 overflow-visible">
               <Table
               data={currentData}
               startIndex={startIndex}
               loading={loading}
+              desktopOnMobile={true}
               keyExtractor={(it: any, idx: number) => `${it.id}-${idx}`}
               columns={([
                 { key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },

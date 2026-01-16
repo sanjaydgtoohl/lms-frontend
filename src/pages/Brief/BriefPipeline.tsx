@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import CreateBriefForm from './CreateBriefForm';
+import { apiClient } from '../../utils/apiClient';
 import MasterView from '../../components/ui/MasterView';
 import Pagination from '../../components/ui/Pagination';
 import Table, { type Column } from '../../components/ui/Table';
@@ -7,13 +8,30 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ROUTES } from '../../constants';
 import MasterHeader from '../../components/ui/MasterHeader';
 import SearchBar from '../../components/ui/SearchBar';
-import { type BriefItem as ServiceBriefItem } from '../../services/BriefPipeline';
+import { type BriefItem as ServiceBriefItem, listBriefs, getBrief, createBrief, updateBrief, deleteBrief } from '../../services/BriefPipeline';
+import updateAssignUser from '../../services/BriefAssignTo';
+import { fetchBriefStatuses, updateBriefStatus, type BriefStatusItem } from '../../services/BriefStatus';
 import StatusDropdown from '../../components/ui/StatusDropdown';
 import AssignDropdown from '../../components/ui/AssignDropdown';
+ import ConfirmDialog from '../../components/ui/ConfirmDialog';
 
 type Brief = ServiceBriefItem;
 
 const BriefPipeline: React.FC = () => {
+    // Helper to fetch briefs (for refresh)
+    const fetchBriefs = async () => {
+      try {
+        setLoading(true);
+        const res = await listBriefs(currentPage, itemsPerPage, searchQuery || undefined);
+        setBriefs(res.data || []);
+        const total = res.meta?.pagination?.total ?? 0;
+        setTotalItems(Number(total));
+      } catch (err) {
+        console.error('Failed to load briefs', err);
+      } finally {
+        setLoading(false);
+      }
+    };
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -25,6 +43,8 @@ const BriefPipeline: React.FC = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [viewItem, setViewItem] = useState<Brief | null>(null);
   const [editItem, setEditItem] = useState<Brief | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentData = briefs;
@@ -35,31 +55,40 @@ const BriefPipeline: React.FC = () => {
 
   const handleEdit = (id: string) => navigate(ROUTES.BRIEF.EDIT(encodeURIComponent(id)));
   const handleView = (id: string) => navigate(ROUTES.BRIEF.DETAIL(encodeURIComponent(id)));
-  const handleDelete = (id: string) => setBriefs(prev => prev.filter(b => b.id !== id));
+  const handleDelete = (id: string) => {
+    setConfirmDeleteId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmDeleteId) return;
+    setConfirmLoading(true);
+    try {
+      await deleteBrief(confirmDeleteId);
+      setBriefs(prev => prev.filter(b => b.id !== confirmDeleteId));
+      setTotalItems(prev => Math.max(0, prev - 1));
+    } catch (err) {
+      console.error('Failed to delete brief', err);
+    } finally {
+      setConfirmLoading(false);
+      setConfirmDeleteId(null);
+    }
+  };
 
   const handleCreate = () => navigate(ROUTES.BRIEF.CREATE);
 
-  const handleSaveBrief = (data: Record<string, unknown>) => {
-    const d = data as Record<string, unknown>;
-    const newBrief: Brief = {
-      id: `#BRF${Math.floor(Math.random() * 90000) + 10000}`,
-      briefName: String(d['briefName'] ?? 'Untitled Brief'),
-      brandName: String(d['brandName'] ?? ''),
-      productName: String(d['productName'] ?? ''),
-      contactPerson: String(d['contactPerson'] ?? ''),
-      modeOfCampaign: String(d['modeOfCampaign'] ?? ''),
-      mediaType: String(d['mediaType'] ?? ''),
-      priority: String(d['priority'] ?? ''),
-      budget: String(d['budget'] ?? ''),
-      createdBy: String(d['createdBy'] ?? ''),
-      assignTo: String(d['assignTo'] ?? ''),
-      status: String(d['status'] ?? ''),
-      briefDetail: String(d['briefDetail'] ?? ''),
-      submissionDate: String(d['submissionDate'] ?? ''),
-      dateTime: new Date().toISOString(),
-    };
-    setBriefs(prev => [newBrief, ...prev]);
-    setCurrentPage(1);
+  const handleSaveBrief = async (data: Record<string, unknown>) => {
+    try {
+      setLoading(true);
+      const payload = data as Partial<Brief>;
+      const created = await createBrief(payload);
+      setBriefs(prev => [created, ...prev]);
+      setTotalItems(prev => prev + 1);
+      setCurrentPage(1);
+    } catch (err) {
+      console.error('Failed to create brief', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -74,10 +103,50 @@ const BriefPipeline: React.FC = () => {
     }
 
     if (location.pathname.endsWith('/edit') && id) {
+      // Try to find in-memory first, otherwise fetch single brief from API
       const found = briefs.find(b => b.id === id) || null;
-      setEditItem(found);
-      setViewItem(null);
-      setShowCreate(false);
+      const patchSubmissionFields = (item: any) => {
+        // If item.submission_date exists, parse and add submissionDate/submissionTime
+        if (item && item.submission_date) {
+          try {
+            const dateObj = new Date(item.submission_date);
+            if (!isNaN(dateObj.getTime())) {
+              const dd = String(dateObj.getDate()).padStart(2, '0');
+              const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+              const yyyy = dateObj.getFullYear();
+              const hh = String(dateObj.getHours()).padStart(2, '0');
+              const min = String(dateObj.getMinutes()).padStart(2, '0');
+              item.submissionDate = `${dd}-${mm}-${yyyy}`;
+              item.submissionTime = `${hh}:${min}`;
+            }
+          } catch {}
+        }
+        return item;
+      };
+      if (found) {
+        setEditItem(patchSubmissionFields(found));
+        setViewItem(null);
+        setShowCreate(false);
+        return;
+      }
+
+      let mounted = true;
+      (async () => {
+        try {
+          setLoading(true);
+          const single = await getBrief(id);
+          if (!mounted) return;
+          setEditItem(single ? patchSubmissionFields(single) : null);
+          setViewItem(null);
+          setShowCreate(false);
+        } catch (err) {
+          console.error('Failed to fetch brief for edit', err);
+          setEditItem(null);
+        } finally {
+          if (mounted) setLoading(false);
+        }
+      })();
+
       return;
     }
 
@@ -94,122 +163,81 @@ const BriefPipeline: React.FC = () => {
     setEditItem(null);
   }, [location.pathname, params.id, briefs]);
 
-  // Dummy data for development
-  const dummyBriefs: Brief[] = [
-    {
-      id: '#BRF10001',
-      briefName: 'Summer Campaign 2025',
-      brandName: 'CoolBrand',
-      productName: 'Summer Collection',
-      contactPerson: 'John Smith',
-      modeOfCampaign: 'Digital',
-      mediaType: 'Social Media',
-      priority: 'High',
-      budget: '50,000',
-      createdBy: 'Sarah Jones',
-      assignTo: 'Planner 1',
-      status: 'submission',
-      briefDetail: 'Summer collection launch campaign across social media platforms',
-      submissionDate: '2025-11-10',
-      dateTime: '2025-11-07T09:00:00Z'
-    },
-    {
-      id: '#BRF10002',
-      briefName: 'Product Launch Event',
-      brandName: 'TechGear',
-      productName: 'SmartWatch Pro',
-      contactPerson: 'Emily Chen',
-      modeOfCampaign: 'Hybrid',
-      mediaType: 'Mixed Media',
-      priority: 'Critical',
-      budget: '100,000',
-      createdBy: 'Michael Wong',
-      assignTo: 'Planner 2',
-      status: 'approve',
-      briefDetail: 'Product launch event with live streaming and social media coverage',
-      submissionDate: '2025-11-15',
-      dateTime: '2025-11-07T10:30:00Z'
-    },
-    {
-      id: '#BRF10003',
-      briefName: 'Holiday Season Campaign',
-      brandName: 'JoyGifts',
-      productName: 'Gift Collection',
-      contactPerson: 'Lisa Brown',
-      modeOfCampaign: 'Traditional',
-      mediaType: 'Print',
-      priority: 'Medium',
-      budget: '75,000',
-      createdBy: 'David Miller',
-      assignTo: 'Planner 3',
-      status: 'negotiation',
-      briefDetail: 'Holiday season promotional campaign for gift collection',
-      submissionDate: '2025-11-20',
-      dateTime: '2025-11-07T11:45:00Z'
-    },
-    {
-      id: '#BRF10004',
-      briefName: 'Brand Refresh',
-      brandName: 'EcoLife',
-      productName: 'Sustainable Line',
-      contactPerson: 'Alex Green',
-      modeOfCampaign: 'Digital',
-      mediaType: 'Website',
-      priority: 'Low',
-      budget: '25,000',
-      createdBy: 'Emma White',
-      assignTo: 'Planner 4',
-      status: 'closed',
-      briefDetail: 'Brand refresh campaign focusing on sustainability',
-      submissionDate: '2025-11-25',
-      dateTime: '2025-11-07T13:15:00Z'
-    },
-    {
-      id: '#BRF10005',
-      briefName: 'New Market Entry',
-      brandName: 'GlobalFoods',
-      productName: 'Organic Range',
-      contactPerson: 'Robert Taylor',
-      modeOfCampaign: 'Integrated',
-      mediaType: 'Multiple',
-      priority: 'High',
-      budget: '150,000',
-      createdBy: 'Jennifer Lee',
-      assignTo: 'Planner 5',
-      status: 'not-interested',
-      briefDetail: 'Market entry campaign for organic food range',
-      submissionDate: '2025-11-30',
-      dateTime: '2025-11-07T14:30:00Z'
-    }
-  ];
-
+  // Fetch briefs from API when page or search changes
   useEffect(() => {
-    setLoading(true);
-    // Simulate API delay
-    setTimeout(() => {
-      const filtered = searchQuery
-        ? dummyBriefs.filter(brief => 
-            Object.values(brief).some(value => 
-              String(value).toLowerCase().includes(searchQuery.toLowerCase())
-            )
-          )
-        : dummyBriefs;
-      
-      setBriefs(filtered);
-      setTotalItems(filtered.length);
+    let mounted = true;
+    const fetch = async () => {
+      try {
+        setLoading(true);
+        const res = await listBriefs(currentPage, itemsPerPage, searchQuery || undefined);
+        if (!mounted) return;
+        setBriefs(res.data || []);
+        // try common pagination shapes
+        const total = res.meta?.pagination?.total ?? 0;
+        setTotalItems(Number(total));
+      } catch (err) {
+        // swallow for now; consider showing toast
+        console.error('Failed to load briefs', err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    fetch();
+
+    return () => { mounted = false; };
+  }, [currentPage, itemsPerPage, searchQuery]);
+
+
+  // Assign To options state and effect (fetch from API)
+  interface UserOption { id: number | string; name: string; }
+  const [assignToOptions, setAssignToOptions] = useState<UserOption[]>([]);
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const res = await apiClient.get('/users/list');
+        const users = Array.isArray(res.data) ? res.data : [];
+        setAssignToOptions(users.map((u: any) => ({ id: u.id, name: u.name })));
+      } catch (err) {
+        setAssignToOptions([]);
+      }
+    };
+    loadUsers();
+  }, []);
+
+  const handleAssignToChange = async (briefId: string, newPlanner: string) => {
+    try {
+      setLoading(true);
+      // resolve selected name to user id from assignToOptions
+      const found = assignToOptions.find(o => o.name === newPlanner);
+      const assignId = found ? found.id : newPlanner;
+      const updated = await updateAssignUser(briefId, assignId);
+      // updated may be the brief object in response.data
+      if (updated && (updated as any).id) {
+        setBriefs(prev => prev.map(b => (b.id === (updated as any).id ? { ...b, ...(updated as Partial<Brief>) } as Brief : b)));
+        // refresh full list to reflect server state
+        setTimeout(() => { fetchBriefs(); }, 300);
+      }
+    } catch (err) {
+      console.error('Failed to update assignee', err);
+    } finally {
       setLoading(false);
-    }, 500);
-  }, [searchQuery]);
-
-  // Assign options for briefs (match planners used in dummy data)
-  const planners = ['Planner 1', 'Planner 2', 'Planner 3', 'Planner 4', 'Planner 5', 'Planner 6'];
-
-  const handleAssignToChange = (briefId: string, newPlanner: string) => {
-    setBriefs(prev => prev.map(b => (b.id === briefId ? { ...b, assignTo: newPlanner } as Brief : b)));
+    }
   };
 
-  const handleSaveEdited = (updated: Partial<Brief>) => {
-    setBriefs(prev => prev.map(b => (b.id === updated.id ? { ...b, ...(updated as Partial<Brief>) } as Brief : b)));
+  const handleSaveEdited = async (updated: Partial<Brief>) => {
+    if (!updated.id) return;
+    try {
+      setLoading(true);
+      const res = await updateBrief(updated.id, updated);
+      setBriefs(prev => prev.map(b => (b.id === res.id ? { ...b, ...(res as Partial<Brief>) } as Brief : b)));
+      // refresh list after successful save
+      setTimeout(() => { fetchBriefs(); }, 300);
+    } catch (err) {
+      console.error('Failed to save edited brief', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePageChange = (page: number) => setCurrentPage(page);
@@ -223,8 +251,20 @@ const BriefPipeline: React.FC = () => {
   const hoverTimeout = useRef<number | null>(null);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
 
-  // Status options
-  const STATUS_OPTIONS = ['submission', 'approve', 'negotiation', 'closed', 'not-interested'];
+  // Status options state and effect (fetch from API)
+  const [statusOptions, setStatusOptions] = useState<BriefStatusItem[]>([]);
+  useEffect(() => {
+    const loadStatuses = async () => {
+      try {
+        const statuses = await fetchBriefStatuses();
+        setStatusOptions(statuses);
+      } catch (err) {
+        console.error('Failed to load statuses:', err);
+        setStatusOptions([]);
+      }
+    };
+    loadStatuses();
+  }, []);
 
   const showTooltip = (e: React.MouseEvent, content: string) => {
     if (hoverTimeout.current) {
@@ -270,13 +310,38 @@ const BriefPipeline: React.FC = () => {
 
   const handleSelectStatus = (id: string | null, newStatus: string) => {
     if (!id) return;
-    setBriefs(prev => prev.map(b => (b.id === id ? { ...b, status: newStatus } as Brief : b)));
+    // Find status ID from statusOptions
+    const statusObj = statusOptions.find(s => s.name === newStatus);
+    const statusId = statusObj ? statusObj.id : newStatus;
+    // persist status change
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await updateBriefStatus(id, statusId);
+        if (res && (res as any).id) {
+          setBriefs(prev => prev.map(b => (b.id === (res as any).id ? { ...b, ...(res as Partial<Brief>) } as Brief : b)));
+          // refresh list to show updated status
+          setTimeout(() => { fetchBriefs(); }, 300);
+        }
+      } catch (err) {
+        console.error('Failed to update status', err);
+      } finally {
+        setLoading(false);
+      }
+    })();
   };
 
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
       {showCreate ? (
-        <CreateBriefForm inline onClose={() => navigate(ROUTES.BRIEF.PIPELINE)} onSave={handleSaveBrief} />
+        <CreateBriefForm
+          inline
+          onClose={() => {
+            navigate(ROUTES.BRIEF.PIPELINE);
+            setTimeout(() => { fetchBriefs(); }, 300);
+          }}
+          onSave={handleSaveBrief}
+        />
       ) : viewItem ? (
         <MasterView item={viewItem} onClose={() => navigate(ROUTES.BRIEF.PIPELINE)} />
       ) : editItem ? (
@@ -284,7 +349,10 @@ const BriefPipeline: React.FC = () => {
           inline
           mode="edit"
           initialData={editItem}
-          onClose={() => navigate(ROUTES.BRIEF.PIPELINE)}
+          onClose={() => {
+            navigate(ROUTES.BRIEF.PIPELINE);
+            setTimeout(() => { fetchBriefs(); }, 300);
+          }}
           onSave={(data: Record<string, unknown>) => handleSaveEdited(data as Partial<Brief>)}
         />
       ) : (
@@ -299,56 +367,91 @@ const BriefPipeline: React.FC = () => {
             ]}
           />
 
-          <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-            <div className="bg-gray-50 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-[var(--text-primary)]">Brief Pipeline</h2>
-              <SearchBar delay={0} onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+            <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-200">
+              <h2 className="text-base font-semibold text-gray-900">Brief Pipeline</h2>
+              <SearchBar delay={0} placeholder="Please Search Brief" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
             </div>
 
-            <Table
-              data={currentData}
-              startIndex={startIndex}
-              loading={loading}
-              keyExtractor={(it: Brief, idx: number) => `${it.id}-${idx}`}
-              columns={([
+            <div className="pt-0 overflow-visible">
+              <Table
+                data={currentData}
+                startIndex={startIndex}
+                loading={loading}
+                desktopOnMobile={true}
+                keyExtractor={(it: Brief, idx: number) => `${it.id}-${idx}`}
+                columns={([
                 { key: 'sr', header: 'Sr. No.', render: (it: Brief) => String(startIndex + currentData.indexOf(it) + 1), className: 'whitespace-nowrap overflow-hidden truncate' },
                 { key: 'briefName', header: 'Brief Name', render: (it: Brief) => it.briefName, className: 'whitespace-nowrap overflow-hidden truncate' },
                 { key: 'brandName', header: 'Brand Name', render: (it: Brief) => it.brandName, className: 'whitespace-nowrap overflow-hidden truncate' },
                 { key: 'productName', header: 'Product Name', render: (it: Brief) => it.productName, className: 'whitespace-nowrap overflow-hidden truncate' },
-                { key: 'contactPerson', header: 'Contact Person', render: (it: Brief) => it.contactPerson, className: 'whitespace-nowrap overflow-hidden truncate' },
+                { key: 'contactPerson', header: 'Contact Person', render: (it: Brief) => {
+                  const contactPersonVal = it.contactPerson;
+                  if (typeof contactPersonVal === 'object' && contactPersonVal !== null && 'name' in contactPersonVal) {
+                    return (contactPersonVal as any).name;
+                  }
+                  return String(contactPersonVal ?? '');
+                }, className: 'whitespace-nowrap overflow-hidden truncate' },
                 { key: 'modeOfCampaign', header: 'Mode Of Campaign', render: (it: Brief) => it.modeOfCampaign, className: 'whitespace-nowrap overflow-hidden truncate' },
                 { key: 'mediaType', header: 'Media Type', render: (it: Brief) => it.mediaType, className: 'whitespace-nowrap overflow-hidden truncate' },
-                { key: 'priority', header: 'Priority', render: (it: Brief) => it.priority, className: 'whitespace-nowrap overflow-hidden truncate' },
+                { key: 'priority', header: 'Priority', render: (it: Brief) => {
+                  const priorityVal = it.priority;
+                  if (typeof priorityVal === 'object' && priorityVal !== null && 'name' in priorityVal) {
+                    return (priorityVal as any).name;
+                  }
+                  return String(priorityVal ?? '');
+                }, className: 'whitespace-nowrap overflow-hidden truncate' },
                 { key: 'budget', header: 'Budget', render: (it: Brief) => String(it.budget ?? ''), className: 'whitespace-nowrap overflow-hidden truncate' },
-                { key: 'createdBy', header: 'Created By', render: (it: Brief) => it.createdBy, className: 'whitespace-nowrap overflow-hidden truncate' },
-                { key: 'assignTo', header: 'Assign To', render: (it: Brief) => (
-                  <div className="min-w-[140px]">
-                    <AssignDropdown
-                      value={String(it.assignTo ?? '')}
-                      options={planners}
-                      onChange={(newPlanner: string) => handleAssignToChange(it.id, newPlanner)}
-                    />
-                  </div>
-                ), className: 'min-w-[140px]' },
-                { key: 'status', header: 'Status', render: (it: Brief) => (
-                  <div className="min-w-[140px]">
-                    <StatusDropdown
-                      value={String(it.status ?? '')}
-                      options={STATUS_OPTIONS}
-                      onChange={(newStatus: string) => handleSelectStatus(it.id, newStatus)}
-                    />
-                  </div>
-                ), className: 'min-w-[140px]' },
+                { key: 'createdBy', header: 'Created By', render: (it: Brief) => {
+                  const createdByVal = it.createdBy;
+                  if (typeof createdByVal === 'object' && createdByVal !== null && 'name' in createdByVal) {
+                    return (createdByVal as any).name;
+                  }
+                  return String(createdByVal ?? '');
+                }, className: 'whitespace-nowrap overflow-hidden truncate' },
+                { key: 'assignTo', header: 'Assign To', render: (it: Brief) => {
+                  const assignToVal = it.assignTo;
+                  let displayName = '';
+                  if (typeof assignToVal === 'object' && assignToVal !== null && 'name' in assignToVal) {
+                    displayName = (assignToVal as any).name;
+                  } else {
+                    displayName = String(assignToVal ?? '');
+                  }
+                  return (
+                    <div className="min-w-[140px]">
+                      <AssignDropdown
+                        value={displayName}
+                        options={assignToOptions.map(opt => opt.name)}
+                        onChange={(newPlanner: string) => handleAssignToChange(it.id, newPlanner)}
+                      />
+                    </div>
+                  );
+                }, className: 'min-w-[140px]' },
+                { key: 'status', header: 'Status', render: (it: Brief) => {
+                  // Show status name from brief_status object, fallback to '-' or 'No Status'
+                  const statusName = it.brief_status && typeof it.brief_status === 'object' && 'name' in it.brief_status
+                    ? (it.brief_status as any).name
+                    : '-';
+                  return (
+                    <div className="min-w-[140px]">
+                      <StatusDropdown
+                        value={statusName}
+                        options={statusOptions.map(opt => opt.name)}
+                        onChange={(newStatus: string) => handleSelectStatus(it.id, newStatus)}
+                      />
+                    </div>
+                  );
+                }, className: 'min-w-[140px]' },
                 {
                   key: 'briefDetail',
                   header: 'Brief Detail',
                   render: (it: Brief) => (
                     <span
                       className="inline-block"
-                      onMouseEnter={(e) => showTooltip(e, String(it.briefDetail ?? ''))}
+                      onMouseEnter={(e) => showTooltip(e, String(it.comment ?? ''))}
                       onMouseLeave={() => hideTooltip()}
                       // provide native tooltip as a11y/fallback
-                      title={String(it.briefDetail ?? '')}
+                      title={String(it.comment ?? '')}
                     >
                       <div
                         className="text-sm text-[var(--text-primary)]"
@@ -362,17 +465,18 @@ const BriefPipeline: React.FC = () => {
                           overflowWrap: 'break-word',
                         }}
                       >
-                        {it.briefDetail}
+                        {it.comment}
                       </div>
                     </span>
                   ),
                 },
                 { key: 'submissionDate', header: 'Submission Date & Time', render: (it: Brief) => it.submissionDate, className: 'whitespace-nowrap overflow-hidden truncate' },
               ] as Column<Brief>[])}
-              onEdit={(it: Brief) => handleEdit(it.id)}
-              onView={(it: Brief) => handleView(it.id)}
-              onDelete={(it: Brief) => handleDelete(it.id)}
-            />
+                onEdit={(it: Brief) => handleEdit(it.id)}
+                onView={(it: Brief) => handleView(it.id)}
+                onDelete={(it: Brief) => handleDelete(it.id)}
+              />
+            </div>
           </div>
 
           <Pagination
@@ -398,6 +502,16 @@ const BriefPipeline: React.FC = () => {
             </div>
           )}
           {/* Status dropdown now uses StatusDropdown component inside table cells */}
+          <ConfirmDialog
+            isOpen={!!confirmDeleteId}
+            title="Delete this brief?"
+            message="This action will permanently remove the brief. This cannot be undone."
+            confirmLabel="Delete"
+            cancelLabel="Cancel"
+            loading={confirmLoading}
+            onCancel={() => setConfirmDeleteId(null)}
+            onConfirm={confirmDelete}
+          />
         </>
       )}
     </div>

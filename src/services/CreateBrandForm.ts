@@ -20,15 +20,15 @@ const ENDPOINTS = {
     DETAIL: (id: string | number) => `/brand-types/${id}`,
   },
   CITIES: {
-    LIST: '/cities',
+    LIST: '/cities/list',
     DETAIL: (id: string | number) => `/cities/${id}`,
   },
   STATES: {
-    LIST: '/states/all',
+    LIST: '/states/list',
     DETAIL: (id: string | number) => `/states/${id}`,
   },
   COUNTRIES: {
-    LIST: '/countries',
+    LIST: '/countries/list',
     DETAIL: (id: string | number) => `/countries/${id}`,
   },
 } as const;
@@ -87,10 +87,21 @@ function buildQuery(params?: Record<string, any>): string {
 }
 
 export async function listCities(params?: { state_id?: string | number; country_id?: string | number }): Promise<City[]> {
-  const cacheKey = JSON.stringify(params || {});
+  // Sanitize params: only include numeric IDs to avoid server validation errors (422)
+  const safeParams: Record<string, any> = {};
+  if (params) {
+    if (params.state_id !== undefined && params.state_id !== null && String(params.state_id).match(/^\d+$/)) {
+      safeParams.state_id = Number(params.state_id);
+    }
+    if (params.country_id !== undefined && params.country_id !== null && String(params.country_id).match(/^\d+$/)) {
+      safeParams.country_id = Number(params.country_id);
+    }
+  }
+
+  const cacheKey = JSON.stringify(safeParams || {});
   if (cityCache[cacheKey]) return cityCache[cacheKey];
 
-  const qs = buildQuery(params as Record<string, any>);
+  const qs = buildQuery(safeParams as Record<string, any>);
   const res = await apiClient.get<City[]>(ENDPOINTS.CITIES.LIST + qs);
   const items = await handleResponse<City[]>(res);
   const normalized = (items || []).map((it: any) => ({
@@ -128,11 +139,12 @@ export type State = {
 
 const stateCache: Record<string, State[]> = {};
 
-export async function listStates(): Promise<State[]> {
-  const cacheKey = 'all_states';
+export async function listStates(params?: { country_id?: string | number }): Promise<State[]> {
+  const cacheKey = JSON.stringify(params || {});
   if (stateCache[cacheKey]) return stateCache[cacheKey];
 
-  const res = await apiClient.get<State[]>(ENDPOINTS.STATES.LIST);
+  const qs = buildQuery(params as Record<string, any>);
+  const res = await apiClient.get<State[]>(ENDPOINTS.STATES.LIST + qs);
   const items = await handleResponse<State[]>(res);
   const normalized = (items || []).map((it: any) => ({
     id: it.id ?? it._id ?? String(it.slug || ''),

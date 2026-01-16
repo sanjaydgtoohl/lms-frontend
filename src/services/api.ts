@@ -6,12 +6,15 @@ import type {
   User, 
   Course
 } from '../types';
-import { loginService } from './Login';
+import { authService } from '.';
 import http from './http';
-import { getCookie } from '../utils/cookies';
 import { handleApiError } from '../utils/apiErrorHandler';
 
 class ApiClient {
+    // Public method to allow custom requests
+    async customRequest<T>(endpoint: string, options: { method?: string; data?: any } = {}): Promise<ApiResponse<T>> {
+      return this.request<T>(endpoint, options);
+    }
   private baseURL: string;
 
   constructor(baseURL: string) {
@@ -48,8 +51,8 @@ class ApiClient {
 
   // Auth Methods
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    // Use the dedicated login service for proper API handling
-    const response = await loginService.login(credentials);
+    // Use the dedicated authService for proper API handling
+    const response = await authService.login(credentials);
     
     if (response.token) {
       this.setToken(response.token);
@@ -85,10 +88,11 @@ class ApiClient {
   }
 
   async refreshToken(): Promise<AuthResponse> {
-    const refreshToken = getCookie('refresh_token');
+
+    // Do not send refreshToken in body; rely on cookie
     const response = await this.request<AuthResponse>(API_ENDPOINTS.AUTH.REFRESH, {
       method: 'POST',
-      data: { refreshToken },
+      data: {},
     });
 
     if (response.data.token) {

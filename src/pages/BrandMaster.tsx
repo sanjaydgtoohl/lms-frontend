@@ -7,7 +7,11 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants';
 import MasterHeader from '../components/ui/MasterHeader';
 import SearchBar from '../components/ui/SearchBar';
-import { listBrands, type BrandItem as ServiceBrandItem } from '../services/BrandMaster';
+import { matchesQuery } from '../utils/index.tsx';
+import { NotificationPopup } from '../components/ui';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
+import { deleteBrand } from '../services/BrandMaster';
+import { listBrands, getBrand, type BrandItem as ServiceBrandItem } from '../services/BrandMaster';
 
 type Brand = ServiceBrandItem;
 
@@ -26,7 +30,19 @@ const BrandMaster: React.FC = () => {
 
   // We fetch paginated data from the API; currentData is the page currently loaded
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentData = brands;
+  // If `searchQuery` is present we support a full client-side search by
+  // filtering the currently loaded brands across all string fields.
+  // Otherwise we show the server-provided page `brands`.
+  const currentData = (() => {
+    if (searchQuery && brands.length > 0) {
+      const filtered = brands.filter((b: Brand) => {
+        const fields = Object.keys(b).filter(k => typeof (b as any)[k] === 'string');
+        return matchesQuery(b as unknown as Record<string, unknown>, searchQuery, { fields, useStartsWith: false });
+      });
+      return filtered.slice(startIndex, startIndex + itemsPerPage);
+    }
+    return brands;
+  })();
 
   const navigate = useNavigate();
   const params = useParams();
@@ -34,29 +50,40 @@ const BrandMaster: React.FC = () => {
 
   const handleEdit = (id: string) => navigate(`${ROUTES.BRAND_MASTER}/${encodeURIComponent(id)}/edit`);
   const handleView = (id: string) => navigate(`${ROUTES.BRAND_MASTER}/${encodeURIComponent(id)}`);
-  const handleDelete = (id: string) => setBrands(prev => prev.filter(b => b.id !== id));
+  
+  const [showErrorToast, setShowErrorToast] = useState(false);
+  const [errorMessageToast, setErrorMessageToast] = useState('');
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [confirmDeleteLabel, setConfirmDeleteLabel] = useState<string>('');
+  const [confirmLoading, setConfirmLoading] = useState(false);
+
+  const handleDelete = (id: string) => {
+    const found = brands.find(b => b.id === id);
+    setConfirmDeleteId(id);
+    setConfirmDeleteLabel(found ? (found.name || String(found.id)) : id);
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmDeleteId) return;
+    setConfirmLoading(true);
+    try {
+      await deleteBrand(confirmDeleteId);
+      // Refetch the brand list after delete
+      const res = await listBrands(currentPage, itemsPerPage, searchQuery);
+      setBrands(res.data as Brand[]);
+      const total = res.meta?.pagination?.total ?? res.data.length;
+      setTotalItems(total);
+    } catch (e: any) {
+      setErrorMessageToast(e?.message || 'Failed to delete');
+      setShowErrorToast(true);
+    } finally {
+      setConfirmLoading(false);
+      setConfirmDeleteId(null);
+      setConfirmDeleteLabel('');
+    }
+  };
 
   const handleCreateBrand = () => navigate(`${ROUTES.BRAND_MASTER}/create`);
-
-  const handleSaveBrand = (data: Record<string, unknown>) => {
-    const d = data as Record<string, unknown>;
-    const newBrand: Brand = {
-      id: `#CMPR${Math.floor(Math.random() * 90000) + 10000}`,
-      name: String(d['brandName'] ?? 'Untitled'),
-      agencyName: String(d['agency'] ?? 'Direct'),
-      brandType: String(d['brandType'] ?? ''),
-      contactPerson: '0',
-      industry: String(d['industry'] ?? ''),
-      country: String(d['country'] ?? ''),
-      state: String(d['state'] ?? ''),
-      city: String(d['city'] ?? ''),
-      zone: String(d['zone'] ?? ''),
-      pinCode: String(d['postalCode'] ?? ''),
-      dateTime: new Date().toISOString(),
-    };
-    setBrands(prev => [newBrand, ...prev]);
-    setCurrentPage(1);
-  };
 
   useEffect(() => {
     const rawId = params.id;
@@ -70,10 +97,20 @@ const BrandMaster: React.FC = () => {
     }
 
     if (location.pathname.endsWith('/edit') && id) {
-      const found = brands.find(b => b.id === id) || null;
-      setEditItem(found);
-      setViewItem(null);
-      setShowCreate(false);
+      // Fetch full brand details from API for edit mode
+      getBrand(id)
+        .then(data => {
+          setEditItem(data);
+          setViewItem(null);
+          setShowCreate(false);
+        })
+        .catch(() => {
+          // Fallback to locally stored data if API fails
+          const found = brands.find(b => b.id === id) || null;
+          setEditItem(found);
+          setViewItem(null);
+          setShowCreate(false);
+        });
       return;
     }
 
@@ -111,25 +148,38 @@ const BrandMaster: React.FC = () => {
     return () => { cancelled = true; };
   }, [currentPage, itemsPerPage, searchQuery]);
 
-  const handleSaveEditedBrand = (updated: Partial<Brand>) => {
-    setBrands(prev => prev.map(b => (b.id === updated.id ? { ...b, ...(updated as Partial<Brand>) } as Brand : b)));
-  };
-
   const handlePageChange = (page: number) => setCurrentPage(page);
 
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
+      {/* Delete success popup removed to avoid showing success toast after delete */}
+      <NotificationPopup
+        isOpen={showErrorToast}
+        onClose={() => setShowErrorToast(false)}
+        message={errorMessageToast}
+        type="error"
+      />
+
+      <ConfirmDialog
+        isOpen={!!confirmDeleteId}
+        title={`Delete brand "${confirmDeleteLabel}"?`}
+        message="This action will permanently remove the brand. This cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        loading={confirmLoading}
+        onCancel={() => setConfirmDeleteId(null)}
+        onConfirm={confirmDelete}
+      />
       {showCreate ? (
-        <CreateBrandForm inline onClose={() => navigate(ROUTES.BRAND_MASTER)} onSave={handleSaveBrand} />
+        <CreateBrandForm inline onClose={() => navigate(ROUTES.BRAND_MASTER)} />
       ) : viewItem ? (
         <MasterView item={viewItem} onClose={() => navigate(ROUTES.BRAND_MASTER)} />
-          ) : editItem ? (
+      ) : editItem ? (
         <CreateBrandForm
           inline
           mode="edit"
           initialData={editItem}
           onClose={() => navigate(ROUTES.BRAND_MASTER)}
-          onSave={(data: Record<string, unknown>) => handleSaveEditedBrand(data as Partial<Brand>)}
         />
       ) : (
         <>
@@ -151,7 +201,7 @@ const BrandMaster: React.FC = () => {
               />
             </div>
 
-            <div className="p-4 overflow-visible">
+            <div className="pt-0 overflow-visible">
               <Table
               data={currentData}
               startIndex={startIndex}
@@ -162,7 +212,41 @@ const BrandMaster: React.FC = () => {
                 { key: 'name', header: 'Brand Name', render: (it: Brand) => it.name || '-' },
                 { key: 'agencyName', header: 'Agency Name', render: (it: Brand) => it.agencyName || '-' },
                 { key: 'brandType', header: 'Brand Type', render: (it: Brand) => it.brandType || '-' },
-                { key: 'contactPerson', header: 'Contact Person', render: (it: Brand) => it.contactPerson || '-' },
+                {
+                  key: 'contactPerson',
+                  header: 'Contact Person',
+                  render: (it: Brand) => {
+                    const raw = (it as any)._raw as Record<string, unknown> | undefined;
+                    const rawCount = raw?.['contact_person_count'] ?? raw?.['contactPersonCount'];
+                    let count: string | number | null = null;
+                    if (typeof rawCount === 'number') count = rawCount;
+                    else if (typeof rawCount === 'string' && rawCount.trim() !== '') count = rawCount;
+
+                    const normCount = (it as any).contact_person_count ?? (it as any).contactPersonCount;
+                    if (count === null && typeof normCount === 'number') count = normCount;
+
+                    const cp = (it as any).contactPerson ?? (it as any).contact_person;
+                    if (count === null) {
+                      if (cp) count = String(cp);
+                      else count = '-';
+                    }
+
+                    // If we have a numeric or non-hyphen count, render as clickable link to contacts page
+                    if (count !== '-' && String(count).trim() !== '') {
+                      const id = encodeURIComponent(String(it.id ?? ''));
+                      return (
+                        <span
+                          onClick={() => navigate(ROUTES.BRAND_CONTACTS(id))}
+                          className="text-gray-900 hover:underline cursor-pointer"
+                        >
+                          {String(count)}
+                        </span>
+                      );
+                    }
+
+                    return String(count ?? '-');
+                  }
+                },
                 { key: 'industry', header: 'Industry', render: (it: Brand) => it.industry || '-' },
                 { key: 'country', header: 'Country', render: (it: Brand) => it.country || '-' },
                 { key: 'state', header: 'State', render: (it: Brand) => it.state || '-' },
@@ -171,6 +255,7 @@ const BrandMaster: React.FC = () => {
                 { key: 'pinCode', header: 'Pin Code', render: (it: Brand) => it.pinCode || '-' },
                 { key: 'dateTime', header: 'Date & Time', render: (it: Brand) => it.dateTime ? new Date(it.dateTime).toLocaleString() : '-' },
               ] as Column<Brand>[])}
+              desktopOnMobile={true}
               onEdit={(it: Brand) => handleEdit(it.id)}
               onView={(it: Brand) => handleView(it.id)}
               onDelete={(it: Brand) => handleDelete(it.id)}
@@ -180,7 +265,7 @@ const BrandMaster: React.FC = () => {
 
           <Pagination
             currentPage={currentPage}
-            totalItems={totalItems}
+            totalItems={typeof totalItems === 'number' ? totalItems : brands.length}
             itemsPerPage={itemsPerPage}
             onPageChange={handlePageChange}
           />

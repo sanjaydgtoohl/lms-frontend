@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MasterCreateHeader } from '../../components/ui/MasterCreateHeader';
-import { Upload } from 'lucide-react';
+import { Upload, Loader, Trash2 } from 'lucide-react';
 import { SelectField } from '../../components/ui';
-import { createMissCampaign, updateMissCampaignWithForm } from '../../services/Create';
+import { apiClient } from '../../utils/apiClient';
+import { createMissCampaign } from '../../services/Create';
+import { updateMissCampaign } from '../../services/View';
 import { listBrands } from '../../services/BrandMaster';
-import { listLeadSources, listLeadSubSourcesBySourceId } from '../../services/LeadSource';
+// Removed LeadSource import as per request
 import { showSuccess, showError } from '../../utils/notifications';
 
 interface CreateProps {
@@ -30,15 +32,17 @@ const Create: React.FC<CreateProps> = ({
     subSource: '',
     productName: '',
     image: null as File | null,
+    image_url: '', // for preview
+    remove_image: false, // for delete flag
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [brandOptions, setBrandOptions] = useState<{ id: string | number; name: string }[]>([]);
+  const [brandOptions, setBrandOptions] = useState<{ id: string; name: string }[]>([]);
   const [brandLoading, setBrandLoading] = useState(false);
-  const [sourceOptions, setSourceOptions] = useState<{ id: string | number; source: string }[]>([]);
+  const [sourceOptions, setSourceOptions] = useState<{ id: string; source: string }[]>([]);
   const [sourceLoading, setSourceLoading] = useState(false);
-  const [subSourceOptions, setSubSourceOptions] = useState<{ id: string | number; subSource: string }[]>([]);
+  const [subSourceOptions, setSubSourceOptions] = useState<{ id: string; label: string }[]>([]);
   const [subSourceLoading, setSubSourceLoading] = useState(false);
 
   // Fetch brands on component mount
@@ -67,11 +71,13 @@ const Create: React.FC<CreateProps> = ({
     const fetchSources = async () => {
       try {
         setSourceLoading(true);
-        const response = await listLeadSources(1, 1000); // fetch all sources (large perPage)
-        const options = (response.data || []).map(source => ({
-          id: source.id,
-          source: source.source,
-        }));
+        // API call for lead sources
+          const response = await apiClient.get('/lead-sources');
+          const data = Array.isArray(response.data) ? response.data : [];
+          const options = data.map((source: { id: string; name: string }) => ({
+            id: source.id,
+            source: source.name,
+          }));
         setSourceOptions(options);
       } catch (err) {
         console.error('Failed to fetch lead sources:', err);
@@ -83,6 +89,22 @@ const Create: React.FC<CreateProps> = ({
     fetchSources();
   }, []);
 
+  // Store initial nested sub-source for reference during fetch cycles
+  const initialSubSourceRef = useRef<{ id: string; label: string } | null>(null);
+
+  useEffect(() => {
+    if (mode === 'edit' && initialData) {
+      const nestedSub = initialData.lead_sub_source ?? initialData.sub_source ?? initialData.subSource;
+      if (nestedSub && typeof nestedSub === 'object') {
+        const nid = String(nestedSub.id ?? nestedSub.lead_sub_source_id ?? nestedSub.sub_source_id ?? '');
+        const nlabel = String(nestedSub.name ?? nestedSub.subSource ?? nestedSub.label ?? '');
+        if (nid && nlabel) {
+          initialSubSourceRef.current = { id: nid, label: nlabel };
+        }
+      }
+    }
+  }, [mode, initialData]);
+
   // Fetch lead sub-sources when source selection changes
   useEffect(() => {
     if (!formData.source) {
@@ -93,14 +115,14 @@ const Create: React.FC<CreateProps> = ({
     const fetchSubSources = async () => {
       try {
         setSubSourceLoading(true);
-        const response = await listLeadSubSourcesBySourceId(formData.source, 1, 1000);
-        const options = (response.data || []).map(subSource => ({
+        // API call for sub sources by source id
+        const response = await apiClient.get(`/lead-sub-sources/by-source/${formData.source}`);
+        const data = Array.isArray(response.data) ? response.data : [];
+        const options = data.map((subSource: { id: string; name: string }) => ({
           id: subSource.id,
-          subSource: subSource.subSource || '',
+          label: subSource.name,
         }));
         setSubSourceOptions(options);
-        // Reset subSource selection when source changes
-        setFormData(prev => ({ ...prev, subSource: '' }));
       } catch (err) {
         console.error('Failed to fetch lead sub-sources:', err);
         setSubSourceOptions([]);
@@ -108,30 +130,51 @@ const Create: React.FC<CreateProps> = ({
         setSubSourceLoading(false);
       }
     };
-
     fetchSubSources();
   }, [formData.source]);
 
   useEffect(() => {
     if (mode === 'edit' && initialData) {
+      // Extract the actual IDs from the raw API response
+      const brandId = initialData.brand_id || initialData.brand?.id || initialData.brandId || initialData.brandName;
+      const sourceId = initialData.lead_source_id || initialData.lead_source?.id || initialData.source_id || initialData.source;
+      const subSourceId = initialData.lead_sub_source_id || initialData.lead_sub_source?.id || initialData.sub_source_id || initialData.subSource;
+
       setFormData(prev => ({
         ...prev,
-        brandName: String(initialData.brand_id ?? initialData.brandName ?? prev.brandName ?? ''),
-        source: String(initialData.lead_source_id ?? initialData.source ?? prev.source ?? ''),
-        subSource: String(initialData.lead_sub_source_id ?? initialData.subSource ?? prev.subSource ?? ''),
+        brandName: String(brandId ?? prev.brandName ?? ''),
+        source: String(sourceId ?? prev.source ?? ''),
+        subSource: String(subSourceId ?? prev.subSource ?? ''),
         productName: String(initialData.name ?? initialData.productName ?? prev.productName ?? ''),
-        // image is not prefilled
+        image: null, // image is not prefilled
+        image_url: initialData.image_url || initialData.image_path || '',
+        remove_image: false,
       }));
+
+      // If API returned a nested `lead_sub_source` object, inject it immediately
+      const nestedSub = initialData.lead_sub_source ?? initialData.sub_source ?? initialData.subSource;
+      if (nestedSub && typeof nestedSub === 'object') {
+        const nid = String(nestedSub.id ?? nestedSub.lead_sub_source_id ?? nestedSub.sub_source_id ?? '');
+        const nlabel = String(nestedSub.name ?? nestedSub.subSource ?? nestedSub.label ?? '');
+        if (nid && nlabel) {
+          // Inject the initial sub-source option
+          setSubSourceOptions(prev => {
+            const exists = prev.find(p => String(p.id) === nid);
+            if (exists) return prev;
+            return [{ id: nid, label: nlabel }, ...prev];
+          });
+        }
+      }
     }
   }, [mode, initialData]);
 
   useEffect(() => {
-    if (initialData) {
-      setFormData(prev => ({
-        ...prev,
-        ...initialData,
-      }));
-    }
+    // Do not blindly merge raw API `initialData` into form state.
+    // The edit-mode normalization above handles mapping IDs (brand/source/subSource)
+    // to `formData` correctly. Spreading `initialData` here can overwrite those
+    // normalized string IDs with nested objects (e.g. `lead_sub_source` object),
+    // causing select inputs to lose their selected label.
+    // Intentionally leave this effect empty to avoid clobbering normalized values.
   }, [initialData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -141,7 +184,12 @@ const Create: React.FC<CreateProps> = ({
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFormData(prev => ({ ...prev, image: e.target.files![0] }));
+      setFormData(prev => ({
+        ...prev,
+        image: e.target.files![0],
+        image_url: '', // clear preview if uploading new
+        remove_image: false,
+      }));
     }
   };
 
@@ -167,14 +215,18 @@ const Create: React.FC<CreateProps> = ({
       brand_id: formData.brandName,
       lead_source_id: formData.source,
       lead_sub_source_id: formData.subSource,
-      image: formData.image,
+      remove_image: formData.remove_image,
     };
+    // Only include image if a new file is selected
+    if (formData.image) {
+      payload.image_path = formData.image;
+    }
 
     try {
       let result: any;
       if (mode === 'edit' && initialData && (initialData.id || initialData.uuid)) {
         const id = String(initialData.id ?? initialData.uuid);
-        result = await updateMissCampaignWithForm(id, payload);
+        result = await updateMissCampaign(id, payload);
         showSuccess('Miss campaign updated successfully');
       } else {
         result = await createMissCampaign(payload);
@@ -205,7 +257,7 @@ const Create: React.FC<CreateProps> = ({
   return (
     <div className={inline ? 'w-full' : 'p-6'}>
       <MasterCreateHeader
-        title={mode === 'edit' ? 'Edit Miss Campaign' : ''}
+        title=""
         onClose={onClose ? onClose : () => navigate(-1)}
       />
       <div className="mt-6 bg-white rounded-2xl shadow-sm border border-[var(--border-color)] p-6">
@@ -221,7 +273,7 @@ const Create: React.FC<CreateProps> = ({
                 <SelectField
                   name="brandName"
                   value={formData.brandName}
-                  onChange={(v) => { setFormData(prev => ({ ...prev, brandName: v })); setErrors(prev => ({ ...prev, brandName: '' })); }}
+                  onChange={(v) => { setFormData(prev => ({ ...prev, brandName: typeof v === 'string' ? v : v[0] ?? '' })); setErrors(prev => ({ ...prev, brandName: '' })); }}
                   options={brandOptions.map(b => ({ value: String(b.id), label: b.name }))}
                   placeholder={brandLoading ? 'Loading brands...' : 'Search or select option'}
                   inputClassName={errors.brandName ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}
@@ -247,7 +299,7 @@ const Create: React.FC<CreateProps> = ({
                 <SelectField
                   name="source"
                   value={formData.source}
-                  onChange={(v) => { setFormData(prev => ({ ...prev, source: v })); setErrors(prev => ({ ...prev, source: '' })); }}
+                  onChange={(v) => { setFormData(prev => ({ ...prev, source: typeof v === 'string' ? v : v[0] ?? '' })); setErrors(prev => ({ ...prev, source: '' })); }}
                   options={sourceOptions.map(s => ({ value: String(s.id), label: s.source }))}
                   placeholder={sourceLoading ? 'Loading sources...' : 'Search or select option'}
                   inputClassName={errors.source ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}
@@ -266,15 +318,16 @@ const Create: React.FC<CreateProps> = ({
 
             {/* Sub Source (dropdown) */}
             <div>
-              <label className="block text-sm font-medium mb-2">
+              <label className="block text-sm font-medium mb-2 flex items-center gap-2">
                 Sub Source <span className="text-[#FF0000]">*</span>
+                {subSourceLoading && <Loader className="w-4 h-4 animate-spin text-blue-500" />}
               </label>
               <div>
                 <SelectField
                   name="subSource"
                   value={formData.subSource}
-                  onChange={(v) => { setFormData(prev => ({ ...prev, subSource: v })); setErrors(prev => ({ ...prev, subSource: '' })); }}
-                  options={subSourceOptions.map(s => ({ value: String(s.id), label: s.subSource }))}
+                  onChange={(v) => { setFormData(prev => ({ ...prev, subSource: typeof v === 'string' ? v : v[0] ?? '' })); setErrors(prev => ({ ...prev, subSource: '' })); }}
+                  options={subSourceOptions.map(s => ({ value: String(s.id), label: s.label }))}
                   placeholder={subSourceLoading ? 'Loading sub-sources...' : (formData.source ? 'Search or select option' : 'Select a source first')}
                   inputClassName={errors.subSource ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}
                   disabled={subSourceLoading || !formData.source}
@@ -317,40 +370,75 @@ const Create: React.FC<CreateProps> = ({
               )}
             </div>
 
-            {/* Image Upload */}
+            {/* Image Upload & Preview */}
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Upload Image
+                {(formData.image_url && !formData.remove_image) ? 'Uploaded Image' : 'Upload Image'}
               </label>
               <div>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                  <input
-                    type="file"
-                    id="image-upload"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    disabled={saving}
-                    className="hidden"
-                  />
-                  <label
-                    htmlFor="image-upload"
-                    className={`cursor-pointer flex flex-col items-center ${saving ? 'pointer-events-none opacity-60' : ''}`}
-                  >
-                    <Upload className="w-8 h-8 text-gray-400 mb-2" />
-                    <span className="text-sm text-gray-500">
-                      Supported format: JPEG, PNG, SVG
-                    </span>
-                  </label>
-                </div>
-
-                {formData.image && (
-                  <div className="text-xs text-green-600 mt-1.5 flex items-center gap-1">
-                    <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <span>{formData.image.name}</span>
+                {/* Uploaded image card redesign */}
+                {formData.image_url && !formData.remove_image && (
+                  <div className="flex flex-col items-start mb-3">
+                    <div className="border border-gray-200 rounded-2xl p-5 shadow-sm bg-gray-50 flex flex-col items-center" style={{ width: 320 }}>
+                      <div className="flex items-center justify-center w-full" style={{ height: 140 }}>
+                        <img
+                          src={formData.image_url}
+                          alt=""
+                          style={{ width: 240, height: 120, objectFit: 'contain', border: '1px solid #e5e7eb', background: '#f3f4f6', borderRadius: 8, display: 'block' }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between w-full mt-3">
+                        <span className="text-base text-gray-900 font-semibold truncate" style={{ maxWidth: 180 }}>{formData.image?.name || initialData?.image_path?.split('/').pop() || 'image.jpg'}</span>
+                        <button
+                          type="button"
+                          className="ml-2 p-2 rounded-full border border-red-200 hover:bg-red-100"
+                          title="Delete"
+                          onClick={() => setFormData(prev => ({ ...prev, image_url: '', remove_image: true, image: null }))}
+                        >
+                            <Trash2 className="w-5 h-5 text-red-500" />
+                        </button>
+                      </div>
+                      <div className="w-full mt-2">
+                        <span className="text-xs text-gray-600 break-all">Path: {initialData?.image_path || ''}</span>
+                      </div>
+                    </div>
                   </div>
                 )}
+                {/* Upload UI if no preview */}
+                {(!formData.image_url || formData.remove_image) && (
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                    <input
+                      type="file"
+                      id="image-upload"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      disabled={saving}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="image-upload"
+                      className={`cursor-pointer flex flex-col items-center ${saving ? 'pointer-events-none opacity-60' : ''}`}
+                    >
+                      <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                      {formData.image ? (
+                        <div className="flex flex-col items-center w-full">
+                          <span className="text-xs text-green-600 font-medium text-center mb-1">{formData.image.name}</span>
+                          <span className="flex items-center justify-center text-sm text-green-700 font-medium text-center gap-2">
+                            <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            Image Is Add Successfully
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-500">
+                          Supported format: JPEG, PNG, SVG
+                        </span>
+                      )}
+                    </label>
+                  </div>
+                )}
+                {/* Removed duplicate file name and success message below the upload card */}
               </div>
             </div>
           </div>
@@ -362,7 +450,7 @@ const Create: React.FC<CreateProps> = ({
               className={`px-6 py-2 btn-primary text-white rounded-lg transition-colors ${saving ? 'opacity-50 cursor-not-allowed' : ''}`}
               disabled={saving}
             >
-              {saving ? 'Saving...' : 'Save'}
+              {saving ? (mode === 'edit' ? 'Updating...' : 'Saving...') : (mode === 'edit' ? 'Update' : 'Save')}
             </button>
           </div>
         </form>

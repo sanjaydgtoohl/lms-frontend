@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
-import { MasterFormHeader, NotificationPopup, SelectField } from '../../../components/ui';
+import { MasterFormHeader, NotificationPopup, MultiSelectDropdown } from '../../../components/ui';
 import { apiClient } from '../../../utils/apiClient';
 import { createUser, updateUser } from '../../../services/CreateUser';
 
@@ -23,7 +23,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
   phone: '',
   password: '',
   password_confirmation: '',
-  role: '',
+  roles: [] as string[],
   });
 
   const [showSuccessToast, setShowSuccessToast] = useState(false);
@@ -34,14 +34,18 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
   const [rolesLoading, setRolesLoading] = useState(false);
   const [rolesError, setRolesError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     if (initialData) {
       setForm((prev) => ({
         ...prev,
         ...initialData,
-        // normalize role id to select value
-        role: initialData.role_id ? String(initialData.role_id) : (initialData.role ? String(initialData.role) : prev.role),
+        // normalize role id(s) to select value(s)
+        roles: initialData.roles && Array.isArray(initialData.roles)
+          ? initialData.roles.map((r: any) => String(r.id))
+          : (initialData.role_id ? [String(initialData.role_id)] : (initialData.role ? [String(initialData.role)] : prev.roles)),
         name: initialData.name ?? initialData.full_name ?? prev.name,
       }));
     }
@@ -151,8 +155,10 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
         phone: base.phone || null,
       };
 
-      // role is SelectField value (string id) -> send as role_id (number)
-      if (base.role) payload.role_id = Number(base.role);
+      // roles is array of role ids -> send as role_ids (array)
+      if (base.roles && base.roles.length > 0) {
+        payload.role_ids = base.roles.map((r: string) => Number(r));
+      }
 
       // include password only when provided (required on create)
       if (base.password && String(base.password).trim() !== '') {
@@ -185,7 +191,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
           const v = respData.errors[k];
           // map backend field names to form field names
           let mappedKey = k;
-          if (k === 'role_id') mappedKey = 'role';
+          if (k === 'role_ids' || k === 'role_id') mappedKey = 'roles';
           if (k === 'first_name' || k === 'full_name') mappedKey = 'name';
           if (k === 'name') mappedKey = 'name';
           // take first message if array
@@ -274,23 +280,47 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
               <label className="block text-sm text-[var(--text-secondary)] mb-1">
                 Password {mode !== 'edit' && <span className="text-[#FF0000]">*</span>}
               </label>
-              <input
-                name="password"
-                type="password"
-                value={form.password}
-                onChange={(e) => {
-                  handleChange(e);
-                  setErrors((prev) => ({ ...prev, password: '' }));
-                }}
-                placeholder={mode === 'edit' ? 'Leave blank to keep current password' : 'Please enter password'}
-                className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
-                  errors.password
-                    ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                    : 'border border-[var(--border-color)] focus:ring-blue-500'
-                }`}
-                aria-invalid={errors.password ? 'true' : 'false'}
-                aria-describedby={errors.password ? 'password-error' : undefined}
-              />
+              <div className="relative">
+                <input
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={form.password}
+                  onChange={(e) => {
+                    handleChange(e);
+                    setErrors((prev) => ({ ...prev, password: '' }));
+                  }}
+                  placeholder={mode === 'edit' ? 'Leave blank to keep current password' : 'Please enter password'}
+                  className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
+                    errors.password
+                      ? 'border border-red-500 bg-red-50 focus:ring-red-500'
+                      : 'border border-[var(--border-color)] focus:ring-blue-500'
+                  }`}
+                  aria-invalid={errors.password ? 'true' : 'false'}
+                  aria-describedby={errors.password ? 'password-error' : undefined}
+                />
+                <span
+                  role="button"
+                  tabIndex={0}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer select-none"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setShowPassword(v => !v); }}
+                >
+                  {showPassword ? (
+                    // Eye open icon
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  ) : (
+                    // Eye closed icon
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.956 9.956 0 012.293-3.95m3.671-2.712A9.956 9.956 0 0112 5c4.477 0 8.268 2.943 9.542 7a9.973 9.973 0 01-4.293 5.03M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3l18 18" />
+                    </svg>
+                  )}
+                </span>
+              </div>
               {errors.password && (
                 <div id="password-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
                   <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -306,23 +336,47 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
               <label className="block text-sm text-[var(--text-secondary)] mb-1">
                 Confirm Password {mode !== 'edit' && <span className="text-[#FF0000]">*</span>}
               </label>
-              <input
-                name="password_confirmation"
-                type="password"
-                value={form.password_confirmation}
-                onChange={(e) => {
-                  handleChange(e);
-                  setErrors((prev) => ({ ...prev, password_confirmation: '' }));
-                }}
-                placeholder={mode === 'edit' ? 'Leave blank to keep current password' : 'Please confirm password'}
-                className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
-                  errors.password_confirmation
-                    ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                    : 'border border-[var(--border-color)] focus:ring-blue-500'
-                }`}
-                aria-invalid={errors.password_confirmation ? 'true' : 'false'}
-                aria-describedby={errors.password_confirmation ? 'password_confirmation-error' : undefined}
-              />
+              <div className="relative">
+                <input
+                  name="password_confirmation"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={form.password_confirmation}
+                  onChange={(e) => {
+                    handleChange(e);
+                    setErrors((prev) => ({ ...prev, password_confirmation: '' }));
+                  }}
+                  placeholder={mode === 'edit' ? 'Leave blank to keep current password' : 'Please confirm password'}
+                  className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
+                    errors.password_confirmation
+                      ? 'border border-red-500 bg-red-50 focus:ring-red-500'
+                      : 'border border-[var(--border-color)] focus:ring-blue-500'
+                  }`}
+                  aria-invalid={errors.password_confirmation ? 'true' : 'false'}
+                  aria-describedby={errors.password_confirmation ? 'password_confirmation-error' : undefined}
+                />
+                <span
+                  role="button"
+                  tabIndex={0}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer select-none"
+                  onClick={() => setShowConfirmPassword((v) => !v)}
+                  aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setShowConfirmPassword(v => !v); }}
+                >
+                  {showConfirmPassword ? (
+                    // Eye open icon
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  ) : (
+                    // Eye closed icon
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.956 9.956 0 012.293-3.95m3.671-2.712A9.956 9.956 0 0112 5c4.477 0 8.268 2.943 9.542 7a9.973 9.973 0 01-4.293 5.03M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3l18 18" />
+                    </svg>
+                  )}
+                </span>
+              </div>
               {errors.password_confirmation && (
                 <div id="password_confirmation-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
                   <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -404,19 +458,16 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
               <label className="block text-sm text-[var(--text-secondary)] mb-1">
                 Role <span className="text-[#FF0000]">*</span>
               </label>
-              <SelectField
-                name="role"
-                placeholder={rolesLoading ? 'Loading roles...' : 'Please select a role'}
-                options={roleOptions}
-                value={form.role}
-                onChange={(v) => {
-                  setForm((prev) => ({ ...prev, role: v }));
-                  setErrors((prev) => ({ ...prev, role: '' }));
-                }}
-                searchable
-                disabled={rolesLoading}
-                inputClassName={`border ${errors.role ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-[var(--border-color)] focus:ring-blue-500'}`}
-              />
+                <MultiSelectDropdown
+                  name="roles"
+                  placeholder={rolesLoading ? 'Loading roles...' : 'Search or select roles'}
+                  options={roleOptions}
+                  value={form.roles}
+                  onChange={(v) => { setForm((prev) => ({ ...prev, roles: v })); setErrors((prev) => ({ ...prev, roles: '' })); }}
+                  disabled={rolesLoading}
+                  inputClassName={`border ${errors.roles ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-[var(--border-color)] focus:ring-blue-500'}`}
+                  maxVisibleOptions={2}
+                />
               {rolesError && (
                 <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
                   <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">

@@ -5,13 +5,16 @@ import SearchBar from '../../../components/ui/SearchBar';
 import { MasterHeader } from '../../../components/ui';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
-import { listRoles } from '../../../services/AllRoles';
+import { listRoles, deleteRole } from '../../../services/AllRoles';
+import { showError } from '../../../utils/notifications';
+import ConfirmDialog from '../../../components/ui/ConfirmDialog';
 
 interface Role {
   id: string;
   name: string;
   description?: string;
   srNo?: number;
+  _realId?: string; // Add for type safety
 }
 
 const AllRoles: React.FC = () => {
@@ -21,6 +24,9 @@ const AllRoles: React.FC = () => {
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(false);
   const [totalItems, setTotalItems] = useState(0);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [confirmDeleteLabel, setConfirmDeleteLabel] = useState<string>('');
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   const fetchRoles = async () => {
     setLoading(true);
@@ -62,6 +68,32 @@ const AllRoles: React.FC = () => {
     navigate(ROUTES.ROLE.DETAIL(cleanId));
   };
 
+  const handleDelete = async (id: string) => {
+    const found = roles.find(r => r.id === id);
+    // Use _realId only if it exists, otherwise use id
+    setConfirmDeleteId(found && found._realId ? found._realId : id);
+    setConfirmDeleteLabel(found ? (found.name || String(found.id)) : id);
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmDeleteId) return;
+    setConfirmLoading(true);
+    try {
+      await deleteRole(confirmDeleteId);
+      setCurrentPage(1);
+      // Reload the table from API
+      await fetchRoles();
+    } catch (err: any) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to delete role', err);
+      showError(err?.message || 'Failed to delete role');
+    } finally {
+      setConfirmLoading(false);
+      setConfirmDeleteId(null);
+      setConfirmDeleteLabel('');
+    }
+  };
+
   const columns = ([
     { 
       key: 'srNo', 
@@ -75,13 +107,23 @@ const AllRoles: React.FC = () => {
 
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
+      <ConfirmDialog
+        isOpen={!!confirmDeleteId}
+        title={`Delete role "${confirmDeleteLabel}"?`}
+        message="This action will permanently remove the role. This cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        loading={confirmLoading}
+        onCancel={() => setConfirmDeleteId(null)}
+        onConfirm={confirmDelete}
+      />
       <MasterHeader
         onCreateClick={handleCreateRole}
         createButtonLabel="Create Role"
       />
-      <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-        <div className="bg-gray-50 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[var(--text-primary)]">All Roles</h2>
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-200">
+          <h2 className="text-base font-semibold text-gray-900">All Roles</h2>
           <div className="ml-4">
             <SearchBar
               placeholder="Search roles..."
@@ -94,15 +136,19 @@ const AllRoles: React.FC = () => {
           </div>
         </div>
 
-        <Table
-          data={roles}
-          startIndex={(currentPage - 1) * itemsPerPage}
-          loading={loading}
-          keyExtractor={(it: Role) => it.id}
-          columns={columns}
-          onEdit={(it: Role) => handleEdit(it.id)}
-          onView={(it: Role) => handleView(it.id)}
-        />
+        <div className="pt-0 overflow-visible">
+          <Table
+            data={roles}
+            startIndex={(currentPage - 1) * itemsPerPage}
+            loading={loading}
+            desktopOnMobile={true}
+            keyExtractor={(it: Role) => it.id}
+            columns={columns}
+            onEdit={(it: Role) => handleEdit(it.id)}
+            onView={(it: Role) => handleView(it.id)}
+            onDelete={(it: Role) => handleDelete(it.id)}
+          />
+        </div>
       </div>
 
       <Pagination

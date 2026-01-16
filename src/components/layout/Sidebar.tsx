@@ -1,28 +1,15 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import {
-  LayoutGrid,
-  ChevronDown,
-  ChevronRight,
-  Globe,
-  Settings,
-  Search,
-  Radio,
-} from "lucide-react";
-import File02Icon from "../../assets/icons/File02Icon";
-import AgencyMasterIcon from "../../assets/icons/AgencyMasterIcon";
-import BrandMasterIcon from "../../assets/icons/BrandMasterIcon";
-import DepartmentMasterIcon from "../../assets/icons/DepartmentMasterIcon";
-import DesignationMasterIcon from "../../assets/icons/DesignationMasterIcon";
-import UserManagementIcon from "../../assets/icons/UserManagementIcon";
-import LeadManagementIcon from "../../assets/icons/LeadManagementIcon";
-import CampaignManagementIcon from "../../assets/icons/CampaignManagementIcon";
-import FinanceIcon from "../../assets/icons/FinanceIcon";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import LogoutIcon from "../../assets/icons/LogoutIcon";
-import Brief2Icon from "../../assets/icons/Brief2Icon";
 import HelpIcon from "../../assets/icons/HelpIcon";
+import logoUrl from "../../assets/DGTOOHL 360.svg";
 import { useAuthStore } from "../../store/auth";
-import { sidebarItems as navigationItems } from "../../services/Sidebar";
+
+// Remove static sidebar import, use dynamic API mapping
+import { mapMenu } from "../../services/Side";
+import type { NavigationItem as ApiNavigationItem } from "../../services/Side";
+import { apiClient } from "../../utils/apiClient";
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -33,12 +20,10 @@ interface SidebarProps {
   onCloseMobile?: () => void;
 }
 
-interface NavigationItem {
-  name: string;
-  path?: string;
-  icon: React.ComponentType<{ className?: string }>;
-  children?: NavigationItem[];
-}
+
+// Use the NavigationItem type from Side.ts for consistency
+type NavigationItem = ApiNavigationItem;
+
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobileOpen = false, onCloseMobile }) => {
   const location = useLocation();
@@ -47,6 +32,26 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [showMobilePopup, setShowMobilePopup] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
+  const [navigationItems, setNavigationItems] = useState<NavigationItem[]>([]);
+
+  // Fetch sidebar data from API and map it
+  useEffect(() => {
+    async function fetchSidebar() {
+      try {
+        const res = await apiClient.get<any>("/permissions/sidebar");
+        if (res && res.data && Array.isArray(res.data)) {
+          const mapped = mapMenu(res.data);
+          // Use sidebar items as provided by the backend mapping
+          setNavigationItems(mapped);
+        } else {
+          setNavigationItems([]);
+        }
+      } catch (e) {
+        setNavigationItems([]);
+      }
+    }
+    fetchSidebar();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -137,23 +142,25 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
   useEffect(() => {
     const effectivePath = getEffectivePath(location.pathname);
 
-    const activeParents = navigationItems
+    let activeParents = navigationItems
       .filter((item) =>
         item.children &&
         item.children.some((child) => {
           if (!child.path) return false;
-          // consider both exact match and nested routes (startsWith)
           return effectivePath === child.path || effectivePath.startsWith(child.path + "/");
         })
       )
       .map((item) => item.name.toLowerCase().replace(/\s+/g, "-"));
 
-    // Replace expanded items with the parents active for the current route.
-    // This collapses any open parent menus when navigating to routes that
-    // don't belong to them and avoids a visible "blink" caused by
-    // clearing then immediately re-opening menus.
+    // Always expand Miss Campaign on /miss-campaign/create
+    if (location.pathname === "/miss-campaign/create") {
+      const missCampaignSlug = navigationItems.find(item => item.name === "Miss Campaign")?.name.toLowerCase().replace(/\s+/g, "-");
+      if (missCampaignSlug && !activeParents.includes(missCampaignSlug)) {
+        activeParents.push(missCampaignSlug);
+      }
+    }
     setExpandedItems(activeParents);
-  }, [location.pathname]);
+  }, [location.pathname, navigationItems]);
 
   const renderNavigationItem = (item: NavigationItem, level = 0) => {
     const hasChildren = item.children && item.children.length > 0;
@@ -161,6 +168,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
     const isExpanded = expandedItems.includes(slug);
     const isItemActive = isParentActive(item);
     const IconComponent = item.icon;
+
+    // Custom highlight for Miss Campaign, Live Campaign, Brief, and Brief Request
+    const isMissCampaignRoute = location.pathname === "/miss-campaign/create";
+    const isMissCampaign = item.name === "Miss Campaign";
+    const isLiveCampaign = item.name === "Live Campaign";
+    const isBriefCreateRoute = location.pathname === "/brief/create";
+    const isBrief = item.name.trim() === "Brief" || item.name.trim() === "Brief ";
+    const isBriefRequest = item.name === "Brief Request";
+    // Highlight parent and child when on /miss-campaign/create or /brief/create
+    const highlightClass =
+      (isMissCampaignRoute && (isMissCampaign || isLiveCampaign)) ||
+      (isBriefCreateRoute && (isBrief || isBriefRequest))
+        ? "bg-orange-100"
+        : isItemActive
+        ? "bg-orange-100"
+        : "hover:bg-orange-50";
 
     const handleCardClick = () => {
       if (hasChildren) {
@@ -181,7 +204,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
             flex items-center justify-between px-4 py-3 text-sm font-medium cursor-pointer rounded-lg
             transition-all duration-200 ease-in-out
             ${level > 0 ? "ml-6" : ""}
-            ${isItemActive ? "bg-orange-100" : "hover:bg-orange-50"}
+            ${highlightClass}
             ${isCollapsed ? "px-2 justify-center" : ""}
           `}
           onClick={handleCardClick}
@@ -191,14 +214,23 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
               isCollapsed ? "justify-center" : ""
             }`}
           >
-            <IconComponent
-              // enforce a fixed visual size and prevent flex shrinking so icons remain
-              // identical across breakpoints (w-4 = 1rem = 16px)
-              className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)] ${isCollapsed ? "" : "mr-2.5"}`}
-            />
+            {/* Show icon_file image if present, else fallback to icon component */}
+            {item.icon_file ? (
+              <img
+                src={item.icon_file}
+                alt={item.name}
+                className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] object-contain ${isCollapsed ? "" : "mr-2.5"}`}
+                style={{ display: "inline-block" }}
+              />
+            ) : (
+              IconComponent && (
+                <IconComponent
+                  className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)] ${isCollapsed ? "" : "mr-2.5"}`}
+                />
+              )
+            )}
             {!isCollapsed && <span className="text-[var(--text-primary)]">{item.name}</span>}
           </div>
-
           {hasChildren && !isCollapsed && (
             <div className="ml-auto">
               {isExpanded ? (
@@ -225,15 +257,25 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
                   setShowMobilePopup(false);
                 }}
               >
-                {React.createElement(child.icon, {
-                  className: "w-4 h-4 mr-2 text-[var(--text-primary)]",
-                })}
+                {/* Show icon_file image if present, else fallback to icon component */}
+                {child.icon_file ? (
+                  <img
+                    src={child.icon_file}
+                    alt={child.name}
+                    className="w-4 h-4 mr-2 object-contain"
+                    style={{ display: "inline-block" }}
+                  />
+                ) : (
+                  child.icon && React.createElement(child.icon, {
+                    className: "w-4 h-4 mr-2 text-[var(--text-primary)]",
+                  })
+                )}
                 <span className="text-[var(--text-primary)]">{child.name}</span>
               </Link>
             ))}
           </div>
         )}
- 
+
         {hasChildren && isExpanded && !isCollapsed && (
           <div className="mt-2 space-y-1">
             {item.children?.map((child) => renderNavigationItem(child, level + 1))}
@@ -253,9 +295,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
       >
         {/* Render collapsed (icons-only) content inside */}
         <div className="flex h-16 items-center px-2">
-          <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
-            <span className="text-[#F5F7FA] font-semibold text-xl leading-none">L</span>
-          </div>
+            <div className="w-12 h-12 rounded-lg flex items-center justify-center">
+              <img src={logoUrl} alt="LMS logo" style={{width: 72, height: 'auto'}} />
+            </div>
         </div>
 
         <nav className="flex-1 overflow-y-auto py-2 px-1 scrolling-touch">
@@ -295,25 +337,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
       `}
     >
       {/* Logo Section */}
-      <div className="flex h-16 items-center px-4">
+      <div className="flex h-16 items-center px-4" style={{paddingLeft: '9px', paddingRight: '9px'}}>
         {isCollapsed ? (
           <div className="w-full flex items-center justify-center">
-            <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
-              <span className="text-[#F5F7FA] font-semibold text-xl leading-none">L</span>
+            <div className="w-12 h-12 rounded-lg flex items-center justify-center">
+              <img src={logoUrl} alt="LMS logo" style={{width: 80, height: 80}} />
             </div>
           </div>
         ) : (
-          <div className="flex items-center gap-3 w-full">
-            <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
-              <span className="text-[#F5F7FA] font-semibold text-xl leading-none">L</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xl font-semibold text-[var(--text-primary)] tracking-wide leading-none">
-                LMS
-              </span>
-              <span className="text-sm font-medium text-[var(--text-secondary)] tracking-wide">
-                Mobiyoung
-              </span>
+          <div className="flex items-center w-full">
+            <div className="rounded-lg flex items-center justify-start">
+              <img src={logoUrl} alt="LMS logo" style={{width: 280, height: 'auto'}} />
             </div>
           </div>
         )}

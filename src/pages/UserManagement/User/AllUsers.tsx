@@ -5,7 +5,8 @@ import SearchBar from '../../../components/ui/SearchBar';
 import { MasterHeader } from '../../../components/ui';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
-import { listUsers, type User } from '../../../services/AllUsers';
+import { listUsers, deleteUser, type User } from '../../../services/AllUsers';
+import ConfirmDialog from '../../../components/ui/ConfirmDialog';
 
 const AllUsers: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -14,6 +15,11 @@ const AllUsers: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [totalItems, setTotalItems] = useState(0);
+
+  // ConfirmDialog state
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -29,12 +35,41 @@ const AllUsers: React.FC = () => {
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('Failed to fetch users', err);
-      setUsers([]);
-      setTotalItems(0);
+      alert('Failed to fetch users.');
     } finally {
       setLoading(false);
     }
   };
+
+  // Show confirm dialog instead of window.confirm
+  const handleDeleteRequest = (user: User) => {
+    setDeleteTarget(user);
+    setConfirmOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    try {
+      await deleteUser(deleteTarget.id);
+      setConfirmOpen(false);
+      setDeleteTarget(null);
+      fetchUsers();
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to delete user', err);
+      alert('Failed to delete user.');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setConfirmOpen(false);
+    setDeleteTarget(null);
+    setDeleteLoading(false);
+  };
+      // ...existing code...
 
   useEffect(() => {
     fetchUsers();
@@ -61,15 +96,17 @@ const AllUsers: React.FC = () => {
       : 'bg-red-100 text-red-700';
   };
 
-  const getRoleBadgeColor = (role?: string) => {
+  // Map role name/display_name to color classes
+  const getRoleBadgeColor = (roleName?: string) => {
     const roleColorMap: Record<string, string> = {
-      'S-Admin': 'border-purple-300 text-purple-700 bg-purple-50',
-      'Admin': 'border-blue-300 text-blue-700 bg-blue-50',
+      'Manager': 'border-blue-300 text-blue-700 bg-blue-50',
+      'Super Admin': 'border-purple-300 text-purple-700 bg-purple-50',
+      'Admin': 'border-green-300 text-green-700 bg-green-50',
       'BDM': 'border-orange-300 text-orange-700 bg-orange-50',
       'S-BDM': 'border-yellow-300 text-yellow-700 bg-yellow-50',
       'Planner': 'border-pink-300 text-pink-700 bg-pink-50',
     };
-    return (role && roleColorMap[role]) || 'border-gray-300 text-gray-700 bg-gray-50';
+    return (roleName && roleColorMap[roleName]) || 'border-gray-300 text-gray-700 bg-gray-50';
   };
 
   const columns = ([
@@ -117,14 +154,19 @@ const AllUsers: React.FC = () => {
       key: 'role',
       header: 'Role',
       render: (it: User) => (
-        <div className="flex justify-center">
-          <span
-            className={`inline-flex items-center justify-center h-7 px-3 border rounded-full text-xs font-medium leading-tight whitespace-nowrap ${getRoleBadgeColor(
-              it.role
-            )}`}
-          >
-            {it.role}
-          </span>
+        <div className="flex flex-wrap gap-2 justify-center">
+          {Array.isArray(it.roles) && it.roles.length > 0 ? (
+            it.roles.map((role: any) => (
+              <span
+                key={role.id || role.name}
+                className={`inline-flex items-center justify-center h-7 px-3 border rounded-full text-xs font-medium leading-tight whitespace-nowrap ${getRoleBadgeColor(role.display_name || role.name)}`}
+              >
+                {role.display_name || role.name}
+              </span>
+            ))
+          ) : (
+            <span className="text-gray-400">-</span>
+          )}
         </div>
       ),
       className: 'text-center',
@@ -145,9 +187,9 @@ const AllUsers: React.FC = () => {
         breadcrumbItems={[{ label: 'User Management', path: '/user-management' }]}
         currentPageTitle="User"
       />
-      <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-        <div className="bg-gray-50 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[var(--text-primary)]">Team Members</h2>
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-200">
+          <h2 className="text-base font-semibold text-gray-900">Team Members</h2>
           <div className="ml-4">
             <SearchBar
               placeholder="Search users..."
@@ -160,15 +202,30 @@ const AllUsers: React.FC = () => {
           </div>
         </div>
 
-        <Table
-          data={users}
-          startIndex={(currentPage - 1) * itemsPerPage}
-          loading={loading}
-          keyExtractor={(it: User) => it.id}
-          columns={columns}
-          onEdit={(it: User) => handleEdit(it.id)}
-          onView={(it: User) => handleView(it.id)}
-        />
+        <div className="pt-0 overflow-visible">
+          <Table
+            data={users}
+            startIndex={(currentPage - 1) * itemsPerPage}
+            loading={loading}
+            desktopOnMobile={true}
+            keyExtractor={(it: User) => it.id}
+            columns={columns}
+            onEdit={(it: User) => handleEdit(it.id)}
+            onView={(it: User) => handleView(it.id)}
+            onDelete={(it: User) => handleDeleteRequest(it)}
+          />
+          {/* ConfirmDialog for delete */}
+          <ConfirmDialog
+            isOpen={confirmOpen}
+            title="Delete User?"
+            message={deleteTarget ? `Are you sure you want to delete user \"${deleteTarget.name}\"? This action cannot be undone.` : ''}
+            confirmLabel="Delete"
+            cancelLabel="Cancel"
+            loading={deleteLoading}
+            onCancel={handleDeleteCancel}
+            onConfirm={handleDeleteConfirm}
+          />
+        </div>
       </div>
 
       <Pagination
