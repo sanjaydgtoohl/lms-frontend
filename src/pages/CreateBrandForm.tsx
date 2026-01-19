@@ -360,14 +360,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
         brandName: initialData.name ?? initialData.brandName ?? prev.brandName,
         brandType: String(initialData.brand_type_id ?? initialData.brandType ?? initialData.brand_type ?? ''),
         website: initialData.website ?? prev.website,
-        agency: (() => {
-          const raw = initialData.agency_id ?? initialData.agency ?? initialData.agencyName ?? null;
-          if (!raw) return [];
-          if (Array.isArray(raw)) {
-            return raw.map(a => String(typeof a === 'object' ? a.id : a));
-          }
-          return [String(raw)];
-        })(),
+        // agency will be set after agencies are loaded
         industry: String(initialData.industry_id ?? initialData.industry ?? ''),
         country: String(initialData.country_id ?? initialData.country ?? ''),
         postalCode: initialData.postal_code ?? initialData.postalCode ?? initialData.pinCode ?? prev.postalCode,
@@ -396,7 +389,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
 
         // If initialData provided and contains agency name/id, try to preselect the matching id(s)
         if (mounted && initialData) {
-          const rawAgency = initialData.agency_id ?? initialData.agency ?? initialData.agencyName ?? null;
+          const rawAgency = initialData.agency_id ?? initialData.agency ?? initialData.agencies ?? initialData.agencyName ?? null;
           if (rawAgency) {
             const agencyIds: string[] = [];
             

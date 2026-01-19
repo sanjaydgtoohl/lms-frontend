@@ -7,13 +7,14 @@ type Props = {
   title?: string;
   item: Record<string, any> | null;
   onClose: () => void;
+  excludeFields?: string[];
 };
 
-const MasterView: React.FC<Props> = ({ title, item, onClose }) => {
+const MasterView: React.FC<Props> = ({ title, item, onClose, excludeFields = [] }) => {
   if (!item) return null;
 
   // produce key/value pairs excluding internal fields if needed
-  const entries = Object.entries(item).filter(([k]) => k !== 'id').sort(([a], [b]) => a.localeCompare(b));
+  const entries = Object.entries(item).filter(([k]) => k !== 'id' && !excludeFields.includes(k)).sort(([a], [b]) => a.localeCompare(b));
 
   // Split entries into two columns for better layout
   const half = Math.ceil(entries.length / 2);
@@ -35,7 +36,7 @@ const MasterView: React.FC<Props> = ({ title, item, onClose }) => {
     // Handle different value types
     let displayValue: string;
     let isImage = false;
-    if (v == null) {
+    if (v == null || v === '') {
       displayValue = '-';
     } else if (typeof v === 'object') {
       if (Array.isArray(v)) {

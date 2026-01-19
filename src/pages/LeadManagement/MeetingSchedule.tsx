@@ -6,7 +6,7 @@ import { showSuccess } from '../../utils/notifications';
 import { useNavigate } from 'react-router-dom';
 import SelectField from '../../components/ui/SelectField';
 import { createMeeting } from '../../services/MeetingSchedule';
-import { listUsers } from '../../services/AllUsers';
+import { listAttendees } from '../../services/AllUsers';
 import { listLeads } from '../../services/AllLeads';
 import MultiSelectDropdown from '../../components/ui/MultiSelectDropdown';
 
@@ -82,7 +82,7 @@ const MeetingSchedule: React.FC = () => {
         setLeadOptions(leadOpts);
 
         // Fetch attendees
-        const { data: usersData } = await listUsers(1, 100);
+        const { data: usersData } = await listAttendees(1, 100);
         const attendeeOpts = usersData.map((user: any) => ({
           value: String(user.id),
           label: `${user.name || user.email || 'Unknown'} #${user.id}`,
@@ -264,6 +264,7 @@ const MeetingSchedule: React.FC = () => {
                       showMonthDropdown
                       showYearDropdown
                       dropdownMode="select"
+                      minDate={new Date()}
                     />
                     {errors.date && <div className="text-red-500 text-xs mt-1">{errors.date}</div>}
                   </div>

@@ -224,7 +224,7 @@ const Table = <T,>(props: TableProps<T>) => {
                   .map(col => (
                     <div
                       key={col.key}
-                      className="flex flex-col items-center gap-1 text-center"
+                      className="flex flex-col items-start gap-1 text-left"
                     >
                       <span className="text-xs font-medium text-gray-500 tracking-wide whitespace-nowrap truncate">
                         {typeof col.header === 'string' ? toTitleCase(col.header) : col.key}

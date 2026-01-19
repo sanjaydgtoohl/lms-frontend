@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import CreateBrandForm from './CreateBrandForm';
 import MasterView from '../components/ui/MasterView';
 import Pagination from '../components/ui/Pagination';
@@ -12,6 +12,7 @@ import { NotificationPopup } from '../components/ui';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import { deleteBrand } from '../services/BrandMaster';
 import { listBrands, getBrand, type BrandItem as ServiceBrandItem } from '../services/BrandMaster';
+import { createPortal } from 'react-dom';
 
 type Brand = ServiceBrandItem;
 
@@ -77,6 +78,10 @@ const BrandMaster: React.FC = () => {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmDeleteLabel, setConfirmDeleteLabel] = useState<string>('');
   const [confirmLoading, setConfirmLoading] = useState(false);
+  const [showAgenciesPopup, setShowAgenciesPopup] = useState(false);
+  const [popupAgencies, setPopupAgencies] = useState<any[]>([]);
+  const [popupPosition, setPopupPosition] = useState<{right: number, top?: number, bottom?: number} | null>(null);
+  const popupTriggerRef = useRef<HTMLElement | null>(null);
 
   const handleDelete = (id: string) => {
     const found = brands.find(b => b.id === id);
@@ -136,10 +141,20 @@ const BrandMaster: React.FC = () => {
     }
 
     if (id) {
-      const found = brands.find(b => b.id === id) || null;
-      setViewItem(found);
-      setShowCreate(false);
-      setEditItem(null);
+      // Fetch full brand details from API for view mode
+      getBrand(id)
+        .then(data => {
+          setViewItem(data);
+          setShowCreate(false);
+          setEditItem(null);
+        })
+        .catch(() => {
+          // Fallback to locally stored data if API fails
+          const found = brands.find(b => b.id === id) || null;
+          setViewItem(found);
+          setShowCreate(false);
+          setEditItem(null);
+        });
       return;
     }
 
@@ -169,6 +184,27 @@ const BrandMaster: React.FC = () => {
     return () => { cancelled = true; };
   }, [currentPage, itemsPerPage, searchQuery]);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        popupTriggerRef.current &&
+        !popupTriggerRef.current.contains(event.target as Node)
+      ) {
+        setShowAgenciesPopup(false);
+        setPopupPosition(null);
+        popupTriggerRef.current = null;
+      }
+    };
+
+    if (showAgenciesPopup) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showAgenciesPopup]);
+
   const handlePageChange = (page: number) => setCurrentPage(page);
 
   return (
@@ -191,10 +227,33 @@ const BrandMaster: React.FC = () => {
         onCancel={() => setConfirmDeleteId(null)}
         onConfirm={confirmDelete}
       />
+
+      {showAgenciesPopup && popupPosition && createPortal(
+        <div 
+          className="fixed bg-white border border-gray-200 rounded shadow-lg z-50 p-2 max-w-xs"
+          style={{ 
+            right: popupPosition.right, 
+            top: popupPosition.top, 
+            bottom: popupPosition.bottom 
+          }}
+        >
+          <h4 className="text-sm font-semibold mb-1">Agencies</h4>
+          <ul className="text-xs list-disc pl-4 max-h-32 overflow-y-auto">
+            {popupAgencies.map((agency, idx) => (
+              <li key={idx}>{agency.name || 'Unknown'}</li>
+            ))}
+          </ul>
+        </div>,
+        document.body
+      )}
       {showCreate ? (
         <CreateBrandForm inline onClose={() => navigate(ROUTES.BRAND_MASTER)} />
       ) : viewItem ? (
-        <MasterView item={viewItem} onClose={() => navigate(ROUTES.BRAND_MASTER)} />
+        <MasterView 
+          item={viewItem} 
+          onClose={() => navigate(ROUTES.BRAND_MASTER)} 
+          excludeFields={['agency', 'industry_id', 'slug', 'brand_type_id', 'city_id', 'state_id', 'status', 'country_id', 'zone_id']}
+        />
       ) : editItem ? (
         <CreateBrandForm
           inline
@@ -231,7 +290,55 @@ const BrandMaster: React.FC = () => {
               columns={([
                 { key: 'sr', header: 'Sr. No.', render: (it: Brand) => String(startIndex + currentData.indexOf(it) + 1) },
                 { key: 'name', header: 'Brand Name', render: (it: Brand) => it.name || '-' },
-                { key: 'agencyName', header: 'Agency Name', render: (it: Brand) => it.agencyName || '-' },
+                { key: 'agencyName', header: 'Agency Name', render: (it: Brand) => {
+                  const raw = (it as any)._raw as Record<string, unknown> | undefined;
+                  const agencies = raw?.['agencies'];
+                  if (Array.isArray(agencies) && agencies.length > 0) {
+                    const first = agencies[0] as any;
+                    const name = first?.name || 'Unknown';
+                    if (agencies.length === 1) {
+                      return name;
+                    } else {
+                      return (
+                        <>
+                          <span
+                            className="inline-flex items-center gap-2 cursor-pointer"
+                            onClick={(e) => {
+                              const target = e.currentTarget as HTMLElement;
+                              popupTriggerRef.current = target;
+                              const rect = target.getBoundingClientRect();
+                              const viewportHeight = window.innerHeight;
+                              const spaceBelow = viewportHeight - rect.bottom;
+                              const spaceAbove = rect.top;
+                              const estimatedMenuHeight = 120; // estimate for agencies list
+                              const requiredSpace = estimatedMenuHeight + 10;
+
+                              const shouldShowAbove = spaceBelow < requiredSpace && spaceAbove >= requiredSpace;
+                              const right = Math.round(window.innerWidth - rect.right);
+
+                              if (shouldShowAbove) {
+                                const bottom = Math.round(window.innerHeight - rect.top);
+                                setPopupPosition({ right, bottom });
+                              } else {
+                                const top = Math.round(rect.bottom);
+                                setPopupPosition({ right, top });
+                              }
+
+                              setPopupAgencies(agencies);
+                              setShowAgenciesPopup(true);
+                            }}
+                          >
+                            {name}
+                            <span className="bg-blue-500 text-white px-1 py-0.5 rounded text-xs">
+                              +{agencies.length - 1}
+                            </span>
+                          </span>
+                        </>
+                      );
+                    }
+                  }
+                  return it.agencyName || '-';
+                } },
                 { key: 'brandType', header: 'Brand Type', render: (it: Brand) => it.brandType || '-' },
                 {
                   key: 'contactPerson',

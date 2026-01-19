@@ -113,7 +113,7 @@ const Profile: React.FC = () => {
               {/* Full Name */}
               <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Full Name</label>
-                <p className="text-base font-medium text-gray-900">{profile.full_name || profile.name || 'N/A'}</p>
+                <p className="text-base font-medium text-gray-900">{(profile.full_name || profile.name || 'N/A') + (profile.id ? ` #${profile.id}` : '')}</p>
               </div>
 
               {/* Email */}

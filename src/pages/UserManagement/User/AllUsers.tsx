@@ -125,13 +125,13 @@ const AllUsers: React.FC = () => {
     {
       key: 'lastLogin',
       header: 'Last Login',
-      render: (it: User) => it.lastLogin,
+      render: (it: User) => it.lastLogin || '-',
       className: 'text-center whitespace-nowrap',
     },
     {
       key: 'created',
       header: 'Created',
-      render: (it: User) => it.created,
+      render: (it: User) => it.created || '-',
       className: 'text-center whitespace-nowrap',
     },
     {

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import SelectField from '../../ui/SelectField';
 import { fetchUsers } from '../../../services/CreateLead';
-import { fetchPriorities } from '../../../services/Priority';
+import { fetchPriorities, fetchPrioritiesByCallStatus } from '../../../services/Priority';
 
 import { fetchCallStatuses } from '../../../services/CallStatus';
 
@@ -86,7 +86,8 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
     let isMounted = true;
     setPriorityLoading(true);
     setPriorityError(null);
-    fetchPriorities().then(({ data, error }) => {
+    const fetchFn = callFeedback ? fetchPrioritiesByCallStatus(callFeedback) : fetchPriorities();
+    fetchFn.then(({ data, error }) => {
       if (!isMounted) return;
       if (error) {
         setPriorityError(error);
@@ -95,19 +96,16 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
         const fetched = Array.isArray(data)
           ? data.map((item: any) => ({ value: String(item.id), label: item.name }))
           : [];
-        // If a priority is passed in props but not in fetched options, prepend it
-        if (priority) {
-          const exists = fetched.find((o: any) => String(o.value) === String(priority) || String(o.label) === String(priority));
-          if (!exists) {
-            fetched.unshift({ value: String(priority), label: String(priority) });
-          }
-        }
         setPriorityOptions(fetched);
+        // Auto-select if only one priority
+        if (fetched.length === 1) {
+          onChange?.({ assignTo, priority: fetched[0].value, callFeedback });
+        }
       }
       setPriorityLoading(false);
     });
     return () => { isMounted = false; };
-  }, [priority]);
+  }, [callFeedback, assignTo, onChange]);
 
   return (
     <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)]">
@@ -152,7 +150,7 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
               options={callStatusOptions}
               placeholder="Please Select Feedback"
               value={callFeedback}
-              onChange={(value: any) => onChange?.({ assignTo, priority, callFeedback: value })}
+              onChange={(value: any) => onChange?.({ assignTo, priority: undefined, callFeedback: value })}
               inputClassName="px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               disabled={callStatusLoading}
             />
