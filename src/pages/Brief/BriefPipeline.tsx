@@ -13,11 +13,13 @@ import updateAssignUser from '../../services/BriefAssignTo';
 import { fetchBriefStatuses, updateBriefStatus, type BriefStatusItem } from '../../services/BriefStatus';
 import StatusDropdown from '../../components/ui/StatusDropdown';
 import AssignDropdown from '../../components/ui/AssignDropdown';
- import ConfirmDialog from '../../components/ui/ConfirmDialog';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
+import { usePermissions } from '../../context/SidebarMenuContext';
 
 type Brief = ServiceBriefItem;
 
 const BriefPipeline: React.FC = () => {
+  const { hasPermission } = usePermissions();
     // Helper to fetch briefs (for refresh)
     const fetchBriefs = async () => {
       try {
@@ -367,15 +369,17 @@ const BriefPipeline: React.FC = () => {
         />
       ) : (
         <>
-          <MasterHeader
-            onCreateClick={handleCreate}
-            createButtonLabel="Create Brief"
-            showBreadcrumb={true}
-            breadcrumbItems={[
-              { label: 'Brief', path: ROUTES.BRIEF.ROOT },
-              { label: 'Brief Pipeline', isActive: true }
-            ]}
-          />
+          {hasPermission('brief.create') && (
+            <MasterHeader
+              onCreateClick={handleCreate}
+              createButtonLabel="Create Brief"
+              showBreadcrumb={true}
+              breadcrumbItems={[
+                { label: 'Brief', path: ROUTES.BRIEF.ROOT },
+                { label: 'Brief Pipeline', isActive: true }
+              ]}
+            />
+          )}
 
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
             <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-200">
@@ -427,7 +431,7 @@ const BriefPipeline: React.FC = () => {
                   } else {
                     displayName = String(assignToVal ?? '');
                   }
-                  return (
+                  return hasPermission('brief.assign') ? (
                     <div className="min-w-[140px]">
                       <AssignDropdown
                         value={displayName}
@@ -436,6 +440,10 @@ const BriefPipeline: React.FC = () => {
                         onConfirm={handleAssignConfirm}
                       />
                     </div>
+                  ) : (
+                    <div className="min-w-[140px] text-sm text-gray-700">
+                      {displayName || 'Not Assigned'}
+                    </div>
                   );
                 }, className: 'min-w-[140px]' },
                 { key: 'status', header: 'Status', render: (it: Brief) => {
@@ -443,7 +451,7 @@ const BriefPipeline: React.FC = () => {
                   const statusName = it.brief_status && typeof it.brief_status === 'object' && 'name' in it.brief_status
                     ? (it.brief_status as any).name
                     : '-';
-                  return (
+                  return hasPermission('brief-status.update') ? (
                     <div className="min-w-[140px]">
                       <StatusDropdown
                         value={statusName}
@@ -451,6 +459,10 @@ const BriefPipeline: React.FC = () => {
                         onChange={(newStatus: string) => handleSelectStatus(it.id, newStatus)}
                         onConfirm={handleStatusConfirm}
                       />
+                    </div>
+                  ) : (
+                    <div className="min-w-[140px] text-sm text-gray-700">
+                      {statusName}
                     </div>
                   );
                 }, className: 'min-w-[140px]' },
@@ -487,6 +499,9 @@ const BriefPipeline: React.FC = () => {
                 onEdit={(it: Brief) => handleEdit(it.id)}
                 onView={(it: Brief) => handleView(it.id)}
                 onDelete={(it: Brief) => handleDelete(it.id)}
+                editPermissionSlug="brief.edit"
+                viewPermissionSlug="brief.view"
+                deletePermissionSlug="brief.delete"
               />
             </div>
           </div>

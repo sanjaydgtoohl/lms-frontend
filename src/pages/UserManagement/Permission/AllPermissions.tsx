@@ -128,6 +128,7 @@ const AllPermissions: React.FC = () => {
       <MasterHeader
         onCreateClick={handleCreatePermission}
         createButtonLabel="Create Permission"
+        createPermissionSlug="permission.create"
       />
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
         <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-200">
@@ -155,6 +156,9 @@ const AllPermissions: React.FC = () => {
             onEdit={(it: Permission) => handleEdit(it.id)}
             onView={(it: Permission) => handleView(it.id)}
             onDelete={(it: Permission) => handleDelete(it.id)}
+            editPermissionSlug="permission.edit"
+            viewPermissionSlug="permission.view"
+            deletePermissionSlug="permission.delete"
           />
         </div>
       </div>

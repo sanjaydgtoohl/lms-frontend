@@ -10,6 +10,7 @@ import { MasterHeader, NotificationPopup } from '../components/ui';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import SearchBar from '../components/ui/SearchBar';
 import { listIndustries, deleteIndustry, updateIndustry, type Industry as ApiIndustry } from '../services/IndustryMaster';
+import { usePermissions } from '../context/SidebarMenuContext';
 
 interface Industry {
   id: string;
@@ -34,6 +35,8 @@ const IndustryMaster: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const { hasPermission } = usePermissions();
 
   // Backend pagination: no client-side filtering for now
   const currentData = industries;
@@ -249,6 +252,7 @@ const IndustryMaster: React.FC = () => {
             onCreateClick={handleCreateIndustry}
             createButtonLabel="Create Industry"
             showBreadcrumb={true}
+            showCreateButton={hasPermission('industry.create')}
           />
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
             <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
@@ -295,6 +299,9 @@ const IndustryMaster: React.FC = () => {
               onEdit={(it: any) => handleEdit(it.id)}
               onView={(it: any) => handleView(it.id)}
               onDelete={(it: any) => handleDelete(it.id)}
+              editPermissionSlug="industry.edit"
+              viewPermissionSlug="industry.view"
+              deletePermissionSlug="industry.delete"
             />
             </div>
           </div>

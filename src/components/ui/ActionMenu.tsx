@@ -2,11 +2,16 @@ import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { MoreHorizontal, Edit, Eye, Trash } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { usePermissions } from '../../context/SidebarMenuContext';
 
 interface ActionMenuProps {
   onEdit?: () => void;
   onView?: () => void;
   onDelete?: () => void;
+  /** Permission slugs for additional checks */
+  editPermissionSlug?: string;
+  viewPermissionSlug?: string;
+  deletePermissionSlug?: string;
   /** If true, forces the menu to open above the trigger (used for last rows) */
   isLast?: boolean;
   /** Index of the row (0-based) - helps determine if near bottom */
@@ -15,7 +20,7 @@ interface ActionMenuProps {
   totalRows?: number;
 }
 
-const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, isLast, rowIndex, totalRows }) => {
+const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, editPermissionSlug, viewPermissionSlug, deletePermissionSlug, isLast, rowIndex, totalRows }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [showAbove, setShowAbove] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -23,6 +28,8 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, isLas
   const containerRef = useRef<HTMLDivElement>(null);
   const [showIconFallback, setShowIconFallback] = useState(false);
   const [portalStyles, setPortalStyles] = useState<{ right: number; top?: number; bottom?: number } | null>(null);
+
+  const { hasPermission } = usePermissions();
 
   // Check if row is near bottom (last 3 rows)
   const isNearBottom = typeof rowIndex === 'number' && typeof totalRows === 'number' 
@@ -302,7 +309,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, isLas
             `}
             onClick={(e) => e.stopPropagation()}
           >
-              {onEdit && (
+              {(onEdit && (!editPermissionSlug || hasPermission(editPermissionSlug))) && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -326,7 +333,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, isLas
                 </button>
               )}
 
-              {onView && (
+              {(onView && (!viewPermissionSlug || hasPermission(viewPermissionSlug))) && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -350,9 +357,9 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, isLas
                 </button>
               )}
 
-              {onDelete && (
+              {(onDelete && (!deletePermissionSlug || hasPermission(deletePermissionSlug))) && (
                 <>
-                  {(onEdit || onView) && (
+                  {((onEdit && (!editPermissionSlug || hasPermission(editPermissionSlug))) || (onView && (!viewPermissionSlug || hasPermission(viewPermissionSlug)))) && (
                     <div className="my-1 border-t border-gray-200" />
                   )}
                   <button

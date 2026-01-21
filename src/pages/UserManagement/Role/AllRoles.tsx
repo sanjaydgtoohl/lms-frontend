@@ -120,6 +120,7 @@ const AllRoles: React.FC = () => {
       <MasterHeader
         onCreateClick={handleCreateRole}
         createButtonLabel="Create Role"
+        createPermissionSlug="roles.create"
       />
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
         <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-200">
@@ -147,6 +148,9 @@ const AllRoles: React.FC = () => {
             onEdit={(it: Role) => handleEdit(it.id)}
             onView={(it: Role) => handleView(it.id)}
             onDelete={(it: Role) => handleDelete(it.id)}
+            editPermissionSlug="roles.edit"
+            viewPermissionSlug="roles.view"
+            deletePermissionSlug="roles.delete"
           />
         </div>
       </div>

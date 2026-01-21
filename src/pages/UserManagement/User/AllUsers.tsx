@@ -186,6 +186,7 @@ const AllUsers: React.FC = () => {
         createButtonLabel="Add User"
         breadcrumbItems={[{ label: 'User Management', path: '/user-management' }]}
         currentPageTitle="User"
+        createPermissionSlug="user.create"
       />
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
         <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-200">
@@ -213,6 +214,9 @@ const AllUsers: React.FC = () => {
             onEdit={(it: User) => handleEdit(it.id)}
             onView={(it: User) => handleView(it.id)}
             onDelete={(it: User) => handleDeleteRequest(it)}
+            editPermissionSlug="user.edit"
+            viewPermissionSlug="user.view"
+            deletePermissionSlug="user.delete"
           />
           {/* ConfirmDialog for delete */}
           <ConfirmDialog

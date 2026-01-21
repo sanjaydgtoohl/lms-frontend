@@ -11,6 +11,7 @@ import Table, { type Column } from '../components/ui/Table';
 import { listLeadSources, deleteLeadSubSource, updateLeadSubSource, type LeadSourceItem } from '../services/LeadSource';
 import { fetchLeadSources } from '../services/CreateSourceForm';
 import { ROUTES } from '../constants';
+import { usePermissions } from '../context/SidebarMenuContext';
 
 const LeadSource: React.FC = () => {
   const [showCreate, setShowCreate] = useState(false);
@@ -32,6 +33,8 @@ const LeadSource: React.FC = () => {
   const [showErrorToast, setShowErrorToast] = useState(false);
   const [errorMessageToast, setErrorMessageToast] = useState('');
   // track deletion in-flight if needed (not used currently)
+
+  const { hasPermission } = usePermissions();
 
   useEffect(() => {
     let isMounted = true;
@@ -270,6 +273,7 @@ const LeadSource: React.FC = () => {
             onCreateClick={handleCreate}
             createButtonLabel="Create Source"
             showBreadcrumb={true}
+            showCreateButton={hasPermission('source.create')}
           />
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
             <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
@@ -316,6 +320,9 @@ const LeadSource: React.FC = () => {
               onEdit={(it: any) => handleEdit(it)}
               onView={(it: any) => handleView(it)}
               onDelete={(it: any) => handleDelete(it)}
+              editPermissionSlug="source.edit"
+              viewPermissionSlug="source.view"
+              deletePermissionSlug="source.delete"
             />
             </div>
           </div>

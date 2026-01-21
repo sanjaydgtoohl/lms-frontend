@@ -18,8 +18,10 @@ import {
   updateMissCampaign,
   type MissCampaign 
 } from '../../services/View';
+import { usePermissions } from '../../context/SidebarMenuContext';
 
 const View: React.FC = () => {
+  const { hasPermission } = usePermissions();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -307,7 +309,9 @@ const View: React.FC = () => {
         />
       ) : (
         <>
-          <MasterHeader onCreateClick={handleCreate} createButtonLabel="Create Miss Campaign" />
+          {hasPermission('miss-campaign.create') && (
+            <MasterHeader onCreateClick={handleCreate} createButtonLabel="Create Miss Campaign" />
+          )}
 
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
             <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-200">
@@ -351,6 +355,9 @@ const View: React.FC = () => {
                 onEdit={(it: MissCampaign) => handleEdit(it.id)}
                 onView={(it: MissCampaign) => handleView(it.id)}
                 onDelete={(it: MissCampaign) => handleDelete(it.id, it.productName || it.brandName)}
+                editPermissionSlug="miss-campaign.edit"
+                viewPermissionSlug="miss-campaign.view"
+                deletePermissionSlug="miss-campaign.delete"
               />
             </div>
           </div>

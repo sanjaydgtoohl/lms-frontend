@@ -1,18 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Users, FileCheck, BarChart3, AlertTriangle, Clock, X, Check } from 'lucide-react';
 import Pagination from '../components/ui/Pagination';
 import StatCard from '../components/ui/StatCard';
 import SimpleListCard from '../components/ui/SimpleListCard';
-
-
-interface PendingAssignment {
-  id: number;
-  initials: string;
-  name: string;
-  priority: 'High' | 'Medium' | 'Low';
-  dueInDays?: number;
-  progress?: number; // 0-100
-}
+import { getPendingAssignments, getDashboardStats } from '../services/Dashboard';
+import type { PendingAssignment } from '../services/Dashboard';
 
 interface SystemAlert {
   id: number;
@@ -21,15 +13,6 @@ interface SystemAlert {
 }
 
 const ITEMS_PER_PAGE = 3;
-
-const pendingAssignments: PendingAssignment[] = [
-  { id: 1, initials: 'MK', name: 'Mike', priority: 'High', dueInDays: 2, progress: 40 },
-  { id: 2, initials: 'AP', name: 'Ashish', priority: 'Medium', dueInDays: 5, progress: 20 },
-  { id: 3, initials: 'PP', name: 'Parul', priority: 'Low', dueInDays: 8, progress: 10 },
-  { id: 4, initials: 'RK', name: 'Rakesh', priority: 'High', dueInDays: 1, progress: 60 },
-  { id: 5, initials: 'SK', name: 'Sarah', priority: 'Medium', dueInDays: 4, progress: 50 },
-  { id: 6, initials: 'JD', name: 'John', priority: 'Low', dueInDays: 10, progress: 5 },
-];
 
 const systemAlerts: SystemAlert[] = [
   { id: 1, message: 'User Sarah Johnson has not logged in for 5 days', time: '2 hours ago' },
@@ -42,10 +25,50 @@ const systemAlerts: SystemAlert[] = [
 
 const Dashboard: React.FC = () => {
   const [assignmentsPage, setAssignmentsPage] = useState(1);
-  const [assignments, setAssignments] = useState<PendingAssignment[]>(pendingAssignments);
+  const [assignments, setAssignments] = useState<PendingAssignment[]>([]);
   const [alertsPage, setAlertsPage] = useState(1);
   const [alerts, setAlerts] = useState<SystemAlert[]>(systemAlerts);
   const [alertFilter, setAlertFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    pendingAssignments: 0,
+    teamPerformance: '0%',
+    openAlerts: 0,
+  });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const results = await Promise.allSettled([
+          getPendingAssignments(),
+          getDashboardStats(),
+        ]);
+
+        // Handle assignments
+        if (results[0].status === 'fulfilled') {
+          setAssignments(results[0].value.data);
+        } else {
+          console.error('Failed to fetch pending assignments:', results[0].reason);
+          setAssignments([]);
+        }
+
+        // Handle stats
+        if (results[1].status === 'fulfilled') {
+          setStats(results[1].value.data);
+        } else {
+          console.error('Failed to fetch dashboard stats:', results[1].reason);
+          // Keep default stats
+        }
+      } catch (error) {
+        console.error('Unexpected error in fetchData:', error);
+        // Fallback to empty array or handle error
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   // Note: I've replaced your custom CSS variables like [var(--text-primary)]
   // with standard Tailwind color classes for better integration and readability.
@@ -71,6 +94,39 @@ const Dashboard: React.FC = () => {
     return 'low';
   };
 
+  const formatName = (n: PendingAssignment['name']): string => {
+    if (!n) return '';
+    if (typeof n === 'string') return n;
+    return (n && ((n as any).full_name || (n as any).name)) || JSON.stringify(n);
+  };
+
+  const deriveInitials = (assignment: PendingAssignment) => {
+    if (assignment.initials) return assignment.initials;
+    const name = formatName(assignment.name);
+    if (!name) return '';
+    const parts = name.split(/\s+/).filter(Boolean);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  };
+
+  const formatDate = (s?: string | null) => {
+    if (!s) return '';
+    // try to clean up common backend formats like "2026-01-19 20:24:52 PM"
+    let txt = String(s).trim();
+    // remove duplicate AM/PM if present with 24h time
+    txt = txt.replace(/\s+(AM|PM)$/i, ' $1');
+    // If parsable by Date, format as locale string, else show raw
+    const parsed = Date.parse(txt.replace(/\s+(AM|PM)$/i, ''));
+    if (!Number.isNaN(parsed)) {
+      try {
+        return new Date(parsed).toLocaleString();
+      } catch (e) {
+        return txt;
+      }
+    }
+    return txt;
+  };
+
   const filteredAlerts = alerts.filter(a => {
     if (alertFilter === 'all') return true;
     return mapSeverity(a.message) === alertFilter;
@@ -81,114 +137,20 @@ const Dashboard: React.FC = () => {
   const dismissAlert = (id: number) => setAlerts(prev => prev.filter(a => a.id !== id));
   const markAllRead = () => setAlerts([]);
 
-  // Simple inline sparkline chart component (small, dependency-free)
-  const SparklineChart: React.FC = () => {
-    const data = [45, 48, 50, 52, 49, 55, 58, 60, 62, 61, 64, 66, 70, 68, 72, 75, 74, 76, 78, 80, 82, 85, 84, 86, 88, 90, 92, 91, 93, 95];
-    const width = 680; // will scale via viewBox
-    const height = 180;
-    const padding = 12;
-
-    const min = Math.min(...data);
-    const max = Math.max(...data);
-    const range = max - min || 1;
-
-    const points = data.map((d, i) => {
-      const x = padding + (i / (data.length - 1)) * (width - padding * 2);
-      const y = padding + (1 - (d - min) / range) * (height - padding * 2);
-      return [x, y];
-    });
-
-    const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p[0].toFixed(2)} ${p[1].toFixed(2)}`).join(' ');
-    const areaD = `${pathD} L ${width - padding} ${height - padding} L ${padding} ${height - padding} Z`;
-
-    const last = points[points.length - 1];
-
-    return (
-      <div className="w-full">
-        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-44">
-          <defs>
-            <linearGradient id="g1" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="#c7d2fe" stopOpacity="0.35" />
-              <stop offset="100%" stopColor="#c7d2fe" stopOpacity="0" />
-            </linearGradient>
-            <linearGradient id="g2" x1="0" x2="1">
-              <stop offset="0%" stopColor="#6366f1" />
-              <stop offset="100%" stopColor="#06b6d4" />
-            </linearGradient>
-          </defs>
-
-          <path d={areaD} fill="url(#g1)" />
-          <path d={pathD} fill="none" stroke="url(#g2)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-
-          {/* grid lines */}
-          {[0, 0.25, 0.5, 0.75, 1].map((t, i) => (
-            <line key={i} x1={padding} x2={width - padding} y1={padding + t * (height - padding * 2)} y2={padding + t * (height - padding * 2)} stroke="#f3f4f6" strokeWidth={1} />
-          ))}
-
-          {/* last point */}
-          <circle cx={last[0]} cy={last[1]} r={4} fill="#06b6d4" />
-        </svg>
-        <div className="flex items-center justify-between text-xs text-gray-500 mt-2">
-          <div>Min {min}</div>
-          <div>Average {Math.round(data.reduce((s, v) => s + v, 0) / data.length)}%</div>
-          <div>Max {max}</div>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="space-y-6">
       {/* Top stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Users" value={12} icon={<Users className="w-5 h-5" />} />
-        <StatCard title="Pending Assignments" value={assignments.length} icon={<FileCheck className="w-5 h-5" />} />
-        <StatCard title="Team Performance" value={"92%"} icon={<BarChart3 className="w-5 h-5" />} />
-        <StatCard title="Open Alerts" value={alerts.length} icon={<AlertTriangle className="w-5 h-5" />} />
-      </div>
-
-      {/* Performance Chart - Full Width */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <div>
-            <h2 className="text-sm font-semibold text-gray-800">Performance</h2>
-            <p className="text-xs text-gray-500 mt-1">Overview of recent activity</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="hidden sm:flex items-center gap-3">
-              <div className="text-xs text-gray-500">Range:</div>
-              <div className="flex items-center gap-1 bg-gray-50 rounded-md p-1">
-                <button className="px-2 py-1 text-xs rounded text-gray-700 bg-white">7d</button>
-                <button className="px-2 py-1 text-xs rounded text-gray-700 bg-white">30d</button>
-                <button className="px-2 py-1 text-xs rounded text-gray-700 bg-white">90d</button>
-              </div>
-            </div>
-            <button className="text-xs text-gray-600 bg-gray-50 border border-gray-200 px-2 py-1 rounded hover:bg-gray-100">Export</button>
-          </div>
-        </div>
-
-        {/* Inline SVG sparkline + summary */}
-        <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
-          <div className="lg:col-span-2">
-            <SparklineChart />
-          </div>
-          <div className="flex flex-col gap-3">
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-xs text-gray-500">Today</p>
-              <p className="text-xl font-semibold text-gray-900 mt-1">+3.4%</p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-xs text-gray-500">Avg. Completion</p>
-              <p className="text-xl font-semibold text-gray-900 mt-1">78%</p>
-            </div>
-          </div>
-        </div>
+        <StatCard title={<><span>Total</span><br /><span>Users</span></>} value={stats.totalUsers} icon={<Users className="w-5 h-5" />} />
+        <StatCard title="Pending Assignments" value={stats.pendingAssignments} icon={<FileCheck className="w-5 h-5" />} />
+        <StatCard title="Team Performance" value={stats.teamPerformance} icon={<BarChart3 className="w-5 h-5" />} />
+        <StatCard title={<><span>Open</span><br /><span>Alerts</span></>} value={stats.openAlerts} icon={<AlertTriangle className="w-5 h-5" />} />
       </div>
 
       {/* Assignments & Alerts - Side by Side */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <SimpleListCard
-            title={`Pending Assignments (${assignments.length})`}
+            title={`Pending Assignments ${loading ? '(Loading...)' : `(${assignments.length})`}`}
             headerRight={(
               <div className="flex items-center gap-2">
                 <select value={assignmentFilter} onChange={(e) => setAssignmentFilter(e.target.value as any)} className="text-xs border border-gray-200 rounded px-2 py-1 bg-white">
@@ -197,7 +159,6 @@ const Dashboard: React.FC = () => {
                   <option value="Medium">Medium</option>
                   <option value="Low">Low</option>
                 </select>
-                <button className="text-xs text-gray-600 bg-gray-50 border border-gray-200 px-2 py-1 rounded hover:bg-gray-100">New</button>
               </div>
             )}
             items={currentAssignments}
@@ -206,18 +167,17 @@ const Dashboard: React.FC = () => {
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0 flex-1">
                   <div className="w-9 h-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-semibold flex-shrink-0">
-                    {assignment.initials}
+                    {deriveInitials(assignment)}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-gray-900 truncate">{assignment.name}</p>
-                    <p className="text-xs text-gray-500">Due <span className="font-medium text-gray-700">{assignment.dueInDays}d</span></p>
+                    <p className="text-xs font-medium text-gray-900 truncate">{formatName(assignment.name)}</p>
+                    <p className="text-xs text-gray-500">{formatDate((assignment as any).created_at)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 flex-shrink-0">
                   <span className={`px-1.5 py-0.5 text-xs font-medium rounded whitespace-nowrap ${assignment.priority === 'High' ? 'bg-red-100 text-red-700' : assignment.priority === 'Medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}>
                     {assignment.priority}
                   </span>
-                  <button className="text-xs text-gray-600 bg-gray-50 border border-gray-200 px-1.5 py-0.5 rounded hover:bg-gray-100">Assign</button>
                   <Check
                     className="w-4 h-4 text-green-500 hover:text-green-600 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-green-200 rounded flex-shrink-0"
                     onClick={() => completeAssignment(assignment.id)}
@@ -229,7 +189,7 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
             )}
-            footer={filteredAssignments.length > ITEMS_PER_PAGE ? (
+            footer={filteredAssignments.length >= ITEMS_PER_PAGE ? (
               <Pagination
                 currentPage={assignmentsPage}
                 totalItems={filteredAssignments.length}

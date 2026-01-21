@@ -1,6 +1,7 @@
 import React from 'react';
 import Breadcrumb, { type BreadcrumbItem } from './Breadcrumb';
 import { Plus } from 'lucide-react';
+import { usePermissions } from '../../context/SidebarMenuContext';
 
 interface MasterHeaderProps {
   onCreateClick: () => void;
@@ -11,6 +12,8 @@ interface MasterHeaderProps {
   onSignInClick?: () => void;
   signInButtonLabel?: string;
   showSignInButton?: boolean;
+  showCreateButton?: boolean;
+  createPermissionSlug?: string;
 }
 
 const MasterHeader: React.FC<MasterHeaderProps> = ({ 
@@ -22,7 +25,12 @@ const MasterHeader: React.FC<MasterHeaderProps> = ({
   onSignInClick,
   signInButtonLabel = 'Sign In',
   showSignInButton = false,
+  showCreateButton = true,
+  createPermissionSlug,
 }) => {
+  const { hasPermission } = usePermissions();
+
+  const canCreate = !createPermissionSlug || hasPermission(createPermissionSlug);
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
       {/* Left Side - Breadcrumb */}
@@ -45,13 +53,15 @@ const MasterHeader: React.FC<MasterHeaderProps> = ({
             {signInButtonLabel}
           </button>
         )}
-        <button
-          onClick={onCreateClick}
-          className="flex items-center justify-center space-x-2 px-4 py-2.5 btn-primary text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
-        >
-          <Plus className="w-4 h-4" />
-          <span>{createButtonLabel}</span>
-        </button>
+        {showCreateButton && canCreate && (
+          <button
+            onClick={onCreateClick}
+            className="flex items-center justify-center space-x-2 px-4 py-2.5 btn-primary text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{createButtonLabel}</span>
+          </button>
+        )}
       </div>
     </div>
   );

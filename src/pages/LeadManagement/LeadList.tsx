@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants';
 import { listLeads, listLeadsByStatus, updateLead, deleteLead } from '../../services/AllLeads';
 import { assignUserToLead } from '../../services/leadAssignTo';
+import { usePermissions } from '../../context/SidebarMenuContext';
 
 interface Lead {
   id: string;
@@ -58,14 +59,69 @@ const statusColors: Record<string, string> = {
   'Brief Recieved': '#06b6d4'
 };
 
+const assignPermissionMap: Record<string, string> = {
+  'All': 'all-lead.assign',
+  'Pending': 'pending.assign',
+  'Interested': 'interested.assign',
+  'Meeting Scheduled': 'meeting-scheduled.assign',
+  'Meeting Done': 'meeting-done.assign',
+  'Brief': 'brief-status.assign',
+};
+
+const callStatusPermissionMap: Record<string, string> = {
+  'All': 'all-lead-call-status.update',
+  'Pending': 'pending-call-status.update',
+  'Interested': 'interested-call-status.update',
+  'Meeting Scheduled': 'meeting-scheduled-call-status.update',
+  'Meeting Done': 'meeting-done-call-status.update',
+  'Brief': 'brief-status-call-status.update',
+};
+
+const createPermissionMap: Record<string, string> = {
+  'All': 'leads.create',
+  'Pending': 'leads-p.create',
+  'Interested': 'leads-I.create',
+  'Meeting Scheduled': 'leads-ms.create',
+  'Meeting Done': 'leads-md.create',
+  'Brief': 'leads-b.create',
+};
+
+const editPermissionMap: Record<string, string> = {
+  'All': 'leads.edit',
+  'Pending': 'leads-p.edit',
+  'Interested': 'leads-I.edit',
+  'Meeting Scheduled': 'leads-ms.edit',
+  'Meeting Done': 'leads-md.edit',
+  'Brief': 'leads-b.edit',
+};
+
+const viewPermissionMap: Record<string, string> = {
+  'All': 'leads.view',
+  'Pending': 'leads-p.view',
+  'Interested': 'leads-I.view',
+  'Meeting Scheduled': 'leads-ms.view',
+  'Meeting Done': 'leads-md.view',
+  'Brief': 'leads-b.view',
+};
+
+const deletePermissionMap: Record<string, string> = {
+  'All': 'leads.delete',
+  'Pending': 'leads-p.delete',
+  'Interested': 'leads-I.delete',
+  'Meeting Scheduled': 'leads-ms.delete',
+  'Meeting Done': 'leads-md.delete',
+  'Brief': 'leads-b.delete',
+};
+
 interface Props {
   title: string;
   filterStatus?: string; // if not provided, show all
 }
 
-const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
+const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
   // Assign To options state and effect (must be inside component)
   const [assignToOptions, setAssignToOptions] = useState<UserOption[]>([]);
+  const { hasPermission } = usePermissions();
   useEffect(() => {
     const loadUsers = async () => {
       try {
@@ -78,57 +134,6 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
     };
     loadUsers();
   }, []);
-    // Helper to fetch leads (for reload)
-    const fetchLeads = async () => {
-      try {
-        setLoading(true);
-        let response;
-        if (filterStatus && filterStatus !== 'All') {
-          const statusIdMap: Record<string, number> = {
-            'Interested': 1,
-            'Pending': 2,
-            'Meeting Done': 3,
-            'Brief Pending': 4,
-            'Brief Recieved': 5,
-            'Brief Received': 5,
-            'Meeting Scheduled': 6,
-            'Meeting Schedule': 6
-          };
-          const statusId = statusIdMap[filterStatus] || undefined;
-          if (statusId) {
-            response = await listLeadsByStatus(statusId, currentPage, itemsPerPage);
-          } else {
-            response = await listLeadsByStatus(filterStatus, currentPage, itemsPerPage);
-          }
-        } else {
-          response = await listLeads(currentPage, itemsPerPage);
-        }
-        const transformedLeads = response.data.map((item: any) => ({
-          id: item.id ? String(item.id) : '',
-          agencyName: item.agency?.name || item.agency_name || '',
-          brandName: item.brand_name || item.brand?.name || String(item.brand_id || ''),
-          contactPerson: item.contact_person || item.name || '',
-          phoneNumber: Array.isArray(item.mobile_number) ? (item.mobile_number[0] || '') : (item.mobile_number || item.email || ''),
-          source: item.lead_source || item.source || '',
-          subSource: item.sub_source?.name || item.lead_sub_source?.name || item.lead_sub_source_name || item.lead_sub_source || '',
-          assignBy: item.created_by_user?.name || item.assign_by_name || item.created_by || '',
-          assignTo: item.current_assign_user_name || item.assigned_user?.name || (item.current_assign_user && typeof item.current_assign_user === 'object' ? item.current_assign_user.name : '') || item.assign_to_name || '',
-          dateTime: item.created_at || new Date().toLocaleString(),
-          status: item.lead_status_relation?.name || item.lead_status || '',
-          callStatus: (() => {
-            const raw = item.call_status_relation?.name ?? item.call_status ?? item.callStatus ?? '';
-            return raw === null || raw === undefined || raw === '' ? 'N/A' : raw;
-          })(),
-          callAttempt: Number(item.call_attempt ?? item.callAttempt ?? 0),
-          comment: item.comment || item.notes || '',
-        }));
-        setLeads(transformedLeads);
-      } catch (error) {
-        setLeads([]);
-      } finally {
-        setLoading(false);
-      }
-    };
   // Call status options will be fetched from API
   const [callStatusOptions, setCallStatusOptions] = useState<string[]>([]);
 
@@ -155,60 +160,61 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
   const [confirmLoading, setConfirmLoading] = useState(false);
 
   // Fetch leads from API
-  useEffect(() => {
-    const fetchLeads = async () => {
-      try {
-        setLoading(true);
-        let response;
-        // Use server-side filtering if filterStatus is provided
-        if (filterStatus && filterStatus !== 'All') {
-          // Map status name to ID if needed (update this mapping as per your backend)
-          const statusIdMap: Record<string, number> = {
-            'Interested': 1,
-            'Pending': 2,
-            'Meeting Done': 3,
-            'Brief Pending': 4,
-            'Brief Recieved': 5,
-            'Brief Received': 5,
-            'Meeting Scheduled': 6,
-            'Meeting Schedule': 6
-          };
-          const statusId = statusIdMap[filterStatus] || undefined;
-          if (statusId) {
-            response = await listLeadsByStatus(statusId, currentPage, itemsPerPage);
-          } else {
-            response = await listLeadsByStatus(filterStatus, currentPage, itemsPerPage);
-          }
+  const fetchLeads = async () => {
+    try {
+      setLoading(true);
+      let response;
+      // Use server-side filtering if filterStatus is provided
+      if (filterStatus && filterStatus !== 'All') {
+        // Map status name to ID if needed (update this mapping as per your backend)
+        const statusIdMap: Record<string, number> = {
+          'Interested': 1,
+          'Pending': 2,
+          'Meeting Done': 3,
+          'Brief Pending': 4,
+          'Brief Recieved': 5,
+          'Brief Received': 5,
+          'Meeting Scheduled': 6,
+          'Meeting Schedule': 6
+        };
+        const statusId = statusIdMap[filterStatus] || undefined;
+        if (statusId) {
+          response = await listLeadsByStatus(statusId, currentPage, itemsPerPage);
         } else {
-          response = await listLeads(currentPage, itemsPerPage);
+          response = await listLeadsByStatus(filterStatus, currentPage, itemsPerPage);
         }
-        const transformedLeads = response.data.map((item: any) => ({
-          id: item.id ? String(item.id) : '',
-          agencyName: item.agency?.name || item.agency_name || '',
-          brandName: item.brand_name || item.brand?.name || String(item.brand_id || ''),
-          contactPerson: item.contact_person || item.name || '',
-          phoneNumber: Array.isArray(item.mobile_number) ? (item.mobile_number[0] || '') : (item.mobile_number || item.email || ''),
-          source: item.lead_source || item.source || '',
-          subSource: item.sub_source?.name || item.lead_sub_source?.name || item.lead_sub_source_name || item.lead_sub_source || '',
-          assignBy: item.created_by_user?.name || item.assign_by_name || item.created_by || '',
-          assignTo: item.current_assign_user_name || item.assigned_user?.name || (item.current_assign_user && typeof item.current_assign_user === 'object' ? item.current_assign_user.name : '') || item.assign_to_name || '',
-          dateTime: item.created_at || new Date().toLocaleString(),
-          status: item.lead_status_relation?.name || item.lead_status || '',
-          callStatus: (() => {
-            const raw = item.call_status_relation?.name ?? item.call_status ?? item.callStatus ?? '';
-            return raw === null || raw === undefined || raw === '' ? 'N/A' : raw;
-          })(),
-          callAttempt: Number(item.call_attempt ?? item.callAttempt ?? 0),
-          comment: item.comment || item.notes || '',
-        }));
-        setLeads(transformedLeads);
-      } catch (error) {
-        console.error('Error fetching leads:', error);
-        setLeads([]);
-      } finally {
-        setLoading(false);
+      } else {
+        response = await listLeads(currentPage, itemsPerPage);
       }
-    };
+      const transformedLeads = response.data.map((item: any) => ({
+        id: item.id ? String(item.id) : '',
+        agencyName: item.agency?.name || item.agency_name || '',
+        brandName: item.brand_name || item.brand?.name || String(item.brand_id || ''),
+        contactPerson: item.contact_person || item.name || '',
+        phoneNumber: Array.isArray(item.mobile_number) && item.mobile_number.length > 0 ? item.mobile_number[0].number : (item.mobile_number || item.number || item.phone || item.email || ''),
+        source: item.lead_source || item.source || '',
+        subSource: item.sub_source?.name || item.lead_sub_source?.name || item.lead_sub_source_name || item.lead_sub_source || '',
+        assignBy: item.created_by_user?.name || item.assign_by_name || item.created_by || '',
+        assignTo: item.current_assign_user_name || item.assigned_user?.name || (item.current_assign_user && typeof item.current_assign_user === 'object' ? item.current_assign_user.name : '') || item.assign_to_name || '',
+        dateTime: item.created_at || new Date().toLocaleString(),
+        status: item.lead_status_relation?.name || item.lead_status || '',
+        callStatus: (() => {
+          const raw = item.call_status_relation?.name ?? item.call_status ?? item.callStatus ?? '';
+          return raw === null || raw === undefined || raw === '' ? 'N/A' : raw;
+        })(),
+        callAttempt: Number(item.call_attempt ?? item.callAttempt ?? 0),
+        comment: item.comment || item.notes || '',
+      }));
+      setLeads(transformedLeads);
+    } catch (error) {
+      console.error('Error fetching leads:', error);
+      setLeads([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchLeads();
   }, [currentPage, filterStatus]);
 
@@ -409,7 +415,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
     { key: 'phoneNumber', header: 'Phone Number', render: (it: Lead) => it.phoneNumber || '-', className: 'whitespace-nowrap' },
     { key: 'subSource', header: 'Sub-Source', render: (it: Lead) => it.subSource || '-', className: 'whitespace-nowrap' },
     { key: 'assignBy', header: 'Assign By', render: (it: Lead) => it.assignBy || '-', className: 'whitespace-nowrap' },
-    {
+    ...(hasPermission(assignPermissionMap[filterStatus || 'All']) ? [{
       key: 'assignTo',
       header: 'Assign To',
       render: (it: Lead) => (
@@ -422,7 +428,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
         />
       ),
       className: 'min-w-[140px]',
-    },
+    } as Column<Lead>] : []),
     { key: 'dateTime', header: 'Date & Time', render: (it: Lead) => it.dateTime || '-', className: 'whitespace-nowrap' },
     { 
       key: 'status', 
@@ -440,12 +446,16 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
       header: 'Call Status',
       render: (it: Lead) => (
         <div className="min-w-[160px]">
-          <CallStatusDropdown
-            value={(it.callStatus && it.callStatus !== 'N/A') ? it.callStatus : ''}
-            options={callStatusOptions}
-            onChange={(newStatus) => handleCallStatusChange(it.id, newStatus)}
-            onConfirm={handleCallStatusConfirm}
-          />
+          {hasPermission(callStatusPermissionMap[filterStatus || 'All']) ? (
+            <CallStatusDropdown
+              value={(it.callStatus && it.callStatus !== 'N/A') ? it.callStatus : ''}
+              options={callStatusOptions}
+              onChange={(newStatus) => handleCallStatusChange(it.id, newStatus)}
+              onConfirm={handleCallStatusConfirm}
+            />
+          ) : (
+            <span>{it.callStatus || 'N/A'}</span>
+          )}
         </div>
       ),
       className: 'min-w-[160px]',
@@ -482,10 +492,12 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
 
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
-      <MasterHeader
-        onCreateClick={handleCreateLead}
-        createButtonLabel="Create Lead"
-      />
+      {hasPermission(createPermissionMap[filterStatus] || 'leads.create') && (
+        <MasterHeader
+          onCreateClick={handleCreateLead}
+          createButtonLabel="Create Lead"
+        />
+      )}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
         <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-200">
           <h2 className="text-base font-semibold text-gray-900">{title}</h2>
@@ -512,6 +524,9 @@ const LeadList: React.FC<Props> = ({ title, filterStatus }) => {
             onEdit={(it: Lead) => handleEdit(it.id)}
             onView={(it: Lead) => handleView(it.id)}
             onDelete={(it: Lead) => handleDelete(it.id)}
+            editPermissionSlug={editPermissionMap[filterStatus]}
+            viewPermissionSlug={viewPermissionMap[filterStatus]}
+            deletePermissionSlug={deletePermissionMap[filterStatus]}
           />
         </div>
       </div>

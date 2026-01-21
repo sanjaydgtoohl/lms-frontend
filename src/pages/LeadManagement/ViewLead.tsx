@@ -179,8 +179,8 @@ const ViewLead: React.FC = () => {
                   Phone Number
                 </div>
                 {lead.mobile_number && lead.mobile_number.length > 0 ? (
-                  <a href={`tel:${lead.mobile_number[0]}`} className="text-base font-medium text-orange-500 hover:text-orange-600 underline">
-                    {lead.mobile_number[0]}
+                  <a href={`tel:${typeof lead.mobile_number[0] === 'string' ? lead.mobile_number[0] : lead.mobile_number[0].number}`} className="text-base font-medium text-orange-500 hover:text-orange-600 underline">
+                    {typeof lead.mobile_number[0] === 'string' ? lead.mobile_number[0] : lead.mobile_number[0].number}
                   </a>
                 ) : (
                   <span className="text-base font-medium text-gray-500">Not provided</span>
@@ -193,8 +193,8 @@ const ViewLead: React.FC = () => {
                     <Phone size={16} className="mr-2" />
                     Secondary Phone
                   </div>
-                  <a href={`tel:${lead.mobile_number[1]}`} className="text-base font-medium text-orange-500 hover:text-orange-600 underline">
-                    {lead.mobile_number[1]}
+                  <a href={`tel:${typeof lead.mobile_number[1] === 'string' ? lead.mobile_number[1] : lead.mobile_number[1].number}`} className="text-base font-medium text-orange-500 hover:text-orange-600 underline">
+                    {typeof lead.mobile_number[1] === 'string' ? lead.mobile_number[1] : lead.mobile_number[1].number}
                   </a>
                 </div>
               )}

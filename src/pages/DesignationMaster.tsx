@@ -17,6 +17,7 @@ import {
   type Designation as ApiDesignation,
 } from '../services/DesignationMaster';
 import { showSuccess, showError } from '../utils/notifications';
+import { usePermissions } from '../context/SidebarMenuContext';
 
 interface Designation {
   id: string;
@@ -145,6 +146,8 @@ const DesignationMaster: React.FC = () => {
   const itemsPerPage = 10;
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
+
+  const { hasPermission } = usePermissions();
 
   // Store designations in state fetched from API
   const [designations, setDesignations] = useState<Designation[]>([]);
@@ -395,6 +398,7 @@ const DesignationMaster: React.FC = () => {
             onCreateClick={handleCreateDesignation} 
             createButtonLabel="Create Designation"
             showBreadcrumb={true}
+            showCreateButton={hasPermission('designation.create')}
           />
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
             <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
@@ -436,6 +440,9 @@ const DesignationMaster: React.FC = () => {
               onEdit={(it: any) => handleEdit(it.id)}
               onView={(it: any) => handleView(it.id)}
               onDelete={(it: any) => handleDelete(it.id)}
+              editPermissionSlug="designation.edit"
+              viewPermissionSlug="designation.view"
+              deletePermissionSlug="designation.delete"
             />
             </div>
           </div>

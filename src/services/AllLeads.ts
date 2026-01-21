@@ -7,6 +7,8 @@ export interface LeadItem {
   brand_id?: number | string;
   contact_person?: string;
   mobile_number?: string[];
+  number?: string;
+  phone?: string;
   email?: string;
   lead_source?: string;
   lead_sub_source?: string;

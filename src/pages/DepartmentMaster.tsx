@@ -18,6 +18,7 @@ import {
 	type Department as ApiDepartment,
 } from '../services/DepartmentMaster';
 import { showSuccess, showError } from '../utils/notifications';
+import { usePermissions } from '../context/SidebarMenuContext';
 
 interface Department {
 	id: string;
@@ -163,6 +164,8 @@ const DepartmentMaster: React.FC = () => {
 	const navigate = useNavigate();
 	const params = useParams();
 	const location = useLocation();
+
+	const { hasPermission } = usePermissions();
 
 	// Backend pagination - no client-side slicing
 	const startIndex = (currentPage - 1) * itemsPerPage;
@@ -328,6 +331,7 @@ const DepartmentMaster: React.FC = () => {
 						onCreateClick={handleCreateDepartment}
 						createButtonLabel="Create Department"
 						showBreadcrumb={true}
+						showCreateButton={hasPermission('department.create')}
 					/>
 					<div className="bg-white rounded-lg border border-gray-200 shadow-sm">
 						{/* Table Header */}
@@ -370,6 +374,9 @@ const DepartmentMaster: React.FC = () => {
 							onEdit={(it: any) => handleEdit(it.id)}
 							onView={(it: any) => handleView(it.id)}
 							onDelete={(it: any) => handleDelete(it.id)}
+							editPermissionSlug="department.edit"
+							viewPermissionSlug="department.view"
+							deletePermissionSlug="department.delete"
 						/>
 						</div>
 					</div>

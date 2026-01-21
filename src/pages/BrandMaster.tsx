@@ -13,6 +13,7 @@ import ConfirmDialog from '../components/ui/ConfirmDialog';
 import { deleteBrand } from '../services/BrandMaster';
 import { listBrands, getBrand, type BrandItem as ServiceBrandItem } from '../services/BrandMaster';
 import { createPortal } from 'react-dom';
+import { usePermissions } from '../context/SidebarMenuContext';
 
 type Brand = ServiceBrandItem;
 
@@ -49,6 +50,8 @@ const BrandMaster: React.FC = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [viewItem, setViewItem] = useState<Brand | null>(null);
   const [editItem, setEditItem] = useState<Brand | null>(null);
+
+  const { hasPermission } = usePermissions();
 
   // We fetch paginated data from the API; currentData is the page currently loaded
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -267,6 +270,7 @@ const BrandMaster: React.FC = () => {
             onCreateClick={handleCreateBrand} 
             createButtonLabel="Create Brand"
             showBreadcrumb={true}
+            showCreateButton={hasPermission('brand.create')}
           />
 
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
@@ -387,6 +391,9 @@ const BrandMaster: React.FC = () => {
               onEdit={(it: Brand) => handleEdit(it.id)}
               onView={(it: Brand) => handleView(it.id)}
               onDelete={(it: Brand) => handleDelete(it.id)}
+              editPermissionSlug="brand.edit"
+              viewPermissionSlug="brand.view"
+              deletePermissionSlug="brand.delete"
             />
             </div>
           </div>

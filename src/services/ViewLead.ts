@@ -7,7 +7,9 @@ export interface Lead {
   slug: string;
   email: string;
   profile_url: string;
-  mobile_number: string[];
+  mobile_number: (string | { id: number; number: string })[];
+  number?: string;
+  phone?: string;
   type: string;
   status: string;
   comment: string;

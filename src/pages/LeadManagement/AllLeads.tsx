@@ -13,6 +13,7 @@ import { listLeads, updateLead, deleteLead } from '../../services/AllLeads';
 import { assignUserToLead } from '../../services/leadAssignTo';
 import { apiClient } from '../../utils/apiClient';
 import { fetchCallStatuses, updateCallStatus } from '../../services/CallStatus';
+import { usePermissions } from '../../context/SidebarMenuContext';
 
 interface Lead {
   id: string;
@@ -55,6 +56,7 @@ const AllLeads: React.FC = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [callStatusOptions, setCallStatusOptions] = useState<CallStatusOption[]>([]);
   const [assignToOptions, setAssignToOptions] = useState<UserOption[]>([]);
+  const { hasPermission } = usePermissions();
     // Fetch call status options from API
     useEffect(() => {
       const loadCallStatuses = async () => {
@@ -269,7 +271,7 @@ const AllLeads: React.FC = () => {
           agencyName: it.agency?.name || it.agency_name || '',
           brandName: it.brand_name || it.brand?.name || String(it.brand_id || ''),
           contactPerson: it.contact_person || it.name || '',
-          phoneNumber: Array.isArray(it.mobile_number) ? (it.mobile_number[0] || '') : (it.mobile_number || ''),
+          phoneNumber: Array.isArray(it.mobile_number) ? (it.mobile_number[0]?.number || '') : (it.number || it.mobile_number || it.phone || ''),
           source: it.lead_source || it.source || '',
           subSource: it.sub_source?.name || it.lead_sub_source?.name || it.lead_sub_source_name || it.lead_sub_source || '',
           assignBy: it.created_by_user?.name || it.assign_by_name || it.created_by || '',
@@ -303,7 +305,7 @@ const AllLeads: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, searchQuery]);
 
-  const columns = ([
+  const columns: Column<Lead>[] = [
     { key: 'sr', header: 'Id', render: (it: Lead) => it.id, className: 'text-left whitespace-nowrap' },
     { key: 'agencyName', header: 'Agency Name', render: (it: Lead) => it.agencyName || '-', className: 'max-w-[180px] overflow-hidden text-ellipsis whitespace-nowrap' },
     { key: 'brandName', header: 'Brand Name', render: (it: Lead) => it.brandName || '-', className: 'max-w-[180px] overflow-hidden text-ellipsis whitespace-nowrap' },
@@ -311,7 +313,7 @@ const AllLeads: React.FC = () => {
     { key: 'phoneNumber', header: 'Phone Number', render: (it: Lead) => it.phoneNumber || '-', className: 'whitespace-nowrap' },
     { key: 'subSource', header: 'Sub-Source', render: (it: Lead) => it.subSource || '-', className: 'whitespace-nowrap' },
     { key: 'assignBy', header: 'Assign By', render: (it: Lead) => it.assignBy || '-', className: 'whitespace-nowrap' },
-    {
+    ...(hasPermission('all-lead.assign') ? [{
       key: 'assignTo',
       header: 'Assign To',
       render: (it: Lead) => (
@@ -324,7 +326,7 @@ const AllLeads: React.FC = () => {
         />
       ),
       className: 'min-w-[140px]',
-    },
+    } as Column<Lead>] : []),
     { key: 'dateTime', header: 'Date & Time', render: (it: Lead) => it.dateTime || '-', className: 'whitespace-nowrap' },
     { 
       key: 'status', 
@@ -358,12 +360,16 @@ const AllLeads: React.FC = () => {
       header: 'Call Status',
       render: (it: Lead) => (
         <div className="min-w-[160px]">
+          {hasPermission('all-lead-call-status.update') ? (
             <CallStatusDropdown
               value={(it.callStatus && it.callStatus !== 'N/A') ? it.callStatus : ''}
               options={callStatusOptions.map(opt => opt.name)}
               onChange={(newStatus) => handleCallStatusChange(it.id, newStatus)}
               onConfirm={handleCallStatusConfirm}
             />
+          ) : (
+            <span>{it.callStatus || 'N/A'}</span>
+          )}
         </div>
       ),
       className: 'min-w-[160px]',
@@ -395,7 +401,7 @@ const AllLeads: React.FC = () => {
       ),
       className: 'max-w-[220px]'
     },
-  ] as Column<Lead>[]);
+  ];
 
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
@@ -418,10 +424,12 @@ const AllLeads: React.FC = () => {
         onConfirm={confirmDelete}
       />
 
-      <MasterHeader
-        onCreateClick={handleCreateLead}
-        createButtonLabel="Create Lead"
-      />
+      {hasPermission('leads.create') && (
+        <MasterHeader
+          onCreateClick={handleCreateLead}
+          createButtonLabel="Create Lead"
+        />
+      )}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
         <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-200">
           <h2 className="text-base font-semibold text-gray-900">All Leads</h2>
@@ -448,6 +456,9 @@ const AllLeads: React.FC = () => {
             onEdit={(it: Lead) => handleEdit(it.id)}
             onView={(it: Lead) => handleView(it.id)}
             onDelete={(it: Lead) => handleDelete(it.id)}
+            editPermissionSlug="leads.edit"
+            viewPermissionSlug="leads.view"
+            deletePermissionSlug="leads.delete"
           />
         </div>
       </div>

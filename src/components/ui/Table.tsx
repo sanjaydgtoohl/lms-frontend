@@ -24,6 +24,10 @@ interface TableProps<T> {
   onEdit?: (item: T) => void;
   onView?: (item: T) => void;
   onDelete?: (item: T) => void;
+  /** Permission slugs for actions */
+  editPermissionSlug?: string;
+  viewPermissionSlug?: string;
+  deletePermissionSlug?: string;
   /** optional render key extractor (defaults to item.id || index) */
   keyExtractor?: (item: T, index: number) => string;
   /** compact mode reduces cell padding (default false) */
@@ -33,7 +37,7 @@ interface TableProps<T> {
 }
 
 const Table = <T,>(props: TableProps<T>) => {
-  const { data, columns, startIndex = 0, loading = false, onEdit, onView, onDelete, keyExtractor, compact = false, desktopOnMobile = true } = props;
+  const { data, columns, startIndex = 0, loading = false, onEdit, onView, onDelete, editPermissionSlug, viewPermissionSlug, deletePermissionSlug, keyExtractor, compact = false, desktopOnMobile = true } = props;
 
   // responsive padding classes used for cells/headers; compact mode reduces padding further
   // small screens get compact padding while larger screens keep desktop spacing
@@ -157,6 +161,9 @@ const Table = <T,>(props: TableProps<T>) => {
                           onEdit={() => onEdit?.(item)}
                           onView={() => onView?.(item)}
                           onDelete={() => onDelete?.(item)}
+                          editPermissionSlug={editPermissionSlug}
+                          viewPermissionSlug={viewPermissionSlug}
+                          deletePermissionSlug={deletePermissionSlug}
                         />
                       </div>
                     </td>

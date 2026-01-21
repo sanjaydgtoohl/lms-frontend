@@ -13,6 +13,7 @@ import ConfirmDialog from '../components/ui/ConfirmDialog';
 import { showError } from '../utils/notifications';
 import Pagination from '../components/ui/Pagination';
 import SearchBar from '../components/ui/SearchBar';
+import { usePermissions } from '../context/SidebarMenuContext';
 
 // Robust parser: normalize various API date formats into an ISO timestamp (returns empty string on failure)
 const parseApiDateToISO = (s?: string): string => {
@@ -88,6 +89,8 @@ const AgencyMaster: React.FC = () => {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmDeleteLabel, setConfirmDeleteLabel] = useState<string>('');
   const [confirmLoading, setConfirmLoading] = useState(false);
+
+  const { hasPermission } = usePermissions();
 
   const navigate = useNavigate();
   const params = useParams();
@@ -258,6 +261,7 @@ const AgencyMaster: React.FC = () => {
             onCreateClick={handleCreateAgency}
             createButtonLabel="Create Agency"
             showBreadcrumb={true}
+            showCreateButton={hasPermission('agency.create')}
           />
 
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
@@ -338,6 +342,9 @@ const AgencyMaster: React.FC = () => {
                 onEdit={(it: Agency) => handleEdit(it)}
                 onView={(it: Agency) => handleView(it)}
                 onDelete={(it: Agency) => handleDelete(it)}
+                editPermissionSlug="agency.edit"
+                viewPermissionSlug="agency.view"
+                deletePermissionSlug="agency.delete"
               />
             </div>
           </div>

@@ -133,7 +133,8 @@ const PermissionTree: React.FC<PermissionTreeProps> = ({ data, selectedPermissio
               const childIds = collectIds(child);
               return childIds.some((id) => next.includes(id));
             });
-            if (!hasAnyCheckedChild) {
+            // Only uncheck parent if it has no checked children AND more than one child
+            if (!hasAnyCheckedChild && parentChildren.length > 1) {
               next = next.filter((id) => id !== parentId);
             }
           }

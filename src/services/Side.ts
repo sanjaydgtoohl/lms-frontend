@@ -27,6 +27,29 @@ export function extractAllPaths(apiItems: ApiSidebarItem[]): string[] {
   // Remove duplicates
   return [...new Set(paths)];
 }
+
+/**
+ * Recursively extract all permission slugs from the raw sidebar API response.
+ * Use this for permission checks.
+ */
+export function extractAllSlugs(apiItems: ApiSidebarItem[]): string[] {
+  const slugs: string[] = [];
+  
+  function recurse(items: ApiSidebarItem[]) {
+    for (const item of items) {
+      if (item.name && item.name.trim() !== '') {
+        slugs.push(item.name);
+      }
+      if (item.children && item.children.length > 0) {
+        recurse(item.children);
+      }
+    }
+  }
+  recurse(apiItems);
+  
+  // Remove duplicates
+  return [...new Set(slugs)];
+}
 /**
  * Checks if a given path is permitted based on sidebar menu structure.
  * Returns true if found, false otherwise.
@@ -108,13 +131,15 @@ export function mapMenu(apiItems: ApiSidebarItem[]): NavigationItem[] {
     icon_file: item.icon_file || undefined,
     children:
       item.children && item.children.length > 0
-        ? item.children.map((child) => ({
-            name: child.display_name || child.name || '',
-            path: fixPath(child.url),
-            icon: null,
-            icon_file: child.icon_file || undefined,
-            // Do NOT map grandchildren
-          }))
+        ? item.children
+            .filter((child) => child.name !== 'brief.assign' && child.name !== 'brief-status.update') // Filter out Assign Brief and Brief Status Update
+            .map((child) => ({
+              name: child.display_name || child.name || '',
+              path: fixPath(child.url),
+              icon: null,
+              icon_file: child.icon_file || undefined,
+              // Do NOT map grandchildren
+            }))
         : undefined,
   }));
 }

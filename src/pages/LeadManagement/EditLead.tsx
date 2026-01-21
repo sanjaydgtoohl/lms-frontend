@@ -79,8 +79,8 @@ const EditLead: React.FC = () => {
           fullName: apiLead.name || '',
           profileUrl: apiLead.profile_url || '',
           email: apiLead.email || '',
-          mobileNo: Array.isArray(apiLead.mobile_number) ? String(apiLead.mobile_number[0] || '') : '',
-          mobileNo2: Array.isArray(apiLead.mobile_number) ? String(apiLead.mobile_number[1] || '') : '',
+          mobileNo: Array.isArray(apiLead.mobile_number) ? (apiLead.mobile_number[0] ? (typeof apiLead.mobile_number[0] === 'string' ? apiLead.mobile_number[0] : apiLead.mobile_number[0].number) : '') : (apiLead.mobile_number || apiLead.number || apiLead.phone || ''),
+          mobileNo2: Array.isArray(apiLead.mobile_number) ? (apiLead.mobile_number[1] ? (typeof apiLead.mobile_number[1] === 'string' ? apiLead.mobile_number[1] : apiLead.mobile_number[1].number) : '') : '',
           showSecondMobile: Array.isArray(apiLead.mobile_number) && apiLead.mobile_number.length > 1,
           type: apiLead.type || '',
           designation: apiLead.designation?.id ? String(apiLead.designation.id) : '',
@@ -96,9 +96,9 @@ const EditLead: React.FC = () => {
 
         const mappedLead: Lead = {
           id: String(apiLead.id),
-          selectedOption: apiLead.brand_id ? 'brand' : (apiLead.agency_id ? 'agency' : 'brand'),
-          brandId: apiLead.brand_id ? String(apiLead.brand_id) : undefined,
-          agencyId: apiLead.agency_id ? String(apiLead.agency_id) : undefined,
+          selectedOption: apiLead.brand ? 'brand' : (apiLead.agency ? 'agency' : 'brand'),
+          brandId: apiLead.brand?.id ? String(apiLead.brand.id) : undefined,
+          agencyId: apiLead.agency?.id ? String(apiLead.agency.id) : undefined,
           contacts: [contact],
           assignTo: apiLead.assigned_user?.id ? String(apiLead.assigned_user.id) : undefined,
           assignToName: apiLead.assigned_user?.name || undefined,

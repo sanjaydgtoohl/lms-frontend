@@ -56,7 +56,8 @@ const Layout: React.FC = () => {
     && !location.pathname.startsWith('/meeting-schedule')
     && !location.pathname.startsWith('/brief')
     && !location.pathname.startsWith('/user-management')
-    && !location.pathname.startsWith('/gmail');
+    && !location.pathname.startsWith('/gmail')
+    && !location.pathname.startsWith('/dashboard');
 
   return (
     <>
