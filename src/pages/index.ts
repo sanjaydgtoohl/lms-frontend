@@ -1,5 +1,7 @@
 export { default as LoginCard } from './Auth/LoginCard';
 export { default as Dashboard } from './Dashboard';
+export { default as SalesDashboard } from './Dashboard/SalesDashboard';
+export { default as PlannerDashboard } from './Dashboard/PlannerDashboard';
 export { default as Courses } from './Courses';
 export { default as Profile } from './Profile';
 export { default as LeadSource } from './LeadSource';

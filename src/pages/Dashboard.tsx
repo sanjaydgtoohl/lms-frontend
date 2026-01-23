@@ -135,7 +135,6 @@ const Dashboard: React.FC = () => {
   const currentAlerts = getCurrentPageItems(filteredAlerts, alertsPage);
 
   const dismissAlert = (id: number) => setAlerts(prev => prev.filter(a => a.id !== id));
-  const markAllRead = () => setAlerts([]);
 
   return (
     <div className="space-y-6">
@@ -203,7 +202,6 @@ const Dashboard: React.FC = () => {
           title={`System Alerts (${alerts.length})`}
             headerRight={(
               <div className="flex items-center gap-2">
-                <button onClick={markAllRead} className="text-xs text-gray-600 bg-gray-50 border border-gray-200 px-2 py-1 rounded hover:bg-gray-100">Mark all read</button>
                 <select value={alertFilter} onChange={(e) => setAlertFilter(e.target.value as any)} className="text-xs border border-gray-200 rounded px-2 py-1 bg-white">
                   <option value="all">All</option>
                   <option value="high">High</option>

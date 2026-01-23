@@ -433,6 +433,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
                 value={form.phone}
                 onChange={handleChange}
                 placeholder="Please enter phone number"
+                maxLength={10}
                 className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
                   errors.phone
                     ? 'border border-red-500 bg-red-50 focus:ring-red-500'

@@ -46,6 +46,8 @@ export interface NavigationItem {
 
 export const sidebarItems: NavigationItem[] = [
   { name: "Dashboard", path: "/dashboard", icon: LayoutGrid },
+  { name: "Sales Dashboard", path: "/dashboard/sales", icon: FinanceIcon },
+  { name: "Planner Dashboard", path: "/dashboard/planner", icon: LayoutGrid },
   {
     name: "Master Data",
     icon: File02Icon,

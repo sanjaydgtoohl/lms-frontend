@@ -1,11 +1,9 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Button, Input, NotificationPopup } from '../../components/ui';
+import { Button, Input } from '../../components/ui';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/auth';
-import { useUiStore } from '../../store/ui';
 import { ROUTES } from '../../constants';
 
 const loginSchema = z.object({
@@ -23,15 +21,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginCard() {
   const { login, isLoading } = useAuthStore();
-  const notification = useUiStore((s) => s.notification);
   const [loginError, setLoginError] = useState<string | null>(null);
-  const navigate = useNavigate();
-
-  const handleNotificationClose = () => {
-    useUiStore.getState().hideNotification();
-    // Navigate to dashboard after notification is closed
-    navigate(ROUTES.DASHBOARD);
-  };
 
 
   const {
@@ -49,10 +39,9 @@ export default function LoginCard() {
     try {
       await login(data.email, data.password);
       setLoginError(null);
-      // Show success notification on login page
-      useUiStore.getState().showNotification('Login successful! Welcome back!', 'success', 'Success');
+      // Reload the page to dashboard after successful login
+      window.location.href = ROUTES.DASHBOARD;
     } catch (error: any) {
-      useUiStore.getState().hideNotification();
       // Try to extract API error message if present
       let apiErrorMsg = '';
       if (error?.response?.data?.errors) {
@@ -71,15 +60,6 @@ export default function LoginCard() {
 
   return (
     <div className="fixed inset-0 w-full h-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-zinc-950 via-black to-zinc-900">
-      {/* Error Popup */}
-      <NotificationPopup
-        isOpen={notification.isOpen}
-        onClose={handleNotificationClose}
-        message={notification.message}
-        type={notification.type}
-        title={notification.title}
-      />
-      
       {/* ✨ Full-screen animated background effects */}
       <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-transparent to-orange-600/10" />
       <div className="absolute w-[800px] h-[800px] bg-orange-500/20 rounded-full blur-[300px] top-[-200px] left-[-200px] animate-pulse" />

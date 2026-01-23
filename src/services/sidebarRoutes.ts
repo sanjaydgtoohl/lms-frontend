@@ -4,6 +4,8 @@
 const sidebarRoutes = [
   // Dashboard
   '/dashboard',
+  '/dashboard/sales',
+  '/dashboard/planner',
 
   // Master Data
   '/master/brand',

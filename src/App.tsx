@@ -5,6 +5,8 @@ import { handleTokenExpiration } from './utils/auth';
 import authService from './services/authService';
 import LoginCard from './pages/Auth/LoginCard';
 import Dashboard from './pages/Dashboard';
+import SalesDashboard from './pages/Dashboard/SalesDashboard';
+import PlannerDashboard from './pages/Dashboard/PlannerDashboard';
 import Courses from './pages/Courses';
 import Profile from './pages/Profile';
 import LeadSource from './pages/LeadSource';
@@ -104,6 +106,8 @@ function App() {
           <Route index element={<Navigate to="dashboard" replace />} />
           {/* Child routes must be relative when nested */}
           <Route path="dashboard" element={<PermissionRoute><Dashboard /></PermissionRoute>} />
+          <Route path="dashboard/sales" element={<PermissionRoute><SalesDashboard /></PermissionRoute>} />
+          <Route path="dashboard/planner" element={<PermissionRoute><PlannerDashboard /></PermissionRoute>} />
           <Route path="courses" element={<PermissionRoute><Courses /></PermissionRoute>} />
           <Route path="profile" element={<PermissionRoute><Profile /></PermissionRoute>} />
           <Route path="gmail" element={<PermissionRoute><GmailPanel /></PermissionRoute>} />

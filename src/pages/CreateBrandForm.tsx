@@ -358,15 +358,15 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
       setForm(prev => ({
         ...prev,
         brandName: initialData.name ?? initialData.brandName ?? prev.brandName,
-        brandType: String(initialData.brand_type_id ?? initialData.brandType ?? initialData.brand_type ?? ''),
+        brandType: String(initialData.brand_type?.id ?? initialData.brand_type_id ?? initialData.brandType ?? initialData.brand_type ?? ''),
         website: initialData.website ?? prev.website,
         // agency will be set after agencies are loaded
-        industry: String(initialData.industry_id ?? initialData.industry ?? ''),
-        country: String(initialData.country_id ?? initialData.country ?? ''),
+        industry: String(initialData.industry?.id ?? initialData.industry_id ?? initialData.industry ?? ''),
+        country: String(initialData.country?.id ?? initialData.country_id ?? initialData.country ?? ''),
         postalCode: initialData.postal_code ?? initialData.postalCode ?? initialData.pinCode ?? prev.postalCode,
-        state: String(initialData.state_id ?? initialData.state ?? ''),
-        city: String(initialData.city_id ?? initialData.city ?? ''),
-        zone: String(initialData.zone_id ?? initialData.zone ?? ''),
+        state: String(initialData.state?.id ?? initialData.state_id ?? initialData.state ?? ''),
+        city: String(initialData.city?.id ?? initialData.city_id ?? initialData.city ?? ''),
+        zone: String(initialData.zone?.id ?? initialData.zone_id ?? initialData.zone ?? ''),
       }));
     }
 

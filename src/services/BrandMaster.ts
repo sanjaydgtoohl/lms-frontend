@@ -73,14 +73,17 @@ export async function listBrands(page = 1, perPage = 10, search?: string): Promi
     const idVal = raw['id'] ?? raw['uuid'] ?? raw['code'] ?? `BR${String(idx + 1).padStart(3, '0')}`;
     const nameVal = raw['name'] ?? raw['brand_name'] ?? '';
     const agencyRaw = raw['agency'];
-    const agencyNameVal = raw['agency_name'] ?? (agencyRaw && typeof agencyRaw === 'object' && 'name' in (agencyRaw as Record<string, unknown>) ? String((agencyRaw as Record<string, unknown>)['name']) : agencyRaw ?? '');
-    const brandTypeVal = raw['brand_type'] ?? raw['type'] ?? '';
+    const agenciesRaw = raw['agencies'];
+    const agencyNameVal = raw['agency_name'] ?? 
+      (Array.isArray(agenciesRaw) && agenciesRaw.length > 0 ? (agenciesRaw[0] as any)?.name ?? '' : '') ??
+      (agencyRaw && typeof agencyRaw === 'object' && 'name' in (agencyRaw as Record<string, unknown>) ? String((agencyRaw as Record<string, unknown>)['name']) : agencyRaw ?? '');
+    const brandTypeVal = (raw['brand_type'] as any)?.name ?? raw['type'] ?? '';
     const contactPersonVal = raw['contact_person'] ?? raw['contact'] ?? '';
-    const industryVal = raw['industry'] ?? '';
-    const countryVal = raw['country'] ?? '';
-    const stateVal = raw['state'] ?? '';
-    const cityVal = raw['city'] ?? '';
-    const zoneVal = raw['zone'] ?? '';
+    const industryVal = (raw['industry'] as any)?.name ?? '';
+    const countryVal = (raw['country'] as any)?.name ?? '';
+    const stateVal = (raw['state'] as any)?.name ?? '';
+    const cityVal = (raw['city'] as any)?.name ?? '';
+    const zoneVal = (raw['zone'] as any)?.name ?? '';
     const pinCodeVal = raw['pin_code'] ?? raw['postal_code'] ?? raw['postalCode'] ?? '';
     const dateTimeVal = raw['created_at'] ?? raw['date_time'] ?? raw['dateTime'] ?? '';
 

@@ -148,7 +148,7 @@ export async function getContactPersonsByBrand(brandId: string): Promise<Contact
       uuid: raw.uuid,
       name: raw.name || '',
       email: raw.email || null,
-      phone: (raw.mobile_number && raw.mobile_number.length > 0) ? raw.mobile_number[0] : '',
+      phone: (Array.isArray(raw.mobile_number) && raw.mobile_number.length > 0) ? raw.mobile_number[0] : '',
       designation: raw.designation?.name || '',
       department: raw.department?.name || '',
       brand: raw.brand?.name || '',
@@ -163,8 +163,8 @@ export async function getContactPersonsByBrand(brandId: string): Promise<Contact
       zone: raw.zone?.name || '',
       postalCode: raw.postal_code || '',
       comment: raw.comment || null,
-      createdAt: raw.created_at || '',
-      updatedAt: raw.updated_at || '',
+      createdAt: raw.created_at ? raw.created_at.replace(/ (AM|PM)$/, '') : '',
+      updatedAt: raw.updated_at ? raw.updated_at.replace(/ (AM|PM)$/, '') : '',
       _raw: raw,
     };
   });
@@ -184,7 +184,7 @@ export async function getContactPersonDetail(id: string): Promise<ContactPerson>
     uuid: raw.uuid,
     name: raw.name || '',
     email: raw.email || null,
-    phone: (raw.mobile_number && raw.mobile_number.length > 0) ? raw.mobile_number[0] : '',
+    phone: (Array.isArray(raw.mobile_number) && raw.mobile_number.length > 0) ? raw.mobile_number[0] : '',
     designation: raw.designation?.name || '',
     department: raw.department?.name || '',
     brand: raw.brand?.name || '',
@@ -199,8 +199,8 @@ export async function getContactPersonDetail(id: string): Promise<ContactPerson>
     zone: raw.zone?.name || '',
     postalCode: raw.postal_code || '',
     comment: raw.comment || null,
-    createdAt: raw.created_at || '',
-    updatedAt: raw.updated_at || '',
+    createdAt: raw.created_at ? raw.created_at.replace(/ (AM|PM)$/, '') : '',
+    updatedAt: raw.updated_at ? raw.updated_at.replace(/ (AM|PM)$/, '') : '',
     _raw: raw,
   };
 }
