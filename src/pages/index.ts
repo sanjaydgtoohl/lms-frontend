@@ -10,4 +10,8 @@ export { default as BrandMaster } from './BrandMaster';
 export { default as IndustryMaster } from './IndustryMaster';
 export { default as DesignationMaster } from './DesignationMaster';
 export { default as DepartmentMaster } from './DepartmentMaster';
+export { default as BriefLog } from './Brief/BriefLog';
+export { default as PlanHistory } from './Brief/PlanHistory';
+export { default as PlanSubmission } from './Brief/PlanSubmission';
+export { default as EditSubmittedPlan } from './Brief/EditSubmittedPlan';
 export { MissCampaignView, MissCampaignCreate } from './MissCampaign';

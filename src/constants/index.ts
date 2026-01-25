@@ -31,6 +31,8 @@ export const ROUTES = {
     ROOT: '/brief',
     PIPELINE: '/brief/Brief_Pipeline',
     CREATE: '/brief/create',
+    LOG: '/brief/log',
+    PLAN_HISTORY: (id: string) => `/brief/plan-history/${id}`,
     EDIT: (id: string) => `/brief/${id}/edit`,
     DETAIL: (id: string) => `/brief/${id}`,
   },

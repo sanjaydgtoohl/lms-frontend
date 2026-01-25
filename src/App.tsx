@@ -24,6 +24,9 @@ import Layout from './components/layout/Layout';
 import PermissionRoute from './components/ui/PermissionRoute';
 import { SidebarMenuProvider } from './context/SidebarMenuContext';
 import BriefPipeline from './pages/Brief/BriefPipeline';
+import { BriefLog, PlanHistory } from './pages';
+import { PlanSubmission } from './pages';
+import { EditSubmittedPlan } from './pages';
 import ErrorBoundary from './components/ui/ErrorBoundary';
 import { ROUTES } from './constants';
 import GmailPanel from './components/Gmail/GmailPanel';
@@ -173,6 +176,10 @@ function App() {
           <Route path="brief">
             <Route path="Brief_Pipeline" element={<PermissionRoute><BriefPipeline /></PermissionRoute>} />
             <Route path="create" element={<PermissionRoute><BriefPipeline /></PermissionRoute>} />
+            <Route path="log" element={<PermissionRoute><BriefLog /></PermissionRoute>} />
+            <Route path="plan-history/:id" element={<PermissionRoute><PlanHistory /></PermissionRoute>} />
+            <Route path="plan-submission" element={<PermissionRoute><PlanSubmission /></PermissionRoute>} />
+            <Route path="edit-submitted-plan/:id" element={<PermissionRoute><EditSubmittedPlan /></PermissionRoute>} />
             <Route path=":id" element={<PermissionRoute><BriefPipeline /></PermissionRoute>} />
             <Route path=":id/edit" element={<PermissionRoute><BriefPipeline /></PermissionRoute>} />
           </Route>

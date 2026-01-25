@@ -54,6 +54,7 @@ const sidebarRoutes = [
   // Brief
   '/brief/Brief_Pipeline',
   '/brief/create',
+  '/brief/log',
 
   // Miss Campaign
   '/miss-campaign/view',
