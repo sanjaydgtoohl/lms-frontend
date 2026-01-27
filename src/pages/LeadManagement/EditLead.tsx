@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MasterCreateHeader } from '../../components/ui/MasterCreateHeader';
 import Table, { type Column } from '../../components/ui/Table';
-import { Mail, Eye } from 'lucide-react';
+import { Mail, Eye, Bold, Italic, List, ListOrdered } from 'lucide-react';
 import LeadManagementSection from '../../components/forms/CreateLead/LeadManagementSection';
 import ContactPersonsCard from '../../components/forms/CreateLead/ContactPersonsCard';
 import AssignPriorityCard from '../../components/forms/CreateLead/AssignPriorityCard';
@@ -11,6 +11,7 @@ import { fetchBrands, fetchAgencies } from '../../services/CreateLead';
 import { Button } from '../../components/ui';
 import { updateLead } from '../../services/AllLeads';
 import { showSuccess, showError } from '../../utils/notifications';
+import gmailService from '../../services/gmailService';
 
 import CommentSection from '../../components/forms/CreateLead/CommentSection';
 
@@ -56,6 +57,24 @@ const EditLead: React.FC = () => {
   const [optionsError, setOptionsError] = useState<string | null>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [showEmailComposer, setShowEmailComposer] = useState(false);
+  const [emailTo, setEmailTo] = useState('');
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailBody, setEmailBody] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [templateName, setTemplateName] = useState('');
+  const [isCodeView, setIsCodeView] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [templateNameError, setTemplateNameError] = useState('');
+  const [subjectError, setSubjectError] = useState('');
+  const [emailToError, setEmailToError] = useState('');
+  const [emailBodyError, setEmailBodyError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const editorRef = useRef<HTMLDivElement>(null);
+
+  const handlePriorityChange = useCallback(({ assignTo, priority, callFeedback }: { assignTo?: string; priority?: string; callFeedback?: string }) => {
+    setLead(prev => prev ? { ...prev, assignTo, priority, ...(callFeedback !== undefined ? { callFeedback } : {}) } : null);
+  }, []);
 
   useEffect(() => {
     const fetchLead = async () => {
@@ -124,6 +143,16 @@ const EditLead: React.FC = () => {
     }
   }, [id]);
 
+  // Initialize Gmail service
+  useEffect(() => {
+    const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'YOUR_CLIENT_ID';
+    try {
+      gmailService.initGmail(CLIENT_ID);
+    } catch (e) {
+      console.warn('Gmail init error', e);
+    }
+  }, []);
+
   // Fetch lead history when lead is loaded
   useEffect(() => {
     let mounted = true;
@@ -147,6 +176,23 @@ const EditLead: React.FC = () => {
     return () => { mounted = false; };
   }, [lead?.id]);
 
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => setSuccessMessage(''), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
+
+  useEffect(() => {
+    if (showEmailComposer && editorRef.current) {
+      // Ensure editor is properly initialized
+      editorRef.current.focus();
+      if (!editorRef.current.innerHTML) {
+        editorRef.current.innerHTML = emailBody;
+      }
+    }
+  }, [showEmailComposer, emailBody]);
+
   // Fetch brand/agency options when selectedOption changes
   useEffect(() => {
     let isMounted = true;
@@ -165,15 +211,11 @@ const EditLead: React.FC = () => {
         } else {
           const fetched = Array.isArray(data) ? data.map((it: any) => ({ value: String(it.id), label: it.name })) : [];
           // If there's an existing selected value that's not present in fetched options,
-          // add it using the lead's stored name so the select shows the current value.
+          // add it using the dropdownValue as the label so the select shows the current value.
           if (dropdownValue) {
             const exists = fetched.find((o: any) => o.value === dropdownValue);
             if (!exists) {
-              // Try to get a label from the currently loaded lead
-              const existingLabel = selectedOption === 'brand'
-                ? (lead?.contacts?.[0]?.agencyBrand || lead?.brandId)
-                : (lead?.contacts?.[0]?.agencyBrand || lead?.agencyId);
-              fetched.unshift({ value: dropdownValue, label: String(existingLabel || dropdownValue) });
+              fetched.unshift({ value: dropdownValue, label: dropdownValue });
             }
           }
           setOptions(fetched);
@@ -191,7 +233,7 @@ const EditLead: React.FC = () => {
     fetchData();
 
     return () => { isMounted = false; };
-  }, [selectedOption, dropdownValue, lead]);
+  }, [selectedOption, dropdownValue]);
 
   // Keep lead's brandId/agencyId in sync when dropdownValue changes
   useEffect(() => {
@@ -256,8 +298,101 @@ const EditLead: React.FC = () => {
     }
   };
 
+  const handleSave = async () => {
+    setTemplateNameError('');
+    setSubjectError('');
+    setEmailToError('');
+    setEmailBodyError('');
+    setSuccessMessage('');
+    if (!emailTo.trim() || !emailTo.includes('@')) {
+      setEmailToError('Valid email address is required.');
+      return;
+    }
+    if (!templateName.trim()) {
+      setTemplateNameError('Template Name is required.');
+      return;
+    }
+    if (!emailSubject.trim()) {
+      setSubjectError('Subject is required.');
+      return;
+    }
+    const body = isCodeView ? emailBody : (editorRef.current?.innerHTML || '');
+    if (!body.trim()) {
+      setEmailBodyError('Email body is required.');
+      return;
+    }
+    setSendingEmail(true);
+    try {
+      let t = gmailService.getAccessToken();
+      if (!t) {
+        t = await gmailService.requestAccessToken('consent');
+      }
+      const body = isCodeView ? emailBody : (editorRef.current?.innerHTML || '');
+      await gmailService.sendEmail(emailTo, emailSubject, body);
+      setSuccessMessage('Email sent successfully.');
+      setTimeout(() => {
+        setShowEmailComposer(false);
+        handleClear();
+      }, 2000);
+    } catch (err: any) {
+      setTemplateNameError('Failed to send email: ' + String(err));
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
+  const handleFormat = (command: string, value?: string) => {
+    if (editorRef.current) {
+      editorRef.current.focus();
+      document.execCommand(command, false, value);
+    }
+  };
+
+  const handleInsertLink = () => {
+    const url = prompt('Enter URL:');
+    if (url) handleFormat('createLink', url);
+  };
+
+  const handleInsertImage = () => {
+    const url = prompt('Enter Image URL:');
+    if (url) handleFormat('insertImage', url);
+  };
+
+  const handleFontSize = (size: string) => {
+    handleFormat('fontSize', size);
+  };
+
+  const handleCodeViewToggle = () => {
+    if (isCodeView) {
+      // Switch to WYSIWYG
+      if (editorRef.current) {
+        editorRef.current.innerHTML = emailBody;
+      }
+    } else {
+      // Switch to code view
+      if (editorRef.current) {
+        setEmailBody(editorRef.current.innerHTML);
+      }
+    }
+    setIsCodeView(!isCodeView);
+  };
+
+  const handleClear = () => {
+    setTemplateName('');
+    setEmailSubject('');
+    setEmailBody('');
+    setEmailTo('');
+    setTemplateNameError('');
+    setSubjectError('');
+    setEmailToError('');
+    setEmailBodyError('');
+    setSuccessMessage('');
+    if (editorRef.current) editorRef.current.innerHTML = '';
+  };
+
   if (isLoading) {
     return (
+
       <div className="flex-1 p-6">
         <div className="flex items-center justify-center h-full">
           <div className="text-lg text-gray-500">Loading...</div>
@@ -311,9 +446,7 @@ const EditLead: React.FC = () => {
           assignedLabel={lead.assignToName}
           priority={lead.priority}
           callFeedback={lead.callFeedback}
-          onChange={({ assignTo, priority, callFeedback }) => {
-            setLead(prev => prev ? { ...prev, assignTo, priority, ...(callFeedback !== undefined ? { callFeedback } : {}) } : null);
-          }}
+          onChange={handlePriorityChange}
         />
 
         {/* Comment Card Section */}
@@ -337,7 +470,132 @@ const EditLead: React.FC = () => {
 
         {/* Email Activity Section */}
         <div className="bg-[#F9F9F9] rounded-2xl shadow-sm border border-[var(--border-color)] p-4">
-          <h3 className="text-sm text-[var(--text-secondary)] mb-3 font-medium">Email Activity</h3>
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-sm text-[var(--text-secondary)] font-medium">Email Activity</h3>
+            <Button onClick={() => { setShowEmailComposer(true); setEmailTo(lead.contacts[0]?.email || ''); }}>Send Email</Button>
+          </div>
+          {showEmailComposer && (
+            <div className="fixed inset-0 flex items-center justify-center z-50">
+              <div className={`bg-white rounded-lg shadow-lg ${isFullscreen ? 'w-full h-full' : 'max-w-4xl w-full mx-4'} max-h-[90vh] overflow-y-auto`}>
+                <div className="flex justify-between items-center p-4 border-b">
+                  <h2 className="text-lg font-semibold">Send Email</h2>
+                  <button onClick={() => setShowEmailComposer(false)} className="text-gray-500 hover:text-gray-700">&times;</button>
+                </div>
+                {successMessage && (
+                  <div className="p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+                    {successMessage}
+                  </div>
+                )}
+                <div className="p-4 space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">To <span className="text-red-500">*</span></label>
+                    <input
+                      type="email"
+                      value={emailTo}
+                      onChange={(e) => {
+                        setEmailTo(e.target.value);
+                        setEmailToError('');
+                      }}
+                      className="w-full p-2 border rounded" 
+                      required
+                    />
+                    {emailToError && <p className="text-red-500 text-sm mt-1">{emailToError}</p>}
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Template Name <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        value={templateName}
+                        onChange={(e) => {
+                          setTemplateName(e.target.value);
+                          setTemplateNameError('');
+                        }}
+                        className="w-full p-2 border rounded"
+                        required
+                      />
+                      {templateNameError && <p className="text-red-500 text-sm mt-1">{templateNameError}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Subject <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        value={emailSubject}
+                        onChange={(e) => {
+                          setEmailSubject(e.target.value);
+                          setSubjectError('');
+                        }}
+                        className="w-full p-2 border rounded"
+                        required
+                      />
+                      {subjectError && <p className="text-red-500 text-sm mt-1">{subjectError}</p>}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Email Body <span className="text-red-500">*</span></label>
+                    <div className="border rounded">
+                      <div className="flex flex-wrap items-center p-2 border-b bg-gray-50">
+                        <button type="button" onClick={handleCodeViewToggle} className="p-1 hover:bg-gray-200" title="Code View">&lt;/&gt;</button>
+                        <button type="button" onClick={() => handleFormat('undo')} className="p-1 hover:bg-gray-200" title="Undo">↶</button>
+                        <button type="button" onClick={() => handleFormat('redo')} className="p-1 hover:bg-gray-200" title="Redo">↷</button>
+                        <div className="w-px h-6 bg-gray-300 mx-2"></div>
+                        <button type="button" onClick={() => handleFormat('bold')} className="p-1 hover:bg-gray-200" title="Bold"><Bold size={16} /></button>
+                        <button type="button" onClick={() => handleFormat('italic')} className="p-1 hover:bg-gray-200" title="Italic"><Italic size={16} /></button>
+                        <button type="button" onClick={() => handleFormat('strikeThrough')} className="p-1 hover:bg-gray-200" title="Strikethrough">S</button>
+                        <select onChange={(e) => handleFontSize(e.target.value)} className="p-1 border rounded text-sm">
+                          <option value="1">Size 1</option>
+                          <option value="2">Size 2</option>
+                          <option value="3">Size 3</option>
+                          <option value="4">Size 4</option>
+                          <option value="5">Size 5</option>
+                          <option value="6">Size 6</option>
+                          <option value="7">Size 7</option>
+                        </select>
+                        <div className="w-px h-6 bg-gray-300 mx-2"></div>
+                        <button type="button" onClick={() => handleFormat('justifyLeft')} className="p-1 hover:bg-gray-200" title="Align Left">⬅</button>
+                        <button type="button" onClick={() => handleFormat('justifyCenter')} className="p-1 hover:bg-gray-200" title="Align Center">⬌</button>
+                        <button type="button" onClick={() => handleFormat('justifyRight')} className="p-1 hover:bg-gray-200" title="Align Right">➡</button>
+                        <div className="w-px h-6 bg-gray-300 mx-2"></div>
+                        <button type="button" onClick={() => handleFormat('insertUnorderedList')} className="p-1 hover:bg-gray-200" title="Bullet List"><List size={16} /></button>
+                        <button type="button" onClick={() => handleFormat('insertOrderedList')} className="p-1 hover:bg-gray-200" title="Numbered List"><ListOrdered size={16} /></button>
+                        <div className="w-px h-6 bg-gray-300 mx-2"></div>
+                        <button type="button" onClick={handleInsertLink} className="p-1 hover:bg-gray-200" title="Insert Link">🔗</button>
+                        <button type="button" onClick={handleInsertImage} className="p-1 hover:bg-gray-200" title="Insert Image">🖼</button>
+                        <div className="ml-auto">
+                          <button type="button" onClick={() => setIsFullscreen(!isFullscreen)} className="p-1 hover:bg-gray-200" title="Fullscreen">⛶</button>
+                        </div>
+                      </div>
+                      {isCodeView ? (
+                        <textarea
+                          value={emailBody}
+                          onChange={(e) => {
+                            setEmailBody(e.target.value);
+                            setEmailBodyError('');
+                          }}
+                          className="w-full h-64 p-2 font-mono text-sm"
+                          placeholder="Enter HTML code..."
+                        />
+                      ) : (
+                        <div
+                          ref={editorRef}
+                          contentEditable
+                          className="min-h-[200px] p-2"
+                          onInput={() => setEmailBodyError('')}
+                        />
+                      )}
+                    </div>
+                    {emailBodyError && <p className="text-red-500 text-sm mt-1">{emailBodyError}</p>}
+                  </div>
+                </div>
+                <div className="flex justify-end space-x-2 p-4 border-t bg-gray-50">
+                  <Button onClick={handleClear} className="bg-red-500 text-white hover:bg-red-600">Clear</Button>
+                  <Button onClick={handleSave} disabled={sendingEmail}>
+                    {sendingEmail ? 'Sending...' : 'Send'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
           <div className="space-y-3">
             {['Subject Line 1', 'Subject Line 2', 'Subject Line 3'].map((sub, idx) => (
               <div key={idx} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 shadow-sm border border-[var(--border-color)]">

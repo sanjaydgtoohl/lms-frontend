@@ -175,7 +175,11 @@ const PlanSubmission: React.FC = () => {
                         accept=".xls,.xlsx,.xlsm,.csv,.doc,.docx,.ppt,.pptx"
                         onChange={(e) => {
                           if (e.target.files) {
-                            setPlanFiles([...planFiles, ...Array.from(e.target.files)]);
+                            const files = Array.from(e.target.files);
+                            setPlanFiles((prev) => {
+                              const combined = [...prev, ...files];
+                              return combined.slice(0, 2);
+                            });
                           }
                         }}
                       />
@@ -203,7 +207,7 @@ const PlanSubmission: React.FC = () => {
             ) : (
               <UploadCard
                 files={planFiles}
-                onChange={setPlanFiles}
+                onChange={(files: File[]) => setPlanFiles(files.slice(0, 2))}
                 accept=".xls,.xlsx,.xlsm,.csv,.doc,.docx,.ppt,.pptx"
                 supported="Excel, Word, PPT"
               />
@@ -227,12 +231,15 @@ const PlanSubmission: React.FC = () => {
                     <label className="w-full h-40 flex items-center justify-center border-2 border-dashed border-blue-300 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors bg-blue-50">
                       <input
                         type="file"
-                        multiple
                         className="hidden"
                         accept=".xls,.xlsx,.xlsm,.csv,.doc,.docx,.ppt,.pptx"
                         onChange={(e) => {
                           if (e.target.files) {
-                            setBackupFiles([...backupFiles, ...Array.from(e.target.files)]);
+                            const files = Array.from(e.target.files);
+                            setBackupFiles((prev) => {
+                              const combined = [...prev, ...files];
+                              return combined.slice(0, 1);
+                            });
                           }
                         }}
                       />
@@ -260,7 +267,7 @@ const PlanSubmission: React.FC = () => {
             ) : (
               <UploadCard
                 files={backupFiles}
-                onChange={setBackupFiles}
+                onChange={(files: File[]) => setBackupFiles(files.slice(0, 1))}
                 accept=".xls,.xlsx,.xlsm,.csv,.doc,.docx,.ppt,.pptx"
                 supported="Excel, Word, PPT"
               />

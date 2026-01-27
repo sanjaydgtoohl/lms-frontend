@@ -1,24 +1,3 @@
-import { apiClient } from '../utils/apiClient';
-// Map API sidebar item to NavigationItem recursively
-function mapApiSidebarItem(apiItem: any): NavigationItem {
-  return {
-    name: apiItem.display_name || apiItem.name || '',
-    path: apiItem.url && apiItem.url !== 'javascript:void(0)' ? `/${apiItem.url.replace(/^\//, '')}` : undefined,
-    icon: undefined, // Optionally map icon here if needed
-    children: Array.isArray(apiItem.children) && apiItem.children.length > 0
-      ? apiItem.children.map(mapApiSidebarItem)
-      : undefined,
-  };
-}
-
-// Fetch sidebar from API and map to NavigationItem[]
-export async function fetchSidebarFromApi(): Promise<NavigationItem[]> {
-  const res = await apiClient.get<any>('/permissions/sidebar');
-  if (res && res.data && Array.isArray(res.data)) {
-    return res.data.map(mapApiSidebarItem);
-  }
-  return [];
-}
 import { LayoutGrid, Settings } from "lucide-react";
 import File02Icon from "../assets/icons/File02Icon";
 import AgencyMasterIcon from "../assets/icons/AgencyMasterIcon";

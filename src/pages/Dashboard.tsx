@@ -3,32 +3,15 @@ import { Users, FileCheck, BarChart3, AlertTriangle, Clock, X, Check } from 'luc
 import Pagination from '../components/ui/Pagination';
 import StatCard from '../components/ui/StatCard';
 import SimpleListCard from '../components/ui/SimpleListCard';
-import { getPendingAssignments, getDashboardStats } from '../services/Dashboard';
-import type { PendingAssignment } from '../services/Dashboard';
-
-interface SystemAlert {
-  id: number;
-  message: string;
-  time: string;
-}
+import { getPendingAssignments, getDashboardStats, getMeetings, type PendingAssignment, type Meeting } from '../services/Dashboard';
 
 const ITEMS_PER_PAGE = 3;
-
-const systemAlerts: SystemAlert[] = [
-  { id: 1, message: 'User Sarah Johnson has not logged in for 5 days', time: '2 hours ago' },
-  { id: 2, message: 'Planner 1 is approaching deadline for Samsung campaign', time: '5 hours ago' },
-  { id: 3, message: '2 modules are overdue by more than 90 days', time: '1 day ago' },
-  { id: 4, message: 'Team meeting scheduled for tomorrow', time: '3 hours ago' },
-  { id: 5, message: 'New course materials need review', time: '6 hours ago' },
-  { id: 6, message: 'System maintenance scheduled for next week', time: '2 days ago' },
-];
 
 const Dashboard: React.FC = () => {
   const [assignmentsPage, setAssignmentsPage] = useState(1);
   const [assignments, setAssignments] = useState<PendingAssignment[]>([]);
-  const [alertsPage, setAlertsPage] = useState(1);
-  const [alerts, setAlerts] = useState<SystemAlert[]>(systemAlerts);
-  const [alertFilter, setAlertFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [meetingsPage, setMeetingsPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -43,6 +26,7 @@ const Dashboard: React.FC = () => {
         const results = await Promise.allSettled([
           getPendingAssignments(),
           getDashboardStats(),
+          getMeetings(),
         ]);
 
         // Handle assignments
@@ -59,6 +43,14 @@ const Dashboard: React.FC = () => {
         } else {
           console.error('Failed to fetch dashboard stats:', results[1].reason);
           // Keep default stats
+        }
+
+        // Handle meetings
+        if (results[2].status === 'fulfilled') {
+          setMeetings(results[2].value.data);
+        } else {
+          console.error('Failed to fetch meetings:', results[2].reason);
+          setMeetings([]);
         }
       } catch (error) {
         console.error('Unexpected error in fetchData:', error);
@@ -87,12 +79,6 @@ const Dashboard: React.FC = () => {
   const currentAssignments = getCurrentPageItems(filteredAssignments, assignmentsPage);
 
   const completeAssignment = (id: number) => setAssignments(prev => prev.filter(a => a.id !== id));
-  const mapSeverity = (text: string) => {
-    const t = text.toLowerCase();
-    if (t.includes('overdue') || t.includes('deadline')) return 'high';
-    if (t.includes('maintenance') || t.includes('not logged') || t.includes('approaching')) return 'medium';
-    return 'low';
-  };
 
   const formatName = (n: PendingAssignment['name']): string => {
     if (!n) return '';
@@ -127,14 +113,9 @@ const Dashboard: React.FC = () => {
     return txt;
   };
 
-  const filteredAlerts = alerts.filter(a => {
-    if (alertFilter === 'all') return true;
-    return mapSeverity(a.message) === alertFilter;
-  });
+  const currentMeetings = getCurrentPageItems(meetings, meetingsPage);
 
-  const currentAlerts = getCurrentPageItems(filteredAlerts, alertsPage);
-
-  const dismissAlert = (id: number) => setAlerts(prev => prev.filter(a => a.id !== id));
+  const dismissMeeting = (id: number) => setMeetings(prev => prev.filter(m => m.id !== id));
 
   return (
     <div className="space-y-6">
@@ -148,6 +129,7 @@ const Dashboard: React.FC = () => {
 
       {/* Assignments & Alerts - Side by Side */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="h-full">
           <SimpleListCard
             title={`Pending Assignments ${loading ? '(Loading...)' : `(${assignments.length})`}`}
             headerRight={(
@@ -197,55 +179,45 @@ const Dashboard: React.FC = () => {
               />
             ) : null}
           />
+        </div>
 
-        <SimpleListCard
-          title={`System Alerts (${alerts.length})`}
-            headerRight={(
-              <div className="flex items-center gap-2">
-                <select value={alertFilter} onChange={(e) => setAlertFilter(e.target.value as any)} className="text-xs border border-gray-200 rounded px-2 py-1 bg-white">
-                  <option value="all">All</option>
-                  <option value="high">High</option>
-                  <option value="medium">Medium</option>
-                  <option value="low">Low</option>
-                </select>
+        <div className="h-full">
+          <SimpleListCard
+          title={`Meeting (${meetings.length})`}
+            items={currentMeetings}
+            renderItem={(meeting) => (
+              <div className="flex items-start gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-gray-900">{meeting.title}</p>
+                  <p className="text-xs text-gray-500">{meeting.agenda}</p>
+                  <p className="text-xs text-gray-500">Lead: {meeting.lead.name}</p>
+                  <p className="text-xs text-gray-500 flex items-center mt-1">
+                    <Clock className="w-3.5 h-3.5 mr-1 text-gray-400" />
+                    {formatDate(meeting.meeting_date)} {meeting.meeting_time}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-700">{meeting.type}</span>
+                  <X
+                    className="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-pointer focus:outline-none focus:ring-0"
+                    onClick={() => dismissMeeting(meeting.id)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') dismissMeeting(meeting.id); }}
+                  />
+                </div>
               </div>
             )}
-            items={currentAlerts}
-            renderItem={(alert) => {
-              const sev = mapSeverity(alert.message);
-              const sevCls = sev === 'high' ? 'bg-red-100 text-red-700' : sev === 'medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700';
-              return (
-                <div className="flex items-start gap-3">
-                  <div className={`w-2.5 h-2.5 rounded-full mt-2 ${sev === 'high' ? 'bg-red-500' : sev === 'medium' ? 'bg-yellow-500' : 'bg-green-500'}`} />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm text-gray-800">{alert.message}</p>
-                    <p className="text-xs text-gray-500 flex items-center mt-1">
-                      <Clock className="w-3.5 h-3.5 mr-1 text-gray-400" />
-                      {alert.time}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${sevCls}`}>{sev}</span>
-                    <X
-                      className="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-pointer focus:outline-none focus:ring-0"
-                      onClick={() => dismissAlert(alert.id)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') dismissAlert(alert.id); }}
-                    />
-                  </div>
-                </div>
-              );
-            }}
-            footer={alerts.length > ITEMS_PER_PAGE ? (
+            footer={meetings.length >= ITEMS_PER_PAGE ? (
               <Pagination
-                currentPage={alertsPage}
-                totalItems={filteredAlerts.length}
+                currentPage={meetingsPage}
+                totalItems={meetings.length}
                 itemsPerPage={ITEMS_PER_PAGE}
-                onPageChange={setAlertsPage}
+                onPageChange={setMeetingsPage}
               />
             ) : null}
           />
+        </div>
       </div>
 
       {/* Progress */}

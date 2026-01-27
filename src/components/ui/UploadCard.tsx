@@ -2,7 +2,6 @@ import React, { useRef } from 'react';
 import Button from './Button';
 
 type UploadCardProps = {
-  title?: string;
   supported?: string;
   files: File[];
   accept?: string;
@@ -16,7 +15,7 @@ const humanFileSize = (size: number) => {
   return `${(size / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
 };
 
-const UploadCard: React.FC<UploadCardProps> = ({ title, supported, files, accept, onChange }) => {
+const UploadCard: React.FC<UploadCardProps> = ({ supported, files, accept, onChange }) => {
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const handleDrop = (e: React.DragEvent) => {
@@ -27,10 +26,6 @@ const UploadCard: React.FC<UploadCardProps> = ({ title, supported, files, accept
       const newFiles = Array.from(dt.files);
       onChange([...files, ...newFiles]);
     }
-  };
-
-  const handleBrowse = () => {
-    inputRef.current?.click();
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -20,6 +20,22 @@ export type DashboardStats = {
   openAlerts: number;
 };
 
+export type Meeting = {
+  id: number;
+  title: string;
+  agenda: string;
+  meeting_date: string;
+  meeting_time: string;
+  lead: { id: number; name: string };
+  attendees: { id: number; name: string }[];
+  type: string;
+  location: string;
+  link: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export type DashboardApiResponse = {
   total_user_count: number;
   pending_lead_count: number;
@@ -30,6 +46,7 @@ export type DashboardApiResponse = {
 const ENDPOINTS = {
   PENDING_ASSIGNMENTS: '/leads/pending',
   DASHBOARD_STATS: '/dashboard',
+  MEETINGS: '/meetings',
 } as const;
 
 export type PendingAssignmentsResponse = {
@@ -38,6 +55,10 @@ export type PendingAssignmentsResponse = {
 
 export type DashboardStatsResponse = {
   data: DashboardStats;
+};
+
+export type MeetingsResponse = {
+  data: Meeting[];
 };
 
 export async function getPendingAssignments(): Promise<PendingAssignmentsResponse> {
@@ -133,6 +154,45 @@ export async function getDashboardStats(): Promise<DashboardStatsResponse> {
         teamPerformance: data.team_performance || '0%',
         openAlerts: data.open_alerts || 0,
       },
+    };
+  } catch (error) {
+    handleApiError(error);
+    throw error;
+  }
+}
+
+export async function getMeetings(): Promise<MeetingsResponse> {
+  try {
+    const res = await apiClient.get<Meeting[]>(ENDPOINTS.MEETINGS);
+    const json = res;
+    if (!json || !json.success) {
+      const message = (json as any)?.message || (json as any)?.error || 'Request failed';
+      const error = new Error(message);
+      (error as any).statusCode = (json as any)?.meta?.status_code || (json as any)?.meta?.status || undefined;
+      (error as any).responseData = json;
+      handleApiError(error);
+      throw error;
+    }
+    const raw = json.data || [];
+
+    const normalized: Meeting[] = (raw || []).map((it: any) => ({
+      id: Number(it.id),
+      title: it.title || '',
+      agenda: it.agenda || '',
+      meeting_date: it.meeting_date || '',
+      meeting_time: it.meeting_time || '',
+      lead: it.lead || { id: 0, name: '' },
+      attendees: it.attendees || [],
+      type: it.type || '',
+      location: it.location || '',
+      link: it.link || '',
+      status: it.status || '',
+      created_at: it.created_at || '',
+      updated_at: it.updated_at || '',
+    }));
+
+    return {
+      data: normalized,
     };
   } catch (error) {
     handleApiError(error);

@@ -6,10 +6,9 @@ import HelpIcon from "../../assets/icons/HelpIcon";
 import logoUrl from "../../assets/DGTOOHL 360.svg";
 import { useAuthStore } from "../../store/auth";
 
-// Remove static sidebar import, use dynamic API mapping
-import { mapMenu } from "../../services/Side";
-import type { NavigationItem as ApiNavigationItem } from "../../services/Side";
-import { apiClient } from "../../utils/apiClient";
+// Use the NavigationItem type from Side.ts for consistency
+import type { NavigationItem } from "../../services/Side";
+import { useSidebarMenu } from "../../context/SidebarMenuContext";
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -21,10 +20,6 @@ interface SidebarProps {
 }
 
 
-// Use the NavigationItem type from Side.ts for consistency
-type NavigationItem = ApiNavigationItem;
-
-
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobileOpen = false, onCloseMobile }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -32,26 +27,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [showMobilePopup, setShowMobilePopup] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
-  const [navigationItems, setNavigationItems] = useState<NavigationItem[]>([]);
-
-  // Fetch sidebar data from API and map it
-  useEffect(() => {
-    async function fetchSidebar() {
-      try {
-        const res = await apiClient.get<any>("/permissions/sidebar");
-        if (res && res.data && Array.isArray(res.data)) {
-          const mapped = mapMenu(res.data);
-          // Use sidebar items as provided by the backend mapping
-          setNavigationItems(mapped);
-        } else {
-          setNavigationItems([]);
-        }
-      } catch (e) {
-        setNavigationItems([]);
-      }
-    }
-    fetchSidebar();
-  }, []);
+  
+  // Use sidebar data from context instead of fetching separately
+  const { sidebarMenu: navigationItems } = useSidebarMenu();
 
   const handleLogout = async () => {
     try {
@@ -109,6 +87,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
     "/user-management/permission/create": "/user-management/permission",
     "/user-management/role/create": "/user-management/role",
     "/user-management/user/create": "/user-management/user",
+    "/brief/plan-submission": "/brief/log",
   };
 
   const getEffectivePath = (pathname: string) => {
@@ -118,6 +97,26 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
       if (match) {
         return `/user-management/${match[1]}`;
       }
+    }
+    // Handle /lead-management/edit/:id to highlight All Leads
+    if (pathname.match(/^\/lead-management\/edit\//)) {
+      return "/lead-management/all-leads";
+    }
+    // Handle /lead-management/:id to highlight All Leads
+    if (pathname.match(/^\/lead-management\/\d+$/)) {
+      return "/lead-management/all-leads";
+    }
+    // Handle /brief/edit-submitted-plan/:id to highlight Brief Log
+    if (pathname.match(/^\/brief\/edit-submitted-plan\//)) {
+      return "/brief/log";
+    }
+    // Handle /brief/plan-history/:id to highlight Brief Log
+    if (pathname.match(/^\/brief\/plan-history\//)) {
+      return "/brief/log";
+    }
+    // Handle /brief/:id to highlight Brief Pipeline
+    if (pathname.match(/^\/brief\/(?!create|log|Brief_Pipeline|plan-history|plan-submission|edit-submitted-plan)[^\/]+$/)) {
+      return "/brief/Brief_Pipeline";
     }
     return routeAliases[pathname] ?? pathname;
   };
@@ -174,12 +173,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
     const isMissCampaign = item.name === "Miss Campaign";
     const isLiveCampaign = item.name === "Live Campaign";
     const isBriefCreateRoute = location.pathname === "/brief/create";
+    const isBriefRoute = location.pathname.startsWith("/brief");
     const isBrief = item.name.trim() === "Brief" || item.name.trim() === "Brief ";
-    const isBriefRequest = item.name === "Brief Request";
     // Highlight parent and child when on /miss-campaign/create or /brief/create
     const highlightClass =
       (isMissCampaignRoute && (isMissCampaign || isLiveCampaign)) ||
-      (isBriefCreateRoute && (isBrief || isBriefRequest))
+      ((isBriefRoute || isBriefCreateRoute) && isBrief)
         ? "bg-orange-100"
         : isItemActive
         ? "bg-orange-100"

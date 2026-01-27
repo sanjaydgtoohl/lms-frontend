@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { mapMenu, extractAllPaths, extractAllSlugs } from '../services/Side';
 import type { NavigationItem, ApiSidebarItem } from '../services/Side';
 import { apiClient } from '../utils/apiClient';
+import { useAuthStore } from '../store/auth';
 
 interface SidebarMenuContextType {
   sidebarMenu: NavigationItem[]; // 1 level for UI
@@ -28,8 +29,15 @@ export const SidebarMenuProvider: React.FC<{ children: ReactNode }> = ({ childre
   const [allPermittedSlugs, setAllPermittedSlugs] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const { isAuthenticated } = useAuthStore();
+
   useEffect(() => {
     async function fetchSidebar() {
+      if (!isAuthenticated) {
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       try {
         const res = await apiClient.get<any>('/permissions/sidebar');
@@ -57,7 +65,7 @@ export const SidebarMenuProvider: React.FC<{ children: ReactNode }> = ({ childre
       }
     }
     fetchSidebar();
-  }, []);
+  }, [isAuthenticated]);
 
   return (
     <SidebarMenuContext.Provider value={{ sidebarMenu, allPermittedPaths, allPermittedSlugs, loading }}>

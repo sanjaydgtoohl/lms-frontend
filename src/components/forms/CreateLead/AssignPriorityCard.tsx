@@ -97,8 +97,15 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
           ? data.map((item: any) => ({ value: String(item.id), label: item.name }))
           : [];
         setPriorityOptions(fetched);
-        // Auto-select if only one priority
-        if (fetched.length === 1) {
+
+        // Check if current priority is still valid, if not, clear it
+        const isCurrentPriorityValid = priority && fetched.some(option => option.value === priority);
+        if (priority && !isCurrentPriorityValid) {
+          onChange?.({ assignTo, priority: undefined, callFeedback });
+        }
+
+        // Auto-select if only one priority and no priority is currently selected
+        if (fetched.length === 1 && !priority) {
           onChange?.({ assignTo, priority: fetched[0].value, callFeedback });
         }
       }
@@ -150,7 +157,7 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
               options={callStatusOptions}
               placeholder="Please Select Feedback"
               value={callFeedback}
-              onChange={(value: any) => onChange?.({ assignTo, priority: undefined, callFeedback: value })}
+              onChange={(value: any) => onChange?.({ assignTo, priority, callFeedback: value })}
               inputClassName="px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               disabled={callStatusLoading}
             />
