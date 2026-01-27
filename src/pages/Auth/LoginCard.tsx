@@ -5,6 +5,7 @@ import { Button, Input } from '../../components/ui';
 import { useState } from 'react';
 import { useAuthStore } from '../../store/auth';
 import { ROUTES } from '../../constants';
+import { apiClient } from '../../services';
 
 const loginSchema = z.object({
   email: z
@@ -39,7 +40,6 @@ export default function LoginCard() {
     try {
       await login(data.email, data.password);
       setLoginError(null);
-      // Reload the page to dashboard after successful login
       window.location.href = ROUTES.DASHBOARD;
     } catch (error: any) {
       // Try to extract API error message if present

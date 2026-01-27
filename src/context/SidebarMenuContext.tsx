@@ -47,6 +47,7 @@ export const SidebarMenuProvider: React.FC<{ children: ReactNode }> = ({ childre
           setAllPermittedPaths(paths);
           const slugs = extractAllSlugs(res.data as ApiSidebarItem[]); // all permission slugs
           setAllPermittedSlugs(slugs);
+          
           console.log('✅ Permitted paths loaded:', paths);
           console.log('✅ Permitted slugs loaded:', slugs);
         } else {

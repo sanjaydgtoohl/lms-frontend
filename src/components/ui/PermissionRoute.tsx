@@ -71,7 +71,7 @@ const PermissionRoute: React.FC<PermissionRouteProps> = ({ children }) => {
   }
 
   const hasPermission = allPermittedPaths.some(permittedPath => matchPath(permittedPath, path));
-  
+  console.log('🔍 Checking permissions for path:', path, '=>', hasPermission ? 'Allowed' : 'Denied');
   // Log permission check for debugging
   if (!hasPermission) {
     console.warn('❌ Access Denied:', {
@@ -79,6 +79,12 @@ const PermissionRoute: React.FC<PermissionRouteProps> = ({ children }) => {
       permittedPaths: allPermittedPaths,
       reason: 'No matching permission found'
     });
+
+    if (allPermittedPaths.length != 0) {
+       // Redirect to first permitted path if none match
+      window.location.href = allPermittedPaths[0];
+    }
+
   } else {
     const matchedPath = allPermittedPaths.find(p => matchPath(p, path));
     console.log('✅ Access Granted:', path, `(matched: ${matchedPath})`);
