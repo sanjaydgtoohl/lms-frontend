@@ -24,6 +24,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
   password: '',
   password_confirmation: '',
   roles: [] as string[],
+  managers: [] as string[],
   });
 
   const [showSuccessToast, setShowSuccessToast] = useState(false);
@@ -36,6 +37,9 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
   const [saving, setSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [managerOptions, setManagerOptions] = useState<Array<{ label: string; value: string }>>([]);
+  const [managersLoading, setManagersLoading] = useState(false);
+  const [managersError, setManagersError] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialData) {
@@ -46,6 +50,9 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
         roles: initialData.roles && Array.isArray(initialData.roles)
           ? initialData.roles.map((r: any) => String(r.id))
           : (initialData.role_id ? [String(initialData.role_id)] : (initialData.role ? [String(initialData.role)] : prev.roles)),
+        managers: initialData.managers && Array.isArray(initialData.managers)
+          ? initialData.managers.map((m: any) => String(m.id))
+          : prev.managers,
         name: initialData.name ?? initialData.full_name ?? prev.name,
       }));
     }
@@ -102,6 +109,57 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
     };
   }, []);
 
+  useEffect(() => {
+    let mounted = true;
+
+    const loadManagers = async () => {
+      setManagersLoading(true);
+      setManagersError(null);
+      try {
+        // Request a reasonably large page so we get all users in one go
+        const resp = await apiClient.get<any>('/users?per_page=100');
+
+        // resp may be the api wrapper with `data` or direct array/object depending on server
+        // Try a few common shapes to extract the array of items
+        let items: any[] = [];
+        if (!resp) items = [];
+        else if (Array.isArray((resp as any).data)) items = (resp as any).data;
+        else if (Array.isArray((resp as any).data?.data)) items = (resp as any).data.data;
+        else if (Array.isArray((resp as any).data?.items)) items = (resp as any).data.items;
+        else if (Array.isArray((resp as any).data?.users)) items = (resp as any).data.users;
+        else if (Array.isArray((resp as any).users)) items = (resp as any).users;
+        else if (Array.isArray((resp as any).data?.data?.data)) items = (resp as any).data.data.data;
+        else if (Array.isArray((resp as any))) items = (resp as any);
+        else items = [];
+
+        const opts = items.map((it: any) => {
+          // Prefer numeric id if available; strip non-digits if server returns decorated ids
+          const rawId = it.id ?? it.user_id ?? it.value ?? '';
+          const numeric = String(rawId).replace(/[^0-9]/g, '') || String(rawId);
+          return {
+            label: it.name ?? it.full_name ?? it.email ?? String(it.label ?? ''),
+            value: String(numeric),
+          };
+        });
+
+        if (mounted) {
+          setManagerOptions(opts);
+        }
+      } catch (err: any) {
+        console.error('Failed to load managers', err);
+        if (mounted) setManagersError(err?.message || 'Failed to load managers');
+      } finally {
+        if (mounted) setManagersLoading(false);
+      }
+    };
+
+    loadManagers();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -129,6 +187,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
     else if (!validateEmail(form.email)) next.email = 'Please enter a valid email address';
     
   if (form.phone && !validatePhone(form.phone)) next.phone = 'Please enter a valid phone number';
+  if (!form.roles || form.roles.length === 0) next.roles = 'Please select at least one role';
 
     // Password required on create
     if (mode !== 'edit') {
@@ -158,6 +217,13 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
       // roles is array of role ids -> send as role_ids (array)
       if (base.roles && base.roles.length > 0) {
         payload.role_ids = base.roles.map((r: string) => Number(r));
+      }
+
+      // managers is array of manager ids -> send as manager_ids (array)
+      if (base.managers && base.managers.length > 0) {
+        payload.manager_ids = base.managers.map((m: string) => Number(m));
+        // Set is_parent to the first selected manager's id
+        payload.is_parent = Number(base.managers[0]);
       }
 
       // include password only when provided (required on create)
@@ -192,6 +258,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
           // map backend field names to form field names
           let mappedKey = k;
           if (k === 'role_ids' || k === 'role_id') mappedKey = 'roles';
+          if (k === 'manager_ids' || k === 'manager_id') mappedKey = 'managers';
           if (k === 'first_name' || k === 'full_name') mappedKey = 'name';
           if (k === 'name') mappedKey = 'name';
           // take first message if array
@@ -383,6 +450,42 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                   </svg>
                   {errors.password_confirmation}
+                </div>
+              )}
+            </div>
+
+            {/* Manager */}
+            <div>
+              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+                Select Manager
+              </label>
+              <MultiSelectDropdown
+                name="managers"
+                placeholder={managersLoading ? 'Loading managers...' : 'Search or select managers'}
+                options={managerOptions}
+                value={form.managers}
+                onChange={(v) => {
+                  setForm((prev) => ({ ...prev, managers: v }));
+                  setErrors((prev) => ({ ...prev, managers: '' }));
+                }}
+                disabled={managersLoading}
+                inputClassName={`${errors.managers ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-[var(--border-color)] focus:ring-blue-500'}`}
+                maxVisibleOptions={2}
+              />
+              {managersError && (
+                <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {managersError}
+                </div>
+              )}
+              {errors.managers && (
+                <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.managers}
                 </div>
               )}
             </div>

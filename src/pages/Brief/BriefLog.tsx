@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Pagination from '../../components/ui/Pagination';
 import Table, { type Column } from '../../components/ui/Table';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -7,283 +7,11 @@ import MasterHeader from '../../components/ui/MasterHeader';
 import SearchBar from '../../components/ui/SearchBar';
 import StatusDropdown from '../../components/ui/StatusDropdown';
 import { ROUTES } from '../../constants';
+import { listBriefLogs } from '../../services/BriefLog';
+import type { BriefLogItem } from '../../services/BriefLog';
+import { getPlannerStatuses } from '../../services/BriefLog';
 
-interface BriefLogItem {
-  id: number;
-  brief_id: number;
-  action: string;
-  description: string;
-  user_name: string;
-  created_at: string;
-  brief_name?: string;
-  budget?: number;
-  brand_name?: string;
-  product_name?: string;
-  contact_person?: string;
-  mode_of_campaign?: string;
-  media_type?: string;
-  priority?: string;
-  status?: string;
-}
-
-// Static mock data for brief logs
-const mockBriefLogs: BriefLogItem[] = [
-  {
-    id: 1,
-    brief_id: 101,
-    action: 'Created',
-    description: 'Brief created for Product Launch Campaign',
-    user_name: 'John Doe',
-    created_at: '2024-01-20T10:30:00Z',
-    brief_name: 'Product Launch Q1',
-    budget: 500000,
-    brand_name: 'TechCorp',
-    product_name: 'New Gadget',
-    contact_person: 'Alice Johnson',
-    mode_of_campaign: 'Digital',
-    media_type: 'Social Media',
-    priority: 'High',
-    status: 'Plan Submitted'
-  },
-  {
-    id: 2,
-    brief_id: 102,
-    action: 'Updated',
-    description: 'Budget updated from ₹500,000 to ₹750,000',
-    user_name: 'Jane Smith',
-    created_at: '2024-01-19T14:45:00Z',
-    brief_name: 'Brand Awareness Campaign',
-    budget: 750000,
-    brand_name: 'FashionHub',
-    product_name: 'Summer Collection',
-    contact_person: 'Bob Lee',
-    mode_of_campaign: 'Traditional',
-    media_type: 'TV',
-    priority: 'Medium',
-    status: 'Plan Reviewed'
-  },
-  {
-    id: 3,
-    brief_id: 101,
-    action: 'Assigned',
-    description: 'Assigned to Marketing Team Lead',
-    user_name: 'Mike Johnson',
-    created_at: '2024-01-18T09:15:00Z',
-    brief_name: 'Product Launch Q1',
-    budget: 600000,
-    brand_name: 'TechCorp',
-    product_name: 'New Gadget',
-    contact_person: 'Alice Johnson',
-    mode_of_campaign: 'Digital',
-    media_type: 'Social Media',
-    priority: 'High',
-    status: 'Plan Approved'
-  },
-  {
-    id: 4,
-    brief_id: 103,
-    action: 'Status Changed',
-    description: 'Status changed from Draft to In Review',
-    user_name: 'Sarah Wilson',
-    created_at: '2024-01-17T16:20:00Z',
-    brief_name: 'Social Media Campaign',
-    budget: 400000,
-    brand_name: 'FoodieDelight',
-    product_name: 'Organic Snacks',
-    contact_person: 'Carol Davis',
-    mode_of_campaign: 'Digital',
-    media_type: 'Instagram',
-    priority: 'Low',
-    status: 'Plan Submitted'
-  },
-  {
-    id: 5,
-    brief_id: 104,
-    action: 'Comment Added',
-    description: 'Added comment: "Please include influencer partnerships"',
-    user_name: 'David Brown',
-    created_at: '2024-01-16T11:00:00Z',
-    brief_name: 'Influencer Marketing',
-    budget: 300000,
-    brand_name: 'BeautyGlow',
-    product_name: 'Skincare Line',
-    contact_person: 'Eve Martinez',
-    mode_of_campaign: 'Digital',
-    media_type: 'TikTok',
-    priority: 'High',
-    status: 'Plan Reviewed'
-  },
-  {
-    id: 6,
-    brief_id: 102,
-    action: 'Approved',
-    description: 'Brief approved by Senior Management',
-    user_name: 'Lisa Davis',
-    created_at: '2024-01-15T13:30:00Z',
-    brief_name: 'Brand Awareness Campaign',
-    budget: 800000,
-    brand_name: 'FashionHub',
-    product_name: 'Summer Collection',
-    contact_person: 'Bob Lee',
-    mode_of_campaign: 'Traditional',
-    media_type: 'TV',
-    priority: 'Medium',
-    status: 'Plan Approved'
-  },
-  {
-    id: 7,
-    brief_id: 105,
-    action: 'Created',
-    description: 'Brief created for Event Sponsorship',
-    user_name: 'Tom Wilson',
-    created_at: '2024-01-14T08:45:00Z',
-    brief_name: 'Event Sponsorship 2024',
-    budget: 450000,
-    brand_name: 'SportsGear',
-    product_name: 'Running Shoes',
-    contact_person: 'Frank Garcia',
-    mode_of_campaign: 'Event',
-    media_type: 'On-site',
-    priority: 'Medium',
-    status: 'Plan Submitted'
-  },
-  {
-    id: 8,
-    brief_id: 103,
-    action: 'Updated',
-    description: 'Media type changed to Digital + Print',
-    user_name: 'Emma Taylor',
-    created_at: '2024-01-13T15:20:00Z',
-    brief_name: 'Social Media Campaign',
-    budget: 550000,
-    brand_name: 'FoodieDelight',
-    product_name: 'Organic Snacks',
-    contact_person: 'Carol Davis',
-    mode_of_campaign: 'Mixed',
-    media_type: 'Digital + Print',
-    priority: 'Low',
-    status: 'Plan Reviewed'
-  },
-  {
-    id: 9,
-    brief_id: 106,
-    action: 'Assigned',
-    description: 'Assigned to Creative Director',
-    user_name: 'Chris Anderson',
-    created_at: '2024-01-12T10:10:00Z',
-    brief_name: 'Website Redesign',
-    budget: 700000,
-    brand_name: 'TechCorp',
-    product_name: 'Website',
-    contact_person: 'Alice Johnson',
-    mode_of_campaign: 'Digital',
-    media_type: 'Web',
-    priority: 'High',
-    status: 'Plan Approved'
-  },
-  {
-    id: 10,
-    brief_id: 104,
-    action: 'Status Changed',
-    description: 'Status changed from In Review to Approved',
-    user_name: 'Rachel Green',
-    created_at: '2024-01-11T12:00:00Z',
-    brief_name: 'Influencer Marketing',
-    budget: 350000,
-    brand_name: 'BeautyGlow',
-    product_name: 'Skincare Line',
-    contact_person: 'Eve Martinez',
-    mode_of_campaign: 'Digital',
-    media_type: 'TikTok',
-    priority: 'High',
-    status: 'Plan Submitted'
-  },
-  {
-    id: 11,
-    brief_id: 107,
-    action: 'Created',
-    description: 'Brief created for Email Marketing Campaign',
-    user_name: 'Kevin Parker',
-    created_at: '2024-01-10T09:30:00Z',
-    brief_name: 'Email Newsletter Q1',
-    budget: 250000,
-    brand_name: 'RetailMax',
-    product_name: 'Seasonal Sale',
-    contact_person: 'Grace Kim',
-    mode_of_campaign: 'Digital',
-    media_type: 'Email',
-    priority: 'Low',
-    status: 'Plan Submitted'
-  },
-  {
-    id: 12,
-    brief_id: 105,
-    action: 'Comment Added',
-    description: 'Added comment: "Focus on ROI metrics"',
-    user_name: 'Amanda White',
-    created_at: '2024-01-09T14:15:00Z',
-    brief_name: 'Event Sponsorship 2024',
-    budget: 650000,
-    brand_name: 'SportsGear',
-    product_name: 'Running Shoes',
-    contact_person: 'Frank Garcia',
-    mode_of_campaign: 'Event',
-    media_type: 'On-site',
-    priority: 'Medium',
-    status: 'Plan Reviewed'
-  },
-  {
-    id: 13,
-    brief_id: 106,
-    action: 'Updated',
-    description: 'Deadline extended by 2 weeks',
-    user_name: 'Robert Lee',
-    created_at: '2024-01-08T11:45:00Z',
-    brief_name: 'Website Redesign',
-    budget: 900000,
-    brand_name: 'TechCorp',
-    product_name: 'Website',
-    contact_person: 'Alice Johnson',
-    mode_of_campaign: 'Digital',
-    media_type: 'Web',
-    priority: 'High',
-    status: 'Plan Reviewed'
-  },
-  {
-    id: 14,
-    brief_id: 108,
-    action: 'Created',
-    description: 'Brief created for Content Marketing',
-    user_name: 'Sophie Martin',
-    created_at: '2024-01-07T13:20:00Z',
-    brief_name: 'Content Strategy 2024',
-    budget: 200000,
-    brand_name: 'EduLearn',
-    product_name: 'Online Courses',
-    contact_person: 'Henry Wilson',
-    mode_of_campaign: 'Digital',
-    media_type: 'Blog',
-    priority: 'Medium',
-    status: 'Plan Submitted'
-  },
-  {
-    id: 15,
-    brief_id: 107,
-    action: 'Status Changed',
-    description: 'Status changed from Draft to In Progress',
-    user_name: 'Daniel Kim',
-    created_at: '2024-01-06T16:30:00Z',
-    brief_name: 'Email Newsletter Q1',
-    budget: 1000000,
-    brand_name: 'RetailMax',
-    product_name: 'Seasonal Sale',
-    contact_person: 'Grace Kim',
-    mode_of_campaign: 'Digital',
-    media_type: 'Email',
-    priority: 'Low',
-    status: 'Plan Submitted'
-  }
-];
+// Data is fetched from API via `listBriefLogs` service
 
 const BriefLog: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -292,70 +20,99 @@ const BriefLog: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const itemsPerPage = 10;
+  const [briefLogs, setBriefLogs] = useState<BriefLogItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [totalItems, setTotalItems] = useState(0);
+  const [plannerStatusOptions, setPlannerStatusOptions] = useState<{ id: number; name: string }[]>([]);
 
-  // Status options for the dropdown (same as filter options)
-  const statusOptions = useMemo(() => {
-    const statuses = mockBriefLogs
-      .map(log => log.status)
-      .filter((status): status is string => status !== undefined)
-      .filter((value, index, self) => self.indexOf(value) === index);
-    return statuses.map(status => ({ id: status, name: status }));
+  // Status options for the dropdown (from API)
+  const statusOptions = useMemo(() => plannerStatusOptions, [plannerStatusOptions]);
+
+  // Fetch planner statuses for dropdown
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        const res = await getPlannerStatuses();
+        if (mounted && res && Array.isArray(res.data)) {
+          setPlannerStatusOptions(res.data.map((item: any) => ({ id: item.id, name: item.name })));
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
+    load();
+    return () => { mounted = false; };
   }, []);
 
-  // Filter logs based on search query and brief ID
+  // Fetch brief logs (server-side paginated)
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      setLoading(true);
+      try {
+        const filters: Record<string, any> = {};
+        if (id) filters.brief_id = id;
+        const res = await listBriefLogs(currentPage, itemsPerPage, filters);
+        if (!mounted) return;
+        setBriefLogs(res.data || []);
+        const total = res.meta?.pagination?.total ?? res.meta?.total ?? 0;
+        setTotalItems(Number(total || 0));
+      } catch (err) {
+        if (!mounted) return;
+        console.error(err);
+        setBriefLogs([]);
+        setTotalItems(0);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+    load();
+    return () => { mounted = false; };
+  }, [currentPage, id]);
+
+  // Filter logs locally (search only applies to current page of results)
   const filteredLogs = useMemo(() => {
-    let filtered = mockBriefLogs;
+    let filtered = briefLogs;
 
-    // Filter by brief ID if provided
-    if (id) {
-      filtered = filtered.filter(log => log.brief_id === parseInt(id));
-    }
-
-    // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(log =>
-        log.brief_name?.toLowerCase().includes(query) ||
-        log.action.toLowerCase().includes(query) ||
-        log.description.toLowerCase().includes(query) ||
-        (log.budget && log.budget.toString().includes(query)) ||
-        log.brand_name?.toLowerCase().includes(query) ||
-        log.product_name?.toLowerCase().includes(query) ||
-        log.contact_person?.toLowerCase().includes(query) ||
-        log.mode_of_campaign?.toLowerCase().includes(query) ||
-        log.media_type?.toLowerCase().includes(query) ||
-        log.priority?.toLowerCase().includes(query) ||
-        log.status?.toLowerCase().includes(query)
+      filtered = filtered.filter((log) =>
+        (log.brief_name || '').toString().toLowerCase().includes(query) ||
+        (log.action || '').toString().toLowerCase().includes(query) ||
+        (log.description || '').toString().toLowerCase().includes(query) ||
+        (log.budget || '').toString().toLowerCase().includes(query) ||
+        (log.brand_name || '').toString().toLowerCase().includes(query) ||
+        (log.product_name || '').toString().toLowerCase().includes(query) ||
+        ((log.contact_person && (log.contact_person as any).name) || '').toString().toLowerCase().includes(query) ||
+        (log.mode_of_campaign || '').toString().toLowerCase().includes(query) ||
+        (log.media_type || '').toString().toLowerCase().includes(query) ||
+        (log.priority || '').toString().toLowerCase().includes(query) ||
+        (log.status || '').toString().toLowerCase().includes(query)
       );
     }
 
     return filtered;
-  }, [searchQuery, id]);
+  }, [searchQuery, briefLogs]);
 
-  const totalItems = filteredLogs.length;
-
-  // Get current page data
-  const currentLogs = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filteredLogs.slice(startIndex, endIndex);
-  }, [filteredLogs, currentPage, itemsPerPage]);
+  // current page logs come from server; apply local search above
+  const currentLogs = filteredLogs;
 
   const columns: Column<BriefLogItem>[] = [
     {
       key: 'brief_id',
       header: 'Brief Id',
-      render: (item) => item.brief_id,
+      render: (item) => `#${item.brief_id ?? item.id}`,
     },
     {
       key: 'brief_name',
       header: 'Brief Name',
-      render: (item) => item.brief_name || `Brief #${item.brief_id}`,
+      render: (item) => item.brief_name || item.name || `Brief #${item.brief_id ?? item.id}`,
     },
     {
       key: 'brand_name',
       header: 'Brand Name',
-      render: (item) => item.brand_name || 'N/A',
+      render: (item) => item.brand_name || item.brand?.name || 'N/A',
     },
     {
       key: 'product_name',
@@ -385,40 +142,61 @@ const BriefLog: React.FC = () => {
     {
       key: 'status',
       header: 'Status',
-      render: (item) => (
-        <div className="min-w-[140px]">
-          <StatusDropdown
-            value={item.status || ''}
-            options={statusOptions.map(opt => opt.name)}
-            onChange={(newStatus: string) => handleSelectStatus(item.id.toString(), newStatus)}
-            onConfirm={handleStatusConfirm}
-          />
-        </div>
-      ),
+      render: (item) => {
+        // Show dropdown with planner statuses, default to '-' if null
+        const status = item.planner_status;
+        return (
+          <div className="min-w-[140px]">
+            <StatusDropdown
+              value={status === null || status === undefined || status === '' ? '-' : status}
+              options={statusOptions.map(opt => opt.name)}
+              onChange={(newStatus: string) => handleSelectStatus(item.id.toString(), newStatus)}
+              onConfirm={handleStatusConfirm}
+            />
+          </div>
+        );
+      },
       className: 'min-w-[140px]',
     },
     {
       key: 'budget',
       header: 'Budget',
-      render: (item) => item.budget ? `₹${item.budget.toLocaleString()}` : 'N/A',
+      render: (item) => {
+        const val = typeof item.budget === 'string' ? parseFloat(item.budget) : (item.budget as any) || 0;
+        return val ? `₹${Number(val).toLocaleString()}` : 'N/A';
+      },
     },
     {
       key: 'description',
       header: 'Brief Detail',
-      render: (item) => item.description,
+      render: (item) => item.comment || item.description,
       className: 'truncate',
     },
     {
       key: 'created_at',
       header: 'Submission Date & Time',
-      render: (item) => new Date(item.created_at).toLocaleString(),
+      render: (item) => {
+        const dateStr = item.submission_date || item.created_at;
+        if (!dateStr) return 'N/A';
+        // Parse date by taking YYYY-MM-DD HH:mm:ss part, ignoring AM/PM
+        const parts = dateStr.split(' ');
+        const dateTime = parts.slice(0, 2).join(' ');
+        return new Date(dateTime).toLocaleString();
+      },
     },
     {
       key: 'action',
       header: 'Left Time',
       render: (item) => {
+        if (item.left_time) {
+          return (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              {item.left_time}
+            </span>
+          );
+        }
         const now = new Date();
-        const created = new Date(item.created_at);
+        const created = new Date(item.created_at || Date.now());
         const diffTime = now.getTime() - created.getTime();
         const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
         return (
@@ -448,7 +226,7 @@ const BriefLog: React.FC = () => {
   };
 
   const handleEdit = (item: BriefLogItem) => {
-    navigate(`/brief/edit-submitted-plan/${item.brief_id}`);
+    navigate(`/brief/edit-submitted-plan/${item.brief_id || item.id}`);
   };
   
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -481,13 +259,13 @@ const BriefLog: React.FC = () => {
           <Table
             data={currentLogs}
             startIndex={startIndex}
-            loading={false}
+            loading={loading}
             desktopOnMobile={true}
             keyExtractor={(it: BriefLogItem, idx: number) => `${it.id}-${idx}`}
             columns={columns}
             onEdit={(item: BriefLogItem) => handleEdit(item)}
-            onView={(item: BriefLogItem) => navigate(ROUTES.BRIEF.PLAN_HISTORY(item.brief_id.toString()))}
-            onUpload={() => navigate('/brief/plan-submission')}
+            onView={(item: BriefLogItem) => navigate(ROUTES.BRIEF.PLAN_HISTORY((item.brief_id || item.id).toString()))}
+            onUpload={(item: BriefLogItem) => navigate(`/brief/plan-submission/${item.brief_id || item.id}`)}
           />
         </div>
       </div>

@@ -18,6 +18,7 @@ const EditUser: React.FC = () => {
     password: '',
     password_confirmation: '',
     roles: [] as string[],
+    managers: [] as string[],
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -31,6 +32,9 @@ const EditUser: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [managerOptions, setManagerOptions] = useState<Array<{ label: string; value: string }>>([]);
+  const [managersLoading, setManagersLoading] = useState(false);
+  const [managersError, setManagersError] = useState<string | null>(null);
 
   // Fetch initial user data
   useEffect(() => {
@@ -41,6 +45,43 @@ const EditUser: React.FC = () => {
           console.log('Fetching user with ID:', id);
           const user = await getUserForEdit(id);
           console.log('User data received:', user);
+          // If user has a 'parent' property, treat it as a manager
+          let managers: string[] = [];
+          if (user.managers && Array.isArray(user.managers) && user.managers.length > 0) {
+            managers = user.managers.map((m: any) => String(Number(m.id)));
+          }
+          // Always ensure parent is in managerOptions and managers if present
+          if (user.parent && user.parent.id && user.parent.name) {
+            const parentId = String(Number(user.parent.id));
+            setManagerOptions((prev) => {
+              const exists = prev.some(opt => opt.value === parentId);
+              if (!exists) {
+                return [
+                  { label: user.parent!.name, value: parentId },
+                  ...prev
+                ];
+              }
+              // If already present, but label is not correct, update it
+              return prev.map(opt =>
+                opt.value === parentId
+                  ? { ...opt, label: user.parent!.name }
+                  : opt
+              );
+            });
+            // If managers is empty or does not include parent, set it
+            if (!managers.includes(parentId)) {
+              managers = [parentId];
+            }
+            // Force update form after managerOptions is set
+            setTimeout(() => {
+              setForm(f => ({
+                ...f,
+                managers: [parentId],
+              }));
+            }, 0);
+          } else if (!user.managers || !Array.isArray(user.managers) || user.managers.length === 0) {
+            managers = [];
+          }
           setForm({
             name: user.name || '',
             email: user.email || '',
@@ -50,6 +91,7 @@ const EditUser: React.FC = () => {
             roles: user.roles && Array.isArray(user.roles) 
               ? user.roles.map(r => String(r.id)) 
               : (user.role_id ? [String(user.role_id)] : []),
+            managers,
           });
         }
       } catch (error) {
@@ -116,6 +158,57 @@ const EditUser: React.FC = () => {
     };
   }, []);
 
+  useEffect(() => {
+    let mounted = true;
+
+    const loadManagers = async () => {
+      setManagersLoading(true);
+      setManagersError(null);
+      try {
+        // Request a reasonably large page so we get all users in one go
+        const resp = await apiClient.get<any>('/users?per_page=100');
+
+        // resp may be the api wrapper with `data` or direct array/object depending on server
+        // Try a few common shapes to extract the array of items
+        let items: any[] = [];
+        if (!resp) items = [];
+        else if (Array.isArray((resp as any).data)) items = (resp as any).data;
+        else if (Array.isArray((resp as any).data?.data)) items = (resp as any).data.data;
+        else if (Array.isArray((resp as any).data?.items)) items = (resp as any).data.items;
+        else if (Array.isArray((resp as any).data?.users)) items = (resp as any).data.users;
+        else if (Array.isArray((resp as any).users)) items = (resp as any).users;
+        else if (Array.isArray((resp as any).data?.data?.data)) items = (resp as any).data.data.data;
+        else if (Array.isArray((resp as any))) items = (resp as any);
+        else items = [];
+
+        const opts = items.map((it: any) => {
+          // Prefer numeric id if available; strip non-digits if server returns decorated ids
+          const rawId = it.id ?? it.user_id ?? it.value ?? '';
+          const numeric = String(rawId).replace(/[^0-9]/g, '') || String(rawId);
+          return {
+            label: it.name ?? it.full_name ?? '',
+            value: String(numeric),
+          };
+        });
+
+        if (mounted) {
+          setManagerOptions(opts);
+        }
+      } catch (err: any) {
+        console.error('Failed to load managers', err);
+        if (mounted) setManagersError(err?.message || 'Failed to load managers');
+      } finally {
+        if (mounted) setManagersLoading(false);
+      }
+    };
+
+    loadManagers();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -169,6 +262,20 @@ const EditUser: React.FC = () => {
         payload.role_ids = base.roles.map((r: string) => Number(r));
       }
 
+      // managers is array of manager ids -> send as manager_ids (array)
+      if (base.managers && base.managers.length > 0) {
+        payload.manager_ids = base.managers.map((m: string) => {
+          // Ensure only numeric id is sent
+          const num = Number(m);
+          return isNaN(num) ? undefined : num;
+        }).filter((id: number | undefined): id is number => typeof id === 'number' && !isNaN(id));
+        // Also send is_parent as the first manager id (string)
+        payload.is_parent = payload.manager_ids && payload.manager_ids.length > 0 ? String(payload.manager_ids[0]) : '';
+      } else {
+        // If no manager selected, clear is_parent
+        payload.is_parent = '';
+      }
+
       // include password only when provided (optional on edit)
       if (base.password && String(base.password).trim() !== '') {
         payload.password = base.password;
@@ -196,6 +303,7 @@ const EditUser: React.FC = () => {
           // map backend field names to form field names
           let mappedKey = k;
           if (k === 'role_ids' || k === 'role_id') mappedKey = 'roles';
+          if (k === 'manager_ids' || k === 'manager_id') mappedKey = 'managers';
           if (k === 'first_name' || k === 'full_name') mappedKey = 'name';
           if (k === 'name') mappedKey = 'name';
           // take first message if array
@@ -397,6 +505,42 @@ const EditUser: React.FC = () => {
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                   </svg>
                   {errors.password_confirmation}
+                </div>
+              )}
+            </div>
+
+            {/* Manager */}
+            <div>
+              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+                Select Manager
+              </label>
+              <MultiSelectDropdown
+                name="managers"
+                placeholder={managersLoading ? 'Loading managers...' : 'Search or select managers'}
+                options={managerOptions}
+                value={form.managers}
+                onChange={(v) => {
+                  setForm((prev) => ({ ...prev, managers: v }));
+                  setErrors((prev) => ({ ...prev, managers: '' }));
+                }}
+                disabled={managersLoading}
+                inputClassName={`${errors.managers ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-[var(--border-color)] focus:ring-blue-500'}`}
+                maxVisibleOptions={2}
+              />
+              {managersError && (
+                <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {managersError}
+                </div>
+              )}
+              {errors.managers && (
+                <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.managers}
                 </div>
               )}
             </div>

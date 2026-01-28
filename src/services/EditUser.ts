@@ -8,6 +8,8 @@ export interface EditUserPayload {
   password?: string;
   password_confirmation?: string;
   role_ids?: number[];
+  manager_ids?: number[];
+  is_parent?: string;
 }
 
 export interface EditUserDetail {
@@ -26,6 +28,15 @@ export interface EditUserDetail {
     name: string;
     description?: string;
   }>;
+  managers?: Array<{
+    id: string | number;
+    name: string;
+  }>;
+  parent?: {
+    id: string | number;
+    name: string;
+    email?: string;
+  };
   created_at?: string;
   updated_at?: string;
   last_login_at?: string | null;

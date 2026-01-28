@@ -5,7 +5,6 @@ import { Button, Input } from '../../components/ui';
 import { useState } from 'react';
 import { useAuthStore } from '../../store/auth';
 import { ROUTES } from '../../constants';
-import { apiClient } from '../../services';
 
 const loginSchema = z.object({
   email: z

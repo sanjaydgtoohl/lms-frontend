@@ -115,43 +115,49 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
         client: parentClientIds,
       });
 
-      // Handle child agencies
-      if (Array.isArray(initialData.children)) {
-        setChildren(initialData.children.map((c: any, idx: number) => {
-          // Extract child agency type
-          let childTypeId = '';
-          const rawChildType = c.type || c.agency_type;
-          if (typeof rawChildType === 'object' && rawChildType?.id) {
-            childTypeId = String(rawChildType.id);
-          } else if (rawChildType) {
-            childTypeId = String(rawChildType);
-          }
+        // Handle child agencies (support both 'children' and 'childs' keys)
+        const childAgencies = Array.isArray(initialData.children)
+          ? initialData.children
+          : Array.isArray(initialData.childs)
+            ? initialData.childs
+            : [];
 
-          // Extract child agency clients
-          // Also check for brand data in the response
-          let childClientIds: string[] = [];
-          let rawChildClient = c.client || c.clients || [];
-          
-          // If no client data but brand data exists, use brand IDs as clients
-          if ((!rawChildClient || rawChildClient.length === 0) && c.brand && Array.isArray(c.brand)) {
-            rawChildClient = c.brand;
-          }
-          
-          if (Array.isArray(rawChildClient)) {
-            childClientIds = rawChildClient.map((cc: any) => {
-              if (typeof cc === 'object' && cc?.id) return String(cc.id);
-              return String(cc);
-            });
-          }
+        if (childAgencies.length > 0) {
+          setChildren(childAgencies.map((c: any, idx: number) => {
+            // Extract child agency type
+            let childTypeId = '';
+            const rawChildType = c.type || c.agency_type;
+            if (typeof rawChildType === 'object' && rawChildType?.id) {
+              childTypeId = String(rawChildType.id);
+            } else if (rawChildType) {
+              childTypeId = String(rawChildType);
+            }
 
-          return {
-            id: `child-${idx}-${Date.now()}`,
-            name: c.name || '',
-            type: childTypeId,
-            client: childClientIds,
-          };
-        }));
-      }
+            // Extract child agency clients
+            // Also check for brand data in the response
+            let childClientIds: string[] = [];
+            let rawChildClient = c.client || c.clients || [];
+
+            // If no client data but brand data exists, use brand IDs as clients
+            if ((!rawChildClient || rawChildClient.length === 0) && c.brand && Array.isArray(c.brand)) {
+              rawChildClient = c.brand;
+            }
+
+            if (Array.isArray(rawChildClient)) {
+              childClientIds = rawChildClient.map((cc: any) => {
+                if (typeof cc === 'object' && cc?.id) return String(cc.id);
+                return String(cc);
+              });
+            }
+
+            return {
+              id: `child-${idx}-${Date.now()}`,
+              name: c.name || '',
+              type: childTypeId,
+              client: childClientIds,
+            };
+          }));
+        }
     }
 
     return () => { mounted = false; };
