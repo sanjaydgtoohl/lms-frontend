@@ -113,7 +113,7 @@ const ViewUser: React.FC = () => {
           <div className="col-span-2">
             <div>
               <div className="text-sm text-gray-600">Created Date</div>
-              <div className="text-base text-[var(--text-primary)]">{user.created_at || '-'}</div>
+              <div className="text-base text-[var(--text-primary)]">{user.created_at ? new Date(user.created_at).toLocaleString() : '-'}</div>
             </div>
           </div>
         </div>
