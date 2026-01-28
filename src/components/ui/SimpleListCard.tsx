@@ -11,12 +11,12 @@ interface SimpleListCardProps<T> {
 
 const SimpleListCard = <T,>({ title, items, renderItem, footer, headerRight, onItemClick }: SimpleListCardProps<T>) => {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden h-full flex flex-col">
       <div className="px-5 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white flex items-center justify-between">
         <h2 className="text-sm font-semibold text-gray-900">{title}</h2>
         {headerRight && <div className="ml-4">{headerRight}</div>}
       </div>
-      <div className="p-4">
+      <div className="p-4 flex-1">
         <div className="space-y-3">
           {items.map((item, index) => (
             <div

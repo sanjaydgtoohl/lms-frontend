@@ -178,7 +178,7 @@ function App() {
             <Route path="create" element={<PermissionRoute><BriefPipeline /></PermissionRoute>} />
             <Route path="log" element={<PermissionRoute><BriefLog /></PermissionRoute>} />
             <Route path="plan-history/:id" element={<PermissionRoute><PlanHistory /></PermissionRoute>} />
-            <Route path="plan-submission" element={<PermissionRoute><PlanSubmission /></PermissionRoute>} />
+            <Route path="plan-submission/:id" element={<PermissionRoute><PlanSubmission /></PermissionRoute>} />
             <Route path="edit-submitted-plan/:id" element={<PermissionRoute><EditSubmittedPlan /></PermissionRoute>} />
             <Route path=":id" element={<PermissionRoute><BriefPipeline /></PermissionRoute>} />
             <Route path=":id/edit" element={<PermissionRoute><BriefPipeline /></PermissionRoute>} />

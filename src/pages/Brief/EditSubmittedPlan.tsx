@@ -4,90 +4,28 @@ import { Eye, Download, Trash2 } from 'lucide-react';
 import MasterFormHeader from '../../components/ui/MasterFormHeader';
 import Button from '../../components/ui/Button';
 import UploadCard from '../../components/ui/UploadCard';
-
-interface BriefDetails {
-  id: string;
-  briefId: string;
-  briefName: string;
-  brandName: string;
-  productName: string;
-  salesPerson: string;
-  source: string;
-  media: string;
-  mediaType: string;
-  briefStatus: string;
-  priority: string;
-  briefDetail: string;
-  budget: number;
-  submissionDate: string;
-}
+import { getBriefById } from '../../services/PlanSubmission';
+import type { BriefDetail } from '../../services/PlanSubmission';
 
 const EditSubmittedPlan: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [planFiles, setPlanFiles] = useState<File[]>([]);
   const [backupFiles, setBackupFiles] = useState<File[]>([]);
-  const [briefDetails, setBriefDetails] = useState<BriefDetails | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  // Mock data - in real scenario, this would come from API
-  const mockBriefDetails: Record<string, BriefDetails> = {
-    '101': {
-      id: '101',
-      briefId: '#CM9801',
-      briefName: 'Brief 1',
-      brandName: 'Apple',
-      productName: 'iPhone',
-      salesPerson: 'Aryan Sharma',
-      source: 'Newspaper',
-      media: 'Programmatic',
-      mediaType: 'DOOH',
-      briefStatus: 'SUBMISSION',
-      priority: 'High',
-      briefDetail: 'According to Format',
-      budget: 45000,
-      submissionDate: '02-07-2025 22:23',
-    },
-    '102': {
-      id: '102',
-      briefId: '#CM9802',
-      briefName: 'Brand Awareness Campaign',
-      brandName: 'FashionHub',
-      productName: 'Summer Collection',
-      salesPerson: 'Jane Smith',
-      source: 'Digital',
-      media: 'Traditional',
-      mediaType: 'TV',
-      briefStatus: 'IN_REVIEW',
-      priority: 'Medium',
-      briefDetail: 'Brand visibility campaign',
-      budget: 750000,
-      submissionDate: '01-07-2025 15:30',
-    },
-  };
+  const [briefDetails, setBriefDetails] = useState<BriefDetail | null>(null);
 
   useEffect(() => {
-    // Simulate API call to fetch brief details
-    const fetchBriefDetails = async () => {
-      try {
-        setLoading(true);
-        // In real app, this would be an API call
-        const details = mockBriefDetails[id || '101'];
-        if (details) {
-          setBriefDetails(details);
-        }
-      } catch (error) {
+    if (!id) return;
+    // removed leftover setLoading
+    getBriefById(Number(id))
+      .then((data) => setBriefDetails(data))
+      .catch((error) => {
+        setBriefDetails(null);
         console.error('Failed to fetch brief details:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchBriefDetails();
+      });
   }, [id]);
 
   const handleSubmit = () => {
-    console.log('Updating submitted plan:', { planFiles, backupFiles });
     // In real scenario, this would make an API call
     // After successful update, show success message and navigate back
     navigate(-1);
@@ -165,18 +103,7 @@ const EditSubmittedPlan: React.FC = () => {
         </div>
       </div>
     );
-  };
-
-  if (loading) {
-    return (
-      <>
-        <MasterFormHeader onBack={() => navigate(-1)} title="Edit Submitted Plan" />
-        <div className="flex items-center justify-center h-64">
-          <p className="text-gray-500">Loading...</p>
-        </div>
-      </>
-    );
-  }
+  } // <-- This closes FileCard
 
   if (!briefDetails) {
     return (
@@ -207,57 +134,53 @@ const EditSubmittedPlan: React.FC = () => {
               <div className="space-y-3">
                 <div>
                   <span className="text-gray-500">Brief ID:</span>
-                  <span className="font-medium text-gray-900 ml-2">{briefDetails.briefId}</span>
+                  <span className="font-medium text-gray-900 ml-2">{`#${briefDetails.id}`}</span>
                 </div>
                 <div>
                   <span className="text-gray-500">Brief Name:</span>
-                  <span className="font-medium text-gray-900 ml-2">{briefDetails.briefName}</span>
+                  <span className="font-medium text-gray-900 ml-2">{briefDetails.name || '-'}</span>
                 </div>
                 <div>
                   <span className="text-gray-500">Sales Person:</span>
-                  <span className="font-medium text-gray-900 ml-2">{briefDetails.salesPerson}</span>
-                </div>
-                <div>
-                  <span className="text-gray-500">Source:</span>
-                  <span className="font-medium text-gray-900 ml-2">{briefDetails.source}</span>
+                  <span className="font-medium text-gray-900 ml-2">{briefDetails.assigned_user?.name || '-'}</span>
                 </div>
                 <div>
                   <span className="text-gray-500">Brief Status:</span>
-                  <span className="font-medium text-gray-900 ml-2">{briefDetails.briefStatus}</span>
+                  <span className="font-medium text-gray-900 ml-2">{briefDetails.brief_status?.name || briefDetails.status || '-'}</span>
                 </div>
                 <div>
                   <span className="text-gray-500">Budget:</span>
-                  <span className="font-medium text-gray-900 ml-2">₹{briefDetails.budget.toLocaleString()}</span>
+                  <span className="font-medium text-gray-900 ml-2">{briefDetails.budget || '-'}</span>
                 </div>
                 <div>
                   <span className="text-gray-500">Brief Submission Date & Time:</span>
-                  <span className="font-medium text-gray-900 ml-2">{briefDetails.submissionDate}</span>
+                  <span className="font-medium text-gray-900 ml-2">{briefDetails.submission_date || '-'}</span>
                 </div>
               </div>
               <div className="space-y-3">
                 <div>
                   <span className="text-gray-500">Brand Name:</span>
-                  <span className="font-medium text-gray-900 ml-2">{briefDetails.brandName}</span>
+                  <span className="font-medium text-gray-900 ml-2">{briefDetails?.brand?.name || '-'}</span>
                 </div>
                 <div>
                   <span className="text-gray-500">Product Name:</span>
-                  <span className="font-medium text-gray-900 ml-2">{briefDetails.productName}</span>
+                  <span className="font-medium text-gray-900 ml-2">{briefDetails?.product_name || '-'}</span>
                 </div>
                 <div>
                   <span className="text-gray-500">Media:</span>
-                  <span className="font-medium text-gray-900 ml-2">{briefDetails.media}</span>
+                  <span className="font-medium text-gray-900 ml-2">{briefDetails?.mode_of_campaign || '-'}</span>
                 </div>
                 <div>
                   <span className="text-gray-500">Media Type:</span>
-                  <span className="font-medium text-gray-900 ml-2">{briefDetails.mediaType}</span>
+                  <span className="font-medium text-gray-900 ml-2">{briefDetails?.media_type || '-'}</span>
                 </div>
                 <div>
                   <span className="text-gray-500">Priority:</span>
-                  <span className="font-medium text-gray-900 ml-2">{briefDetails.priority}</span>
+                  <span className="font-medium text-gray-900 ml-2">{briefDetails?.priority?.name || '-'}</span>
                 </div>
                 <div>
                   <span className="text-gray-500">Brief Detail:</span>
-                  <span className="font-medium text-gray-900 ml-2">{briefDetails.briefDetail}</span>
+                  <span className="font-medium text-gray-900 ml-2">{briefDetails?.comment || '-'}</span>
                 </div>
               </div>
             </div>

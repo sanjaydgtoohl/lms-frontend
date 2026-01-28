@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import MasterHeader from '../../components/ui/MasterHeader';
 import MasterFormHeader from '../../components/ui/MasterFormHeader';
+import { getBriefById } from '../../services/PlanSubmission';
+import type { BriefDetail } from '../../services/PlanSubmission';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 // Mock data for Submitted Plans listing
@@ -78,26 +80,18 @@ const mockSubmittedPlans: SubmittedPlan[] = [
 ];
 
 const PlanHistory: React.FC = () => {
+
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [brief, setBrief] = useState<BriefDetail | null>(null);
+  // Removed unused loading and error state
 
-  const leftColumn = [
-    { label: 'Brief ID', value: '#CM9801' },
-    { label: 'Sales Person', value: 'Aryan Sharma' },
-    { label: 'Source', value: 'Newspaper' },
-    { label: 'Brief Status', value: 'Submission' },
-    { label: 'Budget', value: '450000' },
-    { label: 'Brief Submission Date & Time', value: '02-07-2025 22:23' },
-  ];
-
-  const rightColumn = [
-    { label: 'Brand Name', value: 'Apple' },
-    { label: 'Product Name', value: 'iPhone' },
-    { label: 'Media', value: 'Programmatic' },
-    { label: 'Media Type', value: 'DOOH' },
-    { label: 'Priority', value: 'High' },
-    { label: 'Brief Detail', value: 'According to format' },
-  ];
+  useEffect(() => {
+    if (!id) return;
+    getBriefById(Number(id))
+      .then((data) => setBrief(data))
+      .catch(() => {/* ignore error for now */});
+  }, [id]);
 
   return (
     <>
@@ -125,20 +119,57 @@ const PlanHistory: React.FC = () => {
             <h3 className="text-sm font-medium text-gray-700 mb-4">Brief Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
               <div className="space-y-3">
-                {leftColumn.map((item, index) => (
-                  <div key={index}>
-                    <span className="text-gray-500">{item.label}:</span>
-                    <span className="font-medium text-gray-900 ml-2">{item.value}</span>
-                  </div>
-                ))}
+                <div>
+                  <span className="text-gray-500">Brief ID:</span>
+                  <span className="font-medium text-gray-900 ml-2">{brief ? `#${brief.id}` : '-'}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Brief Name:</span>
+                  <span className="font-medium text-gray-900 ml-2">{brief?.name || '-'}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Sales Person:</span>
+                  <span className="font-medium text-gray-900 ml-2">{brief?.assigned_user?.name || '-'}</span>
+                </div>
+                {/* Source field removed: not present in BriefDetail */}
+                <div>
+                  <span className="text-gray-500">Brief Status:</span>
+                  <span className="font-medium text-gray-900 ml-2">{brief?.brief_status?.name || brief?.status || '-'}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Budget:</span>
+                  <span className="font-medium text-gray-900 ml-2">{brief?.budget || '-'}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Brief Submission Date & Time:</span>
+                  <span className="font-medium text-gray-900 ml-2">{brief?.submission_date || '-'}</span>
+                </div>
               </div>
               <div className="space-y-3">
-                {rightColumn.map((item, index) => (
-                  <div key={index}>
-                    <span className="text-gray-500">{item.label}:</span>
-                    <span className="font-medium text-gray-900 ml-2">{item.value}</span>
-                  </div>
-                ))}
+                <div>
+                  <span className="text-gray-500">Brand Name:</span>
+                  <span className="font-medium text-gray-900 ml-2">{brief?.brand?.name || '-'}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Product Name:</span>
+                  <span className="font-medium text-gray-900 ml-2">{brief?.product_name || '-'}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Media:</span>
+                  <span className="font-medium text-gray-900 ml-2">{brief?.mode_of_campaign || '-'}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Media Type:</span>
+                  <span className="font-medium text-gray-900 ml-2">{brief?.media_type || '-'}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Priority:</span>
+                  <span className="font-medium text-gray-900 ml-2">{brief?.priority?.name || '-'}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Brief Detail:</span>
+                  <span className="font-medium text-gray-900 ml-2">{brief?.comment || '-'}</span>
+                </div>
               </div>
             </div>
           </div>

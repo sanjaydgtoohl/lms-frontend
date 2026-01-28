@@ -109,7 +109,7 @@ const AgencyMaster: React.FC = () => {
         // API can return parent info either in `is_parent` (object) or `agency_group`.
         // Prefer `is_parent.name` if available, otherwise fall back to `agency_group.name` or a string.
         const parentObj = a.is_parent ?? a.agency_group ?? null;
-        const agencyGroupName = parentObj ? (typeof parentObj === 'object' ? (parentObj.name || String(parentObj?.id || '')) : String(parentObj)) : '';
+        const agencyGroupName = parentObj ? (typeof parentObj === 'object' ? (parentObj.name || String(parentObj?.id || '')) : String(parentObj)) : a.name || '';
         const rawCount = a.contact_person_count ?? a.contactPersonCount;
         const contactPersonValue = (typeof rawCount === 'number') ? String(rawCount)
           : (typeof rawCount === 'string' && rawCount.trim() !== '') ? rawCount

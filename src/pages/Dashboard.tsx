@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, FileCheck, BarChart3, AlertTriangle, Clock, X, Check } from 'lucide-react';
+import { Users, FileCheck, BarChart3, AlertTriangle, X, Check } from 'lucide-react';
 import Pagination from '../components/ui/Pagination';
 import StatCard from '../components/ui/StatCard';
 import SimpleListCard from '../components/ui/SimpleListCard';
@@ -113,6 +113,17 @@ const Dashboard: React.FC = () => {
     return txt;
   };
 
+  const formatDateTime = (date: string, time: string): string => {
+    try {
+      const d = new Date(`${date}T${time}`);
+      const dateStr = d.toLocaleDateString('en-US');
+      const timeStr = d.toLocaleTimeString('en-US', { hour12: false });
+      return `${dateStr}, ${timeStr}`;
+    } catch {
+      return `${date}, ${time}`;
+    }
+  };
+
   const currentMeetings = getCurrentPageItems(meetings, meetingsPage);
 
   const dismissMeeting = (id: number) => setMeetings(prev => prev.filter(m => m.id !== id));
@@ -186,25 +197,26 @@ const Dashboard: React.FC = () => {
           title={`Meeting (${meetings.length})`}
             items={currentMeetings}
             renderItem={(meeting) => (
-              <div className="flex items-start gap-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-gray-900">{meeting.title}</p>
-                  <p className="text-xs text-gray-500">{meeting.agenda}</p>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
                   <p className="text-xs text-gray-500">Lead: {meeting.lead.name}</p>
-                  <p className="text-xs text-gray-500 flex items-center mt-1">
-                    <Clock className="w-3.5 h-3.5 mr-1 text-gray-400" />
-                    {formatDate(meeting.meeting_date)} {meeting.meeting_time}
-                  </p>
+                  <p className="text-xs font-medium text-gray-900">{meeting.title}</p>
+                  <p className="text-xs text-gray-500">Attendees: {meeting.attendees?.map((a: {name: string}) => a.name).join(', ') || 'None'}</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-700">{meeting.type}</span>
-                  <X
-                    className="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-pointer focus:outline-none focus:ring-0"
-                    onClick={() => dismissMeeting(meeting.id)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') dismissMeeting(meeting.id); }}
-                  />
+                <div className="flex flex-col items-end gap-2">
+                  <p className="text-xs text-gray-500">{formatDateTime(meeting.meeting_date, meeting.meeting_time)}</p>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${meeting.type === 'face_to_face' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
+                      {meeting.type}
+                    </span>
+                    <X
+                      className="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-pointer focus:outline-none focus:ring-0"
+                      onClick={() => dismissMeeting(meeting.id)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') dismissMeeting(meeting.id); }}
+                    />
+                  </div>
                 </div>
               </div>
             )}

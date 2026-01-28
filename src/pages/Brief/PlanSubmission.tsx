@@ -1,14 +1,35 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Eye, Download, Trash2 } from 'lucide-react';
 import MasterFormHeader from '../../components/ui/MasterFormHeader';
 import Button from '../../components/ui/Button';
 import UploadCard from '../../components/ui/UploadCard';
+import { getBriefById } from '../../services/PlanSubmission';
+import type { BriefDetail } from '../../services/PlanSubmission';
 
 const PlanSubmission: React.FC = () => {
   const navigate = useNavigate();
+  // Get briefId from route params (assume route: /briefs/:id/plan-submission)
+  const { id } = useParams<{ id: string }>();
+  const [brief, setBrief] = useState<BriefDetail | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [planFiles, setPlanFiles] = useState<File[]>([]);
   const [backupFiles, setBackupFiles] = useState<File[]>([]);
+
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    setError(null);
+    console.log('PlanSubmission id from URL:', id);
+    getBriefById(Number(id))
+      .then((data) => {
+        console.log('Fetched brief data:', data);
+        setBrief(data);
+      })
+      .catch(() => setError('Failed to load brief details.'))
+      .finally(() => setLoading(false));
+  }, [id]);
 
   const getFileExtension = (fileName: string): string => {
     return fileName.split('.').pop()?.toUpperCase() || 'FILE';
@@ -82,72 +103,70 @@ const PlanSubmission: React.FC = () => {
   return (
     <>
       <MasterFormHeader onBack={() => navigate(-1)} title="Plan Submission" />
-
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
         <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
           <h2 className="text-sm font-semibold text-gray-900">
             Plan Submission
           </h2>
         </div>
-
         <div className="p-6 text-sm">
+          {/* Loading & Error States */}
+          {loading && <div className="mb-4 text-blue-600">Loading brief details...</div>}
+          {error && <div className="mb-4 text-red-600">{error}</div>}
+
           {/* Brief Details Section */}
           <div className="mb-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <div>
                   <span className="text-gray-500">Brief ID:</span>
-                  <span className="font-medium text-gray-900 ml-2">#CM9801</span>
+                  <span className="font-medium text-gray-900 ml-2">{brief ? `#${brief.id}` : '-'}</span>
                 </div>
                 <div>
                   <span className="text-gray-500">Brief Name:</span>
-                  <span className="font-medium text-gray-900 ml-2">Brief 1</span>
+                  <span className="font-medium text-gray-900 ml-2">{brief?.name || '-'}</span>
                 </div>
                 <div>
                   <span className="text-gray-500">Sales Person:</span>
-                  <span className="font-medium text-gray-900 ml-2">Aryan Sharma</span>
-                </div>
-                <div>
-                  <span className="text-gray-500">Source:</span>
-                  <span className="font-medium text-gray-900 ml-2">Newspaper</span>
+                  <span className="font-medium text-gray-900 ml-2">{brief?.assigned_user?.name || '-'}</span>
                 </div>
                 <div>
                   <span className="text-gray-500">Brief Status:</span>
-                  <span className="font-medium text-gray-900 ml-2">SUBMISSION</span>
+                  <span className="font-medium text-gray-900 ml-2">{brief?.brief_status?.name || brief?.status || '-'}</span>
                 </div>
                 <div>
                   <span className="text-gray-500">Budget:</span>
-                  <span className="font-medium text-gray-900 ml-2">45000</span>
+                  <span className="font-medium text-gray-900 ml-2">{brief?.budget || '-'}</span>
                 </div>
                 <div>
                   <span className="text-gray-500">Brief Submission Date & Time:</span>
-                  <span className="font-medium text-gray-900 ml-2">02-07-2025 22:23</span>
+                  <span className="font-medium text-gray-900 ml-2">{brief?.submission_date || '-'}</span>
                 </div>
               </div>
               <div className="space-y-3">
                 <div>
                   <span className="text-gray-500">Brand Name:</span>
-                  <span className="font-medium text-gray-900 ml-2">Apple</span>
+                  <span className="font-medium text-gray-900 ml-2">{brief?.brand?.name || '-'}</span>
                 </div>
                 <div>
                   <span className="text-gray-500">Product Name:</span>
-                  <span className="font-medium text-gray-900 ml-2">iPhone</span>
+                  <span className="font-medium text-gray-900 ml-2">{brief?.product_name || '-'}</span>
                 </div>
                 <div>
                   <span className="text-gray-500">Media:</span>
-                  <span className="font-medium text-gray-900 ml-2">Programmatic</span>
+                  <span className="font-medium text-gray-900 ml-2">{brief?.mode_of_campaign || '-'}</span>
                 </div>
                 <div>
                   <span className="text-gray-500">Media Type:</span>
-                  <span className="font-medium text-gray-900 ml-2">DOOH</span>
+                  <span className="font-medium text-gray-900 ml-2">{brief?.media_type || '-'}</span>
                 </div>
                 <div>
                   <span className="text-gray-500">Priority:</span>
-                  <span className="font-medium text-gray-900 ml-2">High</span>
+                  <span className="font-medium text-gray-900 ml-2">{brief?.priority?.name || '-'}</span>
                 </div>
                 <div>
                   <span className="text-gray-500">Brief Detail:</span>
-                  <span className="font-medium text-gray-900 ml-2">According to Format</span>
+                  <span className="font-medium text-gray-900 ml-2">{brief?.comment || '-'}</span>
                 </div>
               </div>
             </div>
