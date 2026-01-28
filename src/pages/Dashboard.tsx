@@ -4,6 +4,7 @@ import Pagination from '../components/ui/Pagination';
 import StatCard from '../components/ui/StatCard';
 import SimpleListCard from '../components/ui/SimpleListCard';
 import { getPendingAssignments, getDashboardStats, getMeetings, type PendingAssignment, type Meeting } from '../services/Dashboard';
+import { getBusinessForecast } from '../services/BusinessForecast';
 
 const ITEMS_PER_PAGE = 3;
 
@@ -19,6 +20,7 @@ const Dashboard: React.FC = () => {
     teamPerformance: '0%',
     openAlerts: 0,
   });
+  const [monthlyRevenue, setMonthlyRevenue] = useState<number>(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -27,6 +29,7 @@ const Dashboard: React.FC = () => {
           getPendingAssignments(),
           getDashboardStats(),
           getMeetings(),
+          getBusinessForecast(),
         ]);
 
         // Handle assignments
@@ -51,6 +54,14 @@ const Dashboard: React.FC = () => {
         } else {
           console.error('Failed to fetch meetings:', results[2].reason);
           setMeetings([]);
+        }
+
+        // Handle business forecast (monthly revenue)
+        if (results[3].status === 'fulfilled') {
+          setMonthlyRevenue(results[3].value.data.total_budget || 0);
+        } else {
+          console.error('Failed to fetch business forecast:', results[3].reason);
+          setMonthlyRevenue(0);
         }
       } catch (error) {
         console.error('Unexpected error in fetchData:', error);
@@ -113,15 +124,33 @@ const Dashboard: React.FC = () => {
     return txt;
   };
 
-  const formatDateTime = (date: string, time: string): string => {
-    try {
-      const d = new Date(`${date}T${time}`);
-      const dateStr = d.toLocaleDateString('en-US');
-      const timeStr = d.toLocaleTimeString('en-US', { hour12: false });
-      return `${dateStr}, ${timeStr}`;
-    } catch {
-      return `${date}, ${time}`;
+  const formatDateTime = (date: string, time?: string): string => {
+    if (!date) return '';
+    // Extract YYYY-MM-DD from ISO string
+    const match = date.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    let dateStr = date;
+    if (match) {
+      const [_, year, month, day] = match;
+      // Format as 'Month DD, YYYY'
+      const months = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+      ];
+      dateStr = `${months[parseInt(month, 10) - 1]} ${parseInt(day, 10)}, ${year}`;
     }
+    let timeStr = '';
+    if (time) {
+      // Format time as HH:mm or h:mm AM/PM
+      const [h, m] = time.split(":");
+      if (h !== undefined && m !== undefined) {
+        // Show as 14:15 or 2:15 PM (24h or 12h format)
+        // For 24h format:
+        timeStr = `${h.padStart(2, '0')}:${m.padStart(2, '0')}`;
+      } else {
+        timeStr = time;
+      }
+    }
+    return timeStr ? `${dateStr}, ${timeStr}` : dateStr;
   };
 
   const currentMeetings = getCurrentPageItems(meetings, meetingsPage);
@@ -135,7 +164,7 @@ const Dashboard: React.FC = () => {
         <StatCard title={<><span>Total</span><br /><span>Users</span></>} value={stats.totalUsers} icon={<Users className="w-5 h-5" />} />
         <StatCard title="Pending Assignments" value={stats.pendingAssignments} icon={<FileCheck className="w-5 h-5" />} />
         <StatCard title="Team Performance" value={stats.teamPerformance} icon={<BarChart3 className="w-5 h-5" />} />
-        <StatCard title={<><span>Open</span><br /><span>Alerts</span></>} value={stats.openAlerts} icon={<AlertTriangle className="w-5 h-5" />} />
+        <StatCard title={<><span>Monthly Revenue</span><br /><span></span></>} value={monthlyRevenue} icon={<AlertTriangle className="w-5 h-5" />} />
       </div>
 
       {/* Assignments & Alerts - Side by Side */}
