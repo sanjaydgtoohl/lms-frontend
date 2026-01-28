@@ -19,5 +19,5 @@ export async function getBusinessForecast(): Promise<BusinessForecastResponse> {
   if (!res || !res.success) {
     throw new Error(res?.message || 'Failed to fetch business forecast');
   }
-  return res;
+  return res.data;
 }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import EyeIcon from '../../assets/icons/EyeIcon';
 
 
@@ -7,6 +8,7 @@ import EyeIcon from '../../assets/icons/EyeIcon';
 // New Leads will be fetched from API
 
 const SalesDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [leads, setLeads] = useState<any[]>([]);
   const [activities, setActivities] = useState<any[]>([]);
   const [briefs, setBriefs] = useState<any[]>([]);
@@ -89,21 +91,7 @@ const SalesDashboard: React.FC = () => {
     }
   }, [selectedPriorityLeadId]);
 
-  const getStatusColor = (status: string) => {
-    const colorMap: { [key: string]: string } = {
-      'Pending': 'bg-yellow-100 text-yellow-800',
-      'Interested': 'bg-green-100 text-green-800',
-      'Meeting Scheduled': 'bg-blue-100 text-blue-800',
-      'Meeting Done': 'bg-purple-100 text-purple-800',
-      'Brief Recieved': 'bg-indigo-100 text-indigo-800',
-      'Not Interested': 'bg-red-100 text-red-800',
-      'SUBMISSION': 'bg-orange-100 text-orange-800',
-      'Negotiation': 'bg-teal-100 text-teal-800',
-      'Approve': 'bg-lime-100 text-lime-800',
-      'Closed': 'bg-gray-100 text-gray-800'
-    };
-    return colorMap[status] || 'bg-gray-100 text-gray-700';
-  };
+  // ...existing code...
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent | TouchEvent) {
@@ -233,7 +221,16 @@ const SalesDashboard: React.FC = () => {
               className={`px-4 py-2 rounded-full cursor-pointer text-sm transition-all duration-150 ${activeTab==='meeting' ? 'bg-blue-100 text-blue-700 font-bold shadow' : 'text-gray-600 hover:bg-gray-200'}`}
             >Meeting Scheduled</span>
           </div>
-          <a className="text-sm text-blue-600 font-semibold hover:underline cursor-pointer">View All</a>
+          <a
+            className="text-sm text-blue-600 font-semibold hover:underline cursor-pointer"
+            onClick={() => {
+              if (activeTab === 'brief') {
+                navigate('/brief/Brief_Pipeline');
+              } else {
+                navigate('/lead-management/all-leads');
+              }
+            }}
+          >View All</a>
         </div>
 
         <div className="space-y-3">
@@ -250,9 +247,13 @@ const SalesDashboard: React.FC = () => {
                 <div className="text-xs text-gray-500">Call Attempts<br/><span className="text-gray-700 font-medium text-xs">{l.call_attempt}</span></div>
               </div>
               <div className="flex items-center gap-4">
-                <a href={l.profile_url} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer" title="View Lead">
+                <span
+                  className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer"
+                  onClick={() => navigate(`/lead-management/edit/${l.id}`)}
+                  title="Edit Lead"
+                >
                   <EyeIcon className="w-5 h-5 text-blue-500" />
-                </a>
+                </span>
               </div>
             </div>
           ))}
@@ -270,7 +271,13 @@ const SalesDashboard: React.FC = () => {
                 <div className="text-xs text-gray-500">Contact Person<br/><span className="text-gray-700 font-medium text-xs">{b.contact_person?.name || '-'}</span></div>
               </div>
               <div className="flex items-center gap-4">
-                <span className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer"><EyeIcon className="w-5 h-5 text-blue-500" /></span>
+                <span
+                  className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer"
+                  onClick={() => navigate('/brief/Brief_Pipeline')}
+                  title="View Brief"
+                >
+                  <EyeIcon className="w-5 h-5 text-blue-500" />
+                </span>
               </div>
             </div>
           ))}
@@ -290,9 +297,13 @@ const SalesDashboard: React.FC = () => {
                 <div className="text-xs text-gray-500">Call Attempts<br/><span className="text-gray-700 font-medium text-xs">{f.call_attempt}</span></div>
               </div>
               <div className="flex items-center gap-4">
-                <a href={f.profile_url} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer" title="View Lead">
+                <span
+                  className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer"
+                  onClick={() => navigate(`/lead-management/edit/${f.id}`)}
+                  title="Edit Lead"
+                >
                   <EyeIcon className="w-5 h-5 text-blue-500" />
-                </a>
+                </span>
               </div>
             </div>
           ))}
@@ -312,9 +323,13 @@ const SalesDashboard: React.FC = () => {
                 <div className="text-xs text-gray-500">Call Attempts<br/><span className="text-gray-700 font-medium text-xs">{m.call_attempt}</span></div>
               </div>
               <div className="flex items-center gap-4">
-                <a href={m.profile_url} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer" title="View Lead">
+                <span
+                  className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer"
+                  onClick={() => navigate(`/lead-management/edit/${m.id}`)}
+                  title="Edit Lead"
+                >
                   <EyeIcon className="w-5 h-5 text-blue-500" />
-                </a>
+                </span>
               </div>
             </div>
           ))}
