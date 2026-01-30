@@ -1,3 +1,62 @@
+// --- API Response Types for /briefs/{id}/planners POST ---
+export interface PlanFileInfo {
+  path: string;
+  url: string;
+  name: string;
+}
+
+export interface PlanSubmissionResponseData {
+  id: number;
+  status: string;
+  status_label: string;
+  submitted_plan: PlanFileInfo[];
+  submitted_plan_count: number;
+  backup_plan?: string;
+  backup_plan_url?: string;
+  has_backup_plan: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PlanSubmissionResponse {
+  success: boolean;
+  message: string;
+  meta: {
+    timestamp: string;
+    status_code: number;
+  };
+  data: PlanSubmissionResponseData;
+}
+/**
+ * Uploads plan and backup files for a brief (Plan Submission)
+ * @param briefId Brief ID (numeric)
+ * @param planFiles Array of plan files (submitted_plan[])
+ * @param backupFile Single backup plan file (backup_plan)
+ */
+
+export async function uploadPlanSubmission(
+  briefId: number,
+  planFiles: File[],
+  backupFile?: File
+): Promise<PlanSubmissionResponse> {
+  const formData = new FormData();
+  planFiles.forEach((file) => {
+    formData.append('submitted_plan[]', file);
+  });
+  if (backupFile) {
+    formData.append('backup_plan', backupFile);
+  }
+  try {
+    const response = await api.customRequest<PlanSubmissionResponse>(
+      `/briefs/${briefId}/planners`,
+      { method: 'POST', data: formData }
+    );
+    return response.data;
+  } catch (error: any) {
+    throw error;
+  }
+}
+
 import api from './api';
 
 // TypeScript interfaces for API response
@@ -41,7 +100,7 @@ export interface BriefDetail {
     percentage?: string | null;
   };
   priority: {
-    id: number;
+      // Removed duplicate import statement
     name: string;
   };
   planner_status?: string | null;

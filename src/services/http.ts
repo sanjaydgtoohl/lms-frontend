@@ -16,9 +16,31 @@ class Http {
     this.instance = axios.create({
       baseURL: API_BASE_URL,
       withCredentials: true,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      // Do not set Content-Type here; set it conditionally below
+    });
+    // Interceptor to set Content-Type only for non-FormData requests
+    this.instance.interceptors.request.use((config: any) => {
+      const token = getCookie('auth_token');
+      if (!token && useAuthStore.getState().isAuthenticated) {
+        console.warn('[http] Token missing from cookies - triggering auto logout');
+        this.autoLogoutDueToMissingToken();
+        return Promise.reject(new Error('Token missing - auto logout triggered'));
+      }
+      if (token && config.headers) {
+        config.headers['Authorization'] = `Bearer ${token}`;
+      }
+      // Only set Content-Type if not uploading FormData
+      if (config.data && typeof config.data === 'object' && config.data.constructor && config.data.constructor.name === 'FormData') {
+        // Let browser/axios set the correct Content-Type for FormData
+        if (config.headers && config.headers['Content-Type']) {
+          delete config.headers['Content-Type'];
+        }
+      } else {
+        if (config.headers && !config.headers['Content-Type']) {
+          config.headers['Content-Type'] = 'application/json';
+        }
+      }
+      return config;
     });
 
     // use any here to avoid strict axios internal types mismatch in interceptor callbacks

@@ -145,10 +145,16 @@ const BriefLog: React.FC = () => {
       render: (item) => {
         // Show dropdown with planner statuses, default to '-' if null
         const status = item.planner_status;
+        let statusValue: string = '-';
+        if (status && typeof status === 'object' && 'name' in status) {
+          statusValue = String(status.name);
+        } else if (typeof status === 'string' || typeof status === 'number') {
+          statusValue = String(status);
+        }
         return (
           <div className="min-w-[140px]">
             <StatusDropdown
-              value={status === null || status === undefined || status === '' ? '-' : status}
+              value={statusValue}
               options={statusOptions.map(opt => opt.name)}
               onChange={(newStatus: string) => handleSelectStatus(item.id.toString(), newStatus)}
               onConfirm={handleStatusConfirm}

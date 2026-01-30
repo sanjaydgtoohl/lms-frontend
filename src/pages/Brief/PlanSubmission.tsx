@@ -4,7 +4,8 @@ import { Eye, Download, Trash2 } from 'lucide-react';
 import MasterFormHeader from '../../components/ui/MasterFormHeader';
 import Button from '../../components/ui/Button';
 import UploadCard from '../../components/ui/UploadCard';
-import { getBriefById } from '../../services/PlanSubmission';
+import { getBriefById, uploadPlanSubmission } from '../../services/PlanSubmission';
+import { showSuccess } from '../../utils/notifications';
 import type { BriefDetail } from '../../services/PlanSubmission';
 
 const PlanSubmission: React.FC = () => {
@@ -16,6 +17,9 @@ const PlanSubmission: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [planFiles, setPlanFiles] = useState<File[]>([]);
   const [backupFiles, setBackupFiles] = useState<File[]>([]);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -299,7 +303,8 @@ const PlanSubmission: React.FC = () => {
               variant="primary"
               size="md"
               className="bg-gray-200 text-gray-700 hover:bg-gray-300"
-              onClick={() => { setPlanFiles([]); setBackupFiles([]); }}
+              onClick={() => { setPlanFiles([]); setBackupFiles([]); setSubmitError(null); setSubmitSuccess(null); }}
+              disabled={submitLoading}
             >
               RESET
             </Button>
@@ -308,10 +313,37 @@ const PlanSubmission: React.FC = () => {
               variant="primary"
               size="md"
               className="bg-blue-600 text-white hover:bg-blue-700"
-              onClick={() => console.log('submit proposal', { planFiles, backupFiles })}
+              disabled={submitLoading || planFiles.length === 0}
+              onClick={async () => {
+                setSubmitLoading(true);
+                setSubmitError(null);
+                setSubmitSuccess(null);
+                try {
+                  if (!id) throw new Error('No brief ID');
+                  const response = await uploadPlanSubmission(
+                    Number(id),
+                    planFiles,
+                    backupFiles[0]
+                  );
+                  console.log('Plan Submission API response:', response);
+                  showSuccess('Plan submitted successfully!');
+                  setPlanFiles([]);
+                  setBackupFiles([]);
+                  setTimeout(() => {
+                    navigate('/brief/log');
+                  }, 1200);
+                } catch (err: any) {
+                  setSubmitError(err?.message || 'Failed to submit plan.');
+                } finally {
+                  setSubmitLoading(false);
+                }
+              }}
             >
-              SUBMIT PROPOSAL
+              {submitLoading ? 'Submitting...' : 'SUBMIT PROPOSAL'}
             </Button>
+                    {/* Submission Success/Error Messages */}
+                    {submitError && <div className="mb-4 text-red-600">{submitError}</div>}
+                    {submitSuccess && <div className="mb-4 text-green-600">{submitSuccess}</div>}
           </div>
         </div>
       </div>

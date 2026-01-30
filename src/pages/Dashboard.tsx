@@ -21,6 +21,7 @@ const Dashboard: React.FC = () => {
     openAlerts: 0,
   });
   const [monthlyRevenue, setMonthlyRevenue] = useState<number>(0);
+  const formatNumber = (num: number) => num.toLocaleString('en-IN');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -57,10 +58,15 @@ const Dashboard: React.FC = () => {
         }
 
         // Handle business forecast (monthly revenue)
-        if (results[3].status === 'fulfilled') {
-          setMonthlyRevenue(results[3].value.data.total_budget || 0);
+        if (
+          results[3].status === 'fulfilled' &&
+          results[3].value &&
+          typeof results[3].value.total_budget === 'number'
+        ) {
+          console.log('Business Forecast total_budget:', results[3].value.total_budget);
+          setMonthlyRevenue(results[3].value.total_budget);
         } else {
-          console.error('Failed to fetch business forecast:', results[3].reason);
+          console.error('Failed to fetch business forecast:', results[3]);
           setMonthlyRevenue(0);
         }
       } catch (error) {
@@ -161,10 +167,38 @@ const Dashboard: React.FC = () => {
     <div className="space-y-6">
       {/* Top stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title={<><span>Total</span><br /><span>Users</span></>} value={stats.totalUsers} icon={<Users className="w-5 h-5" />} />
-        <StatCard title="Pending Assignments" value={stats.pendingAssignments} icon={<FileCheck className="w-5 h-5" />} />
-        <StatCard title="Team Performance" value={stats.teamPerformance} icon={<BarChart3 className="w-5 h-5" />} />
-        <StatCard title={<><span>Monthly Revenue</span><br /><span></span></>} value={monthlyRevenue} icon={<AlertTriangle className="w-5 h-5" />} />
+        <StatCard
+          title={
+            <div className="flex flex-col items-start">
+              <span className="text-xs sm:text-sm font-medium text-gray-500 leading-tight">Total Users</span>
+            </div>
+          }
+          value={stats.totalUsers}
+          icon={<Users className="w-5 h-5" />}
+        />
+        <StatCard
+          title={
+            <span className="text-xs sm:text-sm font-medium text-gray-500 leading-tight">Pending Assignments</span>
+          }
+          value={stats.pendingAssignments}
+          icon={<FileCheck className="w-5 h-5" />}
+        />
+        <StatCard
+          title={
+            <span className="text-xs sm:text-sm font-medium text-gray-500 leading-tight">Team Performance</span>
+          }
+          value={stats.teamPerformance}
+          icon={<BarChart3 className="w-5 h-5" />}
+        />
+        <StatCard
+          title={
+            <div className="flex flex-col items-start">
+              <span className="text-xs sm:text-sm font-medium text-gray-500 leading-tight">Monthly Revenue</span>
+            </div>
+          }
+          value={formatNumber(monthlyRevenue)}
+          icon={<AlertTriangle className="w-5 h-5" />}
+        />
       </div>
 
       {/* Assignments & Alerts - Side by Side */}

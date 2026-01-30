@@ -11,7 +11,8 @@ const SalesDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [leads, setLeads] = useState<any[]>([]);
   const [activities, setActivities] = useState<any[]>([]);
-  const [briefs, setBriefs] = useState<any[]>([]);
+  const [briefs, setBriefs] = useState<any[]>([]); // For Brief tab
+  const [recentBriefs, setRecentBriefs] = useState<any[]>([]); // For Recent Brief section
   const [followUpLeads, setFollowUpLeads] = useState<any[]>([]);
   const [meetingLeads, setMeetingLeads] = useState<any[]>([]);
   const [selectedPriorityLeadId, setSelectedPriorityLeadId] = useState<number | null>(null);
@@ -33,6 +34,15 @@ const SalesDashboard: React.FC = () => {
       fetchLatestMeetingScheduledTwoLeads()
         .then(setMeetingLeads)
         .catch(() => setMeetingLeads([]));
+    });
+  }, []);
+
+  // Fetch only for Recent Brief section
+  useEffect(() => {
+    import('../../services/SalesDashboard').then(({ fetchRecentBriefs }) => {
+      fetchRecentBriefs()
+        .then(setRecentBriefs)
+        .catch(() => setRecentBriefs([]));
     });
   }, []);
 
@@ -273,7 +283,7 @@ const SalesDashboard: React.FC = () => {
               <div className="flex items-center gap-4">
                 <span
                   className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer"
-                  onClick={() => navigate('/brief/Brief_Pipeline')}
+                  onClick={() => navigate(`/brief/${b.id}/edit`)}
                   title="View Brief"
                 >
                   <EyeIcon className="w-5 h-5 text-blue-500" />
@@ -366,18 +376,18 @@ const SalesDashboard: React.FC = () => {
             <h3 className="font-semibold">Recent Brief</h3>
           </div>
           <div className="space-y-3">
-            {briefs.map(b => (
+            {recentBriefs.map(b => (
               <div key={b.id} className="bg-white p-3 rounded-md border border-gray-100 flex items-center justify-between h-[100px]">
                 <div>
                   <div className="text-xs mb-1">
                     <span className="font-semibold">Brief Name:</span> {b.name}
                     <span className="ml-4 px-2 py-0.5 text-xs rounded text-black">{b.brief_status?.name}</span>
                   </div>
-                  <div className="text-xs mb-1"><span className="font-semibold">Brand Name:</span> {b.brand?.name || '-'}</div>
+                  <div className="text-xs mb-1"><span className="font-semibold">Brand Name:</span> {b.brand_name || '-'}</div>
                   <div className="text-xs mb-1"><span className="font-semibold">Product Name:</span> {b.product_name}</div>
                   <div className="text-xs">
                     <span className="font-semibold">Budget:</span> ₹{b.budget}
-                    <span className="ml-4 font-semibold">Contact Person:</span> {b.contact_person?.name || '-'}
+                    <span className="ml-4 font-semibold">Contact Person:</span> {b.contact_person_name || '-'}
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
