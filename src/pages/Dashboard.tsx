@@ -130,34 +130,7 @@ const Dashboard: React.FC = () => {
     return txt;
   };
 
-  const formatDateTime = (date: string, time?: string): string => {
-    if (!date) return '';
-    // Extract YYYY-MM-DD from ISO string
-    const match = date.match(/^(\d{4})-(\d{2})-(\d{2})/);
-    let dateStr = date;
-    if (match) {
-      const [_, year, month, day] = match;
-      // Format as 'Month DD, YYYY'
-      const months = [
-        'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'
-      ];
-      dateStr = `${months[parseInt(month, 10) - 1]} ${parseInt(day, 10)}, ${year}`;
-    }
-    let timeStr = '';
-    if (time) {
-      // Format time as HH:mm or h:mm AM/PM
-      const [h, m] = time.split(":");
-      if (h !== undefined && m !== undefined) {
-        // Show as 14:15 or 2:15 PM (24h or 12h format)
-        // For 24h format:
-        timeStr = `${h.padStart(2, '0')}:${m.padStart(2, '0')}`;
-      } else {
-        timeStr = time;
-      }
-    }
-    return timeStr ? `${dateStr}, ${timeStr}` : dateStr;
-  };
+  // Removed unused formatDateTime function
 
   const currentMeetings = getCurrentPageItems(meetings, meetingsPage);
 
@@ -267,7 +240,10 @@ const Dashboard: React.FC = () => {
                   <p className="text-xs text-gray-500">Attendees: {meeting.attendees?.map((a: {name: string}) => a.name).join(', ') || 'None'}</p>
                 </div>
                 <div className="flex flex-col items-end gap-2">
-                  <p className="text-xs text-gray-500">{formatDateTime(meeting.meeting_date, meeting.meeting_time)}</p>
+                  <p className="text-xs text-gray-500">
+                    Start: {formatDate(meeting.meetin_start_date)}<br />
+                    End: {formatDate(meeting.meetin_end_date)}
+                  </p>
                   <div className="flex items-center gap-2">
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${meeting.type === 'face_to_face' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
                       {meeting.type}

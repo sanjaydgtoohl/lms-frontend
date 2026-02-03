@@ -26,6 +26,8 @@ export type Meeting = {
   agenda: string;
   meeting_date: string;
   meeting_time: string;
+  meetin_start_date?: string | null;
+  meetin_end_date?: string | null;
   lead: { id: number; name: string };
   attendees: { id: number; name: string }[];
   type: string;
@@ -181,6 +183,8 @@ export async function getMeetings(): Promise<MeetingsResponse> {
       agenda: it.agenda || '',
       meeting_date: it.meeting_date || '',
       meeting_time: it.meeting_time || '',
+      meetin_start_date: it.meetin_start_date ?? null,
+      meetin_end_date: it.meetin_end_date ?? null,
       lead: it.lead || { id: 0, name: '' },
       attendees: it.attendees || [],
       type: it.type || '',

@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+dayjs.extend(customParseFormat);
 import { useParams, useNavigate } from 'react-router-dom';
 import MasterHeader from '../../components/ui/MasterHeader';
 import MasterFormHeader from '../../components/ui/MasterFormHeader';
@@ -152,23 +155,22 @@ const SubmittedPlansList: React.FC<SubmittedPlansListProps> = ({ plans = [], loa
       <div className="space-y-4">
         {paginated.map((plan, idx) => {
           // Use created_at as submission date, and show planner/creator
-          const d = new Date(plan.created_at);
-          const date = d.toLocaleDateString('en-GB');
-          const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const dateObj = dayjs(plan.created_at, 'YYYY-MM-DD hh:mm:ss A');
+          const formattedDateTime = dateObj.isValid() ? dateObj.format('DD MMM YYYY, hh:mm A') : '-';
 
           // Attachments: submitted_plan (array), backup_plan (object)
           const attachments = [
-            ...plan.submitted_plan.map((file, i) => ({
+            ...(Array.isArray(plan.planner?.submitted_plan) ? plan.planner.submitted_plan.map((file: { name: string; url: string }, i: number) => ({
               type: file.name.toLowerCase().endsWith('.xlsx') ? 'xls' : file.name.toLowerCase().endsWith('.pptx') ? 'ppt' : 'file',
               label: (i + 1).toString(),
               url: file.url,
               name: file.name
-            })),
-            ...(plan.backup_plan ? [{
-              type: plan.backup_plan.name.toLowerCase().endsWith('.xlsx') ? 'xls' : plan.backup_plan.name.toLowerCase().endsWith('.pptx') ? 'ppt' : 'file',
+            })) : []),
+            ...(plan.planner?.backup_plan ? [{
+              type: plan.planner.backup_plan.name.toLowerCase().endsWith('.xlsx') ? 'xls' : plan.planner.backup_plan.name.toLowerCase().endsWith('.pptx') ? 'ppt' : 'file',
               label: 'Back-Up',
-              url: plan.backup_plan.url,
-              name: plan.backup_plan.name
+              url: plan.planner.backup_plan.url,
+              name: plan.planner.backup_plan.name
             }] : [])
           ];
 
@@ -195,7 +197,7 @@ const SubmittedPlansList: React.FC<SubmittedPlansListProps> = ({ plans = [], loa
 
                     <div>
                       <div className="text-xs text-gray-500">Plan Submitted Date & Time</div>
-                      <div className="mt-1 text-sm text-gray-700">{date} {time}</div>
+                      <div className="mt-1 text-sm text-gray-700">{formattedDateTime}</div>
 
                       <div className="text-xs text-gray-500 mt-3">Submitted By</div>
                       <div className="mt-1 text-sm">

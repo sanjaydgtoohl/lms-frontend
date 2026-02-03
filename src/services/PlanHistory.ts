@@ -24,6 +24,8 @@ export type PlannerHistoryItem = {
   };
   planner: {
     id: number;
+    submitted_plan: SubmittedPlanFile[];
+    backup_plan: BackupPlanFile | null;
   };
   creator: {
     id: number;

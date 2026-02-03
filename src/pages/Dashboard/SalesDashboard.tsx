@@ -271,10 +271,8 @@ const SalesDashboard: React.FC = () => {
             <div key={b.id} className="flex items-center justify-between bg-indigo-50 rounded-lg p-3">
               <div className="flex items-center gap-14 min-w-0">
                 <div className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 font-semibold">Brief</div>
-                <div>
-                  <div className="text-sm font-semibold">{b.name}</div>
-                  <div className="text-xs text-black">{b.brand?.name || '-'}</div>
-                </div>
+                <div className="text-xs text-gray-500">Brief Name<br/><span className="text-gray-700 font-medium text-xs">{b.name}</span></div>
+                <div className="text-xs text-gray-500">Brand Name<br/><span className="text-gray-700 font-medium text-xs">{b.brand?.name || '-'}</span></div>
                 <div className="text-xs text-gray-500">Product<br/><span className="text-gray-700 font-medium text-xs">{b.product_name}</span></div>
                 <div className="text-xs text-gray-500">Budget<br/><span className="text-gray-700 font-medium text-xs">₹{b.budget}</span></div>
                 <div className="text-xs text-gray-500">Brief Status<br/><span className="text-xs rounded px-2 py-0.5 text-black">{b.brief_status?.name}</span></div>
@@ -295,10 +293,8 @@ const SalesDashboard: React.FC = () => {
             <div key={f.id} className="flex items-center justify-between bg-indigo-50 rounded-lg p-3">
               <div className="flex items-center gap-6 min-w-0">
                 <div className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 font-semibold">{f.type}</div>
-                <div>
-                  <div className="text-sm font-semibold">{f.name}</div>
-                  <div className="text-xs text-gray-500">{f.brand ? f.brand.name : f.agency ? f.agency.name : ''}</div>
-                </div>
+                <div className="text-xs text-gray-500">Contact Person Name<br/><span className="text-gray-700 font-medium text-xs">{f.name}</span></div>
+                <div className="text-xs text-gray-500">Brand Name<br/><span className="text-gray-700 font-medium text-xs">{f.brand ? f.brand.name : f.agency ? f.agency.name : '-'}</span></div>
                 <div className="text-xs text-gray-500">Email<br/><span className="text-gray-700 font-medium text-xs">{f.email}</span></div>
                 <div className="text-xs text-gray-500">Mobile<br/><span className="text-gray-700 font-medium text-xs">{f.mobile_number && f.mobile_number.length > 0 ? f.mobile_number[0].number : '-'}</span></div>
                 <div className="text-xs text-gray-500">Priority<br/><span className="text-gray-700 font-medium text-xs">{f.priority?.name || '-'}</span></div>
@@ -321,10 +317,8 @@ const SalesDashboard: React.FC = () => {
             <div key={m.id} className="flex items-center justify-between bg-indigo-50 rounded-lg p-3">
               <div className="flex items-center gap-6 min-w-0">
                 <div className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 font-semibold">{m.type}</div>
-                <div>
-                  <div className="text-sm font-semibold">{m.name}</div>
-                  <div className="text-xs text-gray-500">{m.brand ? m.brand.name : m.agency ? m.agency.name : ''}</div>
-                </div>
+                <div className="text-xs text-gray-500">Contact Person Name<br/><span className="text-gray-700 font-medium text-xs">{m.name}</span></div>
+                <div className="text-xs text-gray-500">Brand Name<br/><span className="text-gray-700 font-medium text-xs">{m.brand ? m.brand.name : m.agency ? m.agency.name : '-'}</span></div>
                 <div className="text-xs text-gray-500">Email<br/><span className="text-gray-700 font-medium text-xs">{m.email}</span></div>
                 <div className="text-xs text-gray-500">Mobile<br/><span className="text-gray-700 font-medium text-xs">{m.mobile_number && m.mobile_number.length > 0 ? m.mobile_number[0].number : '-'}</span></div>
                 <div className="text-xs text-gray-500">Priority<br/><span className="text-gray-700 font-medium text-xs">{m.priority?.name || '-'}</span></div>
@@ -364,6 +358,11 @@ const SalesDashboard: React.FC = () => {
                   </div>
                   <div className="text-xs text-gray-400 text-right">
                     <div><span className="font-semibold">Created At:</span> {a.created_at}</div>
+                    {a.lead_status && (
+                      <div className="mt-1 inline-block px-2 py-1 rounded bg-green-100 text-green-700 font-semibold text-xs">
+                        {a.lead_status}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -381,7 +380,11 @@ const SalesDashboard: React.FC = () => {
                 <div>
                   <div className="text-xs mb-1">
                     <span className="font-semibold">Brief Name:</span> {b.name}
-                    <span className="ml-4 px-2 py-0.5 text-xs rounded text-black">{b.brief_status?.name}</span>
+                    {b.brief_status?.name && (
+                      <span className="ml-4 px-2 py-0.5 rounded bg-yellow-100 text-yellow-800 font-semibold text-xs">
+                        {b.brief_status.name}
+                      </span>
+                    )}
                   </div>
                   <div className="text-xs mb-1"><span className="font-semibold">Brand Name:</span> {b.brand_name || '-'}</div>
                   <div className="text-xs mb-1"><span className="font-semibold">Product Name:</span> {b.product_name}</div>
