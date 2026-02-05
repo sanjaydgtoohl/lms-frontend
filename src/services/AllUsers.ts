@@ -12,6 +12,11 @@ export interface User {
   created?: string;
   created_at_formatted?: string;
   last_login_at?: string;
+  parent?: {
+    id: number;
+    name: string;
+    email?: string;
+  };
 }
 
 const ENDPOINTS = {
@@ -102,6 +107,11 @@ export async function listUsers(page = 1, perPage = 10, search?: string): Promis
       created,
       created_at_formatted: it.created_at_formatted,
       last_login_at: it.last_login_at,
+      parent: it.parent ? {
+        id: it.parent.id,
+        name: it.parent.name,
+        email: it.parent.email,
+      } : undefined,
     } as User;
   });
 
@@ -176,6 +186,11 @@ export async function listAttendees(page = 1, perPage = 100, search?: string): P
       created,
       created_at_formatted: it.created_at_formatted,
       last_login_at: it.last_login_at,
+      parent: it.parent ? {
+        id: it.parent.id,
+        name: it.parent.name,
+        email: it.parent.email,
+      } : undefined,
     } as User;
   });
 

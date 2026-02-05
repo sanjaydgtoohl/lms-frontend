@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
 import { listUsers, deleteUser, type User } from '../../../services/AllUsers';
 import ConfirmDialog from '../../../components/ui/ConfirmDialog';
+import RolesModal from '../../../components/ui/RolesModal';
 
 const AllUsers: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -20,6 +21,11 @@ const AllUsers: React.FC = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // RolesModal state
+  const [rolesModalOpen, setRolesModalOpen] = useState(false);
+  const [selectedUserRoles, setSelectedUserRoles] = useState<any[]>([]);
+  const [selectedUserName, setSelectedUserName] = useState('');
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -68,6 +74,20 @@ const AllUsers: React.FC = () => {
     setConfirmOpen(false);
     setDeleteTarget(null);
     setDeleteLoading(false);
+  };
+
+  const handleRolesClick = (user: User) => {
+    if (Array.isArray(user.roles) && user.roles.length > 0) {
+      setSelectedUserRoles(user.roles);
+      setSelectedUserName(user.name);
+      setRolesModalOpen(true);
+    }
+  };
+
+  const handleRolesModalClose = () => {
+    setRolesModalOpen(false);
+    setSelectedUserRoles([]);
+    setSelectedUserName('');
   };
       // ...existing code...
 
@@ -123,6 +143,12 @@ const AllUsers: React.FC = () => {
       className: 'max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap',
     },
     {
+      key: 'parent',
+      header: 'Parent User',
+      render: (it: User) => (it as any).parent?.name || (it as any).parent || '-',
+      className: 'max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap',
+    },
+    {
       key: 'lastLogin',
       header: 'Last Login',
       render: (it: User) => it.lastLogin || '-',
@@ -154,16 +180,23 @@ const AllUsers: React.FC = () => {
       key: 'role',
       header: 'Role',
       render: (it: User) => (
-        <div className="flex flex-wrap gap-2 justify-center">
+        <div
+          className="flex gap-2 justify-center items-center cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={() => Array.isArray(it.roles) && it.roles.length > 0 && handleRolesClick(it)}
+        >
           {Array.isArray(it.roles) && it.roles.length > 0 ? (
-            it.roles.map((role: any) => (
+            <>
               <span
-                key={role.id || role.name}
-                className={`inline-flex items-center justify-center h-7 px-3 border rounded-full text-xs font-medium leading-tight whitespace-nowrap ${getRoleBadgeColor(role.display_name || role.name)}`}
+                className={`inline-flex items-center justify-center h-7 px-3 border rounded-full text-xs font-medium leading-tight whitespace-nowrap ${getRoleBadgeColor(it.roles[0].display_name || it.roles[0].name)}`}
               >
-                {role.display_name || role.name}
+                {it.roles[0].display_name || it.roles[0].name}
               </span>
-            ))
+              {it.roles.length > 1 && (
+                <span className="inline-flex items-center justify-center h-7 px-2 border border-gray-300 rounded-full text-xs font-medium leading-tight whitespace-nowrap bg-gray-50 text-gray-700">
+                  +{it.roles.length - 1}
+                </span>
+              )}
+            </>
           ) : (
             <span className="text-gray-400">-</span>
           )}
@@ -228,6 +261,15 @@ const AllUsers: React.FC = () => {
             loading={deleteLoading}
             onCancel={handleDeleteCancel}
             onConfirm={handleDeleteConfirm}
+          />
+
+          {/* RolesModal for viewing all roles */}
+          <RolesModal
+            isOpen={rolesModalOpen}
+            roles={selectedUserRoles}
+            userName={selectedUserName}
+            onClose={handleRolesModalClose}
+            title="User Roles"
           />
         </div>
       </div>

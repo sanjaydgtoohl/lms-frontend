@@ -24,6 +24,8 @@ import Layout from './components/layout/Layout';
 import PermissionRoute from './components/ui/PermissionRoute';
 import { SidebarMenuProvider } from './context/SidebarMenuContext';
 import BriefPipeline from './pages/Brief/BriefPipeline';
+import MeetingPipeline from './pages/Meeting';
+import EditMeeting from './pages/Meeting/EditMeeting';
 import { BriefLog, PlanHistory } from './pages';
 import { PlanSubmission } from './pages';
 import { EditSubmittedPlan } from './pages';
@@ -182,6 +184,14 @@ function App() {
             <Route path="edit-submitted-plan/:id" element={<PermissionRoute><EditSubmittedPlan /></PermissionRoute>} />
             <Route path=":id" element={<PermissionRoute><BriefPipeline /></PermissionRoute>} />
             <Route path=":id/edit" element={<PermissionRoute><BriefPipeline /></PermissionRoute>} />
+          </Route>
+
+          {/* Meeting Pipeline Routes */}
+          <Route path="meeting">
+            <Route index element={<PermissionRoute><MeetingPipeline /></PermissionRoute>} />
+            <Route path="create" element={<PermissionRoute><MeetingPipeline /></PermissionRoute>} />
+            <Route path=":id" element={<PermissionRoute><MeetingPipeline /></PermissionRoute>} />
+            <Route path=":id/edit" element={<PermissionRoute><EditMeeting /></PermissionRoute>} />
           </Route>
 
           {/* User Management Routes */}

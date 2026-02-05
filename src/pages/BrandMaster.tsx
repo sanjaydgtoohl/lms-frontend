@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import CreateBrandForm from './CreateBrandForm';
 import MasterView from '../components/ui/MasterView';
 import Pagination from '../components/ui/Pagination';
@@ -10,9 +10,9 @@ import SearchBar from '../components/ui/SearchBar';
 import { matchesQuery } from '../utils/index.tsx';
 import { NotificationPopup } from '../components/ui';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
+import AgenciesModal from '../components/ui/AgenciesModal';
 import { deleteBrand } from '../services/BrandMaster';
 import { listBrands, getBrand, type BrandItem as ServiceBrandItem } from '../services/BrandMaster';
-import { createPortal } from 'react-dom';
 import { usePermissions } from '../context/SidebarMenuContext';
 
 type Brand = ServiceBrandItem;
@@ -81,10 +81,8 @@ const BrandMaster: React.FC = () => {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmDeleteLabel, setConfirmDeleteLabel] = useState<string>('');
   const [confirmLoading, setConfirmLoading] = useState(false);
-  const [showAgenciesPopup, setShowAgenciesPopup] = useState(false);
-  const [popupAgencies, setPopupAgencies] = useState<any[]>([]);
-  const [popupPosition, setPopupPosition] = useState<{right: number, top?: number, bottom?: number} | null>(null);
-  const popupTriggerRef = useRef<HTMLElement | null>(null);
+  const [showAgenciesModal, setShowAgenciesModal] = useState(false);
+  const [modalAgencies, setModalAgencies] = useState<any[]>([]);
 
   const handleDelete = (id: string) => {
     const found = brands.find(b => b.id === id);
@@ -187,27 +185,6 @@ const BrandMaster: React.FC = () => {
     return () => { cancelled = true; };
   }, [currentPage, itemsPerPage, searchQuery]);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        popupTriggerRef.current &&
-        !popupTriggerRef.current.contains(event.target as Node)
-      ) {
-        setShowAgenciesPopup(false);
-        setPopupPosition(null);
-        popupTriggerRef.current = null;
-      }
-    };
-
-    if (showAgenciesPopup) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showAgenciesPopup]);
-
   const handlePageChange = (page: number) => setCurrentPage(page);
 
   return (
@@ -231,24 +208,12 @@ const BrandMaster: React.FC = () => {
         onConfirm={confirmDelete}
       />
 
-      {showAgenciesPopup && popupPosition && createPortal(
-        <div 
-          className="fixed bg-white border border-gray-200 rounded shadow-lg z-50 p-2 max-w-xs"
-          style={{ 
-            right: popupPosition.right, 
-            top: popupPosition.top, 
-            bottom: popupPosition.bottom 
-          }}
-        >
-          <h4 className="text-sm font-semibold mb-1">Agencies</h4>
-          <ul className="text-xs list-disc pl-4 max-h-32 overflow-y-auto">
-            {popupAgencies.map((agency, idx) => (
-              <li key={idx}>{agency.name || 'Unknown'}</li>
-            ))}
-          </ul>
-        </div>,
-        document.body
-      )}
+      <AgenciesModal
+        isOpen={showAgenciesModal}
+        agencies={modalAgencies}
+        onClose={() => setShowAgenciesModal(false)}
+        title="Agencies"
+      />
       {showCreate ? (
         <CreateBrandForm inline onClose={() => navigate(ROUTES.BRAND_MASTER)} />
       ) : viewItem ? (
@@ -304,40 +269,18 @@ const BrandMaster: React.FC = () => {
                       return name;
                     } else {
                       return (
-                        <>
-                          <span
-                            className="inline-flex items-center gap-2 cursor-pointer"
-                            onClick={(e) => {
-                              const target = e.currentTarget as HTMLElement;
-                              popupTriggerRef.current = target;
-                              const rect = target.getBoundingClientRect();
-                              const viewportHeight = window.innerHeight;
-                              const spaceBelow = viewportHeight - rect.bottom;
-                              const spaceAbove = rect.top;
-                              const estimatedMenuHeight = 120; // estimate for agencies list
-                              const requiredSpace = estimatedMenuHeight + 10;
-
-                              const shouldShowAbove = spaceBelow < requiredSpace && spaceAbove >= requiredSpace;
-                              const right = Math.round(window.innerWidth - rect.right);
-
-                              if (shouldShowAbove) {
-                                const bottom = Math.round(window.innerHeight - rect.top);
-                                setPopupPosition({ right, bottom });
-                              } else {
-                                const top = Math.round(rect.bottom);
-                                setPopupPosition({ right, top });
-                              }
-
-                              setPopupAgencies(agencies);
-                              setShowAgenciesPopup(true);
-                            }}
-                          >
-                            {name}
-                            <span className="bg-blue-500 text-white px-1 py-0.5 rounded text-xs">
-                              +{agencies.length - 1}
-                            </span>
+                        <span
+                          className="inline-flex items-center gap-2 cursor-pointer text-black"
+                          onClick={() => {
+                            setModalAgencies(agencies);
+                            setShowAgenciesModal(true);
+                          }}
+                        >
+                          {name}
+                          <span className="bg-blue-500 text-white px-1 py-0.5 rounded text-xs">
+                            +{agencies.length - 1}
                           </span>
-                        </>
+                        </span>
                       );
                     }
                   }

@@ -287,7 +287,7 @@ const IndustryMaster: React.FC = () => {
               desktopOnMobile={true}
               keyExtractor={(it: any, idx: number) => `${it.id}-${idx}`}
               columns={([
-                { key: 'sr', header: 'Id', render: (it: any) => `#${it.id}` },
+                { key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },
                 { key: 'name', header: 'Industry Name', render: (it: any) => it.name || '-' },
                 { key: 'dateTime', header: 'Date & Time', render: (it: any) => {
                     if (!it.dateTime) return '-';
