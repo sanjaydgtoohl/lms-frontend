@@ -1,9 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import EyeIcon from '../../assets/icons/EyeIcon';
-
-
-
+import {
+  getLatestTwoBriefs,
+  getRecentActivities,
+  getLatestTwoLeads,
+  getLatestFollowUpTwoLeads,
+  getLatestMeetingScheduledTwoLeads,
+  getRecentBriefs,
+  getBusinessForecast,
+  getPriorities,
+  getLeadCountByPriority,
+  getBriefCountByPriority,
+} from '../../services/SalesDashboard';
 
 // New Leads will be fetched from API
 
@@ -18,32 +27,28 @@ const SalesDashboard: React.FC = () => {
   const [selectedPriorityLeadId, setSelectedPriorityLeadId] = useState<number | null>(null);
   const [leadCount, setLeadCount] = useState<{ total_leads: number; priority_lead_count: number } | null>(null);
   useEffect(() => {
-    import('../../services/SalesDashboard').then(({ fetchLatestTwoBriefs, fetchRecentActivities, fetchLatestTwoLeads, fetchLatestFollowUpTwoLeads, fetchLatestMeetingScheduledTwoLeads }) => {
-      fetchLatestTwoBriefs()
-        .then(setBriefs)
-        .catch(() => setBriefs([]));
-      fetchRecentActivities()
-        .then(setActivities)
-        .catch(() => setActivities([]));
-      fetchLatestTwoLeads()
-        .then(setLeads)
-        .catch(() => setLeads([]));
-      fetchLatestFollowUpTwoLeads()
-        .then(setFollowUpLeads)
-        .catch(() => setFollowUpLeads([]));
-      fetchLatestMeetingScheduledTwoLeads()
-        .then(setMeetingLeads)
-        .catch(() => setMeetingLeads([]));
-    });
+    getLatestTwoBriefs()
+      .then(setBriefs)
+      .catch(() => setBriefs([]));
+    getRecentActivities()
+      .then(setActivities)
+      .catch(() => setActivities([]));
+    getLatestTwoLeads()
+      .then(setLeads)
+      .catch(() => setLeads([]));
+    getLatestFollowUpTwoLeads()
+      .then(setFollowUpLeads)
+      .catch(() => setFollowUpLeads([]));
+    getLatestMeetingScheduledTwoLeads()
+      .then(setMeetingLeads)
+      .catch(() => setMeetingLeads([]));
   }, []);
 
   // Fetch only for Recent Brief section
   useEffect(() => {
-    import('../../services/SalesDashboard').then(({ fetchRecentBriefs }) => {
-      fetchRecentBriefs()
-        .then(setRecentBriefs)
-        .catch(() => setRecentBriefs([]));
-    });
+    getRecentBriefs()
+      .then(setRecentBriefs)
+      .catch(() => setRecentBriefs([]));
   }, []);
 
   const [activeTab, setActiveTab] = useState<'new'|'brief'|'follow'|'meeting'>('new');
@@ -54,50 +59,45 @@ const SalesDashboard: React.FC = () => {
   const [isPriorityDropdownOpenLead, setIsPriorityDropdownOpenLead] = useState(false);
   const [isPriorityDropdownOpenBrief, setIsPriorityDropdownOpenBrief] = useState(false);
   const [businessForecast, setBusinessForecast] = useState<{ total_budget: number; total_brief_count: number; business_weightage: number } | null>(null);
-    useEffect(() => {
-      import('../../services/SalesDashboard').then(({ fetchBusinessForecast }) => {
-        fetchBusinessForecast()
-          .then(setBusinessForecast)
-          .catch(() => setBusinessForecast(null));
-      });
-    }, []);
+  
+  useEffect(() => {
+    getBusinessForecast()
+      .then(setBusinessForecast)
+      .catch(() => setBusinessForecast(null));
+  }, []);
+  
   const [priorities, setPriorities] = useState<{ id: number; name: string; slug: string }[]>([]);
 
   const leadDropdownRef = useRef<HTMLDivElement | null>(null);
   const briefDropdownRef = useRef<HTMLDivElement | null>(null);
+  
   useEffect(() => {
-    import('../../services/SalesDashboard').then(({ fetchPriorities }) => {
-      fetchPriorities()
-        .then(data => {
-          setPriorities(data);
-          if (data.length > 0) {
-            setSelectedPriorityLead(data[0].name);
-            setSelectedPriorityLeadId(data[0].id);
-            setSelectedPriorityBrief(data[0].name);
-            setSelectedPriorityBriefId(data[0].id);
-          }
-        })
-        .catch(() => setPriorities([]));
-    });
+    getPriorities()
+      .then(data => {
+        setPriorities(data);
+        if (data.length > 0) {
+          setSelectedPriorityLead(data[0].name);
+          setSelectedPriorityLeadId(data[0].id);
+          setSelectedPriorityBrief(data[0].name);
+          setSelectedPriorityBriefId(data[0].id);
+        }
+      })
+      .catch(() => setPriorities([]));
   }, []);
 
   useEffect(() => {
     if (selectedPriorityBriefId != null) {
-      import('../../services/SalesDashboard').then(({ fetchBriefCountByPriority }) => {
-        fetchBriefCountByPriority(selectedPriorityBriefId)
-          .then(data => setBriefCount({ total_briefs: data.total_briefs, priority_brief_count: data.priority_brief_count }))
-          .catch(() => setBriefCount(null));
-      });
+      getBriefCountByPriority(selectedPriorityBriefId)
+        .then(data => setBriefCount({ total_briefs: data.total_briefs, priority_brief_count: data.priority_brief_count }))
+        .catch(() => setBriefCount(null));
     }
   }, [selectedPriorityBriefId]);
 
   useEffect(() => {
     if (selectedPriorityLeadId != null) {
-      import('../../services/SalesDashboard').then(({ fetchLeadCountByPriority }) => {
-        fetchLeadCountByPriority(selectedPriorityLeadId)
-          .then(data => setLeadCount({ total_leads: data.total_leads, priority_lead_count: data.priority_lead_count }))
-          .catch(() => setLeadCount(null));
-      });
+      getLeadCountByPriority(selectedPriorityLeadId)
+        .then(data => setLeadCount({ total_leads: data.total_leads, priority_lead_count: data.priority_lead_count }))
+        .catch(() => setLeadCount(null));
     }
   }, [selectedPriorityLeadId]);
 

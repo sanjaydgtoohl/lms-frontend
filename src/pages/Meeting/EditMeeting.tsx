@@ -157,8 +157,9 @@ const EditMeeting: React.FC = () => {
         type: meetingType,
         location,
         agenda,
-        meeting_start_date: startDateTime,
-        meeting_end_date: endDateTime,
+        // API expects meetin_start_date and meetin_end_date (note the typo in field names)
+        meetin_start_date: startDateTime,
+        meetin_end_date: endDateTime,
         status: 1,
       };
       if (!id) return;

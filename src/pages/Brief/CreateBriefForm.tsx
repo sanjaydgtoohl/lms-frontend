@@ -7,7 +7,7 @@ import { listAgencies } from '../../services/AgencyMaster';
 import { listUsers } from '../../services/AllUsers';
 import { listLeads } from '../../services/AllLeads';
 import { fetchBriefStatuses } from '../../services/BriefStatus';
-import { fetchPriorities } from '../../services/Priority';
+import { getPriorities } from '../../services/Priority';
 import { motion } from 'framer-motion';
 import { MasterFormHeader, NotificationPopup, SelectField } from '../../components/ui';
 import { apiClient } from '../../utils/apiClient';
@@ -529,13 +529,13 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
     (async () => {
       try {
         setPriorityLoading(true);
-        const res = await fetchPriorities();
+        const res = await getPriorities();
         if (!mounted) return;
         
         // Map priorities to SelectField options
         let opts: Array<{ value: string; label: string }> = [];
-        if (res.data && Array.isArray(res.data)) {
-          opts = res.data.map((p: any) => {
+        if (Array.isArray(res)) {
+          opts = res.map((p: any) => {
             const id = String(p.id ?? p.priority_id ?? '');
             const name = String(p.name ?? p.priority ?? p.label ?? '');
             return { value: id, label: name };
@@ -566,9 +566,9 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
           }
         }
         
-        if (res.error) {
-          console.error('Error loading priorities:', res.error);
-          setPriorityError(res.error);
+        if (false) {
+          console.error('Error loading priorities:');
+          setPriorityError('Error loading priorities');
         }
       } catch (err: any) {
         console.error('Failed to load priorities', err);

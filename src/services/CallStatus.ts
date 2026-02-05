@@ -1,31 +1,42 @@
-// Update call status for a lead
-export const updateCallStatus = async (leadId: string | number, callStatusId: string | number) => {
+import { apiClient } from '../utils/apiClient';
+import { handleApiError } from '../utils/apiErrorHandler';
+
+// --- Call Status Type ---
+export type CallStatus = {
+  id: number;
+  name: string;
+};
+
+// --- Fetch call statuses for dropdown ---
+export async function getCallStatuses(): Promise<CallStatus[]> {
   try {
-    // API expects POST with _method=Put and call_status_id
-    const response = await http.post(
-      `${API_BASE_URL}/leads/${leadId}/call-status`,
-      {
-        call_status_id: callStatusId,
-        _method: 'Put',
-      }
-    );
-    return response.data;
-  } catch (error: any) {
+    const res = await apiClient.get<CallStatus[]>('/call-statuses');
+    if (!res || !res.success) {
+      throw new Error(res?.message || 'Failed to fetch call statuses');
+    }
+    return res.data;
+  } catch (error) {
+    handleApiError(error);
     throw error;
   }
-};
-import http from './http';
-import { API_BASE_URL } from '../constants';
+}
 
-// Fetch call statuses for dropdown
-export const fetchCallStatuses = async () => {
+// --- Update call status for a lead ---
+export async function updateCallStatus(
+  leadId: string | number,
+  callStatusId: string | number
+): Promise<void> {
   try {
-    const response = await http.get(`${API_BASE_URL}/call-statuses`);
-    if (response.data && response.data.success) {
-      return { data: response.data.data, error: null };
+    // API expects POST with _method=Put and call_status_id
+    const res = await apiClient.post(`/leads/${leadId}/call-status`, {
+      call_status_id: callStatusId,
+      _method: 'Put',
+    });
+    if (!res || !res.success) {
+      throw new Error(res?.message || 'Failed to update call status');
     }
-    return { data: [], error: response.data?.message || 'Unknown error' };
-  } catch (error: any) {
-    return { data: [], error: error?.response?.data?.message || error.message || 'Network error' };
+  } catch (error) {
+    handleApiError(error);
+    throw error;
   }
-};
+}

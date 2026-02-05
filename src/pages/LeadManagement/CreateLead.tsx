@@ -5,7 +5,7 @@ import AssignPriorityCard from '../../components/forms/CreateLead/AssignPriority
 import CommentSection from '../../components/forms/CreateLead/CommentSection';
 import { MasterFormHeader, Button } from '../../components/ui';
 import { useNavigate } from 'react-router-dom';
-import { fetchBrands, fetchAgencies, createLead } from '../../services/CreateLead';
+import { getBrands, getAgencies, createLead } from '../../services/CreateLead';
 import { showSuccess } from '../../utils/notifications';
 
 
@@ -63,18 +63,20 @@ const CreateLead: React.FC = () => {
     setOptions([]);
     setDropdownValue('');
     const fetchData = async () => {
-      const fetchFn = selectedOption === 'brand' ? fetchBrands : fetchAgencies;
-      const { data, error } = await fetchFn();
-      if (!isMounted) return;
-      if (error) {
-        setError(error);
-        setOptions([]);
-      } else {
+      try {
+        const fetchFn = selectedOption === 'brand' ? getBrands : getAgencies;
+        const data = await fetchFn();
+        if (!isMounted) return;
         setOptions(
           Array.isArray(data)
             ? data.map((item: any) => ({ value: String(item.id), label: item.name }))
             : []
         );
+      } catch (err: any) {
+        if (isMounted) {
+          setError(err?.message || 'Failed to load options');
+          setOptions([]);
+        }
       }
       setLoading(false);
     };

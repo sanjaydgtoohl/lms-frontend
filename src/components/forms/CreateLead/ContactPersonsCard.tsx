@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { fetchDesignations, fetchDepartments, fetchZones, fetchCities, fetchStates, fetchCountries } from '../../../services/CreateLead';
+import { getDesignations, getDepartments, getZones, getCities, getStates, getCountries } from '../../../services/CreateLead';
 import { fetchLeadSubSources } from '../../../services/ContactPersonsCard';
 import { Trash2, X as XIcon, Plus } from 'lucide-react';
 import SelectField from '../../ui/SelectField';
@@ -102,19 +102,25 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
     let isMounted = true;
     setDesignationLoading(true);
     setDesignationError(null);
-    fetchDesignations().then(({ data, error }) => {
+    getDesignations().then((data: any) => {
       if (!isMounted) return;
-      if (error) {
-        setDesignationError(error);
-        setDesignationOptions([]);
-      } else {
+      try {
         setDesignationOptions(
           Array.isArray(data)
             ? data.map((item: any) => ({ value: String(item.id), label: item.name }))
             : []
         );
+      } catch (error: any) {
+        setDesignationError(error?.message || 'Failed to load designations');
+        setDesignationOptions([]);
       }
       setDesignationLoading(false);
+    }).catch((error: any) => {
+      if (isMounted) {
+        setDesignationError(error?.message || 'Failed to load designations');
+        setDesignationOptions([]);
+        setDesignationLoading(false);
+      }
     });
     return () => { isMounted = false; };
   }, []);
@@ -123,19 +129,25 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
     let isMounted = true;
     setDepartmentLoading(true);
     setDepartmentError(null);
-    fetchDepartments().then(({ data, error }) => {
+    getDepartments().then((data: any) => {
       if (!isMounted) return;
-      if (error) {
-        setDepartmentError(error);
-        setDepartmentOptions([]);
-      } else {
+      try {
         setDepartmentOptions(
           Array.isArray(data)
             ? data.map((item: any) => ({ value: String(item.id), label: item.name }))
             : []
         );
+      } catch (error: any) {
+        setDepartmentError(error?.message || 'Failed to load departments');
+        setDepartmentOptions([]);
       }
       setDepartmentLoading(false);
+    }).catch((error: any) => {
+      if (isMounted) {
+        setDepartmentError(error?.message || 'Failed to load departments');
+        setDepartmentOptions([]);
+        setDepartmentLoading(false);
+      }
     });
     return () => { isMounted = false; };
   }, []);
@@ -144,19 +156,25 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
     let isMounted = true;
     setZoneLoading(true);
     setZoneError(null);
-    fetchZones().then(({ data, error }) => {
+    getZones().then((data: any) => {
       if (!isMounted) return;
-      if (error) {
-        setZoneError(error);
-        setZoneOptions([]);
-      } else {
+      try {
         setZoneOptions(
           Array.isArray(data)
             ? data.map((item: any) => ({ value: String(item.id), label: item.name }))
             : []
         );
+      } catch (error: any) {
+        setZoneError(error?.message || 'Failed to load zones');
+        setZoneOptions([]);
       }
       setZoneLoading(false);
+    }).catch((error: any) => {
+      if (isMounted) {
+        setZoneError(error?.message || 'Failed to load zones');
+        setZoneOptions([]);
+        setZoneLoading(false);
+      }
     });
     return () => { isMounted = false; };
   }, []);
@@ -204,19 +222,25 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
     let isMounted = true;
     setCountryLoading(true);
     setCountryError(null);
-    fetchCountries().then(({ data, error }) => {
+    getCountries().then((data: any) => {
       if (!isMounted) return;
-      if (error) {
-        setCountryError(error);
-        setCountryOptions([]);
-      } else {
+      try {
         setCountryOptions(
           Array.isArray(data)
             ? data.map((item: any) => ({ value: String(item.id), label: item.name }))
             : []
         );
+      } catch (error: any) {
+        setCountryError(error?.message || 'Failed to load countries');
+        setCountryOptions([]);
       }
       setCountryLoading(false);
+    }).catch((error: any) => {
+      if (isMounted) {
+        setCountryError(error?.message || 'Failed to load countries');
+        setCountryOptions([]);
+        setCountryLoading(false);
+      }
     });
     return () => { isMounted = false; };
   }, []);
@@ -236,19 +260,25 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
     
     setStateLoading(true);
     setStateError(null);
-    fetchStates({ country_id: selectedCountry }).then(({ data, error }) => {
+    getStates({ country_id: selectedCountry }).then((data: any) => {
       if (!isMounted) return;
-      if (error) {
-        setStateError(error);
-        setStateOptions([]);
-      } else {
+      try {
         setStateOptions(
           Array.isArray(data)
             ? data.map((item: any) => ({ value: String(item.id), label: item.name }))
             : []
         );
+      } catch (error: any) {
+        setStateError(error?.message || 'Failed to load states');
+        setStateOptions([]);
       }
       setStateLoading(false);
+    }).catch((error: any) => {
+      if (isMounted) {
+        setStateError(error?.message || 'Failed to load states');
+        setStateOptions([]);
+        setStateLoading(false);
+      }
     });
     return () => { isMounted = false; };
   }, [contacts]);
@@ -303,7 +333,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
           });
 
           // Fetch states for this country and try to map by name
-          const { data: statesData } = await fetchStates({ country_id: countryOpt.value });
+          const statesData = await getStates({ country_id: countryOpt.value });
           if (Array.isArray(statesData)) {
             const matchedState = statesData.find((s: any) => String(s.name).toLowerCase() === String(stateName).toLowerCase());
             if (matchedState) {
@@ -315,7 +345,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
               });
 
               // Fetch cities for matched state and try to map by name
-              const { data: citiesData } = await fetchCities({ state_id: stateId });
+              const citiesData = await getCities({ state_id: stateId });
               if (Array.isArray(citiesData)) {
                 const matchedCity = citiesData.find((ct: any) => {
                   const nm = String(ct.name || '').toLowerCase();
@@ -357,19 +387,25 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
     
     setCityLoading(true);
     setCityError(null);
-    fetchCities({ state_id: selectedState }).then(({ data, error }) => {
+    getCities({ state_id: selectedState }).then((data: any) => {
       if (!isMounted) return;
-      if (error) {
-        setCityError(error);
-        setCityOptions([]);
-      } else {
+      try {
         setCityOptions(
           Array.isArray(data)
             ? data.map((item: any) => ({ value: String(item.id), label: item.name }))
             : []
         );
+      } catch (error: any) {
+        setCityError(error?.message || 'Failed to load cities');
+        setCityOptions([]);
       }
       setCityLoading(false);
+    }).catch((error: any) => {
+      if (isMounted) {
+        setCityError(error?.message || 'Failed to load cities');
+        setCityOptions([]);
+        setCityLoading(false);
+      }
     });
     return () => { isMounted = false; };
   }, [contacts]);

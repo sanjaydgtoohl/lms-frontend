@@ -77,11 +77,12 @@ export const fetchMeetingById = async (id: string): Promise<MeetingFormData> => 
           status: rawMeetingData.status || '1',
           created_at: rawMeetingData.created_at || '',
           updated_at: rawMeetingData.updated_at || '',
-          // Handle both API field name variations
-          meeting_start_date: rawMeetingData.meetin_start_date || rawMeetingData.meeting_start_date || '',
-          meeting_end_date: rawMeetingData.meetin_end_date || rawMeetingData.meeting_end_date || '',
+          // API returns meetin_start_date and meetin_end_date (note the typo in API field names)
           meetin_start_date: rawMeetingData.meetin_start_date || '',
           meetin_end_date: rawMeetingData.meetin_end_date || '',
+          // Also expose normalized versions for component compatibility
+          meeting_start_date: rawMeetingData.meetin_start_date || rawMeetingData.meeting_start_date || '',
+          meeting_end_date: rawMeetingData.meetin_end_date || rawMeetingData.meeting_end_date || '',
           lead_id: String(rawMeetingData.lead?.id || rawMeetingData.lead_id || ''),
           attendees_id: Array.isArray(rawMeetingData.attendees_id) 
             ? rawMeetingData.attendees_id 

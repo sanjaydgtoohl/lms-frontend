@@ -1,123 +1,158 @@
 import { listUsers } from './AllUsers';
-// Fetch users for Assign To dropdown
-export const fetchUsers = async () => {
-  try {
-    const { data } = await listUsers(1, 100);
-    return { data, error: null };
-  } catch (error: any) {
-    return { data: [], error: error?.message || 'Network error' };
-  }
-};
 import { listCountries } from './CreateBrandForm';
 import { listStates } from './CreateBrandForm';
 import { listCities } from './CreateBrandForm';
 import { listZones } from './CreateBrandForm';
 import { listDepartments } from './DepartmentMaster';
 import { listDesignations } from './DesignationMaster';
+import { apiClient } from '../utils/apiClient';
+import { handleApiError } from '../utils/apiErrorHandler';
 
-import http from './http';
-import { API_BASE_URL } from '../constants';
+// --- Types ---
+export type Brand = {
+  id: number;
+  name: string;
+};
 
-export const fetchBrands = async () => {
+export type Agency = {
+  id: number;
+  name: string;
+};
+
+export type User = {
+  id: string | number;
+  name: string;
+  email?: string;
+};
+
+export type CreateLeadPayload = {
+  name: string;
+  email: string;
+  mobile_number?: string;
+  type?: string;
+  brand_id?: number;
+  agency_id?: number;
+  [key: string]: any;
+};
+
+export type CreateLeadResponse = {
+  id: number;
+  name: string;
+  email: string;
+  [key: string]: any;
+};
+
+// --- Fetch users for Assign To dropdown ---
+export async function getUsers(): Promise<User[]> {
   try {
-    // Use the shared http instance and dynamic base URL
-    const response = await http.get(`${API_BASE_URL}/brands`);
-    if (response.data && response.data.success) {
-      return { data: response.data.data, error: null };
+    const { data } = await listUsers(1, 100);
+    return data || [];
+  } catch (error) {
+    handleApiError(error);
+    throw error;
+  }
+}
+
+// --- Fetch brands for dropdown ---
+export async function getBrands(): Promise<Brand[]> {
+  try {
+    const res = await apiClient.get<Brand[]>('/brands');
+    if (!res || !res.success) {
+      throw new Error(res?.message || 'Failed to fetch brands');
     }
-    return { data: [], error: response.data?.message || 'Unknown error' };
-  } catch (error: any) {
-    return { data: [], error: error?.response?.data?.message || error.message || 'Network error' };
+    return res.data;
+  } catch (error) {
+    handleApiError(error);
+    throw error;
   }
-};
+}
 
-export const fetchAgencies = async () => {
+// --- Fetch agencies for dropdown ---
+export async function getAgencies(): Promise<Agency[]> {
   try {
-    const response = await http.get(`${API_BASE_URL}/agencies`);
-    if (response.data && response.data.success) {
-      return { data: response.data.data, error: null };
+    const res = await apiClient.get<Agency[]>('/agencies');
+    if (!res || !res.success) {
+      throw new Error(res?.message || 'Failed to fetch agencies');
     }
-    return { data: [], error: response.data?.message || 'Unknown error' };
-  } catch (error: any) {
-    return { data: [], error: error?.response?.data?.message || error.message || 'Network error' };
+    return res.data;
+  } catch (error) {
+    handleApiError(error);
+    throw error;
   }
-};
+}
 
-// Fetch designations for dropdown
-export const fetchDesignations = async () => {
+// --- Fetch designations for dropdown ---
+export async function getDesignations() {
   try {
-    const { data } = await listDesignations(1, 100); // fetch up to 100 designations
-    return { data, error: null };
-  } catch (error: any) {
-    return { data: [], error: error?.message || 'Network error' };
+    const { data } = await listDesignations(1, 100);
+    return data || [];
+  } catch (error) {
+    handleApiError(error);
+    throw error;
   }
-};
+}
 
-// Fetch departments for dropdown
-export const fetchDepartments = async () => {
+// --- Fetch departments for dropdown ---
+export async function getDepartments() {
   try {
-    const { data } = await listDepartments(1, 100); // fetch up to 100 departments
-    return { data, error: null };
-  } catch (error: any) {
-    return { data: [], error: error?.message || 'Network error' };
+    const { data } = await listDepartments(1, 100);
+    return data || [];
+  } catch (error) {
+    handleApiError(error);
+    throw error;
   }
-};
+}
 
-// Fetch zones for dropdown
-export const fetchZones = async () => {
+// --- Fetch zones for dropdown ---
+export async function getZones() {
   try {
-    const data = await listZones();
-    return { data, error: null };
-  } catch (error: any) {
-    return { data: [], error: error?.message || 'Network error' };
+    return await listZones();
+  } catch (error) {
+    handleApiError(error);
+    throw error;
   }
-};
+}
 
-// Fetch cities for dropdown
-export const fetchCities = async (params?: { state_id?: string | number; country_id?: string | number }) => {
+// --- Fetch cities for dropdown ---
+export async function getCities(params?: { state_id?: string | number; country_id?: string | number }) {
   try {
-    const data = await listCities(params);
-    return { data, error: null };
-  } catch (error: any) {
-    return { data: [], error: error?.message || 'Network error' };
+    return await listCities(params);
+  } catch (error) {
+    handleApiError(error);
+    throw error;
   }
-};
+}
 
-// Fetch states for dropdown
-export const fetchStates = async (params?: { country_id?: string | number }) => {
+// --- Fetch states for dropdown ---
+export async function getStates(params?: { country_id?: string | number }) {
   try {
-    const data = await listStates(params);
-    return { data, error: null };
-  } catch (error: any) {
-    return { data: [], error: error?.message || 'Network error' };
+    return await listStates(params);
+  } catch (error) {
+    handleApiError(error);
+    throw error;
   }
-};
+}
 
-// Fetch countries for dropdown
-export const fetchCountries = async () => {
+// --- Fetch countries for dropdown ---
+export async function getCountries() {
   try {
-    const data = await listCountries();
-    return { data, error: null };
-  } catch (error: any) {
-    return { data: [], error: error?.message || 'Network error' };
+    return await listCountries();
+  } catch (error) {
+    handleApiError(error);
+    throw error;
   }
-};
+}
 
-// Create lead API
-export const createLead = async (payload: any) => {
+// --- Create lead API ---
+export async function createLead(payload: CreateLeadPayload): Promise<CreateLeadResponse> {
   try {
-    const response = await http.post(`${API_BASE_URL}/leads`, payload);
-    if (response.data && response.data.success) {
-      return { data: response.data.data, error: null, errors: null };
+    const res = await apiClient.post<CreateLeadResponse>('/leads', payload);
+    if (!res || !res.success) {
+      throw new Error(res?.message || 'Failed to create lead');
     }
-    // If backend returns validation errors, include them in the result
-    return { data: null, error: response.data?.message || 'Unknown error', errors: response.data?.errors || null };
-  } catch (error: any) {
-    const respErr = error?.response?.data;
-    return {
-      data: null,
-      error: respErr?.message || error.message || 'Network error',
-      errors: respErr?.errors || null,
-    };
+    return res.data;
+  } catch (error) {
+    handleApiError(error);
+    throw error;
   }
-};
+}
