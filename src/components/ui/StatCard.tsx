@@ -13,9 +13,10 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, trendVal
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 p-5">
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{title}</p>
+          {/* Avoid <div> inside <p> for hydration safety */}
+          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{title}</div>
           <div className="flex items-baseline gap-2 mt-2">
-            <p className="text-3xl font-bold text-gray-900">{value}</p>
+            <span className="text-3xl font-bold text-gray-900">{value}</span>
             {trendValue && (
               <span className={`text-xs font-semibold ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
                 {trend === 'up' ? '↑' : '↓'} {trendValue}

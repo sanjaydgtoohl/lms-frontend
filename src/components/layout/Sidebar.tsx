@@ -114,6 +114,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
     if (pathname.match(/^\/brief\/plan-history\//)) {
       return "/brief/log";
     }
+    // Handle /brief/plan-submission/:id to highlight Brief Log
+    if (pathname.match(/^\/brief\/plan-submission\//)) {
+      return "/brief/log";
+    }
     // Handle /brief/:id to highlight Brief Pipeline
     if (pathname.match(/^\/brief\/(?!create|log|Brief_Pipeline|plan-history|plan-submission|edit-submitted-plan)[^\/]+$/)) {
       return "/brief/Brief_Pipeline";

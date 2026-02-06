@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import SelectField from '../../ui/SelectField';
-import { fetchUsers } from '../../../services/CreateLead';
-import { fetchPriorities, fetchPrioritiesByCallStatus } from '../../../services/Priority';
+import { getUsers } from '../../../services/CreateLead';
+import { getPriorities, getPrioritiesByCallStatus } from '../../../services/Priority';
 
-import { fetchCallStatuses } from '../../../services/CallStatus';
+import { getCallStatuses } from '../../../services/CallStatus';
 
 interface AssignPriorityCardProps {
   assignTo?: string;
@@ -38,20 +38,22 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
     let isMounted = true;
     setCallStatusLoading(true);
     setCallStatusError(null);
-    fetchCallStatuses().then(({ data, error }) => {
-      if (!isMounted) return;
-      if (error) {
-        setCallStatusError(error);
-        setCallStatusOptions([]);
-      } else {
+    getCallStatuses()
+      .then((data: any) => {
+        if (!isMounted) return;
         setCallStatusOptions(
           Array.isArray(data)
             ? data.map((item: any) => ({ value: String(item.id), label: item.name }))
             : []
         );
-      }
-      setCallStatusLoading(false);
-    });
+        setCallStatusLoading(false);
+      })
+      .catch((error: any) => {
+        if (!isMounted) return;
+        setCallStatusError(error?.message || 'Failed to load call statuses');
+        setCallStatusOptions([]);
+        setCallStatusLoading(false);
+      });
     return () => { isMounted = false; };
   }, []);
 
@@ -59,12 +61,9 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
     let isMounted = true;
     setUserLoading(true);
     setUserError(null);
-    fetchUsers().then(({ data, error }) => {
-      if (!isMounted) return;
-      if (error) {
-        setUserError(error);
-        setUserOptions([]);
-      } else {
+    getUsers()
+      .then((data: any) => {
+        if (!isMounted) return;
         const fetched = Array.isArray(data)
           ? data.map((item: any) => ({ value: String(item.id), label: item.name }))
           : [];
@@ -76,9 +75,14 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
           }
         }
         setUserOptions(fetched);
-      }
-      setUserLoading(false);
-    });
+        setUserLoading(false);
+      })
+      .catch((error: any) => {
+        if (!isMounted) return;
+        setUserError(error?.message || 'Failed to load users');
+        setUserOptions([]);
+        setUserLoading(false);
+      });
     return () => { isMounted = false; };
   }, [assignTo, assignedLabel]);
 
@@ -86,13 +90,10 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
     let isMounted = true;
     setPriorityLoading(true);
     setPriorityError(null);
-    const fetchFn = callFeedback ? fetchPrioritiesByCallStatus(callFeedback) : fetchPriorities();
-    fetchFn.then(({ data, error }) => {
-      if (!isMounted) return;
-      if (error) {
-        setPriorityError(error);
-        setPriorityOptions([]);
-      } else {
+    const fetchFn = callFeedback ? getPrioritiesByCallStatus(callFeedback) : getPriorities();
+    fetchFn
+      .then((data: any) => {
+        if (!isMounted) return;
         const fetched = Array.isArray(data)
           ? data.map((item: any) => ({ value: String(item.id), label: item.name }))
           : [];
@@ -108,9 +109,14 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
         if (fetched.length === 1 && !priority) {
           onChange?.({ assignTo, priority: fetched[0].value, callFeedback });
         }
-      }
-      setPriorityLoading(false);
-    });
+        setPriorityLoading(false);
+      })
+      .catch((error: any) => {
+        if (!isMounted) return;
+        setPriorityError(error?.message || 'Failed to load priorities');
+        setPriorityOptions([]);
+        setPriorityLoading(false);
+      });
     return () => { isMounted = false; };
   }, [callFeedback]);
 

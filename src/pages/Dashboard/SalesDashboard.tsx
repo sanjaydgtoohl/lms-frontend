@@ -1,9 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import EyeIcon from '../../assets/icons/EyeIcon';
-
-
-
+import {
+  getLatestTwoBriefs,
+  getRecentActivities,
+  getLatestTwoLeads,
+  getLatestFollowUpTwoLeads,
+  getLatestMeetingScheduledTwoLeads,
+  getRecentBriefs,
+  getBusinessForecast,
+  getPriorities,
+  getLeadCountByPriority,
+  getBriefCountByPriority,
+} from '../../services/SalesDashboard';
 
 // New Leads will be fetched from API
 
@@ -11,29 +20,35 @@ const SalesDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [leads, setLeads] = useState<any[]>([]);
   const [activities, setActivities] = useState<any[]>([]);
-  const [briefs, setBriefs] = useState<any[]>([]);
+  const [briefs, setBriefs] = useState<any[]>([]); // For Brief tab
+  const [recentBriefs, setRecentBriefs] = useState<any[]>([]); // For Recent Brief section
   const [followUpLeads, setFollowUpLeads] = useState<any[]>([]);
   const [meetingLeads, setMeetingLeads] = useState<any[]>([]);
   const [selectedPriorityLeadId, setSelectedPriorityLeadId] = useState<number | null>(null);
   const [leadCount, setLeadCount] = useState<{ total_leads: number; priority_lead_count: number } | null>(null);
   useEffect(() => {
-    import('../../services/SalesDashboard').then(({ fetchLatestTwoBriefs, fetchRecentActivities, fetchLatestTwoLeads, fetchLatestFollowUpTwoLeads, fetchLatestMeetingScheduledTwoLeads }) => {
-      fetchLatestTwoBriefs()
-        .then(setBriefs)
-        .catch(() => setBriefs([]));
-      fetchRecentActivities()
-        .then(setActivities)
-        .catch(() => setActivities([]));
-      fetchLatestTwoLeads()
-        .then(setLeads)
-        .catch(() => setLeads([]));
-      fetchLatestFollowUpTwoLeads()
-        .then(setFollowUpLeads)
-        .catch(() => setFollowUpLeads([]));
-      fetchLatestMeetingScheduledTwoLeads()
-        .then(setMeetingLeads)
-        .catch(() => setMeetingLeads([]));
-    });
+    getLatestTwoBriefs()
+      .then(setBriefs)
+      .catch(() => setBriefs([]));
+    getRecentActivities()
+      .then(setActivities)
+      .catch(() => setActivities([]));
+    getLatestTwoLeads()
+      .then(setLeads)
+      .catch(() => setLeads([]));
+    getLatestFollowUpTwoLeads()
+      .then(setFollowUpLeads)
+      .catch(() => setFollowUpLeads([]));
+    getLatestMeetingScheduledTwoLeads()
+      .then(setMeetingLeads)
+      .catch(() => setMeetingLeads([]));
+  }, []);
+
+  // Fetch only for Recent Brief section
+  useEffect(() => {
+    getRecentBriefs()
+      .then(setRecentBriefs)
+      .catch(() => setRecentBriefs([]));
   }, []);
 
   const [activeTab, setActiveTab] = useState<'new'|'brief'|'follow'|'meeting'>('new');
@@ -44,50 +59,45 @@ const SalesDashboard: React.FC = () => {
   const [isPriorityDropdownOpenLead, setIsPriorityDropdownOpenLead] = useState(false);
   const [isPriorityDropdownOpenBrief, setIsPriorityDropdownOpenBrief] = useState(false);
   const [businessForecast, setBusinessForecast] = useState<{ total_budget: number; total_brief_count: number; business_weightage: number } | null>(null);
-    useEffect(() => {
-      import('../../services/SalesDashboard').then(({ fetchBusinessForecast }) => {
-        fetchBusinessForecast()
-          .then(setBusinessForecast)
-          .catch(() => setBusinessForecast(null));
-      });
-    }, []);
+  
+  useEffect(() => {
+    getBusinessForecast()
+      .then(setBusinessForecast)
+      .catch(() => setBusinessForecast(null));
+  }, []);
+  
   const [priorities, setPriorities] = useState<{ id: number; name: string; slug: string }[]>([]);
 
   const leadDropdownRef = useRef<HTMLDivElement | null>(null);
   const briefDropdownRef = useRef<HTMLDivElement | null>(null);
+  
   useEffect(() => {
-    import('../../services/SalesDashboard').then(({ fetchPriorities }) => {
-      fetchPriorities()
-        .then(data => {
-          setPriorities(data);
-          if (data.length > 0) {
-            setSelectedPriorityLead(data[0].name);
-            setSelectedPriorityLeadId(data[0].id);
-            setSelectedPriorityBrief(data[0].name);
-            setSelectedPriorityBriefId(data[0].id);
-          }
-        })
-        .catch(() => setPriorities([]));
-    });
+    getPriorities()
+      .then(data => {
+        setPriorities(data);
+        if (data.length > 0) {
+          setSelectedPriorityLead(data[0].name);
+          setSelectedPriorityLeadId(data[0].id);
+          setSelectedPriorityBrief(data[0].name);
+          setSelectedPriorityBriefId(data[0].id);
+        }
+      })
+      .catch(() => setPriorities([]));
   }, []);
 
   useEffect(() => {
     if (selectedPriorityBriefId != null) {
-      import('../../services/SalesDashboard').then(({ fetchBriefCountByPriority }) => {
-        fetchBriefCountByPriority(selectedPriorityBriefId)
-          .then(data => setBriefCount({ total_briefs: data.total_briefs, priority_brief_count: data.priority_brief_count }))
-          .catch(() => setBriefCount(null));
-      });
+      getBriefCountByPriority(selectedPriorityBriefId)
+        .then(data => setBriefCount({ total_briefs: data.total_briefs, priority_brief_count: data.priority_brief_count }))
+        .catch(() => setBriefCount(null));
     }
   }, [selectedPriorityBriefId]);
 
   useEffect(() => {
     if (selectedPriorityLeadId != null) {
-      import('../../services/SalesDashboard').then(({ fetchLeadCountByPriority }) => {
-        fetchLeadCountByPriority(selectedPriorityLeadId)
-          .then(data => setLeadCount({ total_leads: data.total_leads, priority_lead_count: data.priority_lead_count }))
-          .catch(() => setLeadCount(null));
-      });
+      getLeadCountByPriority(selectedPriorityLeadId)
+        .then(data => setLeadCount({ total_leads: data.total_leads, priority_lead_count: data.priority_lead_count }))
+        .catch(() => setLeadCount(null));
     }
   }, [selectedPriorityLeadId]);
 
@@ -261,10 +271,8 @@ const SalesDashboard: React.FC = () => {
             <div key={b.id} className="flex items-center justify-between bg-indigo-50 rounded-lg p-3">
               <div className="flex items-center gap-14 min-w-0">
                 <div className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 font-semibold">Brief</div>
-                <div>
-                  <div className="text-sm font-semibold">{b.name}</div>
-                  <div className="text-xs text-black">{b.brand?.name || '-'}</div>
-                </div>
+                <div className="text-xs text-gray-500">Brief Name<br/><span className="text-gray-700 font-medium text-xs">{b.name}</span></div>
+                <div className="text-xs text-gray-500">Brand Name<br/><span className="text-gray-700 font-medium text-xs">{b.brand?.name || '-'}</span></div>
                 <div className="text-xs text-gray-500">Product<br/><span className="text-gray-700 font-medium text-xs">{b.product_name}</span></div>
                 <div className="text-xs text-gray-500">Budget<br/><span className="text-gray-700 font-medium text-xs">₹{b.budget}</span></div>
                 <div className="text-xs text-gray-500">Brief Status<br/><span className="text-xs rounded px-2 py-0.5 text-black">{b.brief_status?.name}</span></div>
@@ -273,7 +281,7 @@ const SalesDashboard: React.FC = () => {
               <div className="flex items-center gap-4">
                 <span
                   className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer"
-                  onClick={() => navigate('/brief/Brief_Pipeline')}
+                  onClick={() => navigate(`/brief/${b.id}/edit`)}
                   title="View Brief"
                 >
                   <EyeIcon className="w-5 h-5 text-blue-500" />
@@ -285,10 +293,8 @@ const SalesDashboard: React.FC = () => {
             <div key={f.id} className="flex items-center justify-between bg-indigo-50 rounded-lg p-3">
               <div className="flex items-center gap-6 min-w-0">
                 <div className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 font-semibold">{f.type}</div>
-                <div>
-                  <div className="text-sm font-semibold">{f.name}</div>
-                  <div className="text-xs text-gray-500">{f.brand ? f.brand.name : f.agency ? f.agency.name : ''}</div>
-                </div>
+                <div className="text-xs text-gray-500">Contact Person Name<br/><span className="text-gray-700 font-medium text-xs">{f.name}</span></div>
+                <div className="text-xs text-gray-500">Brand Name<br/><span className="text-gray-700 font-medium text-xs">{f.brand ? f.brand.name : f.agency ? f.agency.name : '-'}</span></div>
                 <div className="text-xs text-gray-500">Email<br/><span className="text-gray-700 font-medium text-xs">{f.email}</span></div>
                 <div className="text-xs text-gray-500">Mobile<br/><span className="text-gray-700 font-medium text-xs">{f.mobile_number && f.mobile_number.length > 0 ? f.mobile_number[0].number : '-'}</span></div>
                 <div className="text-xs text-gray-500">Priority<br/><span className="text-gray-700 font-medium text-xs">{f.priority?.name || '-'}</span></div>
@@ -311,10 +317,8 @@ const SalesDashboard: React.FC = () => {
             <div key={m.id} className="flex items-center justify-between bg-indigo-50 rounded-lg p-3">
               <div className="flex items-center gap-6 min-w-0">
                 <div className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 font-semibold">{m.type}</div>
-                <div>
-                  <div className="text-sm font-semibold">{m.name}</div>
-                  <div className="text-xs text-gray-500">{m.brand ? m.brand.name : m.agency ? m.agency.name : ''}</div>
-                </div>
+                <div className="text-xs text-gray-500">Contact Person Name<br/><span className="text-gray-700 font-medium text-xs">{m.name}</span></div>
+                <div className="text-xs text-gray-500">Brand Name<br/><span className="text-gray-700 font-medium text-xs">{m.brand ? m.brand.name : m.agency ? m.agency.name : '-'}</span></div>
                 <div className="text-xs text-gray-500">Email<br/><span className="text-gray-700 font-medium text-xs">{m.email}</span></div>
                 <div className="text-xs text-gray-500">Mobile<br/><span className="text-gray-700 font-medium text-xs">{m.mobile_number && m.mobile_number.length > 0 ? m.mobile_number[0].number : '-'}</span></div>
                 <div className="text-xs text-gray-500">Priority<br/><span className="text-gray-700 font-medium text-xs">{m.priority?.name || '-'}</span></div>
@@ -354,6 +358,11 @@ const SalesDashboard: React.FC = () => {
                   </div>
                   <div className="text-xs text-gray-400 text-right">
                     <div><span className="font-semibold">Created At:</span> {a.created_at}</div>
+                    {a.lead_status && (
+                      <div className="mt-1 inline-block px-2 py-1 rounded bg-green-100 text-green-700 font-semibold text-xs">
+                        {a.lead_status}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -366,18 +375,22 @@ const SalesDashboard: React.FC = () => {
             <h3 className="font-semibold">Recent Brief</h3>
           </div>
           <div className="space-y-3">
-            {briefs.map(b => (
+            {recentBriefs.map(b => (
               <div key={b.id} className="bg-white p-3 rounded-md border border-gray-100 flex items-center justify-between h-[100px]">
                 <div>
                   <div className="text-xs mb-1">
                     <span className="font-semibold">Brief Name:</span> {b.name}
-                    <span className="ml-4 px-2 py-0.5 text-xs rounded text-black">{b.brief_status?.name}</span>
+                    {b.brief_status?.name && (
+                      <span className="ml-4 px-2 py-0.5 rounded bg-yellow-100 text-yellow-800 font-semibold text-xs">
+                        {b.brief_status.name}
+                      </span>
+                    )}
                   </div>
-                  <div className="text-xs mb-1"><span className="font-semibold">Brand Name:</span> {b.brand?.name || '-'}</div>
+                  <div className="text-xs mb-1"><span className="font-semibold">Brand Name:</span> {b.brand_name || '-'}</div>
                   <div className="text-xs mb-1"><span className="font-semibold">Product Name:</span> {b.product_name}</div>
                   <div className="text-xs">
                     <span className="font-semibold">Budget:</span> ₹{b.budget}
-                    <span className="ml-4 font-semibold">Contact Person:</span> {b.contact_person?.name || '-'}
+                    <span className="ml-4 font-semibold">Contact Person:</span> {b.contact_person_name || '-'}
                   </div>
                 </div>
                 <div className="flex items-center gap-4">

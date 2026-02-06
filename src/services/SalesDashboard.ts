@@ -1,101 +1,86 @@
+import { apiClient } from '../utils/apiClient';
+import { handleApiError } from '../utils/apiErrorHandler';
+
 // --- Business Forecast and Weightage API ---
-export interface BusinessForecastResponse {
-  success: boolean;
-  message: string;
-  meta: any;
-  data: {
-    total_budget: number;
-    total_brief_count: number;
-    business_weightage: number;
-  };
-}
-
-export const fetchBusinessForecast = async (): Promise<BusinessForecastResponse['data']> => {
-  const token = getCookie('auth_token');
-  const response = await axios.get<BusinessForecastResponse>(
-    'https://apislms.dgtoohl.com/api/v1/briefs/business-forecast',
-    token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
-  );
-  if (response.data.success) {
-    return response.data.data;
-  }
-  throw new Error(response.data.message || 'Failed to fetch business forecast');
+export type BusinessForecastData = {
+  total_budget: number;
+  total_brief_count: number;
+  business_weightage: number;
 };
+
+export async function getBusinessForecast(): Promise<BusinessForecastData> {
+  try {
+    const res = await apiClient.get<BusinessForecastData>('/briefs/business-forecast');
+    if (!res || !res.success) {
+      throw new Error(res?.message || 'Failed to fetch business forecast');
+    }
+    return res.data;
+  } catch (error) {
+    handleApiError(error);
+    throw error;
+  }
+}
 // --- Brief Count by Priority API ---
-export interface BriefCountByPriorityResponse {
-  success: boolean;
-  message: string;
-  meta: any;
-  data: {
-    total_briefs: number;
-    priority_brief_count: number;
-    priority_id: number;
-    priority_name: string;
-  };
-}
-
-export const fetchBriefCountByPriority = async (priorityId: number): Promise<BriefCountByPriorityResponse['data']> => {
-  const token = getCookie('auth_token');
-  const response = await axios.get<BriefCountByPriorityResponse>(
-    `https://apislms.dgtoohl.com/api/v1/priorities/${priorityId}/brief-count`,
-    token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
-  );
-  if (response.data.success) {
-    return response.data.data;
-  }
-  throw new Error(response.data.message || 'Failed to fetch brief count by priority');
+export type BriefCountByPriorityData = {
+  total_briefs: number;
+  priority_brief_count: number;
+  priority_id: number;
+  priority_name: string;
 };
+
+export async function getBriefCountByPriority(priorityId: number): Promise<BriefCountByPriorityData> {
+  try {
+    const res = await apiClient.get<BriefCountByPriorityData>(`/priorities/${priorityId}/brief-count`);
+    if (!res || !res.success) {
+      throw new Error(res?.message || 'Failed to fetch brief count by priority');
+    }
+    return res.data;
+  } catch (error) {
+    handleApiError(error);
+    throw error;
+  }
+}
 // --- Lead Count by Priority API ---
-export interface LeadCountByPriorityResponse {
-  success: boolean;
-  message: string;
-  meta: any;
-  data: {
-    total_leads: number;
-    priority_lead_count: number;
-    priority_id: number;
-    priority_name: string;
-  };
-}
-
-export const fetchLeadCountByPriority = async (priorityId: number): Promise<LeadCountByPriorityResponse['data']> => {
-  const token = getCookie('auth_token');
-  const response = await axios.get<LeadCountByPriorityResponse>(
-    `https://apislms.dgtoohl.com/api/v1/priorities/${priorityId}/lead-count`,
-    token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
-  );
-  if (response.data.success) {
-    return response.data.data;
-  }
-  throw new Error(response.data.message || 'Failed to fetch lead count by priority');
+export type LeadCountByPriorityData = {
+  total_leads: number;
+  priority_lead_count: number;
+  priority_id: number;
+  priority_name: string;
 };
+
+export async function getLeadCountByPriority(priorityId: number): Promise<LeadCountByPriorityData> {
+  try {
+    const res = await apiClient.get<LeadCountByPriorityData>(`/priorities/${priorityId}/lead-count`);
+    if (!res || !res.success) {
+      throw new Error(res?.message || 'Failed to fetch lead count by priority');
+    }
+    return res.data;
+  } catch (error) {
+    handleApiError(error);
+    throw error;
+  }
+}
 // --- Priority API ---
-export interface Priority {
+export type Priority = {
   id: number;
   name: string;
   slug: string;
-}
-
-export interface PrioritiesResponse {
-  success: boolean;
-  message: string;
-  meta: any;
-  data: Priority[];
-}
-
-export const fetchPriorities = async (): Promise<Priority[]> => {
-  const token = getCookie('auth_token');
-  const response = await axios.get<PrioritiesResponse>(
-    'https://apislms.dgtoohl.com/api/v1/priorities',
-    token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
-  );
-  if (response.data.success) {
-    return response.data.data;
-  }
-  throw new Error(response.data.message || 'Failed to fetch priorities');
 };
+
+export async function getPriorities(): Promise<Priority[]> {
+  try {
+    const res = await apiClient.get<Priority[]>('/priorities');
+    if (!res || !res.success) {
+      throw new Error(res?.message || 'Failed to fetch priorities');
+    }
+    return res.data;
+  } catch (error) {
+    handleApiError(error);
+    throw error;
+  }
+}
 // --- Latest Two Meeting Scheduled Leads API ---
-export interface MeetingScheduledLead {
+export type MeetingScheduledLead = {
   id: number;
   name: string;
   email: string;
@@ -121,31 +106,22 @@ export interface MeetingScheduledLead {
   zone: { id: number; name: string };
   created_at: string;
   updated_at: string;
-}
-
-export interface MeetingScheduledLeadsResponse {
-  success: boolean;
-  message: string;
-  meta: {
-    timestamp: string;
-    status_code: number;
-  };
-  data: MeetingScheduledLead[];
-}
-
-export const fetchLatestMeetingScheduledTwoLeads = async (): Promise<MeetingScheduledLead[]> => {
-  const token = getCookie('auth_token');
-  const response = await axios.get<MeetingScheduledLeadsResponse>(
-    'https://apislms.dgtoohl.com/api/v1/leads/latest/meeting-scheduled-two',
-    token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
-  );
-  if (response.data.success) {
-    return response.data.data;
-  }
-  throw new Error(response.data.message || 'Failed to fetch latest meeting scheduled leads');
 };
+
+export async function getLatestMeetingScheduledTwoLeads(): Promise<MeetingScheduledLead[]> {
+  try {
+    const res = await apiClient.get<MeetingScheduledLead[]>('/leads/latest/meeting-scheduled-two');
+    if (!res || !res.success) {
+      throw new Error(res?.message || 'Failed to fetch latest meeting scheduled leads');
+    }
+    return res.data;
+  } catch (error) {
+    handleApiError(error);
+    throw error;
+  }
+}
 // --- Latest Two Follow-Up Leads API ---
-export interface FollowUpLead {
+export type FollowUpLead = {
   id: number;
   name: string;
   email: string;
@@ -171,31 +147,22 @@ export interface FollowUpLead {
   zone: { id: number; name: string };
   created_at: string;
   updated_at: string;
-}
-
-export interface FollowUpLeadsResponse {
-  success: boolean;
-  message: string;
-  meta: {
-    timestamp: string;
-    status_code: number;
-  };
-  data: FollowUpLead[];
-}
-
-export const fetchLatestFollowUpTwoLeads = async (): Promise<FollowUpLead[]> => {
-  const token = getCookie('auth_token');
-  const response = await axios.get<FollowUpLeadsResponse>(
-    'https://apislms.dgtoohl.com/api/v1/leads/latest/follow-up-two',
-    token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
-  );
-  if (response.data.success) {
-    return response.data.data;
-  }
-  throw new Error(response.data.message || 'Failed to fetch latest follow-up leads');
 };
+
+export async function getLatestFollowUpTwoLeads(): Promise<FollowUpLead[]> {
+  try {
+    const res = await apiClient.get<FollowUpLead[]>('/leads/latest/follow-up-two');
+    if (!res || !res.success) {
+      throw new Error(res?.message || 'Failed to fetch latest follow-up leads');
+    }
+    return res.data;
+  } catch (error) {
+    handleApiError(error);
+    throw error;
+  }
+}
 // --- Latest Two Briefs API ---
-export interface LatestBrief {
+export type LatestBrief = {
   id: number;
   name: string;
   product_name: string;
@@ -241,31 +208,22 @@ export interface LatestBrief {
   planner_status: string | null;
   created_at: string;
   updated_at: string;
-}
-
-export interface LatestBriefsResponse {
-  success: boolean;
-  message: string;
-  meta: {
-    timestamp: string;
-    status_code: number;
-  };
-  data: LatestBrief[];
-}
-
-export const fetchLatestTwoBriefs = async (): Promise<LatestBrief[]> => {
-  const token = getCookie('auth_token');
-  const response = await axios.get<LatestBriefsResponse>(
-    'https://apislms.dgtoohl.com/api/v1/briefs/latest/two-briefs',
-    token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
-  );
-  if (response.data.success) {
-    return response.data.data;
-  }
-  throw new Error(response.data.message || 'Failed to fetch latest two briefs');
 };
+
+export async function getLatestTwoBriefs(): Promise<LatestBrief[]> {
+  try {
+    const res = await apiClient.get<LatestBrief[]>('/briefs/latest/two-briefs');
+    if (!res || !res.success) {
+      throw new Error(res?.message || 'Failed to fetch latest two briefs');
+    }
+    return res.data;
+  } catch (error) {
+    handleApiError(error);
+    throw error;
+  }
+}
 // --- Latest Two Leads API ---
-export interface LatestLead {
+export type LatestLead = {
   id: number;
   name: string;
   email: string;
@@ -293,33 +251,22 @@ export interface LatestLead {
   };
   created_at: string;
   updated_at: string;
-}
-
-export interface LatestLeadsResponse {
-  success: boolean;
-  message: string;
-  meta: {
-    timestamp: string;
-    status_code: number;
-  };
-  data: LatestLead[];
-}
-
-export const fetchLatestTwoLeads = async (): Promise<LatestLead[]> => {
-  const token = getCookie('auth_token');
-  const response = await axios.get<LatestLeadsResponse>(
-    'https://apislms.dgtoohl.com/api/v1/leads/latest/two-leads',
-    token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
-  );
-  if (response.data.success) {
-    return response.data.data;
-  }
-  throw new Error(response.data.message || 'Failed to fetch latest two leads');
 };
-import axios from 'axios';
-import { getCookie } from '../utils/cookies';
 
-export interface ActivityLead {
+export async function getLatestTwoLeads(): Promise<LatestLead[]> {
+  try {
+    const res = await apiClient.get<LatestLead[]>('/leads/latest/two-leads');
+    if (!res || !res.success) {
+      throw new Error(res?.message || 'Failed to fetch latest two leads');
+    }
+    return res.data;
+  } catch (error) {
+    handleApiError(error);
+    throw error;
+  }
+}
+// --- Recent Activities API ---
+export type ActivityLead = {
   id: number;
   name: string;
   brand_name: string;
@@ -328,39 +275,31 @@ export interface ActivityLead {
   call_status: string;
   contact_person_name: string;
   created_at: string;
-}
-
-export interface ActivityLeadsResponse {
-  success: boolean;
-  message: string;
-  meta: {
-    timestamp: string;
-    status_code: number;
-  };
-  data: ActivityLead[];
-}
-
-export const fetchRecentActivities = async (): Promise<ActivityLead[]> => {
-  const token = getCookie('auth_token');
-  const response = await axios.get<ActivityLeadsResponse>(
-    'https://apislms.dgtoohl.com/api/v1/leads/activity-leads',
-    token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
-  );
-  if (response.data.success) {
-    return response.data.data;
-  }
-  throw new Error(response.data.message || 'Failed to fetch recent activities');
 };
-export interface BriefStatus {
+
+export async function getRecentActivities(): Promise<ActivityLead[]> {
+  try {
+    const res = await apiClient.get<ActivityLead[]>('/leads/activity-leads');
+    if (!res || !res.success) {
+      throw new Error(res?.message || 'Failed to fetch recent activities');
+    }
+    return res.data;
+  } catch (error) {
+    handleApiError(error);
+    throw error;
+  }
+}
+// --- Recent Briefs API ---
+export type BriefStatus = {
   name: string;
   percentage: string;
-}
+};
 
-export interface AssignTo {
+export type AssignTo = {
   id: number | null;
   name: string | null;
   email: string | null;
-}
+};
 
 export type RecentBrief = {
   id: number;
@@ -371,26 +310,17 @@ export type RecentBrief = {
   contact_person_name: string | null;
   assign_to: AssignTo;
   brief_status: BriefStatus;
-}
-
-export interface RecentBriefsResponse {
-  success: boolean;
-  message: string;
-  meta: {
-    timestamp: string;
-    status_code: number;
-  };
-  data: RecentBrief[];
-}
-
-export const fetchRecentBriefs = async (): Promise<RecentBrief[]> => {
-  const token = getCookie('auth_token');
-  const response = await axios.get<RecentBriefsResponse>(
-    'https://apislms.dgtoohl.com/api/v1/briefs/recent',
-    token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
-  );
-  if (response.data.success) {
-    return response.data.data;
-  }
-  throw new Error(response.data.message || 'Failed to fetch recent briefs');
 };
+
+export async function getRecentBriefs(): Promise<RecentBrief[]> {
+  try {
+    const res = await apiClient.get<RecentBrief[]>('/briefs/recent');
+    if (!res || !res.success) {
+      throw new Error(res?.message || 'Failed to fetch recent briefs');
+    }
+    return res.data;
+  } catch (error) {
+    handleApiError(error);
+    throw error;
+  }
+}

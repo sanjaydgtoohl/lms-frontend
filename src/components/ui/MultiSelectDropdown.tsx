@@ -15,6 +15,7 @@ type MultiSelectDropdownProps = {
   multi?: boolean; // whether multiple selection allowed
   maxVisibleOptions?: number; // how many options visible at once
   horizontalScroll?: boolean; // whether to scroll horizontally instead of wrapping
+  labelMap?: Record<string, string>; // optional map for value -> label fallback
 };
 
 const normalize = (opt: Option): { value: string; label: string } =>
@@ -32,6 +33,7 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   multi = true,
   maxVisibleOptions = 3,
   horizontalScroll = false,
+  labelMap = {},
 }) => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -85,7 +87,8 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
           {safeValue.length > 0 && (
             <div className={`flex items-center gap-2 ${horizontalScroll ? 'flex-1 flex-nowrap' : 'flex-wrap'}`}>
               {safeValue.map((v) => {
-                const label = normalized.find(n => String(n.value) === String(v))?.label ?? v;
+                // First try to find label in options, then fallback to labelMap
+                const label = (normalized.find(n => String(n.value) === String(v))?.label) || labelMap[v] || v;
                 return (
                   <span key={v} className="msd-tag inline-flex items-center gap-2 px-2 py-1 rounded-md text-xs flex-shrink-0">
                     <span className="truncate max-w-[180px]">{label}</span>

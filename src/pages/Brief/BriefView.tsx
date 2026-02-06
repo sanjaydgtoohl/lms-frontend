@@ -68,8 +68,8 @@ const BriefView: React.FC<BriefViewProps> = ({ brief, onClose, onEdit }) => {
         <div>
           <h3 className="text-lg font-semibold text-gray-900">{brief.name ?? brief.product_name ?? 'Untitled Brief'}</h3>
           <div className="mt-2 flex items-center gap-2">
-            <Badge color="bg-indigo-50 text-indigo-700">{brief.brief_status?.name ?? 'Status unknown'}</Badge>
-            <Badge color="bg-yellow-50 text-yellow-800">{brief.priority?.name ?? 'Priority'}</Badge>
+              <Badge color="bg-indigo-50 text-indigo-700">{typeof brief.brief_status?.name === 'string' ? brief.brief_status.name : String(brief.brief_status?.name ?? 'Status unknown')}</Badge>
+              <Badge color="bg-yellow-50 text-yellow-800">{typeof brief.priority?.name === 'string' ? brief.priority.name : String(brief.priority?.name ?? 'Priority')}</Badge>
             <div className="text-sm text-gray-500">Submitted {formatDate(brief.submission_date)}</div>
           </div>
         </div>

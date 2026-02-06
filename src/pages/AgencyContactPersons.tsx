@@ -81,14 +81,7 @@ const AgencyContactPersons: React.FC = () => {
   if (contacts.length === 0) {
     return (
       <div className="flex-1 p-6 w-full">
-        <Button
-          variant="primary"
-          className="font-semibold px-3 py-1 rounded-md flex items-center text-sm mb-4"
-          onClick={handleBack}
-        >
-          <ChevronLeft size={16} className="mr-1" />
-          Go Back
-        </Button>
+        
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
           <p className="text-red-700 font-medium text-lg">No contact persons found</p>
           <p className="text-red-600 text-sm mt-2">This agency has no contact persons associated with it.</p>

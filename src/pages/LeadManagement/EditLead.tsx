@@ -7,7 +7,8 @@ import LeadManagementSection from '../../components/forms/CreateLead/LeadManagem
 import ContactPersonsCard from '../../components/forms/CreateLead/ContactPersonsCard';
 import AssignPriorityCard from '../../components/forms/CreateLead/AssignPriorityCard';
 import { fetchLeadById, fetchLeadHistory } from '../../services/ViewLead';
-import { fetchBrands, fetchAgencies } from '../../services/CreateLead';
+import { getBrands, getAgencies } from '../../services/CreateLead';
+
 import { Button } from '../../components/ui';
 import { updateLead } from '../../services/AllLeads';
 import { showSuccess, showError } from '../../utils/notifications';
@@ -201,25 +202,20 @@ const EditLead: React.FC = () => {
     setOptions([]);
 
     const fetchData = async () => {
-      const fetchFn = selectedOption === 'brand' ? fetchBrands : fetchAgencies;
+      const fetchFn = selectedOption === 'brand' ? getBrands : getAgencies;
       try {
-        const { data, error } = await fetchFn();
+        const data = await fetchFn();
         if (!isMounted) return;
-        if (error) {
-          setOptionsError(error as string);
-          setOptions([]);
-        } else {
-          const fetched = Array.isArray(data) ? data.map((it: any) => ({ value: String(it.id), label: it.name })) : [];
-          // If there's an existing selected value that's not present in fetched options,
-          // add it using the dropdownValue as the label so the select shows the current value.
-          if (dropdownValue) {
-            const exists = fetched.find((o: any) => o.value === dropdownValue);
-            if (!exists) {
-              fetched.unshift({ value: dropdownValue, label: dropdownValue });
-            }
+        const fetched = Array.isArray(data) ? data.map((it: any) => ({ value: String(it.id), label: it.name })) : [];
+        // If there's an existing selected value that's not present in fetched options,
+        // add it using the dropdownValue as the label so the select shows the current value.
+        if (dropdownValue) {
+          const exists = fetched.find((o: any) => o.value === dropdownValue);
+          if (!exists) {
+            fetched.unshift({ value: dropdownValue, label: dropdownValue });
           }
-          setOptions(fetched);
         }
+        setOptions(fetched);
       } catch (err) {
         if (!isMounted) return;
         setOptionsError('Failed to load options');

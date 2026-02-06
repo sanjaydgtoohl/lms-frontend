@@ -58,10 +58,11 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({ value, options, onChang
     if (!selectedOption) return;
     setConfirmLoading(true);
     try {
+      // Always call onChange first to update parent state
+      onChange(selectedOption);
       if (onConfirm) {
         await onConfirm(selectedOption);
       }
-      onChange(selectedOption);
       setConfirmDialogOpen(false);
       setSelectedOption(null);
     } catch (err) {

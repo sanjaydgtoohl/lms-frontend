@@ -40,12 +40,12 @@ const MeetingSchedule: React.FC = () => {
   const [lead, setLead] = useState<string>('');
   const [meetingType, setMeetingType] = useState<string>('');
   const [attendees, setAttendees] = useState<string[]>([]);
-  const [date, setDate] = useState<Date | null>(null);
-  const [time, setTime] = useState<Date | null>(null);
+  const [startDateTime, setStartDateTime] = useState<Date | null>(null);
+  const [endDateTime, setEndDateTime] = useState<Date | null>(null);
   const [title, setTitle] = useState<string>('');
   const [agenda, setAgenda] = useState<string>('');
   const [location, setLocation] = useState<string>('');
-  const [meetLink, setMeetLink] = useState<string>('');
+  const [meetLink] = useState<string>('');
   const [leadOptions, setLeadOptions] = useState<Array<{ value: string; label: string }>>([]);
   const [attendeesOptions, setAttendeesOptions] = useState<Array<{ value: string; label: string }>>([]);
   // Error states for each required field
@@ -53,8 +53,8 @@ const MeetingSchedule: React.FC = () => {
     lead?: string;
     meetingType?: string;
     attendees?: string;
-    date?: string;
-    time?: string;
+    startDateTime?: string;
+    endDateTime?: string;
     title?: string;
   }>({});
 
@@ -103,8 +103,11 @@ const MeetingSchedule: React.FC = () => {
     if (!lead) newErrors.lead = 'Lead is required.';
     if (!meetingType) newErrors.meetingType = 'Meeting type is required.';
     if (!attendees.length) newErrors.attendees = 'At least one attendee is required.';
-    if (!date) newErrors.date = 'Date is required.';
-    if (!time) newErrors.time = 'Time is required.';
+    if (!startDateTime) newErrors.startDateTime = 'Start date & time is required.';
+    if (!endDateTime) newErrors.endDateTime = 'End date & time is required.';
+    if (startDateTime && endDateTime && endDateTime <= startDateTime) {
+      newErrors.endDateTime = 'End time must be after start time.';
+    }
     if (!title) newErrors.title = 'Title is required.';
 
     // Validate meeting type is one of allowed values
@@ -135,6 +138,17 @@ const MeetingSchedule: React.FC = () => {
       console.log('Converted attendee IDs:', attendeeIds);
 
       // Prepare payload for API
+      // Helper to format date as 'YYYY-MM-DD HH:mm'
+      const formatDateTime = (dt: Date | null) => {
+        if (!dt) return '';
+        const yyyy = dt.getFullYear();
+        const mm = String(dt.getMonth() + 1).padStart(2, '0');
+        const dd = String(dt.getDate()).padStart(2, '0');
+        const hh = String(dt.getHours()).padStart(2, '0');
+        const min = String(dt.getMinutes()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+      };
+
       const payload = {
         title,
         lead_id: String(lead),
@@ -143,8 +157,8 @@ const MeetingSchedule: React.FC = () => {
         location,
         agenda,
         link: meetLink,
-        meeting_date: date ? date.toISOString().split('T')[0] : '',
-        meeting_time: time ? `${String(time.getHours()).padStart(2, '0')}:${String(time.getMinutes()).padStart(2, '0')}` : '',
+        meeting_start_date: formatDateTime(startDateTime),
+        meeting_end_date: formatDateTime(endDateTime),
         status: 1,
       };
 
@@ -227,7 +241,7 @@ const MeetingSchedule: React.FC = () => {
                         if (errors.attendees && v.length) setErrors({ ...errors, attendees: undefined });
                       }}
                       options={attendeesOptions}
-                      placeholder={attendeesOptions.length ? 'Search or select attendees' : 'Loading attendees...'}
+                      placeholder={attendeesOptions.length ? 'Please Search And Select Attendees' : 'Loading attendees...'}
                       multi={true}
                       horizontalScroll={true}
                     />
@@ -237,7 +251,7 @@ const MeetingSchedule: React.FC = () => {
                     <label className="block text-sm text-[var(--text-secondary)] mb-1">Agenda</label>
                     <input
                       type="text"
-                      placeholder="Meeting Agenda And Objective"
+                      placeholder="Please Fill Meeting Agenda "
                       value={agenda}
                       onChange={(e) => setAgenda(e.target.value)}
                       className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)]"
@@ -245,19 +259,22 @@ const MeetingSchedule: React.FC = () => {
                   </div>
                 </div>
               </div>
-              {/* Date and Time in one row (Date left, Time right) */}
+              {/* Start and End DateTime pickers */}
               <div className="col-span-2">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Date <span className="text-[#FF0000]">*</span></label>
+                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Start Date & Time <span className="text-[#FF0000]">*</span></label>
                     <DatePicker
-                      selected={date}
-                      onChange={(d: Date | null) => {
-                        setDate(d);
-                        if (errors.date && d) setErrors({ ...errors, date: undefined });
+                      selected={startDateTime}
+                      onChange={(dt: Date | null) => {
+                        setStartDateTime(dt);
+                        if (errors.startDateTime && dt) setErrors({ ...errors, startDateTime: undefined });
                       }}
-                      dateFormat="yyyy-MM-dd"
-                      placeholderText="yyyy-mm-dd"
+                      showTimeSelect
+                      timeIntervals={15}
+                      dateFormat="yyyy-MM-dd HH:mm"
+                      timeFormat="HH:mm"
+                      placeholderText="yyyy-mm-dd HH:mm"
                       className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] w-full"
                       wrapperClassName="w-full"
                       popperPlacement="bottom-start"
@@ -266,27 +283,30 @@ const MeetingSchedule: React.FC = () => {
                       dropdownMode="select"
                       minDate={new Date()}
                     />
-                    {errors.date && <div className="text-red-500 text-xs mt-1">{errors.date}</div>}
+                    {errors.startDateTime && <div className="text-red-500 text-xs mt-1">{errors.startDateTime}</div>}
                   </div>
                   <div>
-                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Time <span className="text-[#FF0000]">*</span></label>
+                    <label className="block text-sm text-[var(--text-secondary)] mb-1">End Date & Time <span className="text-[#FF0000]">*</span></label>
                     <DatePicker
-                      selected={time}
-                      onChange={(t: Date | null) => {
-                        setTime(t);
-                        if (errors.time && t) setErrors({ ...errors, time: undefined });
+                      selected={endDateTime}
+                      onChange={(dt: Date | null) => {
+                        setEndDateTime(dt);
+                        if (errors.endDateTime && dt) setErrors({ ...errors, endDateTime: undefined });
                       }}
                       showTimeSelect
-                      showTimeSelectOnly
                       timeIntervals={15}
-                      timeCaption="Time"
-                      dateFormat="HH:mm"
-                      placeholderText="--:--"
+                      dateFormat="yyyy-MM-dd HH:mm"
+                      timeFormat="HH:mm"
+                      placeholderText="yyyy-mm-dd HH:mm"
                       className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] w-full"
                       wrapperClassName="w-full"
                       popperPlacement="bottom-start"
+                      showMonthDropdown
+                      showYearDropdown
+                      dropdownMode="select"
+                      minDate={startDateTime || new Date()}
                     />
-                    {errors.time && <div className="text-red-500 text-xs mt-1">{errors.time}</div>}
+                    {errors.endDateTime && <div className="text-red-500 text-xs mt-1">{errors.endDateTime}</div>}
                   </div>
                 </div>
               </div>
@@ -294,7 +314,7 @@ const MeetingSchedule: React.FC = () => {
                 <label className="block text-sm text-[var(--text-secondary)] mb-1">Add Title <span className="text-[#FF0000]">*</span></label>
                 <input
                   type="text"
-                  placeholder="Meeting Agenda And Objective"
+                  placeholder="Please Fill Meeting Title"
                   value={title}
                   onChange={(e) => {
                     setTitle(e.target.value);
@@ -309,22 +329,13 @@ const MeetingSchedule: React.FC = () => {
                 <label className="block text-sm text-[var(--text-secondary)] mb-1">Meeting Location</label>
                 <input
                   type="text"
-                  placeholder="In Office , out of Office. etc"
+                  placeholder="Please Fill Meeting Location"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)]"
                 />
               </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm text-[var(--text-secondary)] mb-1">Meet Link</label>
-                <input
-                  type="text"
-                  placeholder="Optional"
-                  value={meetLink}
-                  onChange={(e) => setMeetLink(e.target.value)}
-                  className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)]"
-                />
-              </div>
+
             </div>
             <div className="flex justify-end pt-6">
               <button

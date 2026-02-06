@@ -7,7 +7,7 @@ import { listAgencies } from '../../services/AgencyMaster';
 import { listUsers } from '../../services/AllUsers';
 import { listLeads } from '../../services/AllLeads';
 import { fetchBriefStatuses } from '../../services/BriefStatus';
-import { fetchPriorities } from '../../services/Priority';
+import { getPriorities } from '../../services/Priority';
 import { motion } from 'framer-motion';
 import { MasterFormHeader, NotificationPopup, SelectField } from '../../components/ui';
 import { apiClient } from '../../utils/apiClient';
@@ -133,44 +133,24 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
       // Autofill Submission Date and Time from initialData.submission_date or initialData.submissionDate
       let isoDateStr = initialData.submission_date || initialData.submissionDate;
       if (isoDateStr && typeof isoDateStr === 'string') {
-        try {
-          // Handle both ISO format (with T) and space-separated format (YYYY-MM-DD HH:mm)
-          let parsedDate: Date | null = null;
-          
-          if (isoDateStr.includes('T')) {
-            // ISO format: 2026-01-16T22:45:00
-            parsedDate = new Date(isoDateStr);
-          } else if (isoDateStr.includes(' ')) {
-            // Space-separated format: 2026-01-16 22:45
-            parsedDate = new Date(isoDateStr.replace(' ', 'T'));
-          } else if (isoDateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-            // Date only: 2026-01-16
-            parsedDate = new Date(isoDateStr + 'T00:00:00');
-          }
-          
-          if (parsedDate && !isNaN(parsedDate.getTime())) {
-            const dd = String(parsedDate.getDate()).padStart(2, '0');
-            const mm = String(parsedDate.getMonth() + 1).padStart(2, '0');
-            const yyyy = parsedDate.getFullYear();
-            const hh = String(parsedDate.getHours()).padStart(2, '0');
-            const min = String(parsedDate.getMinutes()).padStart(2, '0');
-            patched.submissionDate = `${dd}-${mm}-${yyyy}`;
-            patched.submissionTime = `${hh}:${min}`;
-            console.log('Parsed submissionDate:', patched.submissionDate, 'submissionTime:', patched.submissionTime);
-          }
-        } catch (err) {
-          console.error('Error parsing submission date:', err);
+        // If the string contains both date and time (with a space)
+        const [datePart, timePartRaw] = isoDateStr.split(' ');
+        if (datePart && timePartRaw) {
+          patched.submissionDate = datePart; // YYYY-MM-DD
+          // Remove seconds and AM/PM from time
+          const timePart = timePartRaw.slice(0, 5); // HH:mm
+          patched.submissionTime = timePart;
         }
       }
 
       setForm(prev => ({ ...prev, ...patched }));
       // Always update calendarDate and calendarTime from patched data
       if (patched.submissionDate && patched.submissionTime) {
-        // Convert DD-MM-YYYY and HH:mm to Date object
+        // Convert YYYY-MM-DD and HH:mm to Date object
         const dateParts = patched.submissionDate.split('-');
         const timeParts = patched.submissionTime.split(':');
         if (dateParts.length === 3 && timeParts.length === 2) {
-          const [dd, mm, yyyy] = dateParts;
+          const [yyyy, mm, dd] = dateParts;
           const [hh, min] = timeParts;
           const dateObj2 = new Date(Number(yyyy), Number(mm) - 1, Number(dd), Number(hh), Number(min));
           if (!isNaN(dateObj2.getTime())) {
@@ -549,13 +529,13 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
     (async () => {
       try {
         setPriorityLoading(true);
-        const res = await fetchPriorities();
+        const res = await getPriorities();
         if (!mounted) return;
         
         // Map priorities to SelectField options
         let opts: Array<{ value: string; label: string }> = [];
-        if (res.data && Array.isArray(res.data)) {
-          opts = res.data.map((p: any) => {
+        if (Array.isArray(res)) {
+          opts = res.map((p: any) => {
             const id = String(p.id ?? p.priority_id ?? '');
             const name = String(p.name ?? p.priority ?? p.label ?? '');
             return { value: id, label: name };
@@ -586,9 +566,9 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
           }
         }
         
-        if (res.error) {
-          console.error('Error loading priorities:', res.error);
-          setPriorityError(res.error);
+        if (false) {
+          console.error('Error loading priorities:');
+          setPriorityError('Error loading priorities');
         }
       } catch (err: any) {
         console.error('Failed to load priorities', err);

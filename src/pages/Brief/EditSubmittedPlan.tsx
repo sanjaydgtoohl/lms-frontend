@@ -6,6 +6,8 @@ import Button from '../../components/ui/Button';
 import UploadCard from '../../components/ui/UploadCard';
 import { getBriefById } from '../../services/PlanSubmission';
 import type { BriefDetail } from '../../services/PlanSubmission';
+import http from '../../services/http';
+import { updateSubmittedPlan } from '../../services/EditSubmittedPlan';
 
 const EditSubmittedPlan: React.FC = () => {
   const navigate = useNavigate();
@@ -13,22 +15,80 @@ const EditSubmittedPlan: React.FC = () => {
   const [planFiles, setPlanFiles] = useState<File[]>([]);
   const [backupFiles, setBackupFiles] = useState<File[]>([]);
   const [briefDetails, setBriefDetails] = useState<BriefDetail | null>(null);
+  const [plannerData, setPlannerData] = useState<any>(null);
 
   useEffect(() => {
     if (!id) return;
-    // removed leftover setLoading
+    // Fetch brief details
     getBriefById(Number(id))
       .then((data) => setBriefDetails(data))
       .catch((error) => {
         setBriefDetails(null);
         console.error('Failed to fetch brief details:', error);
       });
+    // Fetch planner data (by planner_id from briefDetails or id)
+    // We need to fetch planner data after briefDetails is loaded (to get planner_id)
   }, [id]);
 
-  const handleSubmit = () => {
-    // In real scenario, this would make an API call
-    // After successful update, show success message and navigate back
-    navigate(-1);
+  useEffect(() => {
+    // Fetch planner data after briefDetails is loaded
+    const fetchPlanner = async () => {
+      if (!briefDetails) return;
+      // Try to get planner_id from briefDetails or fallback to id
+      const plannerId = (briefDetails as any).planner_id || (briefDetails as any).id || id;
+      if (!plannerId) return;
+      try {
+        const resp = await http.get(`/planners/${plannerId}`);
+        setPlannerData(resp.data.data);
+      } catch (error) {
+        setPlannerData(null);
+        // eslint-disable-next-line no-console
+        console.error('Failed to fetch planner data:', error);
+      }
+    };
+    fetchPlanner();
+  }, [briefDetails, id]);
+
+  const handleSubmit = async () => {
+    if (!id || !briefDetails) return;
+    // Try to get plannerId from briefDetails or params
+    const plannerId = (briefDetails as any).planner_id || (briefDetails as any).id || id;
+    const formData = new FormData();
+    planFiles.forEach((file) => {
+      formData.append('submitted_plan[]', file);
+    });
+    if (backupFiles[0]) {
+      formData.append('backup_plan', backupFiles[0]);
+    }
+    // Debug: log FormData keys and values
+    // eslint-disable-next-line no-console
+    console.log('Submitting plan:', { briefId: id, plannerId, planFiles, backupFiles });
+    for (const pair of formData.entries()) {
+      // eslint-disable-next-line no-console
+      console.log(pair[0], pair[1]);
+    }
+    try {
+      const resp = await updateSubmittedPlan(Number(id), Number(plannerId), formData);
+      // Show success toast/message
+      if (window && (window as any).toast) {
+        (window as any).toast.success(resp.message || 'Plan updated successfully');
+      } else if (window && (window as any).showToast) {
+        (window as any).showToast('success', resp.message || 'Plan updated successfully');
+      } else {
+        alert(resp.message || 'Plan updated successfully');
+      }
+      navigate(-1);
+    } catch (err: any) {
+      // eslint-disable-next-line no-console
+      console.error('Update plan error:', err, err?.response);
+      if (window && (window as any).toast) {
+        (window as any).toast.error(err.message || 'Failed to update plan');
+      } else if (window && (window as any).showToast) {
+        (window as any).showToast('error', err.message || 'Failed to update plan');
+      } else {
+        alert((err && err.message) ? err.message : 'Failed to update plan');
+      }
+    }
   };
 
   const handleReset = () => {
@@ -189,58 +249,70 @@ const EditSubmittedPlan: React.FC = () => {
           {/* Upload Plan Section */}
           <div className="mb-8">
             <h3 className="text-base font-medium text-gray-900 mb-4">Upload Plan</h3>
-            {planFiles.length > 0 ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {planFiles.map((file, idx) => (
-                    <FileCard
-                      key={idx}
-                      file={file}
-                      onRemove={() => setPlanFiles(planFiles.filter((_, i) => i !== idx))}
-                    />
-                  ))}
-                  <div className="flex items-center justify-center">
-                    <label className="w-full h-40 flex items-center justify-center border-2 border-dashed border-blue-300 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors bg-blue-50">
-                        <input
-                          type="file"
-                          multiple
-                          className="hidden"
-                          accept=".xls,.xlsx,.xlsm,.csv,.doc,.docx,.ppt,.pptx"
-                          onChange={(e) => {
-                            if (e.target.files) {
-                              const files = Array.from(e.target.files);
-                              setPlanFiles((prev) => {
-                                const combined = [...prev, ...files];
-                                return combined.slice(0, 2);
-                              });
-                            }
-                          }}
-                        />
-                      <div className="text-center">
-                        <svg
-                          className="mx-auto h-8 w-8 text-blue-400"
-                          stroke="currentColor"
-                          fill="none"
-                          viewBox="0 0 48 48"
-                        >
-                          <path
-                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
-                            strokeWidth={2}
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                        <p className="text-sm text-blue-600 font-medium">Add Plan</p>
-                        <p className="text-xs text-blue-500">Supported formats: Word, PPT</p>
+            {/* Show existing submitted_plan files from plannerData using FileCard style, with delete */}
+            <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+              {plannerData?.submitted_plan?.map((file: any, idx: number) => {
+                const ext = getFileExtension(file.name);
+                const colorClass = getFileTypeColor(ext);
+                return (
+                  <div key={idx} className="relative inline-flex flex-col items-center p-4 border border-gray-200 rounded-lg bg-white hover:shadow-sm transition-shadow">
+                    <div className="relative mb-3">
+                      <div className="w-24 h-32 border-2 border-gray-200 rounded bg-gray-50 flex items-center justify-center">
+                        <div className="text-center">
+                          <div className={`inline-block px-2 py-1 rounded text-xs font-bold mb-2 ${colorClass}`}>
+                            {ext}
+                          </div>
+                        </div>
                       </div>
-                    </label>
+                    </div>
+                    <p className="text-xs text-gray-600 text-center truncate w-28 mb-3" title={file.name}>{file.name}</p>
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={file.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1.5 hover:bg-gray-100 rounded transition-colors"
+                        title="View"
+                      >
+                        <Eye className="w-4 h-4 text-gray-600" />
+                      </a>
+                      <a
+                        href={file.url}
+                        download
+                        className="p-1.5 hover:bg-gray-100 rounded transition-colors"
+                        title="Download"
+                      >
+                        <Download className="w-4 h-4 text-gray-600" />
+                      </a>
+                      <button
+                        type="button"
+                        className="p-1.5 hover:bg-red-50 rounded transition-colors"
+                        title="Delete"
+                        onClick={() => {
+                          const updated = [...(plannerData.submitted_plan || [])];
+                          updated.splice(idx, 1);
+                          setPlannerData((prev: any) => ({ ...prev, submitted_plan: updated }));
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4 text-red-600" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </div>
-            ) : (
+                );
+              })}
+              {planFiles.map((file, idx) => (
+                <FileCard
+                  key={`plan-upload-${idx}`}
+                  file={file}
+                  onRemove={() => setPlanFiles(planFiles.filter((_, i) => i !== idx))}
+                />
+              ))}
+            </div>
+            {/* Upload area only if total files < 2 */}
+            {(plannerData?.submitted_plan?.length || 0) + planFiles.length < 2 && (
               <UploadCard
                 files={planFiles}
-                onChange={(files: File[]) => setPlanFiles(files.slice(0, 2))}
+                onChange={(files: File[]) => setPlanFiles(files.slice(0, 2 - (plannerData?.submitted_plan?.length || 0)))}
                 accept=".xls,.xlsx,.xlsm,.csv,.doc,.docx,.ppt,.pptx"
                 supported="Excel, Word, PPT"
               />
@@ -250,54 +322,60 @@ const EditSubmittedPlan: React.FC = () => {
           {/* Upload Back-Up Plan Section */}
           <div className="mb-8">
             <h3 className="text-base font-medium text-gray-900 mb-4">Upload Back-Up Plan</h3>
-            {backupFiles.length > 0 ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {backupFiles.map((file, idx) => (
-                    <FileCard
-                      key={idx}
-                      file={file}
-                      onRemove={() => setBackupFiles(backupFiles.filter((_, i) => i !== idx))}
-                    />
-                  ))}
-                  <div className="flex items-center justify-center">
-                    <label className="w-full h-40 flex items-center justify-center border-2 border-dashed border-blue-300 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors bg-blue-50">
-                      <input
-                        type="file"
-                        className="hidden"
-                        accept=".xls,.xlsx,.xlsm,.csv,.doc,.docx,.ppt,.pptx"
-                        onChange={(e) => {
-                          if (e.target.files) {
-                            const files = Array.from(e.target.files);
-                            setBackupFiles((prev) => {
-                              const combined = [...prev, ...files];
-                              return combined.slice(0, 1);
-                            });
-                          }
-                        }}
-                      />
+            <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+              {plannerData?.backup_plan_url && (
+                <div className="relative inline-flex flex-col items-center p-4 border border-gray-200 rounded-lg bg-white hover:shadow-sm transition-shadow">
+                  <div className="relative mb-3">
+                    <div className="w-24 h-32 border-2 border-gray-200 rounded bg-gray-50 flex items-center justify-center">
                       <div className="text-center">
-                        <svg
-                          className="mx-auto h-8 w-8 text-blue-400"
-                          stroke="currentColor"
-                          fill="none"
-                          viewBox="0 0 48 48"
-                        >
-                          <path
-                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
-                            strokeWidth={2}
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                        <p className="text-sm text-blue-600 font-medium">Add Plan</p>
-                        <p className="text-xs text-blue-500">Supported formats: Word, PPT</p>
+                        <div className={`inline-block px-2 py-1 rounded text-xs font-bold mb-2 ${getFileTypeColor(getFileExtension(plannerData.backup_plan?.split('/').pop() || 'FILE'))}`}>
+                          {getFileExtension(plannerData.backup_plan?.split('/').pop() || 'FILE')}
+                        </div>
                       </div>
-                    </label>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-600 text-center truncate w-28 mb-3" title={plannerData.backup_plan?.split('/').pop()}>{plannerData.backup_plan?.split('/').pop()}</p>
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={plannerData.backup_plan_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1.5 hover:bg-gray-100 rounded transition-colors"
+                      title="View"
+                    >
+                      <Eye className="w-4 h-4 text-gray-600" />
+                    </a>
+                    <a
+                      href={plannerData.backup_plan_url}
+                      download
+                      className="p-1.5 hover:bg-gray-100 rounded transition-colors"
+                      title="Download"
+                    >
+                      <Download className="w-4 h-4 text-gray-600" />
+                    </a>
+                    <button
+                      type="button"
+                      className="p-1.5 hover:bg-red-50 rounded transition-colors"
+                      title="Delete"
+                      onClick={() => {
+                        setPlannerData((prev: any) => ({ ...prev, backup_plan: null, backup_plan_url: null }));
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4 text-red-600" />
+                    </button>
                   </div>
                 </div>
-              </div>
-            ) : (
+              )}
+              {backupFiles.map((file, idx) => (
+                <FileCard
+                  key={`backup-upload-${idx}`}
+                  file={file}
+                  onRemove={() => setBackupFiles(backupFiles.filter((_, i) => i !== idx))}
+                />
+              ))}
+            </div>
+            {/* Upload area only if total files < 1 */}
+            {(!plannerData?.backup_plan_url && backupFiles.length < 1) && (
               <UploadCard
                 files={backupFiles}
                 onChange={(files: File[]) => setBackupFiles(files.slice(0, 1))}

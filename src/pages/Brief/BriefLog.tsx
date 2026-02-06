@@ -1,3 +1,4 @@
+import { updatePlannerStatus } from '../../services/UpdatePlannerStatus';
 
 import React, { useState, useMemo, useEffect } from 'react';
 import Pagination from '../../components/ui/Pagination';
@@ -24,6 +25,8 @@ const BriefLog: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [totalItems, setTotalItems] = useState(0);
   const [plannerStatusOptions, setPlannerStatusOptions] = useState<{ id: number; name: string }[]>([]);
+  const [statusUpdatingId, setStatusUpdatingId] = useState<number | null>(null);
+  // removed unused pendingStatusChange state
 
   // Status options for the dropdown (from API)
   const statusOptions = useMemo(() => plannerStatusOptions, [plannerStatusOptions]);
@@ -145,14 +148,22 @@ const BriefLog: React.FC = () => {
       render: (item) => {
         // Show dropdown with planner statuses, default to '-' if null
         const status = item.planner_status;
+        let statusValue: string = '-';
+        if (status && typeof status === 'object' && 'name' in status) {
+          statusValue = String(status.name);
+        } else if (typeof status === 'string' || typeof status === 'number') {
+          statusValue = String(status);
+        }
+        const isLoading = statusUpdatingId === item.id;
         return (
           <div className="min-w-[140px]">
             <StatusDropdown
-              value={status === null || status === undefined || status === '' ? '-' : status}
+              value={statusValue}
               options={statusOptions.map(opt => opt.name)}
-              onChange={(newStatus: string) => handleSelectStatus(item.id.toString(), newStatus)}
-              onConfirm={handleStatusConfirm}
+              onChange={(newStatus: string) => handleSelectStatus(item.planner_id?.toString(), newStatus)}
+              onConfirm={(newStatus: string) => handleStatusConfirm(item.planner_id?.toString(), newStatus)}
             />
+            {isLoading && <span className="ml-2 text-xs text-blue-500">Updating...</span>}
           </div>
         );
       },
@@ -213,16 +224,45 @@ const BriefLog: React.FC = () => {
     setCurrentPage(1); // Reset to first page when searching
   };
 
+  // Called when dropdown value changes (before confirmation)
   const handleSelectStatus = (id: string | null, newStatus: string) => {
-    // For demo purposes, we'll just log the change
-    // In a real app, this would update the status via API
-    console.log(`Changing status for log ${id} to ${newStatus}`);
-    // You could update the mock data here if needed
+    console.log('handleSelectStatus called with:', { id, newStatus });
+    if (!id) {
+      alert('Planner ID not found for this row. Cannot update status.');
+      return;
+    }
+    // removed setPendingStatusChange (no longer needed)
   };
 
-  const handleStatusConfirm = async (newStatus: string) => {
-    // Confirmation handler for status change
-    console.log(`Confirmed status change to ${newStatus}`);
+  // Called when user confirms status change
+  const handleStatusConfirm = async (id: string | null, newStatus: string) => {
+    console.log('handleStatusConfirm called with:', { id, newStatus });
+    if (!id) {
+      alert('Planner ID not found. Cannot update status.');
+      return;
+    }
+    if (!newStatus) return;
+    // Find status id from name
+    const statusObj = plannerStatusOptions.find(opt => opt.name === newStatus);
+    if (!statusObj) return;
+    setStatusUpdatingId(Number(id));
+    try {
+      // Debug log
+      console.log('Updating planner status', { plannerId: id, planner_status_id: statusObj.id });
+      const response = await updatePlannerStatus(id, statusObj.id);
+      console.log('Update response:', response);
+      // Refetch logs after update
+      // Do NOT filter by id here, fetch all logs for the page
+      const res = await listBriefLogs(currentPage, itemsPerPage);
+      setBriefLogs(res.data || []);
+    } catch (err) {
+      // Show error feedback
+      alert('Failed to update status. Please try again.');
+      console.error('Failed to update status', err);
+    } finally {
+      setStatusUpdatingId(null);
+      // removed setPendingStatusChange (no longer needed)
+    }
   };
 
   const handleEdit = (item: BriefLogItem) => {

@@ -12,7 +12,7 @@ import { ROUTES } from '../../constants';
 import { listLeads, updateLead, deleteLead } from '../../services/AllLeads';
 import { assignUserToLead } from '../../services/leadAssignTo';
 import { apiClient } from '../../utils/apiClient';
-import { fetchCallStatuses, updateCallStatus } from '../../services/CallStatus';
+import { getCallStatuses, updateCallStatus } from '../../services/CallStatus';
 import { usePermissions } from '../../context/SidebarMenuContext';
 
 interface Lead {
@@ -61,9 +61,11 @@ const AllLeads: React.FC = () => {
     useEffect(() => {
       const loadCallStatuses = async () => {
         try {
-          const resp = await fetchCallStatuses();
+          const resp = await getCallStatuses();
           // Store as array of {id, name}
-          const options = (resp.data || []).map((item: any) => ({ id: item.id, name: item.name })).filter((item: any) => item.id && item.name);
+          const options = Array.isArray(resp)
+            ? resp.map((item: any) => ({ id: item.id, name: item.name })).filter((item: any) => item.id && item.name)
+            : [];
           setCallStatusOptions(options);
         } catch (err) {
           setCallStatusOptions([]);

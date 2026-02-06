@@ -44,7 +44,7 @@ interface UserOption {
   name: string;
 }
 
-import { fetchCallStatuses } from '../../services/CallStatus';
+import { getCallStatuses } from '../../services/CallStatus';
 import { apiClient } from '../../utils/apiClient';
 import http from '../../services/http';
 
@@ -141,8 +141,8 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
   useEffect(() => {
     const loadCallStatuses = async () => {
       try {
-        const resp = await fetchCallStatuses();
-        const options = (resp.data || []).map((item: any) => item.name).filter(Boolean);
+        const resp = await getCallStatuses();
+        const options = Array.isArray(resp) ? resp.map((item: any) => item.name).filter(Boolean) : [];
         setCallStatusOptions(options);
       } catch (err) {
         setCallStatusOptions([]);
@@ -370,8 +370,8 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
           callStatusId = selected?.id;
         } else {
           // Fallback: fetch from API
-          const resp = await fetchCallStatuses();
-          const found = (resp.data || []).find((item: any) => item.name === newStatus);
+          const resp = await getCallStatuses();
+          const found = Array.isArray(resp) ? resp.find((item: any) => item.name === newStatus) : undefined;
           callStatusId = found?.id;
         }
         if (!callStatusId) {
