@@ -8,6 +8,7 @@ import { ROUTES } from '../../../constants';
 import { listUsers, deleteUser, type User } from '../../../services/AllUsers';
 import ConfirmDialog from '../../../components/ui/ConfirmDialog';
 import RolesModal from '../../../components/ui/RolesModal';
+import ParentUserModal from '../../../components/ui/ParentUserModal';
 
 const AllUsers: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -26,6 +27,11 @@ const AllUsers: React.FC = () => {
   const [rolesModalOpen, setRolesModalOpen] = useState(false);
   const [selectedUserRoles, setSelectedUserRoles] = useState<any[]>([]);
   const [selectedUserName, setSelectedUserName] = useState('');
+
+  // ParentUserModal state
+  const [parentUserModalOpen, setParentUserModalOpen] = useState(false);
+  const [selectedParentUser, setSelectedParentUser] = useState<any>(null);
+  const [parentUserContextName, setParentUserContextName] = useState('');
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -89,6 +95,21 @@ const AllUsers: React.FC = () => {
     setSelectedUserRoles([]);
     setSelectedUserName('');
   };
+
+  const handleParentUserClick = (user: User) => {
+    const parentUser = (user as any).parent;
+    if (parentUser) {
+      setSelectedParentUser(parentUser);
+      setParentUserContextName(user.name);
+      setParentUserModalOpen(true);
+    }
+  };
+
+  const handleParentUserModalClose = () => {
+    setParentUserModalOpen(false);
+    setSelectedParentUser(null);
+    setParentUserContextName('');
+  };
       // ...existing code...
 
   useEffect(() => {
@@ -145,8 +166,26 @@ const AllUsers: React.FC = () => {
     {
       key: 'parent',
       header: 'Parent User',
-      render: (it: User) => (it as any).parent?.name || (it as any).parent || '-',
-      className: 'max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap',
+      render: (it: User) => {
+        const parentUser = (it as any).parent;
+        return (
+          <div
+            className="flex gap-2 justify-center items-center cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => parentUser && handleParentUserClick(it)}
+          >
+            {parentUser ? (
+              <span
+                className="inline-flex items-center justify-center h-7 px-3 border border-blue-300 rounded-full text-xs font-medium leading-tight whitespace-nowrap bg-blue-50 text-blue-700"
+              >
+                {parentUser.name || parentUser}
+              </span>
+            ) : (
+              <span className="text-gray-400">-</span>
+            )}
+          </div>
+        );
+      },
+      className: 'text-center',
     },
     {
       key: 'lastLogin',
@@ -270,6 +309,15 @@ const AllUsers: React.FC = () => {
             userName={selectedUserName}
             onClose={handleRolesModalClose}
             title="User Roles"
+          />
+
+          {/* ParentUserModal for viewing parent user details */}
+          <ParentUserModal
+            isOpen={parentUserModalOpen}
+            parentUser={selectedParentUser}
+            userName={parentUserContextName}
+            onClose={handleParentUserModalClose}
+            title="Parent User"
           />
         </div>
       </div>

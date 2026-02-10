@@ -162,7 +162,7 @@ const Table = <T,>(props: TableProps<T>) => {
                           totalRows={data.length}
                           onEdit={() => onEdit?.(item)}
                           onView={() => onView?.(item)}
-                          onDelete={() => onDelete?.(item)}
+                          {...(onDelete && { onDelete: () => onDelete(item) })}
                           {...(onUpload && { onUpload: () => onUpload(item) })}
                           editPermissionSlug={editPermissionSlug}
                           viewPermissionSlug={viewPermissionSlug}
@@ -225,7 +225,7 @@ const Table = <T,>(props: TableProps<T>) => {
                   totalRows={data.length}
                   onEdit={() => onEdit?.(item)}
                   onView={() => onView?.(item)}
-                  onDelete={() => onDelete?.(item)}
+                  {...(onDelete && { onDelete: () => onDelete(item) })}
                 />
               </div>
 

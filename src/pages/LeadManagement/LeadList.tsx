@@ -491,7 +491,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
   ] as Column<Lead>[]);
 
   return (
-    <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
+    <div className="flex-1 p-3 md:p-6 w-full max-w-full overflow-x-hidden">
       {hasPermission(createPermissionMap[filterStatus] || 'leads.create') && (
         <MasterHeader
           onCreateClick={handleCreateLead}
@@ -499,9 +499,9 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
         />
       )}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-        <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-200">
-          <h2 className="text-base font-semibold text-gray-900">{title}</h2>
-          <div className="ml-4">
+        <div className="bg-gray-50 px-3 md:px-6 py-3 md:py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-0 border-b border-gray-200">
+          <h2 className="text-sm md:text-base font-semibold text-gray-900">{title}</h2>
+          <div className="w-full md:w-auto">
             <SearchBar
               placeholder="Search leads..."
               delay={250}
@@ -513,7 +513,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
           </div>
         </div>
 
-        <div className="pt-0 overflow-visible">
+        <div className="pt-0 overflow-x-auto">
           <Table
             data={currentData}
             startIndex={startIndex}

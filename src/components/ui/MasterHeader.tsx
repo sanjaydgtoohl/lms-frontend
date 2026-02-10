@@ -44,11 +44,11 @@ const MasterHeader: React.FC<MasterHeaderProps> = ({
       </div>
 
       {/* Right Side - Sign In and Create Buttons */}
-      <div className="flex-shrink-0 flex gap-3">
+      <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-3">
         {showSignInButton && onSignInClick && (
           <button
             onClick={onSignInClick}
-            className="flex items-center justify-center px-4 py-2.5 btn-primary text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
+            className="flex items-center justify-center w-full sm:w-auto px-4 py-2.5 btn-primary text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
           >
             {signInButtonLabel}
           </button>
@@ -56,7 +56,7 @@ const MasterHeader: React.FC<MasterHeaderProps> = ({
         {showCreateButton && canCreate && (
           <button
             onClick={onCreateClick}
-            className="flex items-center justify-center space-x-2 px-4 py-2.5 btn-primary text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
+            className="flex items-center justify-center space-x-2 w-full sm:w-auto px-4 py-2.5 btn-primary text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
           >
             <Plus className="w-4 h-4" />
             <span>{createButtonLabel}</span>

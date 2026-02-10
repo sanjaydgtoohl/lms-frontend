@@ -188,7 +188,7 @@ const BrandMaster: React.FC = () => {
   const handlePageChange = (page: number) => setCurrentPage(page);
 
   return (
-    <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
+    <div className="flex-1 p-3 md:p-6 w-full max-w-full overflow-x-hidden">
       {/* Delete success popup removed to avoid showing success toast after delete */}
       <NotificationPopup
         isOpen={showErrorToast}
@@ -239,18 +239,20 @@ const BrandMaster: React.FC = () => {
           />
 
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-            <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-200">
-              <h2 className="text-base font-semibold text-gray-900">Brand Master</h2>
-              <SearchBar 
-                delay={300} 
-                onSearch={(q: string) => { 
-                  setSearchQuery(q); 
-                  setCurrentPage(1); 
-                }} 
-              />
+            <div className="bg-gray-50 px-3 md:px-6 py-3 md:py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-0 border-b border-gray-200">
+              <h2 className="text-sm md:text-base font-semibold text-gray-900">Brand Master</h2>
+              <div className="w-full md:w-auto">
+                <SearchBar 
+                  delay={300} 
+                  onSearch={(q: string) => { 
+                    setSearchQuery(q); 
+                    setCurrentPage(1); 
+                  }} 
+                />
+              </div>
             </div>
 
-            <div className="pt-0 overflow-visible">
+            <div className="pt-0 overflow-x-auto">
               <Table
               data={currentData}
               startIndex={startIndex}

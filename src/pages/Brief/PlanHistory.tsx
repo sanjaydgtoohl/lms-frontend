@@ -120,9 +120,9 @@ const PlanHistory: React.FC = () => {
           <h3 className="text-sm font-medium text-gray-700 mb-4">Submitted Plans</h3>
 
           <SubmittedPlansList plans={submittedPlans} loading={loading} />
+          </div>
         </div>
-      </div>
-    </>
+      </>
   );
 };
 
@@ -143,15 +143,15 @@ const SubmittedPlansList: React.FC<SubmittedPlansListProps> = ({ plans = [], loa
   const gotoPage = (p: number) => setCurrentPage(Math.min(Math.max(1, p), totalPages));
 
   if (loading) {
-    return <div className="text-center py-8 text-gray-500">Loading submitted plans...</div>;
+    return <div className="no-transitions text-center py-8 text-gray-500">Loading submitted plans...</div>;
   }
 
   if (!plans.length) {
-    return <div className="text-center py-8 text-gray-500">No submitted plans found.</div>;
+    return <div className="no-transitions text-center py-8 text-gray-500">No submitted plans found.</div>;
   }
 
   return (
-    <>
+    <div className="no-transitions">
       <div className="space-y-4">
         {paginated.map((plan, idx) => {
           // Use created_at as submission date, and show planner/creator
@@ -248,7 +248,7 @@ const SubmittedPlansList: React.FC<SubmittedPlansListProps> = ({ plans = [], loa
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>
-    </>
+    </div>
   );
 };
 

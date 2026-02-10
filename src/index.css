@@ -72,6 +72,14 @@ button,
   transition: all 0.2s ease-in-out;
 }
 
+/* Disable transitions/animations for sections that should be static
+   Use the class `no-transitions` on a container to completely opt-out */
+.no-transitions,
+.no-transitions * {
+  transition: none !important;
+  animation: none !important;
+}
+
 /* Custom scrollbar styling */
 ::-webkit-scrollbar {
   width: 6px;

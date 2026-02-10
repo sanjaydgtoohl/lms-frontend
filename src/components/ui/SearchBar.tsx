@@ -38,7 +38,7 @@ const SearchBar: React.FC<Props> = ({ onSearch, placeholder = 'Search Brand', cl
           value={value}
           onChange={(e) => handleChange(e.target.value)}
           placeholder={placeholder}
-          className="w-56 sm:w-64 px-3 pl-9 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+          className="w-full sm:w-56 md:w-64 px-3 pl-9 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
         />
       </div>
     </div>
