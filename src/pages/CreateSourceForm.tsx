@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { MasterFormHeader, SelectField } from '../components/ui';
 import { createLeadSubSource, fetchLeadSources, type LeadSource } from '../services/CreateSourceForm';
-import { showSuccess, showError } from '../utils/notifications';
+import SweetAlert from '../utils/SweetAlert';
 
 type Props = {
   onClose: () => void;
@@ -71,7 +71,7 @@ const CreateSourceForm: React.FC<Props> = ({ onClose, onSave, inline: _inline })
         try { onSave(payload); } catch (e) { /* swallow parent errors */ }
       } else {
         // show local success and fallback to closing the form when not inline
-        showSuccess('Sub-source created successfully');
+        SweetAlert.showCreateSuccess();
         onClose();
       }
     } catch (err) {
@@ -97,7 +97,7 @@ const CreateSourceForm: React.FC<Props> = ({ onClose, onSave, inline: _inline })
         }
       } catch (_) {}
       // Show global popup only when not inline
-      if (!onSave) showError(msg);
+      if (!onSave) SweetAlert.showError(msg);
     } finally {
       setSaving(false);
     }

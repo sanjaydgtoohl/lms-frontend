@@ -8,7 +8,7 @@ import MasterHeader from '../../components/ui/MasterHeader';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import SearchBar from '../../components/ui/SearchBar';
 import Breadcrumb from '../../components/ui/Breadcrumb';
-import { NotificationPopup } from '../../components/ui';
+import SweetAlert from '../../utils/SweetAlert';
 import Create from './Create';
 import { 
   listMissCampaigns, 
@@ -36,11 +36,6 @@ const View: React.FC = () => {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmDeleteLabel, setConfirmDeleteLabel] = useState<string>('');
   const [confirmLoading, setConfirmLoading] = useState(false);
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-  
-  const [showErrorToast, setShowErrorToast] = useState(false);
-  const [errorMessageToast, setErrorMessageToast] = useState('');
   // Image modal (soft alert) state
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [modalImageUrl, setModalImageUrl] = useState<string | null>(null);
@@ -110,9 +105,7 @@ const View: React.FC = () => {
       const newCampaign = await createMissCampaign(data);
       setCampaigns(prev => [newCampaign, ...prev]);
       setCurrentPage(1);
-      setSuccessMessage('Campaign created successfully');
-      setShowSuccessToast(true);
-      setTimeout(() => setShowSuccessToast(false), 1800);
+      try { SweetAlert.showCreateSuccess(); } catch (_) {}
     } catch (error) {
       console.error('Failed to create campaign:', error);
     }
@@ -123,14 +116,11 @@ const View: React.FC = () => {
     setConfirmLoading(true);
     try {
       await deleteMissCampaign(confirmDeleteId);
-      setSuccessMessage('Campaign deleted successfully');
-      setShowSuccessToast(true);
-      setTimeout(() => setShowSuccessToast(false), 1800);
+      try { SweetAlert.showDeleteSuccess(); } catch (_) {}
       await fetchCampaigns(currentPage); // Refresh table from server
     } catch (error) {
       console.error('Failed to delete campaign:', error);
-      setErrorMessageToast((error as any)?.message || 'Failed to delete campaign');
-      setShowErrorToast(true);
+      try { SweetAlert.showError((error as any)?.message || 'Failed to delete campaign'); } catch (_) {}
     } finally {
       setConfirmLoading(false);
       setConfirmDeleteId(null);
@@ -187,9 +177,7 @@ const View: React.FC = () => {
     try {
       await updateMissCampaign(updated.id, updated);
       await fetchCampaigns(currentPage); // Refresh table from server
-      setSuccessMessage('Campaign updated successfully');
-      setShowSuccessToast(true);
-      setTimeout(() => setShowSuccessToast(false), 1800);
+      try { SweetAlert.showUpdateSuccess(); } catch (_) {}
     } catch (error) {
       console.error('Failed to update campaign:', error);
     }
@@ -204,19 +192,7 @@ const View: React.FC = () => {
 
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
-      <NotificationPopup
-        isOpen={showSuccessToast}
-        onClose={() => setShowSuccessToast(false)}
-        message={successMessage}
-        type="success"
-      />
-      {/* Delete success popup removed to avoid showing success toast after delete */}
-      <NotificationPopup
-        isOpen={showErrorToast}
-        onClose={() => setShowErrorToast(false)}
-        message={errorMessageToast}
-        type="error"
-      />
+      {/* SweetAlert is used for inline success/error notifications */}
       <ConfirmDialog
         isOpen={!!confirmDeleteId}
         title={`Delete campaign "${confirmDeleteLabel}"?`}

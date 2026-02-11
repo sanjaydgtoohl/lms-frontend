@@ -6,7 +6,7 @@ import CommentSection from '../../components/forms/CreateLead/CommentSection';
 import { MasterFormHeader, Button } from '../../components/ui';
 import { useNavigate } from 'react-router-dom';
 import { getBrands, getAgencies, createLead } from '../../services/CreateLead';
-import { showSuccess } from '../../utils/notifications';
+import SweetAlert from '../../utils/SweetAlert';
 
 
 const CreateLead: React.FC = () => {
@@ -209,10 +209,14 @@ const CreateLead: React.FC = () => {
           }
           return;
         }
-        showSuccess('Lead created successfully.');
-        navigate('/lead-management/all-leads');
+        SweetAlert.showCreateSuccess();
+        setTimeout(() => {
+          navigate('/lead-management/all-leads');
+        }, 1800);
       } catch (err: any) {
-        setError(err?.message || 'Failed to create lead');
+        const msg = err?.message || 'Failed to create lead';
+        setError(msg);
+        try { SweetAlert.showError(msg); } catch (_) {}
       } finally {
         setSaving(false);
       }

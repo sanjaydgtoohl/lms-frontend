@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
-import { MasterFormHeader, NotificationPopup, SelectField } from '../../../components/ui';
+import { MasterFormHeader, SelectField } from '../../../components/ui';
+import SweetAlert from '../../../utils/SweetAlert';
 import { createPermission, updatePermission } from '../../../services/CreatePermission';
 import { fetchParentPermissions } from '../../../services/ParentPermissions';
 
@@ -23,9 +24,6 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
     iconText: '',
     order: '',
   });
-  
-
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [parentOptions, setParentOptions] = useState<{ value: string; label: string }[]>([]);
@@ -116,16 +114,16 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
       if (mode === 'edit' && initialData?.id) {
         // Update existing permission
         await updatePermission(initialData.id, payload);
+        SweetAlert.showUpdateSuccess();
       } else {
         // Create new permission
         await createPermission(payload);
+        SweetAlert.showCreateSuccess();
       }
       
-      setShowSuccessToast(true);
       setTimeout(() => {
-        setShowSuccessToast(false);
         navigate(ROUTES.PERMISSION.ROOT);
-      }, 1200);
+      }, 1800);
     } catch (err) {
       console.error('Error saving permission:', err);
       // Try to extract field-level validation errors from the API client
@@ -164,12 +162,6 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
       <MasterFormHeader 
         onBack={handleBack} 
         title={mode === 'edit' ? 'Edit Permission' : 'Create Permission'} 
-      />
-      <NotificationPopup
-        isOpen={showSuccessToast}
-        onClose={() => setShowSuccessToast(false)}
-        message={mode === 'edit' ? 'Permission updated successfully' : 'Permission created successfully'}
-        type="success"
       />
 
       <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">

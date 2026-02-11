@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import gmailService from '../../services/gmailService';
+import SweetAlert from '../../utils/SweetAlert';
 
 import './gmailPanel.css';
 
@@ -27,7 +28,7 @@ export default function GmailPanel() {
     try {
       await gmailService.requestAccessToken();
     } catch (e: any) {
-      alert('Sign-in failed: ' + String(e));
+      SweetAlert.showError('Sign-in failed: ' + String(e));
     }
   }
 
@@ -92,7 +93,7 @@ export default function GmailPanel() {
       });
       setMessages(mapped);
     } catch (e: any) {
-      alert('List failed: ' + String(e));
+      SweetAlert.showError('List failed: ' + String(e));
     } finally {
       setLoadingList(false);
     }
@@ -110,7 +111,7 @@ export default function GmailPanel() {
       }
       setSelected({ ...res, raw });
     } catch (e: any) {
-      alert('Get message failed: ' + String(e));
+      SweetAlert.showError('Get message failed: ' + String(e));
     } finally {
       setLoadingMessage(false);
     }

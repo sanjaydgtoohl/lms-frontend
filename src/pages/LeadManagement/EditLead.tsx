@@ -11,7 +11,7 @@ import { getBrands, getAgencies } from '../../services/CreateLead';
 
 import { Button } from '../../components/ui';
 import { updateLead } from '../../services/AllLeads';
-import { showSuccess, showError } from '../../utils/notifications';
+import SweetAlert from '../../utils/SweetAlert';
 import gmailService from '../../services/gmailService';
 
 import CommentSection from '../../components/forms/CreateLead/CommentSection';
@@ -122,8 +122,8 @@ const EditLead: React.FC = () => {
           contacts: [contact],
           assignTo: apiLead.assigned_user?.id ? String(apiLead.assigned_user.id) : undefined,
           assignToName: apiLead.assigned_user?.name || undefined,
-          priority: apiLead.priority?.slug || (apiLead.priority?.id ? String(apiLead.priority.id) : undefined),
-          callFeedback: apiLead.call_status || undefined,
+          priority: apiLead.priority?.id ? String(apiLead.priority.id) : undefined,
+          callFeedback: apiLead.call_status_relation?.id ? String(apiLead.call_status_relation.id) : undefined,
           comment: apiLead.comment || '',
         };
 
@@ -286,11 +286,11 @@ const EditLead: React.FC = () => {
 
       await updateLead(id || '', payload);
       // Assume updateLead throws on error or returns the updated item
-      showSuccess('Lead updated successfully.');
+      SweetAlert.showUpdateSuccess();
       navigate('/lead-management/all-leads');
     } catch (error: any) {
       console.error('Error updating lead:', error);
-      showError(error?.message || 'Failed to update lead');
+      try { SweetAlert.showError(error?.message || 'Failed to update lead'); } catch (_) {}
     }
   };
 

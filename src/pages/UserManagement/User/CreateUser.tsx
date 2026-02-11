@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
-import { MasterFormHeader, NotificationPopup, MultiSelectDropdown } from '../../../components/ui';
+import { MasterFormHeader, MultiSelectDropdown } from '../../../components/ui';
 import { apiClient } from '../../../utils/apiClient';
 import { createUser, updateUser } from '../../../services/CreateUser';
+import SweetAlert from '../../../utils/SweetAlert';
 
 type Props = {
   mode?: 'create' | 'edit';
@@ -26,10 +27,6 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
   roles: [] as string[],
   managers: [] as string[],
   });
-
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
-  const [showErrorToast, setShowErrorToast] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [roleOptions, setRoleOptions] = useState<Array<{ label: string; value: string }>>([]);
   const [rolesLoading, setRolesLoading] = useState(false);
@@ -237,15 +234,14 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
       // Call API service
       if (mode === 'edit' && initialData && initialData.id) {
         await updateUser(String(initialData.id), payload);
+        SweetAlert.showUpdateSuccess();
       } else {
         await createUser(payload);
+        SweetAlert.showCreateSuccess();
       }
-
-      setShowSuccessToast(true);
       setTimeout(() => {
-        setShowSuccessToast(false);
         navigate(ROUTES.USER.ROOT);
-      }, 1200);
+      }, 1800);
     } catch (err: any) {
       console.error('Error saving user:', err);
 
@@ -267,8 +263,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
         setErrors((prev) => ({ ...prev, ...nextErrs }));
       } else {
         const msg = respData?.message || err?.message || 'Failed to save user';
-        setErrorMessage(String(msg));
-        setShowErrorToast(true);
+        try { SweetAlert.showError(String(msg)); } catch (_) {}
       }
     } finally {
       setSaving(false);
@@ -290,18 +285,6 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
       <MasterFormHeader 
         onBack={handleBack} 
         title={mode === 'edit' ? 'Edit User' : 'Add User'} 
-      />
-      <NotificationPopup
-        isOpen={showSuccessToast}
-        onClose={() => setShowSuccessToast(false)}
-        message={mode === 'edit' ? 'User updated successfully' : 'User created successfully'}
-        type="success"
-      />
-      <NotificationPopup
-        isOpen={showErrorToast}
-        onClose={() => setShowErrorToast(false)}
-        message={errorMessage}
-        type="error"
       />
 
       <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">

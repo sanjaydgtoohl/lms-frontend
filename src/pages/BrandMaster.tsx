@@ -8,12 +8,12 @@ import { ROUTES } from '../constants';
 import MasterHeader from '../components/ui/MasterHeader';
 import SearchBar from '../components/ui/SearchBar';
 import { matchesQuery } from '../utils/index.tsx';
-import { NotificationPopup } from '../components/ui';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import AgenciesModal from '../components/ui/AgenciesModal';
 import { deleteBrand } from '../services/BrandMaster';
 import { listBrands, getBrand, type BrandItem as ServiceBrandItem } from '../services/BrandMaster';
 import { usePermissions } from '../context/SidebarMenuContext';
+import SweetAlert from '../utils/SweetAlert';
 
 type Brand = ServiceBrandItem;
 
@@ -76,8 +76,6 @@ const BrandMaster: React.FC = () => {
   const handleEdit = (id: string) => navigate(`${ROUTES.BRAND_MASTER}/${encodeURIComponent(id)}/edit`);
   const handleView = (id: string) => navigate(`${ROUTES.BRAND_MASTER}/${encodeURIComponent(id)}`);
   
-  const [showErrorToast, setShowErrorToast] = useState(false);
-  const [errorMessageToast, setErrorMessageToast] = useState('');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmDeleteLabel, setConfirmDeleteLabel] = useState<string>('');
   const [confirmLoading, setConfirmLoading] = useState(false);
@@ -100,9 +98,9 @@ const BrandMaster: React.FC = () => {
       setBrands(res.data as Brand[]);
       const total = res.meta?.pagination?.total ?? res.data.length;
       setTotalItems(total);
+      SweetAlert.showDeleteSuccess();
     } catch (e: any) {
-      setErrorMessageToast(e?.message || 'Failed to delete');
-      setShowErrorToast(true);
+      SweetAlert.showError(e?.message || 'Failed to delete');
     } finally {
       setConfirmLoading(false);
       setConfirmDeleteId(null);
@@ -189,14 +187,6 @@ const BrandMaster: React.FC = () => {
 
   return (
     <div className="flex-1 p-3 md:p-6 w-full max-w-full overflow-x-hidden">
-      {/* Delete success popup removed to avoid showing success toast after delete */}
-      <NotificationPopup
-        isOpen={showErrorToast}
-        onClose={() => setShowErrorToast(false)}
-        message={errorMessageToast}
-        type="error"
-      />
-
       <ConfirmDialog
         isOpen={!!confirmDeleteId}
         title={`Delete brand "${confirmDeleteLabel}"?`}

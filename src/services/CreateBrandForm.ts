@@ -98,6 +98,11 @@ export async function listCities(params?: { state_id?: string | number; country_
     }
   }
 
+  // If no valid parameters provided, return empty array instead of making an invalid API call
+  if (Object.keys(safeParams).length === 0) {
+    return [];
+  }
+
   const cacheKey = JSON.stringify(safeParams || {});
   if (cityCache[cacheKey]) return cityCache[cacheKey];
 

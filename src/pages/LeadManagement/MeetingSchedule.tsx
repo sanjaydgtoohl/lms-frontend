@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import Breadcrumb from '../../components/ui/Breadcrumb';
-import { showSuccess } from '../../utils/notifications';
+import SweetAlert from '../../utils/SweetAlert';
 import { useNavigate } from 'react-router-dom';
 import SelectField from '../../components/ui/SelectField';
 import { createMeeting } from '../../services/MeetingSchedule';
@@ -168,12 +168,14 @@ const MeetingSchedule: React.FC = () => {
       const response = await createMeeting(payload);
       console.log('Meeting created successfully', response);
       // Show success message
-      showSuccess('Meeting scheduled successfully!');
+      SweetAlert.showCreateSuccess();
       // Navigate back to lead management list
-      navigate('/lead-management/all-leads');
+      setTimeout(() => {
+        navigate('/lead-management/all-leads');
+      }, 1800);
     } catch (error: any) {
       console.error('Error saving meeting:', error);
-      showSuccess(`Error: ${error.message || 'Failed to save meeting'}`);
+      try { SweetAlert.showError(error?.message || 'Failed to save meeting'); } catch (_) {}
     }
   };
 

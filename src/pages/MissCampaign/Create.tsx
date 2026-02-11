@@ -8,7 +8,7 @@ import { createMissCampaign } from '../../services/Create';
 import { updateMissCampaign } from '../../services/View';
 import { listBrands } from '../../services/BrandMaster';
 // Removed LeadSource import as per request
-import { showSuccess, showError } from '../../utils/notifications';
+import SweetAlert from '../../utils/SweetAlert';
 
 interface CreateProps {
   inline?: boolean;
@@ -260,10 +260,10 @@ const Create: React.FC<CreateProps> = ({
       if (mode === 'edit' && initialData && (initialData.id || initialData.uuid)) {
         const id = String(initialData.id ?? initialData.uuid);
         result = await updateMissCampaign(id, payload);
-        showSuccess('Miss campaign updated successfully');
+        SweetAlert.showUpdateSuccess();
       } else {
         result = await createMissCampaign(payload);
-        showSuccess('Miss campaign created successfully');
+        SweetAlert.showCreateSuccess();
       }
 
       if (onSave) onSave(result);
@@ -275,13 +275,13 @@ const Create: React.FC<CreateProps> = ({
         // Navigate to view page after a short delay to show success message
         setTimeout(() => {
           navigate('/miss-campaign/view');
-        }, 1500);
+        }, 1800);
       }
     } catch (err: any) {
       console.error('Create/Update failed', err);
       const errorMsg = err?.message || 'Failed to save campaign';
       setError(errorMsg);
-      showError(errorMsg);
+      try { SweetAlert.showError(errorMsg); } catch (_) {}
     } finally {
       setSaving(false);
     }

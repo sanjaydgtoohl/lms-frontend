@@ -8,6 +8,7 @@ import { getBriefById } from '../../services/PlanSubmission';
 import type { BriefDetail } from '../../services/PlanSubmission';
 import http from '../../services/http';
 import { updateSubmittedPlan } from '../../services/EditSubmittedPlan';
+import SweetAlert from '../../utils/SweetAlert';
 
 const EditSubmittedPlan: React.FC = () => {
   const navigate = useNavigate();
@@ -75,7 +76,7 @@ const EditSubmittedPlan: React.FC = () => {
       } else if (window && (window as any).showToast) {
         (window as any).showToast('success', resp.message || 'Plan updated successfully');
       } else {
-        alert(resp.message || 'Plan updated successfully');
+        SweetAlert.showUpdateSuccess();
       }
       navigate(-1);
     } catch (err: any) {
@@ -86,7 +87,7 @@ const EditSubmittedPlan: React.FC = () => {
       } else if (window && (window as any).showToast) {
         (window as any).showToast('error', err.message || 'Failed to update plan');
       } else {
-        alert((err && err.message) ? err.message : 'Failed to update plan');
+        SweetAlert.showError((err && err.message) ? err.message : 'Failed to update plan');
       }
     }
   };

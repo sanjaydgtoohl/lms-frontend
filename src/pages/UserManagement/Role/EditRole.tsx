@@ -3,7 +3,8 @@ import { updateRoleById } from '../../../services/EditRole';
 import { motion } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ROUTES, API_ENDPOINTS } from '../../../constants';
-import { MasterFormHeader, NotificationPopup } from '../../../components/ui';
+import { MasterFormHeader } from '../../../components/ui';
+import SweetAlert from '../../../utils/SweetAlert';
 import http from '../../../services/http';
 import PermissionTree from '../../../components/ui/PermissionTree';
 
@@ -26,7 +27,6 @@ const EditRole: React.FC = () => {
 
   const [isLoading, setIsLoading] = useState(true);
   const [permissionError, setPermissionError] = useState('');
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
@@ -103,11 +103,10 @@ const EditRole: React.FC = () => {
       // Make API call to update role
       const numericId = id ? id.replace(/[^\d]/g, '') : '';
       await updateRoleById(numericId, payload);
-      setShowSuccessToast(true);
+      SweetAlert.showUpdateSuccess();
       setTimeout(() => {
-        setShowSuccessToast(false);
         navigate(ROUTES.ROLE.ROOT);
-      }, 1200);
+      }, 1800);
     } catch (err) {
       console.error('Error updating role:', err);
     } finally {
@@ -140,12 +139,6 @@ const EditRole: React.FC = () => {
       <MasterFormHeader 
         onBack={handleBack} 
         title="Edit Role" 
-      />
-      <NotificationPopup
-        isOpen={showSuccessToast}
-        onClose={() => setShowSuccessToast(false)}
-        message="Role updated successfully"
-        type="success"
       />
 
       <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">

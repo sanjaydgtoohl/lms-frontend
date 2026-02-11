@@ -6,11 +6,12 @@ import MasterEdit from '../components/ui/MasterEdit';
 import Pagination from '../components/ui/Pagination';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants';
-import { MasterHeader, NotificationPopup } from '../components/ui';
+import { MasterHeader } from '../components/ui';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import SearchBar from '../components/ui/SearchBar';
 import { listIndustries, deleteIndustry, updateIndustry, type Industry as ApiIndustry } from '../services/IndustryMaster';
 import { usePermissions } from '../context/SidebarMenuContext';
+import SweetAlert from '../utils/SweetAlert';
 
 interface Industry {
   id: string;
@@ -22,12 +23,8 @@ const IndustryMaster: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);
   
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('Industry created successfully');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
-  const [showErrorToast, setShowErrorToast] = useState(false);
-  const [errorMessageToast, setErrorMessageToast] = useState('');
   const itemsPerPage = 10;
 
   const [industries, setIndustries] = useState<Industry[]>([]);
@@ -58,11 +55,9 @@ const IndustryMaster: React.FC = () => {
     setIndustries(prev => [newItem, ...prev]);
     setCurrentPage(1);
 
-    // Show success popup then navigate back to listing and reload
-    setSuccessMessage('Industry created successfully');
-    setShowSuccessToast(true);
+    // Show SweetAlert success then navigate back to listing and reload
+    SweetAlert.showCreateSuccess();
     setTimeout(() => {
-      setShowSuccessToast(false);
       navigate(ROUTES.INDUSTRY_MASTER);
       // Force reload to ensure fresh data
       window.location.reload();
@@ -86,9 +81,9 @@ const IndustryMaster: React.FC = () => {
     try {
       await deleteIndustry(confirmDeleteId);
       setIndustries(prev => prev.filter(i => i.id !== confirmDeleteId));
+      SweetAlert.showDeleteSuccess();
     } catch (e: any) {
-      setErrorMessageToast(e?.message || 'Failed to delete');
-      setShowErrorToast(true);
+      SweetAlert.showError(e?.message || 'Failed to delete');
     } finally {
       setConfirmLoading(false);
       setConfirmDeleteId(null);
@@ -200,6 +195,7 @@ const IndustryMaster: React.FC = () => {
       await updateIndustry(updated.id, { name: updated.name });
       // Refresh the list from server so table shows latest data
       await refresh();
+      SweetAlert.showUpdateSuccess();
     })();
   };
 
@@ -216,20 +212,6 @@ const IndustryMaster: React.FC = () => {
 
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
-      <NotificationPopup
-        isOpen={showSuccessToast}
-        onClose={() => setShowSuccessToast(false)}
-        message={successMessage}
-        type="success"
-      />
-      {/* Delete success popup removed to avoid showing success toast after delete */}
-      <NotificationPopup
-        isOpen={showErrorToast}
-        onClose={() => setShowErrorToast(false)}
-        message={errorMessageToast}
-        type="error"
-      />
-
       <ConfirmDialog
         isOpen={!!confirmDeleteId}
         title="Delete this industry?"

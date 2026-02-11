@@ -6,6 +6,7 @@ import { MasterHeader } from '../../../components/ui';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
 import { listUsers, deleteUser, type User } from '../../../services/AllUsers';
+import SweetAlert from '../../../utils/SweetAlert';
 import ConfirmDialog from '../../../components/ui/ConfirmDialog';
 import RolesModal from '../../../components/ui/RolesModal';
 import ParentUserModal from '../../../components/ui/ParentUserModal';
@@ -47,7 +48,7 @@ const AllUsers: React.FC = () => {
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('Failed to fetch users', err);
-      alert('Failed to fetch users.');
+      SweetAlert.showError('Failed to fetch users.');
     } finally {
       setLoading(false);
     }
@@ -66,11 +67,12 @@ const AllUsers: React.FC = () => {
       await deleteUser(deleteTarget.id);
       setConfirmOpen(false);
       setDeleteTarget(null);
+      try { SweetAlert.showDeleteSuccess(); } catch (_) {}
       fetchUsers();
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('Failed to delete user', err);
-      alert('Failed to delete user.');
+      try { SweetAlert.showError('Failed to delete user.'); } catch (_) {}
     } finally {
       setDeleteLoading(false);
     }

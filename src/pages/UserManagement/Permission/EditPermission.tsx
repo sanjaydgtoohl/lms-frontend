@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
-import { MasterFormHeader, NotificationPopup, SelectField } from '../../../components/ui';
+import { MasterFormHeader, SelectField } from '../../../components/ui';
+import SweetAlert from '../../../utils/SweetAlert';
 import { getPermissionForEdit, updatePermissionWithFile } from '../../../services/EditPermission';
 import { fetchParentPermissions } from '../../../services/ParentPermissions';
 
@@ -22,7 +23,6 @@ const EditPermission: React.FC = () => {
   });
   
   const [isLoading, setIsLoading] = useState(true);
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [parentOptions, setParentOptions] = useState<{ value: string; label: string }[]>([]);
@@ -134,11 +134,10 @@ const EditPermission: React.FC = () => {
         await updatePermissionWithFile(id, payload);
       }
       
-      setShowSuccessToast(true);
+      SweetAlert.showUpdateSuccess();
       setTimeout(() => {
-        setShowSuccessToast(false);
         navigate(ROUTES.PERMISSION.ROOT);
-      }, 1200);
+      }, 1800);
     } catch (err) {
       console.error('Error updating permission:', err);
       // Try to extract field-level validation errors from the API client
@@ -187,12 +186,6 @@ const EditPermission: React.FC = () => {
       <MasterFormHeader 
         onBack={handleBack} 
         title="Edit Permission" 
-      />
-      <NotificationPopup
-        isOpen={showSuccessToast}
-        onClose={() => setShowSuccessToast(false)}
-        message="Permission updated successfully"
-        type="success"
       />
 
       <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">

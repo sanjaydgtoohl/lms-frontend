@@ -17,7 +17,7 @@ import {
 	deleteDepartment,
 	type Department as ApiDepartment,
 } from '../services/DepartmentMaster';
-import { showSuccess, showError } from '../utils/notifications';
+import SweetAlert from '../utils/SweetAlert';
 import { usePermissions } from '../context/SidebarMenuContext';
 
 interface Department {
@@ -73,7 +73,7 @@ const CreateDepartmentForm: React.FC<{
 		try {
 			const res: any = onSave ? (onSave as any)({ name, dateTime: formatDateTime(new Date()) }) : null;
 			if (res && typeof res.then === 'function') await res;
-			showSuccess('Department created successfully');
+			SweetAlert.showCreateSuccess();
 			onClose();
 		} catch (err: any) {
 			const responseData = err?.responseData;
@@ -85,11 +85,11 @@ const CreateDepartmentForm: React.FC<{
 				
 				// Don't show popup for "already been taken" errors - only show on form field
 				if (!errorMessage.toLowerCase().includes('already been taken')) {
-					showError(errorMessage);
+					SweetAlert.showError(errorMessage);
 				}
 			} else {
 				// Show general error if not a validation error
-				showError(err?.message || 'Failed to create department');
+				SweetAlert.showError(err?.message || 'Failed to create department');
 			}
 		}
 	};
@@ -182,7 +182,7 @@ const DepartmentMaster: React.FC = () => {
 				await createDepartment({ name: data.name });
 				await refresh();
 				setCurrentPage(1);
-				showSuccess('Department created successfully');
+				SweetAlert.showCreateSuccess();
 			} catch (e: any) {
 				// Rethrow so caller can decide whether to show a popup or render inline errors
 				throw e;
@@ -208,8 +208,9 @@ const DepartmentMaster: React.FC = () => {
 		try {
 			await deleteDepartment(confirmDeleteId);
 			setDepartments(prev => prev.filter(d => d.id !== confirmDeleteId));
+			SweetAlert.showDeleteSuccess();
 		} catch (e: any) {
-			alert(e?.message || 'Failed to delete');
+			SweetAlert.showError(e?.message || 'Failed to delete');
 		} finally {
 			setConfirmLoading(false);
 			setConfirmDeleteId(null);
@@ -300,9 +301,9 @@ const DepartmentMaster: React.FC = () => {
 			try {
 				await updateDepartment(updated.id, { name: updated.name });
 				setDepartments(prev => prev.map(d => (d.id === updated.id ? { ...d, name: updated.name } as Department : d)));
-				showSuccess('Department updated successfully');
+				SweetAlert.showUpdateSuccess();
 			} catch (e: any) {
-				showError(e?.message || 'Failed to update department');
+				SweetAlert.showError(e?.message || 'Failed to update department');
 			}
 		})();
 	};
@@ -321,8 +322,8 @@ const DepartmentMaster: React.FC = () => {
 			/>
 			{showCreate ? (
 				<CreateDepartmentForm onClose={() => navigate(ROUTES.DEPARTMENT_MASTER)} onSave={handleSaveDepartment} />
-					) : viewItem ? (
-						<MasterView item={viewItem} onClose={() => navigate(ROUTES.DEPARTMENT_MASTER)} />
+				) : viewItem ? (
+				<MasterView item={viewItem} onClose={() => navigate(ROUTES.DEPARTMENT_MASTER)} />
 			) : editItem ? (
 	<MasterEdit item={editItem} onClose={() => navigate(ROUTES.DEPARTMENT_MASTER)} onSave={handleSaveEditedDepartment} hideSource nameLabel="Department" />
 			) : (
