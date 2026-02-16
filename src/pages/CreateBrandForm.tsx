@@ -7,9 +7,10 @@ import { listAgencies } from '../services/AgencyMaster';
 import type { Agency } from '../services/AgencyMaster';
 import { fetchIndustries } from '../services/CreateIndustryForm';
 import type { Industry } from '../services/CreateIndustryForm';
-import { showSuccess, showError } from '../utils/notifications';
+// Notifications replaced by centralized SweetAlert helper
 import { apiClient } from '../utils/apiClient';
 import { updateBrand } from '../services/BrandMaster';
+import SweetAlert from '../utils/SweetAlert';
 
 type Props = {
   onClose: () => void;
@@ -37,7 +38,16 @@ const CitySelect: React.FC<CitySelectProps> = ({ state, value, onChange, presele
 
     const numericState = state && String(state).match(/^\d+$/) ? Number(state) : undefined;
 
-    listCities(numericState ? { state_id: numericState } : undefined)
+    // Only fetch cities if a valid state_id is provided; otherwise clear the list
+    if (!numericState) {
+      if (mounted) {
+        setCities([]);
+        setLoading(false);
+      }
+      return () => { mounted = false; };
+    }
+
+    listCities({ state_id: numericState })
       .then((data) => {
         if (!mounted) return;
         const normalized = (data || []).map((c: any) => ({ id: String(c.id), name: c.name }));
@@ -69,18 +79,18 @@ const CitySelect: React.FC<CitySelectProps> = ({ state, value, onChange, presele
   // Find the label for the selected value (id)
   // ...existing code...
 
-  return (
-    <div>
-      <SelectField
-        name="city"
-        value={value}
-        onChange={(v) => onChange(typeof v === 'string' ? v : v[0] ?? '')}
-        options={cities.map(c => ({ value: String(c.id), label: c.name }))}
-        placeholder={loading ? 'Loading cities...' : (cities.length ? 'Select City' : 'Select State first')}
-        disabled={loading}
-      />
-    </div>
-  );
+    return (
+      <div>
+        <SelectField
+          name="city"
+          value={value}
+          onChange={(v) => onChange(typeof v === 'string' ? v : v[0] ?? '')}
+          options={cities.map(c => ({ value: String(c.id), label: c.name }))}
+          placeholder={loading ? 'Loading cities...' : (cities.length ? 'Select City' : 'Select State first')}
+          disabled={loading}
+        />
+      </div>
+    );
 };
 
 const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create' }) => {
@@ -196,7 +206,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
         // Update existing brand
         res = await updateBrand(initialData.id, payload);
         if (res) {
-          showSuccess('Brand updated successfully');
+          SweetAlert.showUpdateSuccess();
           onClose();
           // Auto-reload Brand Master page after successful update
           window.location.reload();
@@ -206,7 +216,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
         res = await apiClient.post('/brands', payload);
 
         if (res && res.success) {
-          showSuccess('Brand created successfully');
+          SweetAlert.showCreateSuccess();
           onClose();
           // Auto-reload Brand Master page after successful creation
           window.location.reload();
@@ -252,11 +262,11 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
           !newErrors.website &&
           !(newErrors.city && newErrors.city.toLowerCase().includes('must be an integer'))
         ) {
-          showError(firstError);
+            SweetAlert.showError(firstError);
         }
       } else {
         // Show general error if not a validation error
-        showError(err?.message || `Failed to ${mode === 'edit' ? 'update' : 'save'} brand`);
+          SweetAlert.showError(err?.message || `Failed to ${mode === 'edit' ? 'update' : 'save'} brand`);
       }
     }
   };

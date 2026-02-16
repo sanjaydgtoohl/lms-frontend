@@ -59,13 +59,20 @@ const Header: React.FC<HeaderProps> = ({
         {/* Left: show hamburger on mobile only */}
         <div className="flex items-center">
           {showHamburger && (
-            <button
+            <div
               onClick={onHamburgerClick}
               aria-label="Open menu"
-              className="p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-[#344054] md:hidden"
+              role="button"
+              tabIndex={0}
+              className="cursor-pointer p-2 rounded-md hover:bg-gray-100 transition-colors md:hidden focus:outline-none focus:ring-2 focus:ring-[#344054]"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  onHamburgerClick?.();
+                }
+              }}
             >
               <Menu className="w-5 h-5 text-[#344054]" />
-            </button>
+            </div>
           )}
         </div>
 

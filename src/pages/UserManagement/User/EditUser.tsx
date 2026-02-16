@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
-import { MasterFormHeader, NotificationPopup, MultiSelectDropdown } from '../../../components/ui';
+import { MasterFormHeader, MultiSelectDropdown } from '../../../components/ui';
+import SweetAlert from '../../../utils/SweetAlert';
 import { apiClient } from '../../../utils/apiClient';
 import { getUserForEdit, updateUserDetails } from '../../../services/EditUser';
 import type { EditUserPayload } from '../../../services/EditUser';
@@ -22,9 +23,6 @@ const EditUser: React.FC = () => {
   });
 
   const [isLoading, setIsLoading] = useState(true);
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
-  const [showErrorToast, setShowErrorToast] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [roleOptions, setRoleOptions] = useState<Array<{ label: string; value: string }>>([]);
   const [rolesLoading, setRolesLoading] = useState(false);
@@ -286,11 +284,10 @@ const EditUser: React.FC = () => {
         await updateUserDetails(id, payload);
       }
 
-      setShowSuccessToast(true);
+      SweetAlert.showUpdateSuccess();
       setTimeout(() => {
-        setShowSuccessToast(false);
         navigate(ROUTES.USER.ROOT);
-      }, 1200);
+      }, 1800);
     } catch (err: any) {
       console.error('Error updating user:', err);
 
@@ -312,8 +309,7 @@ const EditUser: React.FC = () => {
         setErrors((prev) => ({ ...prev, ...nextErrs }));
       } else {
         const msg = respData?.message || err?.message || 'Failed to update user';
-        setErrorMessage(String(msg));
-        setShowErrorToast(true);
+        try { SweetAlert.showError(String(msg)); } catch (_) {}
       }
     } finally {
       setSaving(false);
@@ -345,18 +341,6 @@ const EditUser: React.FC = () => {
       <MasterFormHeader 
         onBack={handleBack} 
         title="Edit User" 
-      />
-      <NotificationPopup
-        isOpen={showSuccessToast}
-        onClose={() => setShowSuccessToast(false)}
-        message="User updated successfully"
-        type="success"
-      />
-      <NotificationPopup
-        isOpen={showErrorToast}
-        onClose={() => setShowErrorToast(false)}
-        message={errorMessage}
-        type="error"
       />
 
       <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">

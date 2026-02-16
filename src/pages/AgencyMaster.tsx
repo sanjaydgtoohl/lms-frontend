@@ -10,8 +10,8 @@ import { ROUTES } from '../constants';
 import { getItem } from '../data/masterData';
 import { MasterHeader } from '../components/ui';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
-import { showError } from '../utils/notifications';
 import Pagination from '../components/ui/Pagination';
+import SweetAlert from '../utils/SweetAlert';
 import SearchBar from '../components/ui/SearchBar';
 import { usePermissions } from '../context/SidebarMenuContext';
 
@@ -157,7 +157,10 @@ const AgencyMaster: React.FC = () => {
   };
 
   const handleDelete = (item: Agency): void => {
-    if (!item.id) return showError('Agency ID is missing');
+    if (!item.id) {
+      SweetAlert.showError('Agency ID is missing');
+      return;
+    }
     setConfirmDeleteId(item.id);
     setConfirmDeleteLabel(item.agencyName || item.id);
   };
@@ -169,9 +172,10 @@ const AgencyMaster: React.FC = () => {
       await deleteAgency(confirmDeleteId);
       // Refresh the list
       loadAgencies(page, searchValue);
+      SweetAlert.showDeleteSuccess();
     } catch (err) {
       console.error('Delete failed:', err);
-      showError((err as any)?.message || 'Failed to delete agency');
+      SweetAlert.showError((err as any)?.message || 'Failed to delete agency');
     } finally {
       setConfirmLoading(false);
       setConfirmDeleteId(null);

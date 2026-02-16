@@ -11,6 +11,7 @@ import { ROUTES } from '../../constants';
 import { listBriefLogs } from '../../services/BriefLog';
 import type { BriefLogItem } from '../../services/BriefLog';
 import { getPlannerStatuses } from '../../services/BriefLog';
+import SweetAlert from '../../utils/SweetAlert';
 
 // Data is fetched from API via `listBriefLogs` service
 
@@ -228,7 +229,7 @@ const BriefLog: React.FC = () => {
   const handleSelectStatus = (id: string | null, newStatus: string) => {
     console.log('handleSelectStatus called with:', { id, newStatus });
     if (!id) {
-      alert('Planner ID not found for this row. Cannot update status.');
+      SweetAlert.showWarning('Planner ID not found for this row. Cannot update status.');
       return;
     }
     // removed setPendingStatusChange (no longer needed)
@@ -238,7 +239,7 @@ const BriefLog: React.FC = () => {
   const handleStatusConfirm = async (id: string | null, newStatus: string) => {
     console.log('handleStatusConfirm called with:', { id, newStatus });
     if (!id) {
-      alert('Planner ID not found. Cannot update status.');
+      SweetAlert.showWarning('Planner ID not found. Cannot update status.');
       return;
     }
     if (!newStatus) return;
@@ -255,9 +256,10 @@ const BriefLog: React.FC = () => {
       // Do NOT filter by id here, fetch all logs for the page
       const res = await listBriefLogs(currentPage, itemsPerPage);
       setBriefLogs(res.data || []);
+      SweetAlert.showUpdateSuccess();
     } catch (err) {
       // Show error feedback
-      alert('Failed to update status. Please try again.');
+      SweetAlert.showError('Failed to update status. Please try again.');
       console.error('Failed to update status', err);
     } finally {
       setStatusUpdatingId(null);

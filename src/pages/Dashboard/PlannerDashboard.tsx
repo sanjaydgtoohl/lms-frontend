@@ -51,11 +51,8 @@ const PlannerDashboard: React.FC = () => {
   const activeBriefsCount = cardData?.active_briefs ?? 0;
   const completedThisMonthCount = cardData?.closed_briefs ?? 0;
   const avgPlanningTime = cardData?.average_planning_time_days ?? 0;
-  // onTimePercent and overdueCount remain mock for now
-  const onTimePercent = 85;
   const paginatedBriefs = assignedBriefs;
   const overdueCount = 0; // Not available from API for assigned briefs
-  const dueThisWeek = 0; // Not available from API for assigned briefs
 
   return (
     <div className="space-y-6 font-['Inter','Poppins',system-ui,sans-serif]">
@@ -71,42 +68,38 @@ const PlannerDashboard: React.FC = () => {
             <span className="text-red-500">{error}</span>
           </div>
         ) : <>
-          <div className="bg-blue-50 p-4 rounded-lg static" style={{ transition: 'none', transform: 'none', animation: 'none' }}>
+          <div className="bg-[var(--hover-bg)] p-4 rounded-lg static border border-gray-200" style={{ transition: 'none', transform: 'none', animation: 'none' }}>
             <p className="text-xs text-gray-500">Active Briefs</p>
             <div className="flex items-center justify-between mt-2 static">
               <h3 className="text-2xl font-semibold">{activeBriefsCount}</h3>
             </div>
-            <p className="text-xs text-gray-500 mt-1">{dueThisWeek} due this week</p>
           </div>
 
-          <div className="bg-indigo-50 p-4 rounded-lg">
+          <div className="bg-[var(--hover-bg)] p-4 rounded-lg border border-gray-200">
             <p className="text-xs text-gray-500">Completed Brief</p>
             <div className="flex items-center justify-between mt-2">
               <h3 className="text-2xl font-semibold">{completedThisMonthCount}</h3>
             </div>
-            <p className="text-xs text-gray-500 mt-1">{onTimePercent}% on-time delivery</p>
           </div>
 
-          <div className="bg-blue-50 p-4 rounded-lg">
+          <div className="bg-[var(--hover-bg)] p-4 rounded-lg border border-gray-200">
             <p className="text-xs text-gray-500">Avg Planning Time</p>
             <div className="flex items-center justify-between mt-2">
               <h3 className="text-2xl font-semibold">{avgPlanningTime} days</h3>
             </div>
-            <p className="text-xs text-gray-500 mt-1">Target: {cardData?.total_left_time_days ?? 3} days</p>
           </div>
 
-          <div className="bg-indigo-50 p-4 rounded-lg">
+          <div className="bg-[var(--hover-bg)] p-4 rounded-lg border border-gray-200">
             <p className="text-xs text-gray-500">Overdue Items</p>
             <div className="flex items-center justify-between mt-2">
               <h3 className="text-2xl font-semibold">{overdueCount}</h3>
             </div>
-            <p className="text-xs text-gray-500 mt-1">{overdueCount === 0 ? 'All on schedule' : `${overdueCount} overdue`}</p>
           </div>
         </>}
       </div>
 
       {/* My Assigned Briefs */}
-      <div className="bg-gray-100 p-4 rounded-xl">
+      <div className="bg-[var(--hover-bg)] p-4 rounded-xl border border-gray-200">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold">My Assigned Briefs</h3>
           <a
@@ -142,46 +135,46 @@ const PlannerDashboard: React.FC = () => {
               return (
                 <div
                   key={brief.id}
-                  className="bg-white rounded-xl shadow flex flex-col md:flex-row justify-between items-stretch p-5 gap-4"
+                  className="bg-white rounded-xl shadow flex flex-col md:flex-row justify-between items-start md:items-stretch p-3 sm:p-5 gap-3 sm:gap-4 hover:shadow-md transition-shadow duration-200"
                 >
                   {/* Left: Brief Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                  <div className="flex-1 min-w-0 w-full md:w-auto">
+                    <div className="flex flex-row items-center gap-1 sm:gap-2 mb-2 sm:mb-1 flex-wrap">
                       <span className="text-xs text-gray-500">Brief ID</span>
                       <span className="font-semibold text-blue-700 text-sm cursor-pointer">#{brief.id}</span>
                       {statusText && (
-                        <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${statusColor}`}>{statusText}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium w-fit ${statusColor}`}>{statusText}</span>
                       )}
                     </div>
-                    <div className="text-sm text-gray-700 mb-1">
-                      <span className="font-medium">Product Name :</span> {brief.product_name || '-'}
+                    <div className="text-xs sm:text-sm text-gray-700 mb-1 line-clamp-1">
+                      <span className="font-medium">Product Name :</span> <span className="truncate">{brief.product_name || '-'}</span>
                     </div>
-                    <div className="text-sm text-gray-700 mb-1">
-                      <span className="font-medium">Brand Name :</span> {brief.brand_name || '-'}
+                    <div className="text-xs sm:text-sm text-gray-700 mb-1 line-clamp-1">
+                      <span className="font-medium">Brand Name :</span> <span className="truncate">{brief.brand_name || '-'}</span>
                     </div>
-                    <div className="text-sm text-gray-700 mb-1">
-                      <span className="font-medium">Brief Name :</span> {brief.brief_name || '-'}
+                    <div className="text-xs sm:text-sm text-gray-700 mb-1 line-clamp-1">
+                      <span className="font-medium">Brief Name :</span> <span className="truncate">{brief.brief_name || '-'}</span>
                     </div>
-                    <div className="text-sm text-gray-700 mb-1">
-                      <span className="font-medium">Brief Submission Date &amp; Time :</span> {brief.submission_date || '-'}
+                    <div className="text-xs sm:text-sm text-gray-700 mb-1 line-clamp-1">
+                      <span className="font-medium">Brief Submission Date &amp; Time :</span> <span className="truncate">{brief.submission_date || '-'}</span>
                     </div>
                   </div>
                   {/* Right: Time Left & Budget Row, then Submit */}
-                  <div className="flex flex-col items-end min-w-[180px] w-fit">
-                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full shadow-sm border border-blue-100 mb-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                      {timeLeftStr}
+                  <div className="flex flex-row md:flex-col items-center md:items-end gap-2 sm:gap-3 w-full md:w-auto justify-between md:justify-start">
+                    <span className="inline-flex items-center gap-1 px-2 sm:px-3 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full shadow-sm border border-blue-100 flex-1 md:flex-initial justify-center md:justify-start">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      <span className="truncate text-xs">{timeLeftStr}</span>
                     </span>
-                    <span className="font-bold text-lg text-gray-900 mb-2">{budget}</span>
+                    <span className="font-bold text-base sm:text-lg text-gray-900 whitespace-nowrap">{budget}</span>
                     <button
                       type="button"
-                      className="flex items-center justify-center w-10 h-10 bg-green-500 rounded-lg shadow text-white cursor-pointer border-none focus:outline-none hover:bg-green-600"
+                      className="flex items-center justify-center w-10 h-10 bg-green-500 rounded-lg shadow text-white cursor-pointer border-none focus:outline-none hover:bg-green-600 flex-shrink-0"
                       title="Upload"
                       style={{ padding: 0 }}
                       onClick={() => navigate(`/brief/plan-submission/${brief.id}`)}
                     >
                       {/* Upload (arrow up) icon */}
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 9l5-5m0 0l5 5m-5-5v12" />
                       </svg>
                     </button>

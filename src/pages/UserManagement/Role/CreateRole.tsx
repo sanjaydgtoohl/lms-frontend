@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES, API_ENDPOINTS } from '../../../constants';
-import { MasterFormHeader, NotificationPopup } from '../../../components/ui';
+import { MasterFormHeader } from '../../../components/ui';
+import SweetAlert from '../../../utils/SweetAlert';
 import { createRole as apiCreateRole } from '../../../services/CreateRole';
 import http from '../../../services/http';
 import PermissionTree from '../../../components/ui/PermissionTree';
@@ -50,10 +51,6 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
     fetchPermissionTree();
   }, []);
   const [selectedPermissionIds, setSelectedPermissionIds] = useState<number[]>([]);
-
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
-  const [showErrorToast, setShowErrorToast] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
@@ -103,15 +100,17 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
       } else {
         await apiCreateRole(payload);
       }
-
-      setShowSuccessToast(true);
+      
+      if (mode === 'edit') {
+        SweetAlert.showUpdateSuccess();
+      } else {
+        SweetAlert.showCreateSuccess();
+      }
       setTimeout(() => {
-        setShowSuccessToast(false);
         navigate(ROUTES.ROLE.ROOT);
-      }, 1200);
+      }, 1800);
     } catch (err: any) {
       console.error('Error saving role:', err);
-
       const respData = err?.responseData || err?.response?.data || null;
       if (respData && respData.errors && typeof respData.errors === 'object') {
         const nextErrs: Record<string, string> = {};
@@ -122,8 +121,7 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
         setErrors((prev) => ({ ...prev, ...nextErrs }));
       } else {
         const msg = respData?.message || err?.message || 'Failed to save role';
-        setErrorMessage(String(msg));
-        setShowErrorToast(true);
+        try { SweetAlert.showError(String(msg)); } catch (_) {}
       }
     } finally {
       setSaving(false);
@@ -145,21 +143,6 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
       <MasterFormHeader 
         onBack={handleBack} 
         title={mode === 'edit' ? 'Edit Role' : 'Create Role'} 
-      />
-      <NotificationPopup
-        isOpen={showSuccessToast}
-        onClose={() => setShowSuccessToast(false)}
-        message={mode === 'edit' ? 'Role updated successfully' : 'Role created successfully'}
-        type="success"
-      />
-      <NotificationPopup
-        isOpen={showErrorToast}
-        onClose={() => {
-          setShowErrorToast(false);
-          setErrorMessage('');
-        }}
-        message={errorMessage || 'Failed to save role'}
-        type="error"
       />
 
       <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">

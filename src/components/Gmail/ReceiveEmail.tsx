@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import MasterHeader from '../ui/MasterHeader';
 import { RefreshCw } from 'lucide-react';
 import gmailService from '../../services/gmailService';
+import SweetAlert from '../../utils/SweetAlert';
 import DOMPurify from 'dompurify';
 
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'YOUR_CLIENT_ID';
@@ -361,11 +362,11 @@ export default function ReceiveEmail() {
       console.error('[gmail] loadList error', err);
       
       if (errorMsg.includes('authentication required') || errorMsg.includes('Failed to refresh') || errorMsg.includes('No access token')) {
-        alert('Your session has expired. Please sign in again to load emails.');
+        SweetAlert.showWarning('Your session has expired. Please sign in again to load emails.');
         setToken(null);
         setMessages([]);
       } else {
-        alert('Failed to load emails. Please try again.');
+        SweetAlert.showError('Failed to load emails. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -463,11 +464,11 @@ export default function ReceiveEmail() {
       
       // Check if error is auth-related
       if (errorMsg.includes('authentication required') || errorMsg.includes('Failed to refresh') || errorMsg.includes('No access token')) {
-        alert('Your session has expired. Please sign in again to view this email.');
+        SweetAlert.showWarning('Your session has expired. Please sign in again to view this email.');
         setToken(null);
         setSelected(null);
       } else {
-        alert('Failed to load email. Please try again.');
+        SweetAlert.showError('Failed to load email. Please try again.');
         setSelected(null);
       }
     } finally {
@@ -638,7 +639,7 @@ export default function ReceiveEmail() {
                                       } catch (err) {
                                         // eslint-disable-next-line no-console
                                         console.error('Preview failed', err);
-                                        alert(`Preview failed for ${att.filename}`);
+                                        SweetAlert.showError(`Preview failed for ${att.filename}`);
                                       }
                                     }}
                                     style={{ padding: '8px 14px', fontSize: 12, fontWeight: 600, border: 'none', borderRadius: 6, cursor: 'pointer', color: '#fff', backgroundColor: '#22c55e' }}
@@ -653,7 +654,7 @@ export default function ReceiveEmail() {
                                       .catch((err) => {
                                         // eslint-disable-next-line no-console
                                         console.error('Download failed:', err);
-                                        alert(`Failed to download ${att.filename}`);
+                                        SweetAlert.showError(`Failed to download ${att.filename}`);
                                       });
                                   }}
                                   style={{ padding: '8px 16px', fontSize: 12, fontWeight: 600, border: 'none', borderRadius: 6, cursor: 'pointer', color: '#fff', backgroundColor: '#3498db' }}

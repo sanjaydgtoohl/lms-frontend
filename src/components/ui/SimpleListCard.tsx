@@ -12,11 +12,13 @@ interface SimpleListCardProps<T> {
 const SimpleListCard = <T,>({ title, items, renderItem, footer, headerRight, onItemClick }: SimpleListCardProps<T>) => {
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden h-full flex flex-col">
-      <div className="px-5 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-gray-900">{title}</h2>
-        {headerRight && <div className="ml-4">{headerRight}</div>}
+      <div className="px-5 min-h-16 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white flex items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold leading-normal text-gray-900 whitespace-nowrap">{title}</h2>
+        <div className="ml-auto flex-shrink-0">
+          {headerRight}
+        </div>
       </div>
-      <div className="p-4 flex-1">
+      <div className="p-4 flex-1 overflow-y-auto">
         <div className="space-y-3">
           {items.map((item, index) => (
             <div
@@ -33,12 +35,12 @@ const SimpleListCard = <T,>({ title, items, renderItem, footer, headerRight, onI
             </div>
           )}
         </div>
-        {footer && (
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            {footer}
-          </div>
-        )}
       </div>
+      {footer && (
+        <div className="px-4 py-3 border-t border-gray-100 bg-gradient-to-r from-gray-50 to-white flex-shrink-0">
+          {footer}
+        </div>
+      )}
     </div>
   );
 };

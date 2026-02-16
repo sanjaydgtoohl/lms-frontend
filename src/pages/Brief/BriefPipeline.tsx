@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import CreateBriefForm from './CreateBriefForm';
 import { apiClient } from '../../utils/apiClient';
+import { usePermissions } from '../../context/SidebarMenuContext';
 import MasterView from '../../components/ui/MasterView';
 import Pagination from '../../components/ui/Pagination';
 import Table, { type Column } from '../../components/ui/Table';
@@ -14,7 +15,7 @@ import { fetchBriefStatuses, updateBriefStatus, type BriefStatusItem } from '../
 import StatusDropdown from '../../components/ui/StatusDropdown';
 import AssignDropdown from '../../components/ui/AssignDropdown';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
-import { usePermissions } from '../../context/SidebarMenuContext';
+import SweetAlert from '../../utils/SweetAlert';
 
 type Brief = ServiceBriefItem;
 
@@ -68,8 +69,10 @@ const BriefPipeline: React.FC = () => {
       await deleteBrief(confirmDeleteId);
       setBriefs(prev => prev.filter(b => b.id !== confirmDeleteId));
       setTotalItems(prev => Math.max(0, prev - 1));
+      try { SweetAlert.showDeleteSuccess(); } catch (_) {}
     } catch (err) {
       console.error('Failed to delete brief', err);
+      try { SweetAlert.showError((err as any)?.message || 'Failed to delete brief'); } catch (_) {}
     } finally {
       setConfirmLoading(false);
       setConfirmDeleteId(null);
@@ -219,9 +222,11 @@ const BriefPipeline: React.FC = () => {
         setBriefs(prev => prev.map(b => (b.id === (updated as any).id ? { ...b, ...(updated as Partial<Brief>) } as Brief : b)));
         // refresh full list to reflect server state
         setTimeout(() => { fetchBriefs(); }, 300);
+        SweetAlert.showUpdateSuccess();
       }
     } catch (err) {
       console.error('Failed to update assignee', err);
+      try { SweetAlert.showError('Failed to update assignment'); } catch (_) {}
     } finally {
       setLoading(false);
     }
@@ -329,9 +334,11 @@ const BriefPipeline: React.FC = () => {
           setBriefs(prev => prev.map(b => (b.id === (res as any).id ? { ...b, ...(res as Partial<Brief>) } as Brief : b)));
           // refresh list to show updated status
           setTimeout(() => { fetchBriefs(); }, 300);
+          SweetAlert.showUpdateSuccess();
         }
       } catch (err) {
         console.error('Failed to update status', err);
+        try { SweetAlert.showError('Failed to update status'); } catch (_) {}
       } finally {
         setLoading(false);
       }

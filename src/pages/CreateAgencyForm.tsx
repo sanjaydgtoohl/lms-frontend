@@ -4,8 +4,8 @@ import { motion } from 'framer-motion';
 // ChevronDropdownIcon replaced by unified SelectDropdown; keep import removed
 import { Plus, Trash2 } from 'lucide-react';
 import { MasterFormHeader, SelectField, MultiSelectDropdown } from '../components/ui';
-import { showSuccess, showError } from '../utils/notifications';
 import { updateAgency } from '../services/AgencyMaster';
+import SweetAlert from '../utils/SweetAlert';
 
 // --- Types used by this form
 interface ParentAgency {
@@ -298,11 +298,15 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
         if (customRes && typeof customRes.then === 'function') await customRes;
       }
 
-      showSuccess(mode === 'edit' ? 'Agency updated successfully' : 'Agency created successfully');
+      if (mode === 'edit') {
+        SweetAlert.showUpdateSuccess();
+      } else {
+        SweetAlert.showCreateSuccess();
+      }
       setTimeout(() => {
         onClose();
         window.location.reload();
-      }, 1200);
+      }, 1800);
     } catch (err: any) {
       // Handle API validation errors for parent and child agency names (name.0, name.1, ...)
       const responseData = err?.responseData;
@@ -335,7 +339,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
       }
       console.error('Submit failed', err);
       try {
-        showError((err as any)?.message || `Failed to ${mode === 'edit' ? 'update' : 'create'} agency`);
+        SweetAlert.showError((err as any)?.message || `Failed to ${mode === 'edit' ? 'update' : 'create'} agency`);
       } catch (e) {}
     } finally {
       setSubmitting(false);

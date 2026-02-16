@@ -5,7 +5,7 @@ import MasterFormHeader from '../../components/ui/MasterFormHeader';
 import Button from '../../components/ui/Button';
 import UploadCard from '../../components/ui/UploadCard';
 import { getBriefById, uploadPlanSubmission } from '../../services/PlanSubmission';
-import { showSuccess } from '../../utils/notifications';
+import SweetAlert from '../../utils/SweetAlert';
 import type { BriefDetail } from '../../services/PlanSubmission';
 
 const PlanSubmission: React.FC = () => {
@@ -326,7 +326,7 @@ const PlanSubmission: React.FC = () => {
                     backupFiles[0]
                   );
                   console.log('Plan Submission API response:', response);
-                  showSuccess('Plan submitted successfully!');
+                  SweetAlert.showCreateSuccess();
                   setPlanFiles([]);
                   setBackupFiles([]);
                   setTimeout(() => {

@@ -9,7 +9,8 @@ import { listLeads } from '../../services/AllLeads';
 import { fetchBriefStatuses } from '../../services/BriefStatus';
 import { getPriorities } from '../../services/Priority';
 import { motion } from 'framer-motion';
-import { MasterFormHeader, NotificationPopup, SelectField } from '../../components/ui';
+import { MasterFormHeader, SelectField } from '../../components/ui';
+import SweetAlert from '../../utils/SweetAlert';
 import { apiClient } from '../../utils/apiClient';
 // Dropdown UI uses SelectField component
 
@@ -76,7 +77,6 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
 
   // dropdowns are handled by SelectField; it manages outside-click and blur
 
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [histories, setHistories] = useState<any[]>([]);
@@ -837,11 +837,14 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
         res = svc.submitCreateBrief ? svc.submitCreateBrief(payload) : null;
         if (res && typeof res.then === 'function') await res;
       }
-      setShowSuccessToast(true);
+      if (mode === 'edit') {
+        SweetAlert.showUpdateSuccess();
+      } else {
+        SweetAlert.showCreateSuccess();
+      }
       setTimeout(() => {
-        setShowSuccessToast(false);
         onClose();
-      }, 1200);
+      }, 1800);
     } catch (err) {
       // noop - parent handles errors
     } finally {
@@ -858,12 +861,6 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
       className="space-y-6"
     >
       <MasterFormHeader onBack={onClose} title={mode === 'edit' ? 'Edit Brief' : 'Create Brief'} />
-      <NotificationPopup
-        isOpen={showSuccessToast}
-        onClose={() => setShowSuccessToast(false)}
-        message={mode === 'edit' ? 'Brief updated successfully' : 'Brief created successfully'}
-        type="success"
-      />
 
       <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
         <div className="p-6 bg-[#F9FAFB]">

@@ -6,7 +6,7 @@ import MasterEdit from '../components/ui/MasterEdit';
 import Table, { type Column } from '../components/ui/Table';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants';
-import { MasterHeader, MasterFormHeader, NotificationPopup } from '../components/ui';
+import { MasterHeader, MasterFormHeader } from '../components/ui';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import SearchBar from '../components/ui/SearchBar';
 import {
@@ -16,7 +16,7 @@ import {
   createDesignation,
   type Designation as ApiDesignation,
 } from '../services/DesignationMaster';
-import { showSuccess, showError } from '../utils/notifications';
+import SweetAlert from '../utils/SweetAlert';
 import { usePermissions } from '../context/SidebarMenuContext';
 
 interface Designation {
@@ -74,14 +74,14 @@ const CreateDesignationForm: React.FC<{
       if (res && typeof res.then === 'function') await res;
       // If parent provided onSave (inline mode) let parent show success and handle navigation/reload.
       if (!onSave) {
-        showSuccess('Designation created successfully');
+        SweetAlert.showCreateSuccess();
         onClose();
       }
     } catch (err) {
       const message = (err as any)?.message || 'Failed to create designation';
       setError(message);
       // If parent provided `onSave` (inline mode) we only show inline field error.
-      if (!onSave) showError(message);
+      if (!onSave) SweetAlert.showError(message);
     }
   };
 
@@ -141,8 +141,6 @@ const DesignationMaster: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);
   
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('Designation created successfully');
   const itemsPerPage = 10;
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
@@ -177,11 +175,9 @@ const DesignationMaster: React.FC = () => {
 	await refresh();
 	setCurrentPage(1);
 
-	// Show local success popup then navigate back to listing and reload (match Lead Source timing)
-	setSuccessMessage('Designation created successfully');
-	setShowSuccessToast(true);
+	// Show SweetAlert success then navigate back to listing and reload
+	SweetAlert.showCreateSuccess();
 	setTimeout(() => {
-	  setShowSuccessToast(false);
 	  navigate(ROUTES.DESIGNATION_MASTER);
 	  window.location.reload();
 	}, 1800);
@@ -235,8 +231,9 @@ const DesignationMaster: React.FC = () => {
     try {
       await deleteDesignation(confirmDeleteId);
       setDesignations(prev => prev.filter(d => d.id !== confirmDeleteId));
+      SweetAlert.showDeleteSuccess();
     } catch (e: any) {
-      showError(e?.message || 'Failed to delete designation');
+      SweetAlert.showError(e?.message || 'Failed to delete designation');
     } finally {
       setConfirmLoading(false);
       setConfirmDeleteId(null);
@@ -327,7 +324,7 @@ const DesignationMaster: React.FC = () => {
         await updateDesignation(updated.id, { title: updated.name } as any);
         // Refresh list from server so table shows latest data
         await refresh();
-        showSuccess('Designation updated successfully');
+        SweetAlert.showUpdateSuccess();
         // Navigate back to listing immediately
         navigate(ROUTES.DESIGNATION_MASTER);
       } catch (e: any) {
@@ -369,13 +366,6 @@ const DesignationMaster: React.FC = () => {
 
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
-      {/* Delete success popup removed to avoid showing success toast after delete */}
-      <NotificationPopup
-        isOpen={showSuccessToast}
-        onClose={() => setShowSuccessToast(false)}
-        message={successMessage}
-        type="success"
-      />
       <ConfirmDialog
         isOpen={!!confirmDeleteId}
         title="Delete this designation?"

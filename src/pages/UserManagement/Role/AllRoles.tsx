@@ -6,7 +6,7 @@ import { MasterHeader } from '../../../components/ui';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
 import { listRoles, deleteRole } from '../../../services/AllRoles';
-import { showError } from '../../../utils/notifications';
+import SweetAlert from '../../../utils/SweetAlert';
 import ConfirmDialog from '../../../components/ui/ConfirmDialog';
 
 interface Role {
@@ -83,10 +83,11 @@ const AllRoles: React.FC = () => {
       setCurrentPage(1);
       // Reload the table from API
       await fetchRoles();
+      try { SweetAlert.showDeleteSuccess(); } catch (_) {}
     } catch (err: any) {
       // eslint-disable-next-line no-console
       console.error('Failed to delete role', err);
-      showError(err?.message || 'Failed to delete role');
+      try { SweetAlert.showError(err?.message || 'Failed to delete role'); } catch (_) {}
     } finally {
       setConfirmLoading(false);
       setConfirmDeleteId(null);

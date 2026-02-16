@@ -175,8 +175,8 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Assignments & Alerts - Side by Side */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="h-full">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 auto-rows-max lg:auto-rows-fr">
+        <div className="flex flex-col h-full">
           <SimpleListCard
             title={`Pending Assignments ${loading ? '(Loading...)' : `(${assignments.length})`}`}
             headerRight={(
@@ -192,28 +192,47 @@ const Dashboard: React.FC = () => {
             items={currentAssignments}
             onItemClick={(item) => console.log('open assignment', item)}
             renderItem={(assignment) => (
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <div className="w-9 h-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-semibold flex-shrink-0">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-2 min-w-0 flex-1">
+                  <div className="w-9 h-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-semibold flex-shrink-0 mt-0.5">
                     {deriveInitials(assignment)}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-gray-900 truncate">{formatName(assignment.name)}</p>
-                    <p className="text-xs text-gray-500">{formatDate((assignment as any).created_at)}</p>
+                    <p className="text-xs font-medium text-gray-900">{formatName(assignment.name)}</p>
+                    {(assignment as any).brand && (
+                      <p className="text-xs text-gray-600 mt-1">
+                        <span className="font-medium">Brand Name:</span> {(assignment as any).brand}
+                      </p>
+                    )}
+                    {(assignment as any).sub_source && (
+                      <p className="text-xs text-gray-600">
+                        <span className="font-medium">Source:</span> {(assignment as any).sub_source}
+                      </p>
+                    )}
+                    {(assignment as any).mobile_numbers && (assignment as any).mobile_numbers.length > 0 && (
+                      <p className="text-xs text-gray-600">
+                        <span className="font-medium">Mobile No.:</span> {(assignment as any).mobile_numbers[0]}
+                      </p>
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5 flex-shrink-0">
-                  <span className={`px-1.5 py-0.5 text-xs font-medium rounded whitespace-nowrap ${assignment.priority === 'High' ? 'bg-red-100 text-red-700' : assignment.priority === 'Medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}>
-                    {assignment.priority}
-                  </span>
-                  <Check
-                    className="w-4 h-4 text-green-500 hover:text-green-600 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-green-200 rounded flex-shrink-0"
-                    onClick={() => completeAssignment(assignment.id)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') completeAssignment(assignment.id); }}
-                    aria-label="Mark complete"
-                  />
+                <div className="flex flex-col items-end gap-2">
+                  <p className="text-xs text-gray-500">
+                    Created: {formatDate((assignment as any).created_at)}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-1.5 py-0.5 text-xs font-medium rounded whitespace-nowrap ${assignment.priority === 'High' ? 'bg-red-100 text-red-700' : assignment.priority === 'Medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}>
+                      {assignment.priority}
+                    </span>
+                    <Check
+                      className="w-4 h-4 text-green-500 hover:text-green-600 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-green-200 rounded flex-shrink-0"
+                      onClick={() => completeAssignment(assignment.id)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') completeAssignment(assignment.id); }}
+                      aria-label="Mark complete"
+                    />
+                  </div>
                 </div>
               </div>
             )}
@@ -228,10 +247,11 @@ const Dashboard: React.FC = () => {
           />
         </div>
 
-        <div className="h-full">
+        <div className="flex flex-col h-full">
           <SimpleListCard
           title={`Meeting (${meetings.length})`}
             items={currentMeetings}
+            onItemClick={(item) => console.log('open meeting', item)}
             renderItem={(meeting) => (
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">

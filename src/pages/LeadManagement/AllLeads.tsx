@@ -6,10 +6,10 @@ import Pagination from '../../components/ui/Pagination';
 import SearchBar from '../../components/ui/SearchBar';
 import { MasterHeader, StatusPill } from '../../components/ui';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
-import NotificationPopup from '../../components/ui/NotificationPopup';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants';
 import { listLeads, updateLead, deleteLead } from '../../services/AllLeads';
+import SweetAlert from '../../utils/SweetAlert';
 import { assignUserToLead } from '../../services/leadAssignTo';
 import { apiClient } from '../../utils/apiClient';
 import { getCallStatuses, updateCallStatus } from '../../services/CallStatus';
@@ -178,8 +178,10 @@ const AllLeads: React.FC = () => {
           // fallback to existing updateLead call if we only have the name
           await updateLead(numericId, { current_assign_user: newSalesMan });
         }
+        SweetAlert.showUpdateSuccess();
       } catch (err) {
         console.warn('Failed to persist assignTo change', err);
+        try { SweetAlert.showError('Failed to update assignment'); } catch (_) {}
       }
     })();
   };
@@ -188,10 +190,6 @@ const AllLeads: React.FC = () => {
     // This is called when user confirms the assignment in the dialog
     // The actual API call happens after confirmation in handleAssignToChange
   };
-
-  
-  const [showErrorToast, setShowErrorToast] = useState(false);
-  const [errorMessageToast, setErrorMessageToast] = useState('');
 
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmDeleteLabel, setConfirmDeleteLabel] = useState<string>('');
@@ -217,8 +215,7 @@ const AllLeads: React.FC = () => {
       if (isLastOnPage && currentPage > 1) setCurrentPage((p) => p - 1);
     } catch (err: any) {
       console.error('Failed to delete lead', err);
-      setErrorMessageToast(err?.message || 'Failed to delete lead');
-      setShowErrorToast(true);
+      try { SweetAlert.showError(err?.message || 'Failed to delete lead'); } catch (_) {}
     } finally {
       setConfirmLoading(false);
       setConfirmDeleteId(null);
@@ -250,9 +247,11 @@ const AllLeads: React.FC = () => {
       const numericId = String(leadId).replace('#', '');
       await updateCallStatus(numericId, selectedOption.id);
       // Refresh table after update
-      fetchLeads();
+      await fetchLeads();
+      SweetAlert.showUpdateSuccess();
     } catch (err) {
       console.warn('Failed to persist call status change', err);
+      try { SweetAlert.showError('Failed to update call status'); } catch (_) {}
     }
   };
 
@@ -407,14 +406,6 @@ const AllLeads: React.FC = () => {
 
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
-      {/* Delete success popup removed to avoid showing success toast after delete */}
-      <NotificationPopup
-        isOpen={showErrorToast}
-        onClose={() => setShowErrorToast(false)}
-        message={errorMessageToast}
-        type="error"
-      />
-
       <ConfirmDialog
         isOpen={!!confirmDeleteId}
         title={`Delete lead "${confirmDeleteLabel}"?`}

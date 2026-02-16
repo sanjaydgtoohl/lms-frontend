@@ -47,6 +47,7 @@ interface UserOption {
 import { getCallStatuses } from '../../services/CallStatus';
 import { apiClient } from '../../utils/apiClient';
 import http from '../../services/http';
+import SweetAlert from '../../utils/SweetAlert';
 
 const statusColors: Record<string, string> = {
   'Interested': '#22c55e',
@@ -323,8 +324,10 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
         } else {
           await updateLead(numericId, { current_assign_user: newSalesMan });
         }
+        SweetAlert.showUpdateSuccess();
       } catch (err) {
         console.warn('Failed to persist assignTo change', err);
+        try { SweetAlert.showError('Failed to update assignment'); } catch (_) {}
       }
     })();
   };
@@ -349,7 +352,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
       setLeads((prev) => prev.filter((l) => l.id !== confirmDeleteId));
     } catch (err: any) {
       console.error('Failed to delete lead', err);
-      alert(err?.message || 'Failed to delete lead');
+      SweetAlert.showError(err?.message || 'Failed to delete lead');
     } finally {
       setConfirmLoading(false);
       setConfirmDeleteId(null);
@@ -375,7 +378,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
           callStatusId = found?.id;
         }
         if (!callStatusId) {
-          alert('Invalid call status');
+          SweetAlert.showWarning('Invalid call status');
           setLoading(false);
           return;
         }
@@ -386,11 +389,12 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
         const result = response.data;
         if (result.success) {
           await fetchLeads();
+          SweetAlert.showUpdateSuccess();
         } else {
-          alert(result.message || 'Failed to update call status');
+          SweetAlert.showError(result.message || 'Failed to update call status');
         }
       } catch (error) {
-        alert('Error updating call status');
+        SweetAlert.showError('Error updating call status');
       } finally {
         setLoading(false);
       }
@@ -491,7 +495,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
   ] as Column<Lead>[]);
 
   return (
-    <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
+    <div className="flex-1 p-3 md:p-6 w-full max-w-full overflow-x-hidden">
       {hasPermission(createPermissionMap[filterStatus] || 'leads.create') && (
         <MasterHeader
           onCreateClick={handleCreateLead}
@@ -499,9 +503,9 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
         />
       )}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-        <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-200">
-          <h2 className="text-base font-semibold text-gray-900">{title}</h2>
-          <div className="ml-4">
+        <div className="bg-gray-50 px-3 md:px-6 py-3 md:py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-0 border-b border-gray-200">
+          <h2 className="text-sm md:text-base font-semibold text-gray-900">{title}</h2>
+          <div className="w-full md:w-auto">
             <SearchBar
               placeholder="Search leads..."
               delay={250}
@@ -513,7 +517,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
           </div>
         </div>
 
-        <div className="pt-0 overflow-visible">
+        <div className="pt-0 overflow-x-auto">
           <Table
             data={currentData}
             startIndex={startIndex}

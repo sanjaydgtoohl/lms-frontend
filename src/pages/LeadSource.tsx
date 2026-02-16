@@ -4,7 +4,7 @@ import Pagination from '../components/ui/Pagination';
 import CreateSourceForm from './CreateSourceForm';
 import MasterView from '../components/ui/MasterView';
 import MasterEdit from '../components/ui/MasterEdit';
-import { MasterHeader, NotificationPopup } from '../components/ui';
+import { MasterHeader } from '../components/ui';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import SearchBar from '../components/ui/SearchBar';
 import Table, { type Column } from '../components/ui/Table';
@@ -12,6 +12,7 @@ import { listLeadSources, deleteLeadSubSource, updateLeadSubSource, type LeadSou
 import { fetchLeadSources } from '../services/CreateSourceForm';
 import { ROUTES } from '../constants';
 import { usePermissions } from '../context/SidebarMenuContext';
+import SweetAlert from '../utils/SweetAlert';
 
 const LeadSource: React.FC = () => {
   const [showCreate, setShowCreate] = useState(false);
@@ -24,15 +25,9 @@ const LeadSource: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewItem, setViewItem] = useState<LeadSourceItem | null>(null);
   const [editItem, setEditItem] = useState<LeadSourceItem | null>(null);
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('Source updated successfully');
-  
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmDeleteLabel, setConfirmDeleteLabel] = useState<string>('');
   const [confirmLoading, setConfirmLoading] = useState(false);
-  const [showErrorToast, setShowErrorToast] = useState(false);
-  const [errorMessageToast, setErrorMessageToast] = useState('');
-  // track deletion in-flight if needed (not used currently)
 
   const { hasPermission } = usePermissions();
 
@@ -122,11 +117,9 @@ const LeadSource: React.FC = () => {
     };
     setItems(prev => [newItem, ...prev]);
     setCurrentPage(1);
-    // Show create success popup, then navigate and reload to refresh listing
-    setSuccessMessage('Source created successfully');
-    setShowSuccessToast(true);
+    // Show SweetAlert success then navigate back to listing and reload
+    SweetAlert.showCreateSuccess();
     setTimeout(() => {
-      setShowSuccessToast(false);
       navigate(ROUTES.SOURCE_MASTER);
       // Force reload to ensure fresh data
       window.location.reload();
@@ -158,11 +151,8 @@ const LeadSource: React.FC = () => {
       });
       // Refresh the list from server so table shows latest data
       await refresh();
-      // Show success toast and navigate back to listing immediately
-      setShowSuccessToast(true);
-      setTimeout(() => {
-        setShowSuccessToast(false);
-      }, 1800);
+      // Show SweetAlert update success
+      SweetAlert.showUpdateSuccess();
       navigate(ROUTES.SOURCE_MASTER);
     })();
   };
@@ -182,9 +172,9 @@ const LeadSource: React.FC = () => {
       await deleteLeadSubSource(confirmDeleteId);
       // Refetch the lead sources list after delete
       await refresh();
+      SweetAlert.showDeleteSuccess();
     } catch (e: any) {
-      setErrorMessageToast(e?.message || 'Failed to delete');
-      setShowErrorToast(true);
+      SweetAlert.showError(e?.message || 'Failed to delete');
     } finally {
       setConfirmLoading(false);
       setConfirmDeleteId(null);
@@ -228,20 +218,6 @@ const LeadSource: React.FC = () => {
 
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
-      <NotificationPopup
-        isOpen={showSuccessToast}
-        onClose={() => setShowSuccessToast(false)}
-        message={successMessage}
-        type="success"
-      />
-      {/* Delete success popup removed to avoid showing success toast after delete */}
-      <NotificationPopup
-        isOpen={showErrorToast}
-        onClose={() => setShowErrorToast(false)}
-        message={errorMessageToast}
-        type="error"
-      />
-
       <ConfirmDialog
         isOpen={!!confirmDeleteId}
         title={`Delete sub-source "${confirmDeleteLabel}"?`}

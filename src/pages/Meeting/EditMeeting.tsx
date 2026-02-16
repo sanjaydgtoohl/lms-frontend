@@ -182,8 +182,8 @@ const EditMeeting: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between mb-3">
+    <div className="space-y-6 !animate-none !transition-none">
+      <div className="flex items-center justify-between mb-3 !animate-none !transition-none">
         <Breadcrumb
           items={[
             { label: 'Lead Management', path: '/lead-management' },
@@ -200,9 +200,9 @@ const EditMeeting: React.FC = () => {
         </button>
       </div>
 
-      <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-        <div className="p-6 bg-[#F9FAFB]">
-          <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-6">
+      <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden !animate-none !transition-none">
+        <div className="p-6 bg-[#F9FAFB] !animate-none !transition-none">
+          <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-6 !animate-none !transition-none">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm text-[var(--text-secondary)] mb-1">Lead <span className="text-[#FF0000]">*</span></label>

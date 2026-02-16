@@ -11,6 +11,9 @@ export type PendingAssignment = {
   dueInDays?: number;
   created_at?: string | null;
   progress?: number; // 0-100
+  brand?: string | null;
+  sub_source?: string | null;
+  mobile_numbers?: string[];
 };
 
 export type DashboardStats = {
@@ -123,6 +126,9 @@ export async function getPendingAssignments(): Promise<PendingAssignmentsRespons
         dueInDays: it.due_in_days ?? it.dueInDays ?? (typeof it.due === 'number' ? it.due : undefined),
         created_at: normalizeCreatedAt(it),
         progress: typeof it.progress === 'number' ? it.progress : undefined,
+        brand: it.brand ?? it.brand_name ?? null,
+        sub_source: it.sub_source ?? it.source ?? null,
+        mobile_numbers: Array.isArray(it.mobile_numbers) ? it.mobile_numbers : (it.mobile_number ? [it.mobile_number] : []),
       } as PendingAssignment;
     });
 

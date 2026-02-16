@@ -4,7 +4,6 @@ import { ChevronLeft } from 'lucide-react';
 import Breadcrumb from './Breadcrumb';
 import SelectField from './SelectField';
 import { fetchLeadSources, type LeadSource } from '../../services/CreateSourceForm';
-import { showSuccess } from '../../utils/notifications';
 
 type Props = {
   item: Record<string, any> | null;
@@ -116,7 +115,6 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
         if (res && typeof res.then === 'function') {
           await res;
         }
-        showSuccess('Record updated successfully');
         onClose();
         return;
       } catch (err) {
