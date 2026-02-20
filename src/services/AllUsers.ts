@@ -12,11 +12,17 @@ export interface User {
   created?: string;
   created_at_formatted?: string;
   last_login_at?: string;
+  // `parent` kept for backward compatibility (first parent), `parents` contains all parents when available
   parent?: {
     id: number;
     name: string;
     email?: string;
   };
+  parents?: Array<{
+    id: number;
+    name: string;
+    email?: string;
+  }>;
 }
 
 const ENDPOINTS = {
@@ -96,6 +102,14 @@ export async function listUsers(page = 1, perPage = 10, search?: string): Promis
     const rawCreated = it.created_at ?? it.created ?? '';
     const created = it.created_at_formatted ?? normalizeApiDate(rawCreated);
 
+    // Normalize parents: API may return `parents` (array) or `parent` (single)
+    let parentsArray: any[] | undefined = undefined;
+    if (Array.isArray(it.parents) && it.parents.length > 0) {
+      parentsArray = it.parents.map((p: any) => ({ id: p.id, name: p.name, email: p.email }));
+    } else if (it.parent) {
+      parentsArray = [{ id: it.parent.id, name: it.parent.name, email: it.parent.email }];
+    }
+
     return {
       id: String(idStr),
       name,
@@ -107,11 +121,8 @@ export async function listUsers(page = 1, perPage = 10, search?: string): Promis
       created,
       created_at_formatted: it.created_at_formatted,
       last_login_at: it.last_login_at,
-      parent: it.parent ? {
-        id: it.parent.id,
-        name: it.parent.name,
-        email: it.parent.email,
-      } : undefined,
+      parent: parentsArray && parentsArray.length > 0 ? parentsArray[0] : undefined,
+      parents: parentsArray,
     } as User;
   });
 

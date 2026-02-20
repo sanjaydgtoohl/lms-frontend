@@ -43,51 +43,39 @@ const EditUser: React.FC = () => {
           console.log('Fetching user with ID:', id);
           const user = await getUserForEdit(id);
           console.log('User data received:', user);
-          // If user has a 'parent' property, treat it as a manager
+          // Build manager options and selection from `user.parents` (API returns `parents` array).
           let managers: string[] = [];
-          if (user.managers && Array.isArray(user.managers) && user.managers.length > 0) {
-            managers = user.managers.map((m: any) => String(Number(m.id)));
-          }
-          // Always ensure parent is in managerOptions and managers if present
-          if (user.parent && user.parent.id && user.parent.name) {
-            const parentId = String(Number(user.parent.id));
+
+          if (user.parents && Array.isArray(user.parents) && user.parents.length > 0) {
+            // Map parents into options and selection values
+            const parentOpts: Array<{ label: string; value: string }> = user.parents.map((p: any) => ({
+              label: p.name ?? p.full_name ?? '',
+              value: String(Number(p.id)),
+            }));
+
+            // Merge with any existing options while keeping unique values (parents first)
             setManagerOptions((prev) => {
-              const exists = prev.some(opt => opt.value === parentId);
-              if (!exists) {
-                return [
-                  { label: user.parent!.name, value: parentId },
-                  ...prev
-                ];
-              }
-              // If already present, but label is not correct, update it
-              return prev.map(opt =>
-                opt.value === parentId
-                  ? { ...opt, label: user.parent!.name }
-                  : opt
-              );
+              const map = new Map<string, { label: string; value: string }>();
+              parentOpts.forEach((o) => map.set(o.value, o));
+              prev.forEach((o) => { if (!map.has(o.value)) map.set(o.value, o); });
+              return Array.from(map.values());
             });
-            // If managers is empty or does not include parent, set it
-            if (!managers.includes(parentId)) {
-              managers = [parentId];
-            }
-            // Force update form after managerOptions is set
-            setTimeout(() => {
-              setForm(f => ({
-                ...f,
-                managers: [parentId],
-              }));
-            }, 0);
-          } else if (!user.managers || !Array.isArray(user.managers) || user.managers.length === 0) {
+
+            managers = parentOpts.map((p) => p.value);
+          } else if (user.managers && Array.isArray(user.managers) && user.managers.length > 0) {
+            managers = user.managers.map((m: any) => String(Number(m.id)));
+          } else {
             managers = [];
           }
+
           setForm({
             name: user.name || '',
             email: user.email || '',
             phone: user.phone || '',
             password: '',
             password_confirmation: '',
-            roles: user.roles && Array.isArray(user.roles) 
-              ? user.roles.map(r => String(r.id)) 
+            roles: user.roles && Array.isArray(user.roles)
+              ? user.roles.map(r => String(r.id))
               : (user.role_id ? [String(user.role_id)] : []),
             managers,
           });
