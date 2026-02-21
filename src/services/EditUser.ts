@@ -37,9 +37,24 @@ export interface EditUserDetail {
     name: string;
     email?: string;
   };
+  // API may return a `parents` array (list of possible managers / parents)
+  parents?: Array<{
+    id: string | number;
+    name: string;
+    email?: string;
+    // some responses include nested parents as an empty array
+    parents?: any[];
+  }>;
   created_at?: string;
   updated_at?: string;
   last_login_at?: string | null;
+  // Optional formatted / human readable fields returned by API
+  created_at_formatted?: string;
+  updated_at_formatted?: string;
+  created_at_human?: string;
+  updated_at_human?: string;
+  avatar_url?: string;
+  full_name?: string;
 }
 
 const ENDPOINTS = {
@@ -50,22 +65,28 @@ const ENDPOINTS = {
 async function handleResponse<T>(res: any): Promise<T> {
   if (!res) {
     const error = new Error('No response from server');
-    try {
-      handleApiError(error);
-    } catch {}
+    try { handleApiError(error); } catch {}
     throw error;
   }
 
-  // Handle both success and non-success responses
-  if (res.success === false) {
-    const error = new Error(res.message || 'Request failed');
-    try {
-      handleApiError(error);
-    } catch {}
+  // Support axios-like responses where the useful payload is in `res.data`.
+  const payload = res && typeof res === 'object' && 'data' in res ? res.data : res;
+
+  if (!payload) {
+    const error = new Error('Empty response payload');
+    try { handleApiError(error); } catch {}
     throw error;
   }
 
-  return res.data as T;
+  // If API indicates failure explicitly
+  if (payload.success === false) {
+    const error = new Error(payload.message || 'Request failed');
+    try { handleApiError(error); } catch {}
+    throw error;
+  }
+
+  // If the API wraps the result in `data`, return that, otherwise return payload itself.
+  return (payload.data !== undefined ? payload.data : payload) as T;
 }
 
 /**
@@ -81,9 +102,8 @@ export async function getUserForEdit(id: string): Promise<EditUserDetail> {
     const res = await apiClient.get<any>(ENDPOINTS.GET_USER(numericId));
     console.log('API Response:', res);
 
-    const result = handleResponse<EditUserDetail>(res);
+    const result = await handleResponse<EditUserDetail>(res);
     console.log('Parsed result:', result);
-
     return result;
   } catch (err: any) {
     console.error('Error fetching user for edit:', err);
@@ -120,13 +140,22 @@ export async function updateUserDetails(
         formData.append('role[]', String(roleId));
       });
     }
+    // Attach manager/parent relationship as `is_parent[]` to match API expectations
+    if (payload.manager_ids && Array.isArray(payload.manager_ids)) {
+      payload.manager_ids.forEach((managerId) => {
+        formData.append('is_parent[]', String(managerId));
+      });
+    } else if (payload.is_parent !== undefined && payload.is_parent !== null) {
+      // If single value provided, send as an array element to be consistent
+      formData.append('is_parent[]', String(payload.is_parent));
+    }
     formData.append('_method', 'Put');
 
     // Use POST for method override
     const res = await apiClient.post<any>(ENDPOINTS.UPDATE_USER(numericId), formData);
     console.log('Update Response:', res);
 
-    return handleResponse<EditUserDetail>(res);
+    return await handleResponse<EditUserDetail>(res);
   } catch (err: any) {
     console.error('Error updating user:', err);
     const error = new Error(err?.message || 'Failed to update user');

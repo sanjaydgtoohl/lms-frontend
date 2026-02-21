@@ -94,8 +94,10 @@ const MeetingPipeline: React.FC = () => {
             )}
             <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
               <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-200">
-                <h2 className="text-base font-semibold text-gray-900">Meeting Pipeline</h2>
-                <SearchBar delay={0} placeholder="Search Meeting" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
+                <h2 className="text-base font-semibold text-gray-900 flex-shrink-0">Meeting Pipeline</h2>
+                <div className="w-40 md:w-auto ml-auto">
+                  <SearchBar delay={0} placeholder="Search Meeting" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
+                </div>
               </div>
               <div className="pt-0 overflow-visible">
                 <Table

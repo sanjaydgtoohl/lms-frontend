@@ -9,7 +9,8 @@ interface ParentUser {
 
 interface ParentUserModalProps {
   isOpen: boolean;
-  parentUser: ParentUser | null;
+  // support multiple parents
+  parentUser: ParentUser[] | null;
   onClose: () => void;
   userName?: string;
   title?: string;
@@ -34,7 +35,7 @@ const ParentUserModal: React.FC<ParentUserModalProps> = ({
     };
   }, [isOpen]);
 
-  if (!isOpen || !parentUser) return null;
+  if (!isOpen || !parentUser || parentUser.length === 0) return null;
 
   return (
     <>
@@ -134,72 +135,30 @@ const ParentUserModal: React.FC<ParentUserModalProps> = ({
               border: '1px solid #e5e7eb',
             }}
           >
-            <div style={{ marginBottom: '16px' }}>
-              <p style={{ margin: 0, fontSize: 12, color: '#9ca3af', fontWeight: 500 }}>
-                NAME
-              </p>
-              <p
-                style={{
-                  margin: '6px 0 0 0',
-                  fontSize: 14,
-                  color: '#1f2937',
-                  fontWeight: 600,
-                }}
-              >
-                {parentUser.name}
-              </p>
-            </div>
-
-            {parentUser.email && (
-              <div style={{ marginBottom: '16px' }}>
-                <p style={{ margin: 0, fontSize: 12, color: '#9ca3af', fontWeight: 500 }}>
-                  EMAIL
-                </p>
-                <p
+            <p style={{ margin: 0, fontSize: 12, color: '#9ca3af', fontWeight: 500 }}>
+              PARENT USERS
+            </p>
+            <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {parentUser.map((p) => (
+                <div
+                  key={String(p.id)}
                   style={{
-                    margin: '6px 0 0 0',
-                    fontSize: 14,
-                    color: '#1f2937',
-                    wordBreak: 'break-all',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: '8px 12px',
+                    borderRadius: 12,
+                    background: '#fff',
+                    border: '1px solid #e5e7eb',
+                    minWidth: 160,
                   }}
                 >
-                  {parentUser.email}
-                </p>
-              </div>
-            )}
-
-            {parentUser.status && (
-              <div>
-                <p style={{ margin: 0, fontSize: 12, color: '#9ca3af', fontWeight: 500 }}>
-                  STATUS
-                </p>
-                <div style={{ margin: '6px 0 0 0' }}>
-                  <span
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      height: '28px',
-                      padding: '0 12px',
-                      borderRadius: '20px',
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      whiteSpace: 'nowrap',
-                      background:
-                        parentUser.status === 'Active'
-                          ? '#dcfce7'
-                          : '#fee2e2',
-                      color:
-                        parentUser.status === 'Active'
-                          ? '#16a34a'
-                          : '#dc2626',
-                    }}
-                  >
-                    {parentUser.status}
-                  </span>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#1f2937' }}>{p.name}</div>
+                  {p.email && (
+                    <div style={{ marginTop: 6, fontSize: 12, color: '#6b7280', wordBreak: 'break-all' }}>{p.email}</div>
+                  )}
                 </div>
-              </div>
-            )}
+              ))}
+            </div>
           </div>
         </div>
       </div>

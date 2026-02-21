@@ -42,7 +42,8 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
     briefDetail: '',
     submissionDate: '', // will store date as string (DD-MM-YYYY)
     submissionTime: '', // will store time as string (HH:mm)
-    programmatic: 'Programmatic',
+    // store backend-friendly values: 'programmatic' | 'non_programmatic'
+    programmatic: 'programmatic',
     type: '',
   });
 
@@ -730,7 +731,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
     // If programmatic mode changes, ensure the currently selected `type` is valid for the new mode.
     if (name === 'programmatic') {
       const newProgrammatic = value;
-      const typeOptions = newProgrammatic === 'Non-Programmatic' ? ['DOOH', 'OOH'] : ['DOOH', 'CTV'];
+      const typeOptions = newProgrammatic === 'non_programmatic' ? ['DOOH', 'OOH'] : ['DOOH', 'CTV'];
       setForm(prev => ({ ...prev, programmatic: newProgrammatic, type: typeOptions.includes(prev.type) ? prev.type : '' }));
       return;
     }
@@ -789,8 +790,9 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
 
       // Product / mode / media / budget / comment
       if (form.productName) payload.product_name = form.productName;
-      // programmatic value chosen by user may be 'Programmatic'|'Non-Programmatic'
-      if (form.programmatic) payload.mode_of_campaign = String(form.programmatic).toLowerCase().replace(/\s+/g, '_');
+      // programmatic value chosen by user uses backend-friendly values
+      // ('programmatic' | 'non_programmatic') so send directly
+      if (form.programmatic) payload.mode_of_campaign = String(form.programmatic);
       // Use `type` field from UI as media type (Select name="type")
       if (form.type) payload.media_type = String(form.type).toLowerCase();
       if (form.budget) payload.budget = form.budget;
@@ -944,8 +946,8 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                       <input
                         type="radio"
                         name="programmatic"
-                        value="Programmatic"
-                        checked={form.programmatic === 'Programmatic'}
+                        value="programmatic"
+                        checked={form.programmatic === 'programmatic'}
                         onChange={handleChange}
                         className="form-radio accent-blue-600"
                       />
@@ -955,8 +957,8 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                       <input
                         type="radio"
                         name="programmatic"
-                        value="Non-Programmatic"
-                        checked={form.programmatic === 'Non-Programmatic'}
+                        value="non_programmatic"
+                        checked={form.programmatic === 'non_programmatic'}
                         onChange={handleChange}
                         className="form-radio accent-blue-600"
                       />
@@ -969,7 +971,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                   <SelectField
                     name="type"
                     placeholder="Select Type"
-                    options={form.programmatic === 'Non-Programmatic' ? ['DOOH', 'OOH'] : ['DOOH', 'CTV']}
+                    options={form.programmatic === 'non_programmatic' ? ['DOOH', 'OOH'] : ['DOOH', 'CTV']}
                     value={form.type}
                     onChange={(v: any) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; setForm(prev => ({ ...prev, type: val })); }}
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"

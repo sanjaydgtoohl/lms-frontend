@@ -4,6 +4,7 @@ import { Eye, Download, Trash2 } from 'lucide-react';
 import MasterFormHeader from '../../components/ui/MasterFormHeader';
 import Button from '../../components/ui/Button';
 import UploadCard from '../../components/ui/UploadCard';
+import FilePreviewModal from '../../components/ui/FilePreviewModal';
 import { getBriefById } from '../../services/PlanSubmission';
 import type { BriefDetail } from '../../services/PlanSubmission';
 import http from '../../services/http';
@@ -17,9 +18,11 @@ const EditSubmittedPlan: React.FC = () => {
   const [backupFiles, setBackupFiles] = useState<File[]>([]);
   const [briefDetails, setBriefDetails] = useState<BriefDetail | null>(null);
   const [plannerData, setPlannerData] = useState<any>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewSource, setPreviewSource] = useState<any>(null);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id) return; 
     // Fetch brief details
     getBriefById(Number(id))
       .then((data) => setBriefDetails(data))
@@ -35,9 +38,10 @@ const EditSubmittedPlan: React.FC = () => {
     // Fetch planner data after briefDetails is loaded
     const fetchPlanner = async () => {
       if (!briefDetails) return;
-      // Try to get planner_id from briefDetails or fallback to id
-      const plannerId = (briefDetails as any).planner_id || (briefDetails as any).id || id;
-      if (!plannerId) return;
+      // Use planner_id only when it's explicitly set (not null/undefined).
+      const plannerIdRaw = (briefDetails as any).planner_id;
+      if (plannerIdRaw === null || plannerIdRaw === undefined) return;
+      const plannerId = plannerIdRaw;
       try {
         const resp = await http.get(`/planners/${plannerId}`);
         setPlannerData(resp.data.data);
@@ -52,8 +56,14 @@ const EditSubmittedPlan: React.FC = () => {
 
   const handleSubmit = async () => {
     if (!id || !briefDetails) return;
-    // Try to get plannerId from briefDetails or params
-    const plannerId = (briefDetails as any).planner_id || (briefDetails as any).id || id;
+    // Try to get plannerId from briefDetails. If planner_id is explicitly null/undefined
+    // do NOT fall back to the brief id — stop and notify the user instead.
+    const plannerIdRaw = (briefDetails as any).planner_id;
+    if (plannerIdRaw === null || plannerIdRaw === undefined) {
+      SweetAlert.showError('No planner assigned for this brief. Cannot update plan.');
+      return;
+    }
+    const plannerId = plannerIdRaw;
     const formData = new FormData();
     planFiles.forEach((file) => {
       formData.append('submitted_plan[]', file);
@@ -115,7 +125,7 @@ const EditSubmittedPlan: React.FC = () => {
     return colorMap[ext] || 'bg-gray-100 text-gray-700';
   };
 
-  const FileCard = ({ file, onRemove }: { file: File; onRemove: () => void }) => {
+  const FileCard = ({ file, onRemove, onView }: { file: File; onRemove: () => void; onView: () => void }) => {
     const ext = getFileExtension(file.name);
     const colorClass = getFileTypeColor(ext);
 
@@ -136,7 +146,7 @@ const EditSubmittedPlan: React.FC = () => {
             type="button"
             className="p-1.5 hover:bg-gray-100 rounded transition-colors"
             title="View"
-            onClick={() => window.open(URL.createObjectURL(file))}
+            onClick={onView}
           >
             <Eye className="w-4 h-4 text-gray-600" />
           </button>
@@ -268,15 +278,17 @@ const EditSubmittedPlan: React.FC = () => {
                     </div>
                     <p className="text-xs text-gray-600 text-center truncate w-28 mb-3" title={file.name}>{file.name}</p>
                     <div className="flex items-center gap-2">
-                      <a
-                        href={file.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        type="button"
                         className="p-1.5 hover:bg-gray-100 rounded transition-colors"
                         title="View"
+                        onClick={() => {
+                          setPreviewSource({ kind: 'remote', url: file.url, name: file.name });
+                          setPreviewOpen(true);
+                        }}
                       >
                         <Eye className="w-4 h-4 text-gray-600" />
-                      </a>
+                      </button>
                       <a
                         href={file.url}
                         download
@@ -306,6 +318,10 @@ const EditSubmittedPlan: React.FC = () => {
                   key={`plan-upload-${idx}`}
                   file={file}
                   onRemove={() => setPlanFiles(planFiles.filter((_, i) => i !== idx))}
+                  onView={() => {
+                    setPreviewSource({ kind: 'file', file });
+                    setPreviewOpen(true);
+                  }}
                 />
               ))}
             </div>
@@ -372,6 +388,10 @@ const EditSubmittedPlan: React.FC = () => {
                   key={`backup-upload-${idx}`}
                   file={file}
                   onRemove={() => setBackupFiles(backupFiles.filter((_, i) => i !== idx))}
+                  onView={() => {
+                    setPreviewSource({ kind: 'file', file });
+                    setPreviewOpen(true);
+                  }}
                 />
               ))}
             </div>
@@ -408,6 +428,14 @@ const EditSubmittedPlan: React.FC = () => {
           </div>
         </div>
       </div>
+      <FilePreviewModal
+        isOpen={previewOpen}
+        source={previewSource}
+        onClose={() => {
+          setPreviewOpen(false);
+          setPreviewSource(null);
+        }}
+      />
     </>
   );
 };
