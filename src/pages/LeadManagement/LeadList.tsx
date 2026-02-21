@@ -6,6 +6,7 @@ import Pagination from '../../components/ui/Pagination';
 import SearchBar from '../../components/ui/SearchBar';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { MasterHeader, StatusPill } from '../../components/ui';
+import { FaRegCalendarAlt } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants';
 import { listLeads, listLeadsByStatus, updateLead, deleteLead } from '../../services/AllLeads';
@@ -500,12 +501,15 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
         <MasterHeader
           onCreateClick={handleCreateLead}
           createButtonLabel="Create Lead"
+          showSignInButton={true}
+          signInIcon={<FaRegCalendarAlt className="cursor-pointer text-orange-500 hover:text-orange-600 w-4 h-4 sm:w-6 sm:h-6" />}
+          onSignInClick={() => navigate(ROUTES.LEAD.MEETING_SCHEDULE)}
         />
       )}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-        <div className="bg-gray-50 px-3 md:px-6 py-3 md:py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-0 border-b border-gray-200">
+        <div className="bg-gray-50 px-3 md:px-6 py-3 md:py-4 flex items-center justify-between gap-3 border-b border-gray-200">
           <h2 className="text-sm md:text-base font-semibold text-gray-900">{title}</h2>
-          <div className="w-full md:w-auto">
+          <div className="w-40 md:w-auto ml-auto">
             <SearchBar
               placeholder="Search leads..."
               delay={250}

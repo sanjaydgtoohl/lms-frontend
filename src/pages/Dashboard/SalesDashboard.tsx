@@ -251,7 +251,7 @@ const SalesDashboard: React.FC = () => {
                 <div className="text-xs text-gray-500 whitespace-nowrap">Brand Name<br/><span className="text-gray-700 font-medium text-xs">{l.brand?.name || '-'}</span></div>
                 <div className="text-xs text-gray-500 whitespace-nowrap">Contact Person<br/><span className="text-gray-700 font-medium text-xs">{l.name || '-'}</span></div>
                 <div className="text-xs text-gray-500 whitespace-nowrap">Email<br/><span className="text-gray-700 font-medium text-xs text-ellipsis overflow-hidden max-w-xs">{l.email}</span></div>
-                <div className="text-xs text-gray-500 whitespace-nowrap">Priority<br/><span className="text-gray-700 font-medium text-xs">-</span></div>
+                <div className="text-xs text-gray-500 whitespace-nowrap">Priority<br/><span className="text-gray-700 font-medium text-xs">{l.priority?.name || '-'}</span></div>
                 <div className="text-xs text-gray-500 whitespace-nowrap">Call Status<br/><span className="text-gray-700 font-medium text-xs">{l.call_status_relation?.name || '-'}</span></div>
                 <div className="text-xs text-gray-500 whitespace-nowrap">Lead Status<br/><span className="text-gray-700 font-medium text-xs">{l.lead_status_relation?.name || '-'}</span></div>
                 <div className="text-xs text-gray-500 whitespace-nowrap">Call Attempts<br/><span className="text-gray-700 font-medium text-xs">{l.call_attempt}</span></div>

@@ -168,7 +168,7 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
         <div className="p-6 bg-[#F9FAFB]">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Row 1: Display Name & Name */}
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Display Name */}
               <div>
                 <label className="block text-sm text-[var(--text-secondary)] mb-1">
@@ -241,7 +241,7 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
             </div>
 
             {/* Row 2: URL, Order & Icon */}
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* URL */}
               <div>
                 <label className="block text-sm text-[var(--text-secondary)] mb-1">
@@ -337,7 +337,7 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
             </div>
 
             {/* Row 3: Icon Text & Parent Permission */}
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Icon Text */}
               <div>
                 <label className="block text-sm text-[var(--text-secondary)] mb-1">

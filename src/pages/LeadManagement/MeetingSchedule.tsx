@@ -201,9 +201,9 @@ const MeetingSchedule: React.FC = () => {
       <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
         <div className="p-6 bg-[#F9FAFB]">
           <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Lead, Meeting Type, Attendees */}
-              <div>
+              <div className="col-span-2 lg:col-span-1">
                 <label className="block text-sm text-[var(--text-secondary)] mb-1">Lead <span className="text-[#FF0000]">*</span></label>
                 <SelectField
                   placeholder="Select Lead"
@@ -217,7 +217,7 @@ const MeetingSchedule: React.FC = () => {
                 />
                 {errors.lead && <div className="text-red-500 text-xs mt-1">{errors.lead}</div>}
               </div>
-              <div>
+              <div className="col-span-2 lg:col-span-1">
                 <label className="block text-sm text-[var(--text-secondary)] mb-1">Meeting Type <span className="text-[#FF0000]">*</span></label>
                 <SelectField
                   placeholder="Select Type"
@@ -232,7 +232,7 @@ const MeetingSchedule: React.FC = () => {
                 {errors.meetingType && <div className="text-red-500 text-xs mt-1">{errors.meetingType}</div>}
               </div>
               <div className="col-span-2">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm text-[var(--text-secondary)] mb-1">Attendees <span className="text-[#FF0000]">*</span></label>
                     <MultiSelectDropdown
@@ -263,7 +263,7 @@ const MeetingSchedule: React.FC = () => {
               </div>
               {/* Start and End DateTime pickers */}
               <div className="col-span-2">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm text-[var(--text-secondary)] mb-1">Start Date & Time <span className="text-[#FF0000]">*</span></label>
                     <DatePicker
@@ -312,7 +312,7 @@ const MeetingSchedule: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <div>
+              <div className="col-span-2 lg:col-span-1">
                 <label className="block text-sm text-[var(--text-secondary)] mb-1">Add Title <span className="text-[#FF0000]">*</span></label>
                 <input
                   type="text"
@@ -327,7 +327,7 @@ const MeetingSchedule: React.FC = () => {
                 {errors.title && <div className="text-red-500 text-xs mt-1">{errors.title}</div>}
               </div>
               {/* Meeting Location and Agenda side by side */}
-              <div>
+              <div className="col-span-2 lg:col-span-1">
                 <label className="block text-sm text-[var(--text-secondary)] mb-1">Meeting Location</label>
                 <input
                   type="text"

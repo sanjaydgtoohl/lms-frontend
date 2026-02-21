@@ -320,20 +320,31 @@ const PlanSubmission: React.FC = () => {
                 setSubmitSuccess(null);
                 try {
                   if (!id) throw new Error('No brief ID');
+                  // show loading SweetAlert while upload is in progress
+                  SweetAlert.showLoading({ title: 'Submitting Proposal...', text: 'Please wait while we upload your plan' });
+
                   const response = await uploadPlanSubmission(
                     Number(id),
                     planFiles,
                     backupFiles[0]
                   );
                   console.log('Plan Submission API response:', response);
-                  SweetAlert.showCreateSuccess();
+
+                  // close the loading modal before showing success
+                  SweetAlert.close();
+
+                  // wait for the success alert to finish (it auto-closes), then navigate
+                  await SweetAlert.showSubmitSuccess();
+
                   setPlanFiles([]);
                   setBackupFiles([]);
-                  setTimeout(() => {
-                    navigate('/brief/log');
-                  }, 1200);
+                  navigate('/brief/log');
                 } catch (err: any) {
-                  setSubmitError(err?.message || 'Failed to submit plan.');
+                  const msg = err?.message || 'Failed to submit plan.';
+                  setSubmitError(msg);
+                  // ensure any loading modal is closed then show error
+                  SweetAlert.close();
+                  SweetAlert.showError(msg);
                 } finally {
                   setSubmitLoading(false);
                 }
