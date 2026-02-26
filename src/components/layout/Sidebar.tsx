@@ -4,7 +4,6 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import LogoutIcon from "../../assets/icons/LogoutIcon";
 import HelpIcon from "../../assets/icons/HelpIcon";
 import logoUrl from "../../assets/DGTOOHL 360.svg";
-// import { useAuthStore } from "../../store/auth";
 
 // Use the NavigationItem type from Side.ts for consistency
 import type { NavigationItem } from "../../services/Side";
@@ -19,8 +18,6 @@ import { logoutUser } from "../../redux/slices/authSlice";
 
 
 interface SidebarProps {
-  // isCollapsed: boolean;
-  // onToggle: () => void;
   // Mobile specific
   isMobile?: boolean;
   mobileOpen?: boolean;
@@ -46,7 +43,6 @@ const Sidebar: React.FC<SidebarProps> = ({isMobile = false, mobileOpen = false, 
   
   const location = useLocation();
   const navigate = useNavigate();
-  // const { logout } = useAuthStore();
 
    const handleLogout = async () => {
     try {
@@ -60,16 +56,6 @@ const Sidebar: React.FC<SidebarProps> = ({isMobile = false, mobileOpen = false, 
   // const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [showMobilePopup, setShowMobilePopup] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null); 
- 
-
-  // const handleLogout = async () => {
-  //   try {
-  //     await logout();
-  //     navigate("/login");
-  //   } catch (error) {
-  //     console.error("Logout failed:", error);
-  //   }
-  // };
   
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
