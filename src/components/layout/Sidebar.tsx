@@ -1,18 +1,26 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import LogoutIcon from "../../assets/icons/LogoutIcon";
 import HelpIcon from "../../assets/icons/HelpIcon";
 import logoUrl from "../../assets/DGTOOHL 360.svg";
-import { useAuthStore } from "../../store/auth";
+// import { useAuthStore } from "../../store/auth";
 
 // Use the NavigationItem type from Side.ts for consistency
 import type { NavigationItem } from "../../services/Side";
 import { useSidebarMenu } from "../../context/SidebarMenuContext";
 
+
+import { useSelector, useDispatch } from "react-redux";
+import type { RootState } from "../../redux/store";
+import { toggleExpandedItem, setExpandedItems } from "../../redux/slices/sidebarSlice";
+import { logoutUser } from "../../redux/slices/authSlice";
+
+
+
 interface SidebarProps {
-  isCollapsed: boolean;
-  onToggle: () => void;
+  // isCollapsed: boolean;
+  // onToggle: () => void;
   // Mobile specific
   isMobile?: boolean;
   mobileOpen?: boolean;
@@ -20,26 +28,62 @@ interface SidebarProps {
 }
 
 
-const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobileOpen = false, onCloseMobile }) => {
+const Sidebar: React.FC<SidebarProps> = ({isMobile = false, mobileOpen = false, onCloseMobile }) => {
+   const dispatch = useDispatch();
+
+  const isCollapsed = useSelector(
+    (state: RootState) => state.sidebar.isCollapsed
+  );
+
+  const expandedItems = useSelector(
+    (state: RootState) => state.sidebar.expandedItems
+  );
+
+
+    // Use sidebar data from context instead of fetching separately
+  const { sidebarMenu: navigationItems } = useSidebarMenu(); 
+
+  
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useAuthStore();
-  const [expandedItems, setExpandedItems] = useState<string[]>([]);
-  const popupRef = useRef<HTMLDivElement>(null);
-  
-  // Use sidebar data from context instead of fetching separately
-  const { sidebarMenu: navigationItems } = useSidebarMenu();
+  // const { logout } = useAuthStore();
 
-  const handleLogout = async () => {
+   const handleLogout = async () => {
     try {
-      await logout();
+      await dispatch(logoutUser());
       navigate("/login");
     } catch (error) {
       console.error("Logout failed:", error);
     }
   };
+
+  // const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const [showMobilePopup, setShowMobilePopup] = useState(false);
+  const popupRef = useRef<HTMLDivElement>(null); 
+ 
+
+  // const handleLogout = async () => {
+  //   try {
+  //     await logout();
+  //     navigate("/login");
+  //   } catch (error) {
+  //     console.error("Logout failed:", error);
+  //   }
+  // };
   
-  
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (popupRef.current && !popupRef.current.contains(event.target as Node)) {
+        setShowMobilePopup(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   // Mobile: close on Escape key
   useEffect(() => {
     if (!isMobile) return;
@@ -55,15 +99,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
 
   // Toggle expansion for a parent item. When expanding a parent,
   // collapse others so only one parent menu is open at a time.
-  const toggleExpanded = (itemName: string) => {
-    setExpandedItems((prev) => {
-      if (prev.includes(itemName)) {
-        return prev.filter((item) => item !== itemName);
-      }
-      // open only this one (single-open behavior)
-      return [itemName];
-    });
-  };
+        const toggleExpanded = (itemName: string) => {
+          dispatch(toggleExpandedItem(itemName));
+        };
 
   // Route aliases map specific routes to the navigation path that should be
   // considered active. This lets us treat `/lead-management/create` as if the
@@ -149,7 +187,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
         activeParents.push(missCampaignSlug);
       }
     }
-    setExpandedItems(activeParents);
+
+    dispatch(setExpandedItems(activeParents));
   }, [location.pathname, navigationItems]);
 
   const renderNavigationItem = (item: NavigationItem, level = 0) => {
@@ -177,10 +216,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
 
     const handleCardClick = () => {
       if (hasChildren) {
-        toggleExpanded(slug);
+        if (isCollapsed && item.name === "Master Data") {
+          setShowMobilePopup(!showMobilePopup);
+        } else {
+          toggleExpanded(slug);
+        }
       } else if (item.path) {
         navigate(item.path);
-        if (isMobile) onCloseMobile && onCloseMobile();
       }
     };
 
@@ -192,13 +234,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
             transition-all duration-200 ease-in-out
             ${level > 0 ? "ml-6" : ""}
             ${highlightClass}
-            ${(isCollapsed && !isMobile) ? "px-2 justify-center" : ""}
+            ${isCollapsed ? "px-2 justify-center" : ""}
           `}
           onClick={handleCardClick}
         >
           <div
             className={`flex items-center w-full ${
-              (isCollapsed && !isMobile) ? "justify-center" : ""
+              isCollapsed ? "justify-center" : ""
             }`}
           >
             {/* Show icon_file image if present, else fallback to icon component */}
@@ -206,19 +248,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
               <img
                 src={item.icon_file}
                 alt={item.name}
-                className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] object-contain ${(isCollapsed && !isMobile) ? "" : "mr-2.5"}`}
+                className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] object-contain ${isCollapsed ? "" : "mr-2.5"}`}
                 style={{ display: "inline-block" }}
               />
             ) : (
               IconComponent && (
                 <IconComponent
-                  className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)] ${(isCollapsed && !isMobile) ? "" : "mr-2.5"}`}
+                  className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)] ${isCollapsed ? "" : "mr-2.5"}`}
                 />
               )
             )}
-            {(!isCollapsed || isMobile) && <span className="text-[var(--text-primary)]">{item.name}</span>}
+            {!isCollapsed && <span className="text-[var(--text-primary)]">{item.name}</span>}
           </div>
-          {hasChildren && (!isCollapsed || isMobile) && (
+          {hasChildren && !isCollapsed && (
             <div className="ml-auto">
               {isExpanded ? (
                 <ChevronDown className="shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)]" />
@@ -229,7 +271,41 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
           )}
         </div>
 
-        {hasChildren && isExpanded && (!isCollapsed || isMobile) && (
+        {/* Mobile Popup Menu */}
+        {hasChildren && isCollapsed && showMobilePopup && item.name === "Master Data" && (
+          <div
+            ref={popupRef}
+            className="fixed left-16 top-0 mt-12 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 min-w-[200px]"
+          >
+            {item.children?.map((child) => (
+              <Link
+                key={child.name}
+                to={child.path || ""}
+                className="flex items-center px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-orange-50"
+                onClick={() => {
+                  setShowMobilePopup(false);
+                }}
+              >
+                {/* Show icon_file image if present, else fallback to icon component */}
+                {child.icon_file ? (
+                  <img
+                    src={child.icon_file}
+                    alt={child.name}
+                    className="w-4 h-4 mr-2 object-contain"
+                    style={{ display: "inline-block" }}
+                  />
+                ) : (
+                  child.icon && React.createElement(child.icon, {
+                    className: "w-4 h-4 mr-2 text-[var(--text-primary)]",
+                  })
+                )}
+                <span className="text-[var(--text-primary)]">{child.name}</span>
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {hasChildren && isExpanded && !isCollapsed && (
           <div className="mt-2 space-y-1">
             {item.children?.map((child) => renderNavigationItem(child, level + 1))}
           </div>
@@ -238,40 +314,33 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
     );
   };
 
-  // Mobile variant: full sidebar with text labels (same as desktop expanded view)
+  // Mobile variant: icon-only slide-in panel
   if (isMobile) {
     return (
       <div
         aria-hidden={!mobileOpen}
-        className={`fixed top-0 left-0 h-full bg-white border-r border-gray-200 shadow-sm transition-transform duration-300 ease-in-out z-40 transform ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} w-64`}
+        className={`fixed top-0 left-0 h-full bg-white border-r border-gray-200 shadow-sm transition-transform duration-300 ease-in-out z-40 transform ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} w-16`}
         ref={popupRef}
       >
-        {/* Logo Section */}
-        <div className="flex h-16 items-center px-4" style={{paddingLeft: '9px', paddingRight: '9px'}}>
-          <div className="flex items-center w-full">
-            <div className="rounded-lg flex items-center justify-start">
-              <img src={logoUrl} alt="LMS logo" style={{width: 280, height: 'auto'}} />
+        {/* Render collapsed (icons-only) content inside */}
+        <div className="flex h-16 items-center px-2">
+            <div className="w-12 h-12 rounded-lg flex items-center justify-center">
+              <img src={logoUrl} alt="LMS logo" style={{width: 72, height: 'auto'}} />
             </div>
-          </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4 px-2 scrolling-touch">
+        <nav className="flex-1 overflow-y-auto py-2 px-1 scrolling-touch">
           <div className="space-y-1">
             {navigationItems.map((item) => renderNavigationItem(item))}
           </div>
         </nav>
 
-        {/* Footer Section */}
-        <div className="border-t border-gray-100 p-3 space-y-2">
+        <div className="border-t border-gray-100 p-2 space-y-2">
           <div
-            className={`flex items-center px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] rounded-lg hover:bg-orange-50 transition-all cursor-pointer`}
+            className={`flex items-center px-2 py-2 text-sm font-medium text-[var(--text-primary)] rounded-lg hover:bg-orange-50 transition-all cursor-pointer justify-center`}
             onClick={() => onCloseMobile && onCloseMobile()}
           >
-            <HelpIcon
-              className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)] mr-2.5`}
-            />
-            <span className="text-[var(--text-primary)]">Help</span>
+            <HelpIcon className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)]`} />
           </div>
 
           <div
@@ -279,10 +348,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, isMobile = false, mobile
               handleLogout();
               onCloseMobile && onCloseMobile();
             }}
-            className={`flex items-center px-4 py-2.5 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-all cursor-pointer`}
+            className={`flex items-center px-2 py-2 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-all cursor-pointer justify-center`}
           >
-            <LogoutIcon className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-red-600 mr-2.5`} />
-            <span>Log out</span>
+            <LogoutIcon className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-red-600`} />
           </div>
         </div>
       </div>
