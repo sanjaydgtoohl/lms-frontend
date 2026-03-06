@@ -267,14 +267,19 @@ const Create: React.FC<CreateProps> = ({
       }
 
       if (onSave) onSave(result);
-      
+
+      // dispatch a global update so lists can refresh when user returns
+      try {
+        window.dispatchEvent(new CustomEvent('missCampaigns:update', { detail: { id: (result as any)?.id } }));
+      } catch (_) {}
+
       // For inline mode or if no navigation available, just close
       if (inline || !navigate) {
         if (onClose) onClose();
       } else {
         // Navigate to view page after a short delay to show success message
         setTimeout(() => {
-          navigate('/miss-campaign/view');
+          navigate('/miss-campaign/view', { state: { refreshedAt: Date.now() } });
         }, 1800);
       }
     } catch (err: any) {

@@ -31,7 +31,7 @@ const AllUsers: React.FC = () => {
 
   // ParentUserModal state
   const [parentUserModalOpen, setParentUserModalOpen] = useState(false);
-  const [selectedParentUser, setSelectedParentUser] = useState<any>(null);
+  const [selectedParentUser, setSelectedParentUser] = useState<any[] | null>(null);
   const [parentUserContextName, setParentUserContextName] = useState('');
 
   const fetchUsers = async () => {
@@ -99,9 +99,9 @@ const AllUsers: React.FC = () => {
   };
 
   const handleParentUserClick = (user: User) => {
-    const parentUser = (user as any).parent;
-    if (parentUser) {
-      setSelectedParentUser(parentUser);
+    const parents = (user as any).parents ?? ((user as any).parent ? [(user as any).parent] : undefined);
+    if (Array.isArray(parents) && parents.length > 0) {
+      setSelectedParentUser(parents);
       setParentUserContextName(user.name);
       setParentUserModalOpen(true);
     }
@@ -169,18 +169,25 @@ const AllUsers: React.FC = () => {
       key: 'parent',
       header: 'Parent User',
       render: (it: User) => {
-        const parentUser = (it as any).parent;
+        const parents = (it as any).parents ?? ((it as any).parent ? [(it as any).parent] : []);
         return (
           <div
             className="flex gap-2 justify-center items-center cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={() => parentUser && handleParentUserClick(it)}
+            onClick={() => parents && parents.length > 0 && handleParentUserClick(it)}
           >
-            {parentUser ? (
-              <span
-                className="inline-flex items-center justify-center h-7 px-3 border border-blue-300 rounded-full text-xs font-medium leading-tight whitespace-nowrap bg-blue-50 text-blue-700"
-              >
-                {parentUser.name || parentUser}
-              </span>
+            {Array.isArray(parents) && parents.length > 0 ? (
+              <>
+                <span
+                  className="inline-flex items-center justify-center h-7 px-3 border border-blue-300 rounded-full text-xs font-medium leading-tight whitespace-nowrap bg-blue-50 text-blue-700"
+                >
+                  {parents[0].name || parents[0]}
+                </span>
+                {parents.length > 1 && (
+                  <span className="inline-flex items-center justify-center h-7 px-2 border border-gray-300 rounded-full text-xs font-medium leading-tight whitespace-nowrap bg-gray-50 text-gray-700">
+                    +{parents.length - 1}
+                  </span>
+                )}
+              </>
             ) : (
               <span className="text-gray-400">-</span>
             )}

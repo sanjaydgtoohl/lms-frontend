@@ -188,6 +188,31 @@ const View: React.FC = () => {
     fetchCampaigns(currentPage);
   }, [currentPage]);
 
+  // Listen for external updates (create/edit from other routes) and refresh list
+  useEffect(() => {
+    const onExternalUpdate = () => {
+      // go to first page and refresh from server
+      setCurrentPage(1);
+      fetchCampaigns(1);
+    };
+
+    window.addEventListener('missCampaigns:update', onExternalUpdate);
+    return () => window.removeEventListener('missCampaigns:update', onExternalUpdate);
+  }, []);
+
+  // If navigated back with a refresh flag in location.state, refresh and clear state
+  useEffect(() => {
+    const s = (location.state as any) || {};
+    if (s.refreshedAt) {
+      setCurrentPage(1);
+      fetchCampaigns(1);
+      // clear the navigation state so this runs only once
+      try {
+        navigate(location.pathname, { replace: true, state: {} });
+      } catch (_) {}
+    }
+  }, [location.state, navigate]);
+
   const handlePageChange = (page: number) => setCurrentPage(page);
 
   return (

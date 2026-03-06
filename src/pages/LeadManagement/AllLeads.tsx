@@ -5,6 +5,7 @@ import CallStatusDropdown from '../../components/ui/CallStatusDropdown';
 import Pagination from '../../components/ui/Pagination';
 import SearchBar from '../../components/ui/SearchBar';
 import { MasterHeader, StatusPill } from '../../components/ui';
+import { FaRegCalendarAlt } from 'react-icons/fa';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants';
@@ -421,12 +422,15 @@ const AllLeads: React.FC = () => {
         <MasterHeader
           onCreateClick={handleCreateLead}
           createButtonLabel="Create Lead"
+          showSignInButton={true}
+          signInIcon={<FaRegCalendarAlt className="cursor-pointer text-orange-500 hover:text-orange-600 w-4 h-4 sm:w-6 sm:h-6" />}
+          onSignInClick={() => navigate(ROUTES.LEAD.MEETING_SCHEDULE)}
         />
       )}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
         <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-200">
-          <h2 className="text-base font-semibold text-gray-900">All Leads</h2>
-          <div className="ml-4">
+          <h2 className="text-base font-semibold text-gray-900 flex-shrink-0">All Leads</h2>
+          <div className="w-40 md:w-auto ml-auto">
             <SearchBar
               placeholder="Search leads..."
               delay={250}

@@ -10,6 +10,7 @@ import type { BriefDetail } from '../../services/PlanSubmission';
 import { fetchPlannerHistories } from '../../services/PlanHistory';
 import type { PlannerHistoryItem } from '../../services/PlanHistory';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import FilePreviewModal from '../../components/ui/FilePreviewModal';
 
 // No mock data, will fetch from API
 
@@ -134,6 +135,9 @@ interface SubmittedPlansListProps {
 
 const SubmittedPlansList: React.FC<SubmittedPlansListProps> = ({ plans = [], loading }) => {
   const [currentPage, setCurrentPage] = useState(1);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewSource, setPreviewSource] = useState<any>(null);
+  const [selectedAttachment, setSelectedAttachment] = useState<null | { name: string; url: string; label: string }>(null);
   const pageSize = 3;
   const totalPages = Math.max(1, Math.ceil(plans.length / pageSize));
 
@@ -206,18 +210,28 @@ const SubmittedPlansList: React.FC<SubmittedPlansListProps> = ({ plans = [], loa
                     </div>
 
                     <div className="flex items-center justify-end space-x-6">
-                      <div className="flex items-center space-x-6">
-                        {attachments.map((att, idx) => (
-                          <div key={idx} className="flex flex-col items-center">
-                            <a href={att.url} target="_blank" rel="noopener noreferrer">
-                              <div className={`w-12 h-14 rounded border flex items-center justify-center ${att.type === 'xls' ? 'bg-green-50 border-green-200' : att.type === 'ppt' ? 'bg-red-50 border-red-200' : 'bg-gray-100 border-gray-200'}`}>
-                                <div className="text-xs font-semibold" style={{ color: att.type === 'xls' ? '#15803d' : att.type === 'ppt' ? '#b91c1c' : '#333' }}>{att.type.toUpperCase()}</div>
-                              </div>
-                            </a>
-                            <div className="text-xs text-gray-500 mt-1">{att.label}</div>
-                          </div>
-                        ))}
-                      </div>
+                                <div className="flex items-center space-x-6">
+                                  {attachments.map((att, aidx) => (
+                                    <div key={aidx} className="flex flex-col items-center">
+                                      <div
+                                        role="button"
+                                        tabIndex={0}
+                                        title={att.name}
+                                        aria-label={`Open attachment ${att.name}`}
+                                        onClick={() => setSelectedAttachment({ name: att.name, url: att.url, label: att.label })}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            setSelectedAttachment({ name: att.name, url: att.url, label: att.label });
+                                          }
+                                        }}
+                                        className={`w-12 h-14 rounded border flex items-center justify-center cursor-pointer transition transform hover:shadow-md hover:scale-105 focus:outline-none focus:ring-2 ${att.type === 'xls' ? 'bg-green-50 border-green-200 focus:ring-green-300' : att.type === 'ppt' ? 'bg-red-50 border-red-200 focus:ring-red-300' : 'bg-gray-100 border-gray-200 focus:ring-gray-300'}`}>
+                                        <div className="text-xs font-semibold" style={{ color: att.type === 'xls' ? '#15803d' : att.type === 'ppt' ? '#b91c1c' : '#333' }}>{att.type.toUpperCase()}</div>
+                                      </div>
+                                      <div className="text-xs text-gray-500 mt-1">{att.label}</div>
+                                    </div>
+                                  ))}
+                                </div>
                     </div>
                   </div>
                 </div>
@@ -248,8 +262,57 @@ const SubmittedPlansList: React.FC<SubmittedPlansListProps> = ({ plans = [], loa
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>
+      <FilePreviewModal
+        isOpen={previewOpen}
+        source={previewSource}
+        onClose={() => {
+          setPreviewOpen(false);
+          setPreviewSource(null);
+        }}
+      />
+      {/* Confirmation dialog: View or Download */}
+      {selectedAttachment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black opacity-40" onClick={() => setSelectedAttachment(null)} />
+          <div className="bg-white rounded-lg shadow-lg z-50 w-full max-w-xs p-4">
+            <h4 className="text-sm font-semibold text-gray-800 mb-1">Download / View</h4>
+            <div className="text-xs text-gray-600 mb-4 truncate" title={selectedAttachment.name}>{selectedAttachment.name}</div>
+            <div className="flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setPreviewSource({ kind: 'remote', url: selectedAttachment.url, name: selectedAttachment.name });
+                  setPreviewOpen(true);
+                  setSelectedAttachment(null);
+                }}
+                className="px-3 py-1 rounded bg-gray-100 text-gray-800 hover:bg-gray-200"
+              >
+                View
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const a = document.createElement('a');
+                  a.href = selectedAttachment.url;
+                  a.download = selectedAttachment.name || '';
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                  setSelectedAttachment(null);
+                }}
+                className="px-3 py-1 rounded bg-orange-600 text-white hover:bg-orange-700"
+              >
+                Download
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default PlanHistory;
+
+// Modal markup appended to file-level for small local component behavior handled in this file

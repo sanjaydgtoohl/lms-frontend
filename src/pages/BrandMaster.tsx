@@ -229,9 +229,9 @@ const BrandMaster: React.FC = () => {
           />
 
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-            <div className="bg-gray-50 px-3 md:px-6 py-3 md:py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-0 border-b border-gray-200">
-              <h2 className="text-sm md:text-base font-semibold text-gray-900">Brand Master</h2>
-              <div className="w-full md:w-auto">
+            <div className="bg-gray-50 px-3 md:px-6 py-3 md:py-4 flex flex-row items-center justify-between gap-3 flex-wrap md:flex-nowrap border-b border-gray-200">
+              <h2 className="text-sm md:text-base font-semibold text-gray-900 flex-shrink-0">Brand Master</h2>
+              <div className="ml-auto">
                 <SearchBar 
                   delay={300} 
                   onSearch={(q: string) => { 

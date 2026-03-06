@@ -40,9 +40,14 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
 
   useEffect(() => {
     if (initialData) {
+      // Avoid copying sensitive fields like `email`, `password`, and
+      // `password_confirmation` from `initialData` so they are not
+      // autofilled when opening the edit form.
       setForm((prev) => ({
         ...prev,
-        ...initialData,
+        // Only copy safe fields we want pre-filled
+        name: initialData.name ?? initialData.full_name ?? prev.name,
+        phone: initialData.phone ?? prev.phone,
         // normalize role id(s) to select value(s)
         roles: initialData.roles && Array.isArray(initialData.roles)
           ? initialData.roles.map((r: any) => String(r.id))
@@ -50,7 +55,9 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
         managers: initialData.managers && Array.isArray(initialData.managers)
           ? initialData.managers.map((m: any) => String(m.id))
           : prev.managers,
-        name: initialData.name ?? initialData.full_name ?? prev.name,
+        // Ensure password inputs remain empty
+        password: '',
+        password_confirmation: '',
       }));
     }
   }, [initialData]);
@@ -219,8 +226,8 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
       // managers is array of manager ids -> send as manager_ids (array)
       if (base.managers && base.managers.length > 0) {
         payload.manager_ids = base.managers.map((m: string) => Number(m));
-        // Set is_parent to the first selected manager's id
-        payload.is_parent = Number(base.managers[0]);
+        // Set is_parent as array of manager ids
+        payload.is_parent = base.managers.map((m: string) => Number(m));
       }
 
       // include password only when provided (required on create)
@@ -289,7 +296,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
 
       <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
         <div className="p-6 bg-[#F9FAFB]">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
             {/* Name */}
             <div>
               <label className="block text-sm text-[var(--text-secondary)] mb-1">
@@ -334,6 +341,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
                 <input
                   name="password"
                   type={showPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
                   value={form.password}
                   onChange={(e) => {
                     handleChange(e);
@@ -390,6 +398,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
                 <input
                   name="password_confirmation"
                   type={showConfirmPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
                   value={form.password_confirmation}
                   onChange={(e) => {
                     handleChange(e);
@@ -440,11 +449,11 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
             {/* Manager */}
             <div>
               <label className="block text-sm text-[var(--text-secondary)] mb-1">
-                Select Manager
+                Managers
               </label>
               <MultiSelectDropdown
                 name="managers"
-                placeholder={managersLoading ? 'Loading managers...' : 'Search or select managers'}
+                placeholder={managersLoading ? 'Loading managers...' : 'Select manager(s)'}
                 options={managerOptions}
                 value={form.managers}
                 onChange={(v) => {
@@ -481,6 +490,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
               <input
                 name="email"
                 type="email"
+                autoComplete="off"
                 value={form.email}
                 onChange={(e) => {
                   handleChange(e);

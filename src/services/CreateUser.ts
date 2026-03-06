@@ -32,6 +32,15 @@ export async function createUser(payload: Record<string, any>): Promise<any> {
     delete body.roles;
   }
 
+  // Normalize manager fields: backend expects `manager_ids` and `is_parent` as arrays
+  if (Array.isArray(body.manager_ids)) {
+    body.is_parent = body.manager_ids.map((m: any) => Number(m));
+  } else if (Array.isArray(body.managers)) {
+    body.manager_ids = body.managers.map((m: any) => Number(m));
+    body.is_parent = body.managers.map((m: any) => Number(m));
+    delete body.managers;
+  }
+
   const res = await apiClient.post<any>(ENDPOINTS.CREATE, body);
   return handleResponse<any>(res);
 }
@@ -51,6 +60,15 @@ export async function updateUser(id: string, payload: Record<string, any>): Prom
   } else if (body.roles && Array.isArray(body.roles) && !body.role_id) {
     body.role_id = body.roles.map((r: any) => Number(r));
     delete body.roles;
+  }
+
+  // Normalize manager fields: backend expects `manager_ids` and `is_parent` as arrays
+  if (Array.isArray(body.manager_ids)) {
+    body.is_parent = body.manager_ids.map((m: any) => Number(m));
+  } else if (Array.isArray(body.managers)) {
+    body.manager_ids = body.managers.map((m: any) => Number(m));
+    body.is_parent = body.managers.map((m: any) => Number(m));
+    delete body.managers;
   }
 
   const res = await apiClient.put<any>(ENDPOINTS.UPDATE(cleanId), body);

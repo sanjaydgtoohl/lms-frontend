@@ -44,11 +44,11 @@ const Pagination: React.FC<PaginationProps> = ({
         }
       `}</style>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-6">
-        <div className="text-sm text-[var(--text-secondary)] mb-4 sm:mb-0">
+        <div className="text-sm text-[var(--text-secondary)] mb-4 sm:mb-0 text-center w-full sm:w-auto order-2 sm:order-1">
           Showing {startIndex + 1} to {Math.min(endIndex, totalItems)} of {totalItems} entries
         </div>
 
-        <div className="pagination-container flex items-center justify-end bg-transparent px-2 py-1">
+        <div className="pagination-container flex items-center justify-center sm:justify-end bg-transparent px-2 py-1 w-full sm:w-auto order-1 sm:order-2">
           <button
             onClick={() => onPageChange(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}

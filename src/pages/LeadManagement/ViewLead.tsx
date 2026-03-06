@@ -6,7 +6,6 @@ import { Button } from '../../components/ui';
 import { fetchLeadById } from '../../services/ViewLead';
 import type { Lead as ApiLead } from '../../services/ViewLead';
 import Breadcrumb from '../../components/ui/Breadcrumb';
-import { FaRegCalendarAlt } from 'react-icons/fa';
 
 
 const ViewLead: React.FC = () => {
@@ -28,9 +27,6 @@ const ViewLead: React.FC = () => {
   const handleBack = () => {
     navigate('/lead-management/all-leads');
   };
-  const handleMeetingSchedule = () => {
-    navigate(ROUTES.LEAD.MEETING_SCHEDULE);
-  }
 
   if (isLoading) {
     return (
@@ -83,12 +79,6 @@ const ViewLead: React.FC = () => {
           items={[{ label: 'Lead Management', path: ROUTES.LEAD_MANAGEMENT }, { label: `Lead ${lead.id}`, isActive: true }]}
         />
         <div className="flex items-center gap-6">
-          <FaRegCalendarAlt
-            size={22}
-            className="cursor-pointer text-orange-500 hover:text-orange-600"
-            title="Meeting Schedule"
-            onClick={handleMeetingSchedule}
-          />
           <Button
             variant="primary"
             className="font-semibold px-3 py-1 rounded-md flex items-center text-sm"

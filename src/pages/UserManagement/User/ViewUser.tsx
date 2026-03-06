@@ -67,7 +67,7 @@ const ViewUser: React.FC = () => {
         title="View User" 
       />
       <div className="bg-white border border-[var(--border-color)] rounded-xl shadow-sm p-6 mt-6">
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <div>
               <div className="text-sm text-gray-600">User Name</div>
@@ -81,39 +81,75 @@ const ViewUser: React.FC = () => {
               <div className="text-sm text-gray-600">Phone Number</div>
               <div className="text-base text-[var(--text-primary)]">{user.phone || '-'}</div>
             </div>
+            <div>
+              <div className="text-sm text-gray-600">Created Date</div>
+              <div className="text-base text-[var(--text-primary)]">
+                {user.created_at_formatted || (user.created_at ? new Date(user.created_at).toLocaleString() : '-') || '-'}
+              </div>
+            </div>
+
+            <div>
+              <div className="text-sm text-gray-600">Role Description</div>
+              {user.roles && user.roles.length > 0 ? (
+                <ol className="list-decimal list-inside mt-1 space-y-1">
+                  {user.roles.map((r: any, i: number) => (
+                    <li key={r.id ?? i} className="text-base text-[var(--text-primary)]">
+                      {r.description || '-'}
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <div className="text-base text-[var(--text-primary)] mt-1">-</div>
+              )}
+            </div>
           </div>
+
           <div className="space-y-4">
             <div>
               <div className="text-sm text-gray-600">Role</div>
-              <div className="mt-1">
-                <span
-                  className={`inline-flex items-center justify-center h-7 px-3 border rounded-full text-xs font-medium leading-tight whitespace-nowrap ${getRoleBadgeColor(
-                    user.role?.name || (user.roles && user.roles[0]?.name) || ''
-                  )}`}
-                >
-                  {user.role?.name || (user.roles && user.roles[0]?.name) || '-'}
-                </span>
+              <div className="mt-1 flex flex-wrap gap-2">
+                {user.roles && user.roles.length > 0 ? (
+                  user.roles.map((r: any, idx: number) => (
+                    <span
+                      key={r.id ?? idx}
+                      className={`inline-flex items-center h-7 px-3 border rounded-full text-xs font-medium leading-tight whitespace-nowrap ${getRoleBadgeColor(
+                        r.name
+                      )}`}
+                    >
+                      {r.name}
+                    </span>
+                  ))
+                ) : (
+                  <span
+                    className={`inline-flex items-center justify-center h-7 px-3 border rounded-full text-xs font-medium leading-tight whitespace-nowrap ${getRoleBadgeColor(
+                      user.role?.name || ''
+                    )}`}
+                  >
+                    {user.role?.name || '-'}
+                  </span>
+                )}
               </div>
-              {/* Show role description with heading if available */}
-              {(user.role?.description || (user.roles && user.roles[0]?.description)) && (
-                <div className="mt-2">
-                  <div className="text-sm text-gray-600">Role Description</div>
-                  <div className="text-base text-[var(--text-primary)] mt-1">
-                    {user.role?.description || (user.roles && user.roles[0]?.description)}
-                  </div>
-                </div>
-              )}
             </div>
-            {/* Status field removed as requested */}
+
             <div>
               <div className="text-sm text-gray-600">Last Login</div>
               <div className="text-base text-[var(--text-primary)]">{user.last_login_at || '-'}</div>
             </div>
-          </div>
-          <div className="col-span-2">
+
             <div>
-              <div className="text-sm text-gray-600">Created Date</div>
-              <div className="text-base text-[var(--text-primary)]">{user.created_at ? new Date(user.created_at).toLocaleString() : '-'}</div>
+              <div className="text-sm text-gray-600">Parent Users</div>
+              {user.parents && user.parents.length > 0 ? (
+                <div className="mt-2 space-y-3">
+                  {user.parents.map((p: any) => (
+                    <div key={p.id} className="w-full bg-white border border-[var(--border-color)] rounded-md p-3">
+                      <div className="text-base text-[var(--text-primary)]">{p.name}</div>
+                      <div className="text-sm text-gray-600">{p.email}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-base text-[var(--text-primary)] mt-1">-</div>
+              )}
             </div>
           </div>
         </div>
