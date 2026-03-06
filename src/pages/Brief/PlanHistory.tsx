@@ -10,6 +10,7 @@ import type { BriefDetail } from '../../services/PlanSubmission';
 import { fetchPlannerHistories } from '../../services/PlanHistory';
 import type { PlannerHistoryItem } from '../../services/PlanHistory';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import Swal from 'sweetalert2';
 import FilePreviewModal from '../../components/ui/FilePreviewModal';
 
 // No mock data, will fetch from API
@@ -137,7 +138,6 @@ const SubmittedPlansList: React.FC<SubmittedPlansListProps> = ({ plans = [], loa
   const [currentPage, setCurrentPage] = useState(1);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewSource, setPreviewSource] = useState<any>(null);
-  const [selectedAttachment, setSelectedAttachment] = useState<null | { name: string; url: string; label: string }>(null);
   const pageSize = 3;
   const totalPages = Math.max(1, Math.ceil(plans.length / pageSize));
 
@@ -145,6 +145,31 @@ const SubmittedPlansList: React.FC<SubmittedPlansListProps> = ({ plans = [], loa
   const paginated = plans.slice(startIndex, startIndex + pageSize);
 
   const gotoPage = (p: number) => setCurrentPage(Math.min(Math.max(1, p), totalPages));
+
+  const handleAttachmentAction = async (att: { name: string; url: string; label: string }) => {
+    const result = await Swal.fire({
+      title: 'Download / View',
+      text: att.name,
+      showDenyButton: true,
+      showCancelButton: true,
+      confirmButtonText: 'View',
+      denyButtonText: 'Download',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true,
+    });
+
+    if (result.isConfirmed) {
+      setPreviewSource({ kind: 'remote', url: att.url, name: att.name });
+      setPreviewOpen(true);
+    } else if (result.isDenied) {
+      const a = document.createElement('a');
+      a.href = att.url;
+      a.download = att.name || '';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+  };
 
   if (loading) {
     return <div className="no-transitions text-center py-8 text-gray-500">Loading submitted plans...</div>;
@@ -218,11 +243,11 @@ const SubmittedPlansList: React.FC<SubmittedPlansListProps> = ({ plans = [], loa
                                         tabIndex={0}
                                         title={att.name}
                                         aria-label={`Open attachment ${att.name}`}
-                                        onClick={() => setSelectedAttachment({ name: att.name, url: att.url, label: att.label })}
+                                        onClick={() => handleAttachmentAction({ name: att.name, url: att.url, label: att.label })}
                                         onKeyDown={(e) => {
                                           if (e.key === 'Enter' || e.key === ' ') {
                                             e.preventDefault();
-                                            setSelectedAttachment({ name: att.name, url: att.url, label: att.label });
+                                            handleAttachmentAction({ name: att.name, url: att.url, label: att.label });
                                           }
                                         }}
                                         className={`w-12 h-14 rounded border flex items-center justify-center cursor-pointer transition transform hover:shadow-md hover:scale-105 focus:outline-none focus:ring-2 ${att.type === 'xls' ? 'bg-green-50 border-green-200 focus:ring-green-300' : att.type === 'ppt' ? 'bg-red-50 border-red-200 focus:ring-red-300' : 'bg-gray-100 border-gray-200 focus:ring-gray-300'}`}>
@@ -270,45 +295,7 @@ const SubmittedPlansList: React.FC<SubmittedPlansListProps> = ({ plans = [], loa
           setPreviewSource(null);
         }}
       />
-      {/* Confirmation dialog: View or Download */}
-      {selectedAttachment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black opacity-40" onClick={() => setSelectedAttachment(null)} />
-          <div className="bg-white rounded-lg shadow-lg z-50 w-full max-w-xs p-4">
-            <h4 className="text-sm font-semibold text-gray-800 mb-1">Download / View</h4>
-            <div className="text-xs text-gray-600 mb-4 truncate" title={selectedAttachment.name}>{selectedAttachment.name}</div>
-            <div className="flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setPreviewSource({ kind: 'remote', url: selectedAttachment.url, name: selectedAttachment.name });
-                  setPreviewOpen(true);
-                  setSelectedAttachment(null);
-                }}
-                className="px-3 py-1 rounded bg-gray-100 text-gray-800 hover:bg-gray-200"
-              >
-                View
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  const a = document.createElement('a');
-                  a.href = selectedAttachment.url;
-                  a.download = selectedAttachment.name || '';
-                  document.body.appendChild(a);
-                  a.click();
-                  a.remove();
-                  setSelectedAttachment(null);
-                }}
-                className="px-3 py-1 rounded bg-orange-600 text-white hover:bg-orange-700"
-              >
-                Download
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      
     </div>
   );
 };
