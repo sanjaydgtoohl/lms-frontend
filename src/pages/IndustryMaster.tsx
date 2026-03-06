@@ -10,7 +10,8 @@ import { MasterHeader } from '../components/ui';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import SearchBar from '../components/ui/SearchBar';
 import { listIndustries, deleteIndustry, updateIndustry, type Industry as ApiIndustry } from '../services/IndustryMaster';
-import { usePermissions } from '../context/SidebarMenuContext';
+import { usePermissions } from '../hooks/SidebarMenuHooks';
+
 import SweetAlert from '../utils/SweetAlert';
 
 interface Industry {

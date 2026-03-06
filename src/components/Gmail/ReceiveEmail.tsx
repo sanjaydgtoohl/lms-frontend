@@ -242,7 +242,7 @@ export default function ReceiveEmail() {
     // simple bold for *text*
     const bolded = escaped.replace(/\*(.*?)\*/g, '<strong>$1</strong>');
     // convert URLs to clickable links
-    const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`\[\]]*)/g;
+    const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`[\]]*)/g;
     const withLinks = bolded.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: #0066cc; text-decoration: underline; word-break: break-word;">$1</a>');
     // paragraphs: two newlines -> paragraph, single newline -> <br />
     const paragraphs = withLinks.split(/\n\n+/g).map((p) => p.replace(/\n/g, '<br/>'));
@@ -275,7 +275,10 @@ export default function ReceiveEmail() {
     // Escape and preserve line breaks for forwarded block
     const escape = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const forwardedEscaped = escape(after)
-      .replace(/(https?:\/\/[^\s<>"{}|\\^`\[\]]*)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:#0066cc;text-decoration:underline;">$1</a>')
+.replace(
+  /(https?:\/\/[^\s<>"{}|\\^`[\]]*)/g, 
+  '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:#0066cc;text-decoration:underline;">$1</a>'
+)
       .replace(/\n\n+/g, '</p><p>')
       .replace(/\n/g, '<br/>');
 
@@ -337,7 +340,7 @@ export default function ReceiveEmail() {
         const attachments = extractAttachments(m?.payload);
 
         // debug: show parsed values in console to help troubleshoot missing email
-        // eslint-disable-next-line no-console
+         
         console.debug('[gmail] mapped sender', { id: m?.id || ids[idx], fromHeader, senderName, senderEmail, isForwarded, attachments });
         
         return { 
@@ -358,7 +361,7 @@ export default function ReceiveEmail() {
       setMessages(mapped);
     } catch (err) {
       const errorMsg = String(err || '');
-      // eslint-disable-next-line no-console
+       
       console.error('[gmail] loadList error', err);
       
       if (errorMsg.includes('authentication required') || errorMsg.includes('Failed to refresh') || errorMsg.includes('No access token')) {
@@ -400,7 +403,7 @@ export default function ReceiveEmail() {
       const dateStr = res.headers?.Date || '';
 
       // debug: log parsed selection
-      // eslint-disable-next-line no-console
+       
       console.debug('[gmail] viewMessage parsed', { id, fromHeader, parsed, attachments, isForwarded });
       // Revoke any previous object URLs
       if (objectUrlsRef.current.length > 0) {
@@ -426,7 +429,7 @@ export default function ReceiveEmail() {
               }
             } catch (e) {
               // ignore individual attachment preview failures
-              // eslint-disable-next-line no-console
+               
               console.warn('[gmail] inline preview failed', att, e);
             }
           }));
@@ -459,7 +462,7 @@ export default function ReceiveEmail() {
       });
     } catch (err) {
       const errorMsg = String(err || '');
-      // eslint-disable-next-line no-console
+       
       console.error('[gmail] viewMessage error', err);
       
       // Check if error is auth-related
@@ -637,7 +640,7 @@ export default function ReceiveEmail() {
                                         // open preview in new tab/window
                                         window.open(url, '_blank');
                                       } catch (err) {
-                                        // eslint-disable-next-line no-console
+                                         
                                         console.error('Preview failed', err);
                                         SweetAlert.showError(`Preview failed for ${att.filename}`);
                                       }
@@ -652,7 +655,7 @@ export default function ReceiveEmail() {
                                   onClick={() => {
                                     gmailService.downloadAttachment(selected.id, att.id, att.filename)
                                       .catch((err) => {
-                                        // eslint-disable-next-line no-console
+                                         
                                         console.error('Download failed:', err);
                                         SweetAlert.showError(`Failed to download ${att.filename}`);
                                       });

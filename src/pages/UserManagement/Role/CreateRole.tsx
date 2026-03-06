@@ -121,7 +121,9 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
         setErrors((prev) => ({ ...prev, ...nextErrs }));
       } else {
         const msg = respData?.message || err?.message || 'Failed to save role';
-        try { SweetAlert.showError(String(msg)); } catch (_) {}
+        try { SweetAlert.showError(String(msg)); } catch {
+          // no need to action
+        }
       }
     } finally {
       setSaving(false);

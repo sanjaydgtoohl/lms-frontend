@@ -41,7 +41,7 @@ const BriefLog: React.FC = () => {
         if (mounted && res && Array.isArray(res.data)) {
           setPlannerStatusOptions(res.data.map((item: any) => ({ id: item.id, name: item.name })));
         }
-      } catch (e) {
+      } catch {
         // ignore
       }
     };

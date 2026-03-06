@@ -38,7 +38,7 @@ const CreateIndustryForm: React.FC<Props> = ({ onClose, onSave }) => {
       if (onSave) {
         try {
           onSave({ name: created?.name || name, dateTime: formatDateTime(new Date()), id: created?.id });
-        } catch (e) {
+        } catch {
           // swallow parent errors
         }
       } else {
@@ -68,7 +68,9 @@ const CreateIndustryForm: React.FC<Props> = ({ onClose, onSave }) => {
             }
           }
         }
-      } catch (_) {}
+      } catch {
+        // no need to action
+      }
       // Show global popup only when not inline
       if (!onSave) showError(msg);
     } finally {

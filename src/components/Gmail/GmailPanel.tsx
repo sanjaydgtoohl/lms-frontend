@@ -106,7 +106,7 @@ export default function GmailPanel() {
       let raw = null;
       try {
         raw = await gmailService.getMessage(id, 'full');
-      } catch (err) {
+      } catch {
         raw = null;
       }
       setSelected({ ...res, raw });

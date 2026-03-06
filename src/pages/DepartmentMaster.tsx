@@ -18,7 +18,8 @@ import {
 	type Department as ApiDepartment,
 } from '../services/DepartmentMaster';
 import SweetAlert from '../utils/SweetAlert';
-import { usePermissions } from '../context/SidebarMenuContext';
+import { usePermissions } from '../hooks/SidebarMenuHooks';
+
 
 interface Department {
 	id: string;
@@ -82,7 +83,7 @@ const CreateDepartmentForm: React.FC<{
 				const nameErrors = responseData.errors.name;
 				const errorMessage = Array.isArray(nameErrors) ? nameErrors[0] : String(nameErrors);
 				setError(errorMessage);
-				
+
 				// Don't show popup for "already been taken" errors - only show on form field
 				if (!errorMessage.toLowerCase().includes('already been taken')) {
 					SweetAlert.showError(errorMessage);
@@ -102,34 +103,33 @@ const CreateDepartmentForm: React.FC<{
 			transition={{ duration: 0.22 }}
 			className="space-y-6"
 		>
-		<MasterFormHeader onBack={onClose} title="Create Department" />
+			<MasterFormHeader onBack={onClose} title="Create Department" />
 			<div className="w-full bg-white rounded-xl shadow-sm border border-[var(--border-color)] overflow-hidden">
 				<div className="p-6 bg-[#F9FAFB]">
 					<form onSubmit={handleSubmit} className="space-y-6">
-					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-1.5">
-							Department Name <span className="text-red-500">*</span>
-						</label>
-						<input
-							name="departmentName"
-							value={name}
-							onChange={(e) => { setName(e.target.value); setError(''); }}
-							className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 transition-colors ${
-								error ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-							}`}
-							placeholder="Please Enter Department Name"
-							aria-invalid={error ? 'true' : 'false'}
-							aria-describedby={error ? 'departmentName-error' : undefined}
-						/>
-						{error && (
-							<div id="departmentName-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
-								<svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-									<path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-								</svg>
-								{error}
-							</div>
-						)}
-					</div>
+						<div>
+							<label className="block text-sm font-medium text-gray-700 mb-1.5">
+								Department Name <span className="text-red-500">*</span>
+							</label>
+							<input
+								name="departmentName"
+								value={name}
+								onChange={(e) => { setName(e.target.value); setError(''); }}
+								className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 transition-colors ${error ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+									}`}
+								placeholder="Please Enter Department Name"
+								aria-invalid={error ? 'true' : 'false'}
+								aria-describedby={error ? 'departmentName-error' : undefined}
+							/>
+							{error && (
+								<div id="departmentName-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+									<svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+										<path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+									</svg>
+									{error}
+								</div>
+							)}
+						</div>
 
 						<div className="flex items-center justify-end">
 							<button
@@ -149,7 +149,7 @@ const CreateDepartmentForm: React.FC<{
 const DepartmentMaster: React.FC = () => {
 	const [currentPage, setCurrentPage] = useState(1);
 	const itemsPerPage = 10;
-	
+
 	const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 	const [confirmLoading, setConfirmLoading] = useState(false);
 
@@ -178,15 +178,10 @@ const DepartmentMaster: React.FC = () => {
 	const handleSaveDepartment = (data: any) => {
 		// Return the promise so the calling form can handle validation errors inline
 		return (async () => {
-			try {
-				await createDepartment({ name: data.name });
-				await refresh();
-				setCurrentPage(1);
-				SweetAlert.showCreateSuccess();
-			} catch (e: any) {
-				// Rethrow so caller can decide whether to show a popup or render inline errors
-				throw e;
-			}
+			await createDepartment({ name: data.name });
+			await refresh();
+			setCurrentPage(1);
+			SweetAlert.showCreateSuccess();
 		})();
 	};
 
@@ -231,7 +226,7 @@ const DepartmentMaster: React.FC = () => {
 			// When searching, fetch all departments to search across the entire dataset
 			const pageToFetch = search ? 1 : page;
 			const perPageToFetch = search ? 1000 : itemsPerPage; // Fetch all when searching
-			
+
 			const resp = await listDepartments(pageToFetch, perPageToFetch);
 			let mapped: Department[] = resp.data.map((it: ApiDepartment) => ({
 				id: String(it.id),
@@ -244,7 +239,7 @@ const DepartmentMaster: React.FC = () => {
 				const _q_dept = String(search).trim().toLowerCase();
 				mapped = mapped.filter(d => (d.name || '').toLowerCase().startsWith(_q_dept));
 				setTotalItems(mapped.length);
-				
+
 				// Apply pagination to filtered results
 				const startIdx = (page - 1) * itemsPerPage;
 				const endIdx = startIdx + itemsPerPage;
@@ -322,10 +317,10 @@ const DepartmentMaster: React.FC = () => {
 			/>
 			{showCreate ? (
 				<CreateDepartmentForm onClose={() => navigate(ROUTES.DEPARTMENT_MASTER)} onSave={handleSaveDepartment} />
-				) : viewItem ? (
+			) : viewItem ? (
 				<MasterView item={viewItem} onClose={() => navigate(ROUTES.DEPARTMENT_MASTER)} />
 			) : editItem ? (
-	<MasterEdit item={editItem} onClose={() => navigate(ROUTES.DEPARTMENT_MASTER)} onSave={handleSaveEditedDepartment} hideSource nameLabel="Department" />
+				<MasterEdit item={editItem} onClose={() => navigate(ROUTES.DEPARTMENT_MASTER)} onSave={handleSaveEditedDepartment} hideSource nameLabel="Department" />
 			) : (
 				<>
 					<MasterHeader
@@ -339,14 +334,14 @@ const DepartmentMaster: React.FC = () => {
 						<div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
 							<div className="flex items-center justify-between">
 								<h2 className="text-base font-semibold text-gray-900">Department Master</h2>
-								<SearchBar 
-									placeholder="Search Department" 
+								<SearchBar
+									placeholder="Search Department"
 									delay={300}
-									onSearch={(q: string) => { 
-										setSearchQuery(q); 
-										setCurrentPage(1); 
-										refresh(1, q); 
-									}} 
+									onSearch={(q: string) => {
+										setSearchQuery(q);
+										setCurrentPage(1);
+										refresh(1, q);
+									}}
 								/>
 							</div>
 						</div>
@@ -360,25 +355,25 @@ const DepartmentMaster: React.FC = () => {
 							</div>
 						)}
 
-												<div className="pt-0 overflow-visible">
-						<Table
-						data={currentData}
-						startIndex={startIndex}
-						loading={loading}
-						desktopOnMobile={true}
-						keyExtractor={(it: any, idx: number) => `${it.id}-${idx}`}
-						columns={([
-								{ key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },
-								{ key: 'name', header: 'Department Name', render: (it: any) => it.name || '-' },
+						<div className="pt-0 overflow-visible">
+							<Table
+								data={currentData}
+								startIndex={startIndex}
+								loading={loading}
+								desktopOnMobile={true}
+								keyExtractor={(it: any, idx: number) => `${it.id}-${idx}`}
+								columns={([
+									{ key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },
+									{ key: 'name', header: 'Department Name', render: (it: any) => it.name || '-' },
 									{ key: 'dateTime', header: 'Date & Time', render: (it: any) => it.dateTime ? formatDisplayDate(it.dateTime) : '-' },
-							] as Column<any>[])}
-							onEdit={(it: any) => handleEdit(it.id)}
-							onView={(it: any) => handleView(it.id)}
-							onDelete={(it: any) => handleDelete(it.id)}
-							editPermissionSlug="department.edit"
-							viewPermissionSlug="department.view"
-							deletePermissionSlug="department.delete"
-						/>
+								] as Column<any>[])}
+								onEdit={(it: any) => handleEdit(it.id)}
+								onView={(it: any) => handleView(it.id)}
+								onDelete={(it: any) => handleDelete(it.id)}
+								editPermissionSlug="department.edit"
+								viewPermissionSlug="department.view"
+								deletePermissionSlug="department.delete"
+							/>
 						</div>
 					</div>
 

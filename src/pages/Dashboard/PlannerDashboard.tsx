@@ -120,7 +120,7 @@ const PlannerDashboard: React.FC = () => {
             (paginatedBriefs || []).map(brief => {
               // Status badge color
               let statusColor = 'bg-gray-400';
-              let statusText = brief.status || '';
+              const statusText = brief.status || '';
               if (statusText.toLowerCase() === 'approve') statusColor = 'bg-green-200 text-green-800';
               else if (statusText.toLowerCase() === 'closed') statusColor = 'bg-gray-300 text-gray-800';
               else if (statusText.toLowerCase() === 'submission') statusColor = 'bg-yellow-200 text-yellow-800';
@@ -130,7 +130,7 @@ const PlannerDashboard: React.FC = () => {
               const budget = brief.budget ? `₹${Number(brief.budget).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '-';
 
               // Time left formatting (left_time is a string, e.g., '0 days 19 hours 10 minutes left')
-              let timeLeftStr = brief.left_time || '';
+              const timeLeftStr = brief.left_time || '';
 
               return (
                 <div

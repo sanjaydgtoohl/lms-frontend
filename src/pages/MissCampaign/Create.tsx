@@ -271,7 +271,9 @@ const Create: React.FC<CreateProps> = ({
       // dispatch a global update so lists can refresh when user returns
       try {
         window.dispatchEvent(new CustomEvent('missCampaigns:update', { detail: { id: (result as any)?.id } }));
-      } catch (_) {}
+      } catch {
+        // no need to action
+      }
 
       // For inline mode or if no navigation available, just close
       if (inline || !navigate) {
@@ -286,7 +288,9 @@ const Create: React.FC<CreateProps> = ({
       console.error('Create/Update failed', err);
       const errorMsg = err?.message || 'Failed to save campaign';
       setError(errorMsg);
-      try { SweetAlert.showError(errorMsg); } catch (_) {}
+      try { SweetAlert.showError(errorMsg); } catch {
+        // no need to action
+      }
     } finally {
       setSaving(false);
     }

@@ -24,7 +24,9 @@ const ENDPOINTS = {
 async function handleResponse<T>(res: any): Promise<T> {
   if (!res || !res.success) {
     const error = new Error((res && (res.message || 'Request failed')) || 'Request failed');
-    try { handleApiError(error); } catch {}
+    try { handleApiError(error); } catch {
+      //no need to action
+    }
     throw error;
   }
   return res.data as T;
@@ -70,7 +72,9 @@ export async function createMissCampaign(payload: CreateMissCampaignPayload): Pr
     const res = await apiClient.post(ENDPOINTS.CREATE, form);
     return handleResponse<any>(res);
   } catch (error) {
-    try { handleApiError(error as Error); } catch {}
+    try { handleApiError(error as Error); } catch {
+      //no need to action
+    }
     throw error;
   }
 }
@@ -110,7 +114,9 @@ export async function updateMissCampaignWithForm(id: string | number, payload: C
     const res = await apiClient.put(ENDPOINTS.UPDATE(id), form);
     return handleResponse<any>(res);
   } catch (error) {
-    try { handleApiError(error as Error); } catch {}
+    try { handleApiError(error as Error); } catch {
+      //no need to action
+    }
     throw error;
   }
 }

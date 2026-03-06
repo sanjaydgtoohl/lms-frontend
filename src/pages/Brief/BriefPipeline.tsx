@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import CreateBriefForm from './CreateBriefForm';
 import { apiClient } from '../../utils/apiClient';
-import { usePermissions } from '../../context/SidebarMenuContext';
+import { usePermissions } from '../../hooks/SidebarMenuHooks';
 import MasterView from '../../components/ui/MasterView';
 import Pagination from '../../components/ui/Pagination';
 import Table, { type Column } from '../../components/ui/Table';
@@ -69,10 +69,14 @@ const BriefPipeline: React.FC = () => {
       await deleteBrief(confirmDeleteId);
       setBriefs(prev => prev.filter(b => b.id !== confirmDeleteId));
       setTotalItems(prev => Math.max(0, prev - 1));
-      try { SweetAlert.showDeleteSuccess(); } catch (_) {}
+      try { SweetAlert.showDeleteSuccess(); } catch {
+        //no need to action
+      }
     } catch (err) {
       console.error('Failed to delete brief', err);
-      try { SweetAlert.showError((err as any)?.message || 'Failed to delete brief'); } catch (_) {}
+      try { SweetAlert.showError((err as any)?.message || 'Failed to delete brief'); } catch {
+        // no need to action
+      }
     } finally {
       setConfirmLoading(false);
       setConfirmDeleteId(null);
@@ -124,7 +128,9 @@ const BriefPipeline: React.FC = () => {
               item.submissionDate = `${dd}-${mm}-${yyyy}`;
               item.submissionTime = `${hh}:${min}`;
             }
-          } catch {}
+          } catch { 
+// no need to action
+}
         }
         return item;
       };
@@ -135,7 +141,7 @@ const BriefPipeline: React.FC = () => {
         return;
       }
 
-      let mounted = true;
+      const mounted = true;
       (async () => {
         try {
           setLoading(true);
@@ -203,7 +209,7 @@ const BriefPipeline: React.FC = () => {
         const res = await apiClient.get('/users/list');
         const users = Array.isArray(res.data) ? res.data : [];
         setAssignToOptions(users.map((u: any) => ({ id: u.id, name: u.name })));
-      } catch (err) {
+      } catch {
         setAssignToOptions([]);
       }
     };
@@ -226,16 +232,20 @@ const BriefPipeline: React.FC = () => {
       }
     } catch (err) {
       console.error('Failed to update assignee', err);
-      try { SweetAlert.showError('Failed to update assignment'); } catch (_) {}
+      try { SweetAlert.showError('Failed to update assignment'); } catch {
+        // no need to action
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const handleAssignConfirm = async (_newPlanner: string) => {
-    // This is called when user confirms the assignment in the dialog
-    // The actual API call happens after confirmation in handleAssignToChange
-  };
+    void _newPlanner; 
+  // This is called when user confirms the assignment in the dialog
+  // The actual API call happens after confirmation in handleAssignToChange
+  // intentionally empty for now
+};
 
   const handleSaveEdited = async (updated: Partial<Brief>) => {
     if (!updated.id) return;
@@ -338,17 +348,22 @@ const BriefPipeline: React.FC = () => {
         }
       } catch (err) {
         console.error('Failed to update status', err);
-        try { SweetAlert.showError('Failed to update status'); } catch (_) {}
+        try { SweetAlert.showError('Failed to update status'); } catch {
+          // no need to action
+        }
       } finally {
         setLoading(false);
       }
     })();
   };
 
-  const handleStatusConfirm = async (_newStatus: string) => {
-    // This is called when user confirms the status change in the dialog
-    // The actual API call happens after confirmation in handleSelectStatus
-  };
+    const handleStatusConfirm = async (_newStatus: string) => {
+        void _newStatus; // mark as intentionally unused
+      // This is called when user confirms the status change in the dialog
+      // The actual API call happens after confirmation in handleSelectStatus
+      // intentionally empty for now
+    };
+
 
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">

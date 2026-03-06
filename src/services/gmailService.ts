@@ -29,18 +29,16 @@ export function initGmail(clientId: string, scopes: string[] = [
   // Basic runtime validation to help debug invalid_client errors
   try {
     const origin = window.location.origin;
-    // log helpful info to console for debugging
-    // eslint-disable-next-line no-console
+
     console.info('[gmailService] initGmail', { clientId, origin, scopes });
 
     if (!clientId || clientId === 'YOUR_CLIENT_ID' || clientId.indexOf('apps.googleusercontent.com') === -1) {
-      // eslint-disable-next-line no-console
       console.error('[gmailService] Invalid Google client id. Please set VITE_GOOGLE_CLIENT_ID in .env to your Web OAuth Client ID.');
       throw new Error('Invalid Google client id. Please set VITE_GOOGLE_CLIENT_ID to your Web OAuth Client ID.');
     }
-  } catch (e) {
-    // Re-throw after logging
-    throw e;
+  } catch (error) {
+    console.error('[gmailService] initGmail unexpected error', error);
+    throw error; // re-throw to keep original functionality
   }
 
   tokenClient = (window as any).google.accounts.oauth2.initTokenClient({
@@ -132,7 +130,7 @@ async function attemptFetchWithRetries(path: string, opts: RequestInit = {}) {
         // If 'none' fails (user not signed in), request consent
         return requestAccessToken('consent');
       });
-    } catch (e) {
+    } catch {
       throw new Error('No access token. User authentication required. Call requestAccessToken()');
     }
   }
@@ -150,7 +148,7 @@ async function attemptFetchWithRetries(path: string, opts: RequestInit = {}) {
       // Handle 401 Unauthorized - token likely expired
       if (res.status === 401) {
         accessToken = null;
-        // eslint-disable-next-line no-console
+
         console.warn('[gmailService] Access token expired, requesting new one');
         try {
           await requestAccessToken('none').catch(() => {
@@ -164,7 +162,7 @@ async function attemptFetchWithRetries(path: string, opts: RequestInit = {}) {
               return retryRes.json();
             }
           }
-        } catch (e) {
+        } catch {
           throw new Error('Failed to refresh access token');
         }
         throw new Error(`Gmail API error ${res.status}: ${body}`);
@@ -203,7 +201,7 @@ export async function sendEmail(to: string, subject: string, htmlBody: string, a
   } else {
     // Complex case: build multipart message with attachments
     const boundary = `boundary_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     // Build headers
     const headers = [
       `To: ${to}`,
@@ -222,7 +220,7 @@ export async function sendEmail(to: string, subject: string, htmlBody: string, a
     for (const file of attachmentFiles) {
       const fileBuffer = await file.arrayBuffer();
       const fileBytes = new Uint8Array(fileBuffer);
-      
+
       // Convert to base64 without causing stack overflow
       let base64Data = '';
       const chunkSize = 8192;
@@ -277,10 +275,10 @@ function base64UrlDecode(input: string) {
     // Decode UTF-8
     try {
       return decodeURIComponent(escape(decoded));
-    } catch (e) {
+    } catch {
       return decoded;
     }
-  } catch (e) {
+  } catch {
     return '';
   }
 }
@@ -298,10 +296,10 @@ function findBodyFromPayload(payload: any): { text?: string; html?: string } {
   if (payload.parts && Array.isArray(payload.parts)) {
     let htmlBody: string | undefined;
     let textBody: string | undefined;
-    
+
     for (const part of payload.parts) {
       const mimeType = (part.mimeType || '').toLowerCase();
-      
+
       // Prefer multipart/alternative structure: text/plain first, then text/html
       if (mimeType === 'text/html' && part.body?.data) {
         if (!htmlBody) {
@@ -318,11 +316,11 @@ function findBodyFromPayload(payload: any): { text?: string; html?: string } {
         if (found.text && !textBody) textBody = found.text;
       }
     }
-    
+
     // Return HTML if available, else text
     if (htmlBody) return { html: htmlBody };
     if (textBody) return { text: textBody };
-    
+
     // Fallback: try recursion on first part that isn't explicitly a multipart
     for (const part of payload.parts) {
       const found = findBodyFromPayload(part);
@@ -380,7 +378,7 @@ export async function downloadAttachment(messageId: string, attachmentId: string
   try {
     // Check if token exists, if not request one
     if (!accessToken) {
-      // eslint-disable-next-line no-console
+
       console.warn('[gmailService] Access token missing, requesting new one for download');
       await requestAccessToken('none').catch(() => {
         // If 'none' fails (token expired), try with consent
@@ -397,11 +395,11 @@ export async function downloadAttachment(messageId: string, attachmentId: string
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    
-    // eslint-disable-next-line no-console
+
+
     console.debug('[gmailService] Downloaded attachment:', filename);
   } catch (err) {
-    // eslint-disable-next-line no-console
+
     console.error('[gmailService] Failed to download attachment:', err);
     throw err;
   }
@@ -420,7 +418,7 @@ export async function fetchAttachmentBlob(messageId: string, attachmentId: strin
     const blob = new Blob([bytes], { type: mimeType || 'application/octet-stream' });
     return blob;
   } catch (err) {
-    // eslint-disable-next-line no-console
+
     console.error('[gmailService] fetchAttachmentBlob error', err);
     throw err;
   }

@@ -158,17 +158,17 @@ const EditLead: React.FC = () => {
   useEffect(() => {
     let mounted = true;
     const loadHistory = async () => {
-      if (!lead?.id) return;
+      if (!lead?.id || !mounted) return;
+
       setHistoryLoading(true);
+
       try {
         const data = await fetchLeadHistory(lead.id);
-        if (!mounted) return;
         setHistory(Array.isArray(data) ? data : []);
-      } catch (err) {
-        if (!mounted) return;
+      } catch (error) {
+        console.error("Failed to fetch lead history:", error);
         setHistory([]);
       } finally {
-        if (!mounted) return;
         setHistoryLoading(false);
       }
     };
@@ -216,13 +216,14 @@ const EditLead: React.FC = () => {
           }
         }
         setOptions(fetched);
-      } catch (err) {
+      } catch {
         if (!isMounted) return;
         setOptionsError('Failed to load options');
         setOptions([]);
       } finally {
-        if (!isMounted) return;
-        setOptionsLoading(false);
+        if (isMounted) {
+          setOptionsLoading(false);
+        }
       }
     };
 
@@ -290,7 +291,9 @@ const EditLead: React.FC = () => {
       navigate('/lead-management/all-leads');
     } catch (error: any) {
       console.error('Error updating lead:', error);
-      try { SweetAlert.showError(error?.message || 'Failed to update lead'); } catch (_) {}
+      try { SweetAlert.showError(error?.message || 'Failed to update lead'); } catch {
+        // no need to action
+      }
     }
   };
 
@@ -454,7 +457,7 @@ const EditLead: React.FC = () => {
         />
 
         <div className="flex justify-end space-x-4 pt-2">
-          <Button 
+          <Button
             onClick={() => navigate('/lead-management/all-leads')}
           >
             Cancel
@@ -492,7 +495,7 @@ const EditLead: React.FC = () => {
                         setEmailTo(e.target.value);
                         setEmailToError('');
                       }}
-                      className="w-full p-2 border rounded" 
+                      className="w-full p-2 border rounded"
                       required
                     />
                     {emailToError && <p className="text-red-500 text-sm mt-1">{emailToError}</p>}
@@ -668,14 +671,14 @@ const EditLead: React.FC = () => {
                   ];
 
                   return (
-                            <Table<Row>
-                              data={rows}
-                              columns={columns}
-                              startIndex={0}
-                              loading={historyLoading}
-                              desktopOnMobile={true}
-                              keyExtractor={(it) => it.id}
-                            />
+                    <Table<Row>
+                      data={rows}
+                      columns={columns}
+                      startIndex={0}
+                      loading={historyLoading}
+                      desktopOnMobile={true}
+                      keyExtractor={(it) => it.id}
+                    />
                   );
                 })()
               }
@@ -683,7 +686,7 @@ const EditLead: React.FC = () => {
           </div>
         </div>
 
-        
+
       </div>
     </div>
   );

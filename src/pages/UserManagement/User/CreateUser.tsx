@@ -178,7 +178,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
   };
 
   const validatePhone = (phone: string): boolean => {
-    const phoneRegex = /^[\d\s\-\+\(\)]+$/;
+    const phoneRegex = /^[\d\s\-+()]+$/;
     return phoneRegex.test(phone) && phone.length >= 10;
   };
 
@@ -270,7 +270,9 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
         setErrors((prev) => ({ ...prev, ...nextErrs }));
       } else {
         const msg = respData?.message || err?.message || 'Failed to save user';
-        try { SweetAlert.showError(String(msg)); } catch (_) {}
+        try { SweetAlert.showError(String(msg)); } catch{
+          // no need to action
+        }
       }
     } finally {
       setSaving(false);

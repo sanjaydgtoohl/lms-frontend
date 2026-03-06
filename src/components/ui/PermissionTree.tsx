@@ -69,6 +69,9 @@ const PermissionTree: React.FC<PermissionTreeProps> = ({ data, selectedPermissio
     if (!node.children || node.children.length === 0) return isChecked(node.id);
     return node.children.every((child) => areAllChildrenChecked(child));
   };
+  void areAllChildrenChecked; // marks it as intentionally unused
+
+
 
   // Recursively check if any child is checked
   const isAnyChildChecked = (node: PermissionNode): boolean => {
@@ -107,7 +110,7 @@ const PermissionTree: React.FC<PermissionTreeProps> = ({ data, selectedPermissio
   const handleToggle = (node: PermissionNode, checked: boolean) => {
     const allIds = collectIds(node);
     const parentIds = collectParentIds(node.id);
-    
+
     setSelected((prev) => {
       let next: number[];
       if (checked) {
@@ -171,7 +174,7 @@ const PermissionTree: React.FC<PermissionTreeProps> = ({ data, selectedPermissio
 
     return (
       <div key={node.id} className="mb-0.5">
-        <div 
+        <div
           className="flex items-center gap-2 py-2.5 px-3 rounded-md transition-all duration-150 hover:bg-blue-50 group"
           style={{ marginLeft: `${level * 20}px` }}
         >
@@ -210,8 +213,8 @@ const PermissionTree: React.FC<PermissionTreeProps> = ({ data, selectedPermissio
           />
 
           {/* Label */}
-          <label 
-            htmlFor={`perm-${node.id}`} 
+          <label
+            htmlFor={`perm-${node.id}`}
             className="select-none cursor-pointer flex-1 transition-colors text-sm text-gray-700"
           >
             {node.display_name}
@@ -234,7 +237,7 @@ const PermissionTree: React.FC<PermissionTreeProps> = ({ data, selectedPermissio
         {hasChildren && expandedState && (
           <div className="relative">
             {/* Vertical line for children grouping */}
-            <div 
+            <div
               className="absolute left-0 top-0 bottom-0 border-l-2 border-gray-200"
               style={{ marginLeft: `${level * 20 + 12}px` }}
             ></div>

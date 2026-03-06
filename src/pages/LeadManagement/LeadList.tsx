@@ -11,7 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants';
 import { listLeads, listLeadsByStatus, updateLead, deleteLead } from '../../services/AllLeads';
 import { assignUserToLead } from '../../services/leadAssignTo';
-import { usePermissions } from '../../context/SidebarMenuContext';
+import { usePermissions } from '../../hooks/SidebarMenuHooks';
 
 interface Lead {
   id: string;
@@ -130,7 +130,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
         const res = await apiClient.get('/users/list');
         const users = Array.isArray(res.data) ? res.data : [];
         setAssignToOptions(users.map((u: any) => ({ id: u.id, name: u.name })));
-      } catch (err) {
+      } catch {
         setAssignToOptions([]);
       }
     };
@@ -146,7 +146,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
         const resp = await getCallStatuses();
         const options = Array.isArray(resp) ? resp.map((item: any) => item.name).filter(Boolean) : [];
         setCallStatusOptions(options);
-      } catch (err) {
+      } catch {
         setCallStatusOptions([]);
       }
     };
@@ -218,7 +218,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
 
   useEffect(() => {
     fetchLeads();
-  }, [currentPage, filterStatus]);
+  }, [currentPage, filterStatus, fetchLeads]); // ✅ added fetchLeads
 
   // Tooltip state for Comment hover
   const [tooltipVisible, setTooltipVisible] = useState(false);
@@ -274,7 +274,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
       // Special handling for 'Brief' group: include both Received and Pending
       if (filterStatus === 'Brief') {
         if (!(l.status === 'Brief Recieved' || l.status === 'Brief Pending')) return false;
-      } 
+      }
       // Special handling for 'Meeting Scheduled' group: only Meeting Schedule (not Meeting Done)
       else if (filterStatus === 'Meeting Scheduled') {
         if (l.status !== 'Meeting Schedule') return false;
@@ -328,15 +328,16 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
         SweetAlert.showUpdateSuccess();
       } catch (err) {
         console.warn('Failed to persist assignTo change', err);
-        try { SweetAlert.showError('Failed to update assignment'); } catch (_) {}
+        try { SweetAlert.showError('Failed to update assignment'); } catch {
+          // no need to action
+        }
       }
     })();
   };
 
-  const handleAssignConfirm = async (_newSalesMan: string) => {
-    // This is called when user confirms the assignment in the dialog
-    // The actual API call happens after confirmation in handleAssignToChange
-  };
+      const handleAssignConfirm = async (_newSalesMan: string) => {
+        void _newSalesMan; // mark as intentionally unused
+      };
 
   const handleDelete = (leadId: string) => {
     const found = leads.find((l) => l.id === leadId);
@@ -394,7 +395,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
         } else {
           SweetAlert.showError(result.message || 'Failed to update call status');
         }
-      } catch (error) {
+      } catch {
         SweetAlert.showError('Error updating call status');
       } finally {
         setLoading(false);
@@ -403,12 +404,14 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
     updateCallStatus();
   };
 
+  // const handleCallStatusConfirm = async (_newStatus: string) => {
   const handleCallStatusConfirm = async (_newStatus: string) => {
+      void _newStatus; // mark as intentionally unused
     // This is called when user confirms the call status change in the dialog
     // The actual API call happens after confirmation in handleCallStatusChange
   };
 
-  
+
 
   // Status is rendered as a non-clickable pill (same as AllLeads)
 
@@ -435,9 +438,9 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
       className: 'min-w-[140px]',
     } as Column<Lead>] : []),
     { key: 'dateTime', header: 'Date & Time', render: (it: Lead) => it.dateTime || '-', className: 'whitespace-nowrap' },
-    { 
-      key: 'status', 
-      header: 'Status', 
+    {
+      key: 'status',
+      header: 'Status',
       render: (it: Lead) => (
         <StatusPill
           label={it.status ?? '-'}
@@ -467,9 +470,9 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
     },
     { key: 'followUp', header: 'Follow-Up / Meeting Type', render: (it: Lead) => it.dateTime || '-', className: 'whitespace-nowrap' },
     { key: 'callAttempt', header: 'Call Attempt', render: (it: Lead) => it.callAttempt ? String(it.callAttempt) : '-', className: 'whitespace-nowrap' },
-    { 
-      key: 'comment', 
-      header: 'Comment', 
+    {
+      key: 'comment',
+      header: 'Comment',
       render: (it: Lead) => (
         <div
           className="cursor-help max-w-[220px]"

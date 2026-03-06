@@ -10,15 +10,15 @@ import SearchBar from '../../components/ui/SearchBar';
 import Breadcrumb from '../../components/ui/Breadcrumb';
 import SweetAlert from '../../utils/SweetAlert';
 import Create from './Create';
-import { 
-  listMissCampaigns, 
-  createMissCampaign, 
+import {
+  listMissCampaigns,
+  createMissCampaign,
   deleteMissCampaign,
   getMissCampaign,
   updateMissCampaign,
-  type MissCampaign 
+  type MissCampaign
 } from '../../services/View';
-import { usePermissions } from '../../context/SidebarMenuContext';
+import { usePermissions } from '../../hooks/SidebarMenuHooks';
 
 const View: React.FC = () => {
   const { hasPermission } = usePermissions();
@@ -105,7 +105,9 @@ const View: React.FC = () => {
       const newCampaign = await createMissCampaign(data);
       setCampaigns(prev => [newCampaign, ...prev]);
       setCurrentPage(1);
-      try { SweetAlert.showCreateSuccess(); } catch (_) {}
+      try { SweetAlert.showCreateSuccess(); } catch {
+        //no need to action
+      }
     } catch (error) {
       console.error('Failed to create campaign:', error);
     }
@@ -116,11 +118,15 @@ const View: React.FC = () => {
     setConfirmLoading(true);
     try {
       await deleteMissCampaign(confirmDeleteId);
-      try { SweetAlert.showDeleteSuccess(); } catch (_) {}
+      try { SweetAlert.showDeleteSuccess(); } catch {
+        //no need to action
+      }
       await fetchCampaigns(currentPage); // Refresh table from server
     } catch (error) {
       console.error('Failed to delete campaign:', error);
-      try { SweetAlert.showError((error as any)?.message || 'Failed to delete campaign'); } catch (_) {}
+      try { SweetAlert.showError((error as any)?.message || 'Failed to delete campaign'); } catch {
+        // no need to action
+      }
     } finally {
       setConfirmLoading(false);
       setConfirmDeleteId(null);
@@ -177,7 +183,9 @@ const View: React.FC = () => {
     try {
       await updateMissCampaign(updated.id, updated);
       await fetchCampaigns(currentPage); // Refresh table from server
-      try { SweetAlert.showUpdateSuccess(); } catch (_) {}
+      try { SweetAlert.showUpdateSuccess(); } catch {
+        // no need to action
+      }
     } catch (error) {
       console.error('Failed to update campaign:', error);
     }
@@ -209,9 +217,11 @@ const View: React.FC = () => {
       // clear the navigation state so this runs only once
       try {
         navigate(location.pathname, { replace: true, state: {} });
-      } catch (_) {}
+      } catch {
+        // no need to action
+      }
     }
-  }, [location.state, navigate]);
+  }, [location.state, location.pathname, navigate]); // ✅ added location.pathname
 
   const handlePageChange = (page: number) => setCurrentPage(page);
 
@@ -265,9 +275,9 @@ const View: React.FC = () => {
                 <div className="mb-6">
                   <div className="bg-gray-50 rounded-lg p-4">
                     <h4 className="text-sm font-medium text-[var(--text-secondary)] mb-3">Proof Image</h4>
-                    <img 
-                      src={viewItem.proof} 
-                      alt="Campaign Proof" 
+                    <img
+                      src={viewItem.proof}
+                      alt="Campaign Proof"
                       className="w-full max-h-96 object-contain rounded-lg border border-gray-200"
                     />
                   </div>
@@ -328,31 +338,31 @@ const View: React.FC = () => {
                 desktopOnMobile={true}
                 keyExtractor={(it: MissCampaign, idx: number) => `${it.id}-${idx}`}
                 columns={([
-                { key: 'sr', header: 'Id', render: (it: MissCampaign) => `#${it.id}` },
-                { key: 'brandName', header: 'Brand Name', render: (it: MissCampaign) => it.brandName },
-                { key: 'productName', header: 'Product Name', render: (it: MissCampaign) => it.productName },
-                { key: 'source', header: 'Source', render: (it: MissCampaign) => it.source },
-                { key: 'subSource', header: 'Sub Source', render: (it: MissCampaign) => it.subSource },
-                {
-                  key: 'proof',
-                  header: 'Proof',
-                  render: (it: MissCampaign) => (
-                    <div className="flex items-center justify-center">
-                      {it.proof ? (
-                        <img 
-                          src={it.proof} 
-                          alt="Proof" 
-                          className="h-16 w-16 object-cover rounded border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow"
-                          onClick={() => openImageModal(it.proof)}
-                        />
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </div>
-                  ),
-                },
-                { key: 'dateTime', header: 'Date & Time', render: (it: MissCampaign) => it.dateTime },
-              ] as Column<MissCampaign>[])}
+                  { key: 'sr', header: 'Id', render: (it: MissCampaign) => `#${it.id}` },
+                  { key: 'brandName', header: 'Brand Name', render: (it: MissCampaign) => it.brandName },
+                  { key: 'productName', header: 'Product Name', render: (it: MissCampaign) => it.productName },
+                  { key: 'source', header: 'Source', render: (it: MissCampaign) => it.source },
+                  { key: 'subSource', header: 'Sub Source', render: (it: MissCampaign) => it.subSource },
+                  {
+                    key: 'proof',
+                    header: 'Proof',
+                    render: (it: MissCampaign) => (
+                      <div className="flex items-center justify-center">
+                        {it.proof ? (
+                          <img
+                            src={it.proof}
+                            alt="Proof"
+                            className="h-16 w-16 object-cover rounded border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow"
+                            onClick={() => openImageModal(it.proof)}
+                          />
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </div>
+                    ),
+                  },
+                  { key: 'dateTime', header: 'Date & Time', render: (it: MissCampaign) => it.dateTime },
+                ] as Column<MissCampaign>[])}
                 onEdit={(it: MissCampaign) => handleEdit(it.id)}
                 onView={(it: MissCampaign) => handleView(it.id)}
                 onDelete={(it: MissCampaign) => handleDelete(it.id, it.productName || it.brandName)}

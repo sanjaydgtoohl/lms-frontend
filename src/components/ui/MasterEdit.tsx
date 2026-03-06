@@ -20,7 +20,6 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
   const [loadingOptions, setLoadingOptions] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  if (!item) return null;
 
   const handleChange = (key: string, value: any) => {
     setForm(prev => ({ ...prev, [key]: value }));
@@ -28,7 +27,9 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
     setErrors(prev => ({ ...prev, [key]: '' }));
   };
 
+  
   useEffect(() => {
+    // if (!item) return;
     let mounted = true;
     setLoadingOptions(true);
     fetchLeadSources()
@@ -80,7 +81,10 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
         setLoadingOptions(false);
       });
     return () => { mounted = false; };
-  }, [item]);
+  }, [item, form.source, hideSource]);
+
+  if (!item) return null; // ✅ Hooks ke baad safe
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,7 +123,7 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
         return;
       } catch (err) {
           // Try to pick field-specific errors from API response if present
-          let message = err instanceof Error ? err.message : 'Failed to update record';
+          const message = err instanceof Error ? err.message : 'Failed to update record';
           try {
             const resp = (err as any).original?.responseData || (err as any).responseData || err;
             const errorsObj = resp && (resp.errors || resp.data?.errors || resp.errors);
@@ -140,7 +144,7 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
               }
               if (handled) return;
             }
-          } catch (_) {
+          } catch {
             // ignore parsing errors
           }
 

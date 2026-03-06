@@ -35,7 +35,9 @@ const ENDPOINTS = {
 async function handleResponse<T>(res: any): Promise<T> {
   if (!res || !res.success) {
     const message = (res && (res.message || 'Request failed')) || 'Request failed';
-    try { useUiStore.getState().pushError(message); } catch {}
+    try { useUiStore.getState().pushError(message); } catch { 
+// no need to action
+}
     throw new Error(message);
   }
   return res.data as T;

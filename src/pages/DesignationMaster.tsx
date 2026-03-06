@@ -17,7 +17,8 @@ import {
   type Designation as ApiDesignation,
 } from '../services/DesignationMaster';
 import SweetAlert from '../utils/SweetAlert';
-import { usePermissions } from '../context/SidebarMenuContext';
+import { usePermissions } from '../hooks/SidebarMenuHooks';
+
 
 interface Designation {
   id: string;
@@ -200,7 +201,7 @@ const DesignationMaster: React.FC = () => {
               if (vals.length) message = vals[0];
             }
           }
-        } catch (ex) {
+        } catch {
           // fallback to generic message on any extraction error
           message = e?.message || 'Failed to create designation';
         }
@@ -342,7 +343,7 @@ const DesignationMaster: React.FC = () => {
               if (vals.length) message = vals[0];
             }
           }
-        } catch (_) {
+        } catch {
           message = e?.message || message;
         }
 

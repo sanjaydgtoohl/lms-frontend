@@ -27,7 +27,9 @@ const ENDPOINTS = {
 async function handleResponse<T>(res: any): Promise<T> {
   if (!res || !res.success) {
     const error = new Error((res && (res.message || 'Request failed')) || 'Request failed');
-    try { handleApiError(error); } catch {};
+    try { handleApiError(error); } catch { 
+// no need to action
+};
     throw error;
   }
   return res.data as T;

@@ -1,3 +1,4 @@
+import { useSidebarMenu } from "../../hooks/SidebarMenuHooks";
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronRight } from "lucide-react";
@@ -7,26 +8,26 @@ import logoUrl from "../../assets/DGTOOHL 360.svg";
 
 // Use the NavigationItem type from Side.ts for consistency
 import type { NavigationItem } from "../../services/Side";
-import { useSidebarMenu } from "../../context/SidebarMenuContext";
+// import { usePermissions } from '../../hooks/SidebarMenuHooks';
 
 
 import { useSelector, useDispatch } from "react-redux";
-import type { RootState } from "../../redux/store";
+import type { AppDispatch, RootState } from "../../redux/store";
 import { toggleExpandedItem, setExpandedItems } from "../../redux/slices/sidebarSlice";
 import { logoutUser } from "../../redux/slices/authSlice";
 
 
-
 interface SidebarProps {
-  // Mobile specific
-  isMobile?: boolean;
-  mobileOpen?: boolean;
-  onCloseMobile?: () => void;
+  isCollapsed: boolean
+  onToggle: () => void
+  isMobile: boolean
+  mobileOpen: boolean
+  onCloseMobile: () => void
 }
 
+const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false, onCloseMobile }) => {
+  const dispatch = useDispatch<AppDispatch>()
 
-const Sidebar: React.FC<SidebarProps> = ({isMobile = false, mobileOpen = false, onCloseMobile }) => {
-   const dispatch = useDispatch();
 
   const isCollapsed = useSelector(
     (state: RootState) => state.sidebar.isCollapsed
@@ -37,14 +38,14 @@ const Sidebar: React.FC<SidebarProps> = ({isMobile = false, mobileOpen = false, 
   );
 
 
-    // Use sidebar data from context instead of fetching separately
-  const { sidebarMenu: navigationItems } = useSidebarMenu(); 
+  // Use sidebar data from context instead of fetching separately
+  const { sidebarMenu: navigationItems } = useSidebarMenu();
 
-  
+
   const location = useLocation();
   const navigate = useNavigate();
 
-   const handleLogout = async () => {
+  const handleLogout = async () => {
     try {
       await dispatch(logoutUser());
       navigate("/login");
@@ -55,8 +56,8 @@ const Sidebar: React.FC<SidebarProps> = ({isMobile = false, mobileOpen = false, 
 
   // const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [showMobilePopup, setShowMobilePopup] = useState(false);
-  const popupRef = useRef<HTMLDivElement>(null); 
-  
+  const popupRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (popupRef.current && !popupRef.current.contains(event.target as Node)) {
@@ -70,12 +71,15 @@ const Sidebar: React.FC<SidebarProps> = ({isMobile = false, mobileOpen = false, 
     };
   }, []);
 
-  // Mobile: close on Escape key
   useEffect(() => {
     if (!isMobile) return;
+
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onCloseMobile && onCloseMobile();
+      if (e.key === 'Escape' && onCloseMobile) {
+        onCloseMobile();
+      }
     };
+
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [isMobile, onCloseMobile]);
@@ -85,9 +89,9 @@ const Sidebar: React.FC<SidebarProps> = ({isMobile = false, mobileOpen = false, 
 
   // Toggle expansion for a parent item. When expanding a parent,
   // collapse others so only one parent menu is open at a time.
-        const toggleExpanded = (itemName: string) => {
-          dispatch(toggleExpandedItem(itemName));
-        };
+  const toggleExpanded = (itemName: string) => {
+    dispatch(toggleExpandedItem(itemName));
+  };
 
   // Route aliases map specific routes to the navigation path that should be
   // considered active. This lets us treat `/lead-management/create` as if the
@@ -130,7 +134,7 @@ const Sidebar: React.FC<SidebarProps> = ({isMobile = false, mobileOpen = false, 
       return "/brief/log";
     }
     // Handle /brief/:id to highlight Brief Pipeline
-    if (pathname.match(/^\/brief\/(?!create|log|Brief_Pipeline|plan-history|plan-submission|edit-submitted-plan)[^\/]+$/)) {
+    if (pathname.match(/^\/brief\/(?!create|log|Brief_Pipeline|plan-history|plan-submission|edit-submitted-plan)[^/]+$/)) {
       return "/brief/Brief_Pipeline";
     }
     return routeAliases[pathname] ?? pathname;
@@ -156,7 +160,7 @@ const Sidebar: React.FC<SidebarProps> = ({isMobile = false, mobileOpen = false, 
   useEffect(() => {
     const effectivePath = getEffectivePath(location.pathname);
 
-    let activeParents = navigationItems
+    const activeParents = navigationItems
       .filter((item) =>
         item.children &&
         item.children.some((child) => {
@@ -194,11 +198,11 @@ const Sidebar: React.FC<SidebarProps> = ({isMobile = false, mobileOpen = false, 
     // Highlight parent and child when on /miss-campaign/create or /brief/create
     const highlightClass =
       (isMissCampaignRoute && (isMissCampaign || isLiveCampaign)) ||
-      ((isBriefRoute || isBriefCreateRoute) && isBrief)
+        ((isBriefRoute || isBriefCreateRoute) && isBrief)
         ? "bg-orange-100"
         : isItemActive
-        ? "bg-orange-100"
-        : "hover:bg-orange-50";
+          ? "bg-orange-100"
+          : "hover:bg-orange-50";
 
     const handleCardClick = () => {
       if (hasChildren) {
@@ -225,9 +229,8 @@ const Sidebar: React.FC<SidebarProps> = ({isMobile = false, mobileOpen = false, 
           onClick={handleCardClick}
         >
           <div
-            className={`flex items-center w-full ${
-              isCollapsed ? "justify-center" : ""
-            }`}
+            className={`flex items-center w-full ${isCollapsed ? "justify-center" : ""
+              }`}
           >
             {/* Show icon_file image if present, else fallback to icon component */}
             {item.icon_file ? (
@@ -310,9 +313,9 @@ const Sidebar: React.FC<SidebarProps> = ({isMobile = false, mobileOpen = false, 
       >
         {/* Render collapsed (icons-only) content inside */}
         <div className="flex h-16 items-center px-2">
-            <div className="w-12 h-12 rounded-lg flex items-center justify-center">
-              <img src={logoUrl} alt="LMS logo" style={{width: 72, height: 'auto'}} />
-            </div>
+          <div className="w-12 h-12 rounded-lg flex items-center justify-center">
+            <img src={logoUrl} alt="LMS logo" style={{ width: 72, height: 'auto' }} />
+          </div>
         </div>
 
         <nav className="flex-1 overflow-y-auto py-2 px-1 scrolling-touch">
@@ -328,15 +331,16 @@ const Sidebar: React.FC<SidebarProps> = ({isMobile = false, mobileOpen = false, 
           >
             <HelpIcon className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)]`} />
           </div>
-
           <div
             onClick={() => {
               handleLogout();
-              onCloseMobile && onCloseMobile();
+              if (onCloseMobile) {
+                onCloseMobile();
+              }
             }}
-            className={`flex items-center px-2 py-2 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-all cursor-pointer justify-center`}
+            className="flex items-center px-2 py-2 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-all cursor-pointer justify-center"
           >
-            <LogoutIcon className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-red-600`} />
+            <LogoutIcon className="shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-red-600" />
           </div>
         </div>
       </div>
@@ -352,24 +356,24 @@ const Sidebar: React.FC<SidebarProps> = ({isMobile = false, mobileOpen = false, 
       `}
     >
       {/* Logo Section */}
-      <div className="flex h-16 items-center px-4" style={{paddingLeft: '9px', paddingRight: '9px'}}>
+      <div className="flex h-16 items-center px-4" style={{ paddingLeft: '9px', paddingRight: '9px' }}>
         {isCollapsed ? (
           <div className="w-full flex items-center justify-center">
             <div className="w-12 h-12 rounded-lg flex items-center justify-center">
-              <img src={logoUrl} alt="LMS logo" style={{width: 80, height: 80}} />
+              <img src={logoUrl} alt="LMS logo" style={{ width: 80, height: 80 }} />
             </div>
           </div>
         ) : (
           <div className="flex items-center w-full">
             <div className="rounded-lg flex items-center justify-start">
-              <img src={logoUrl} alt="LMS logo" style={{width: 280, height: 'auto'}} />
+              <img src={logoUrl} alt="LMS logo" style={{ width: 280, height: 'auto' }} />
             </div>
           </div>
         )}
       </div>
 
       {/* Navigation */}
-  <nav className="flex-1 overflow-y-auto py-4 px-2 scrolling-touch">
+      <nav className="flex-1 overflow-y-auto py-4 px-2 scrolling-touch">
         <div className="space-y-1">
           {navigationItems.map((item) => renderNavigationItem(item))}
         </div>
@@ -378,9 +382,8 @@ const Sidebar: React.FC<SidebarProps> = ({isMobile = false, mobileOpen = false, 
       {/* Footer Section */}
       <div className="border-t border-gray-100 p-3 space-y-2">
         <div
-          className={`flex items-center px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] rounded-lg hover:bg-orange-50 transition-all cursor-pointer ${
-            isCollapsed ? "px-2 justify-center" : ""
-          }`}
+          className={`flex items-center px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] rounded-lg hover:bg-orange-50 transition-all cursor-pointer ${isCollapsed ? "px-2 justify-center" : ""
+            }`}
         >
           <HelpIcon
             className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)] ${isCollapsed ? "" : "mr-2.5"}`}
@@ -390,9 +393,8 @@ const Sidebar: React.FC<SidebarProps> = ({isMobile = false, mobileOpen = false, 
 
         <div
           onClick={handleLogout}
-          className={`flex items-center px-4 py-2.5 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-all cursor-pointer ${
-            isCollapsed ? "px-2 justify-center" : ""
-          }`}
+          className={`flex items-center px-4 py-2.5 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-all cursor-pointer ${isCollapsed ? "px-2 justify-center" : ""
+            }`}
         >
           <LogoutIcon className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-red-600 ${isCollapsed ? "" : "mr-2.5"}`} />
           {!isCollapsed && <span>Log out</span>}

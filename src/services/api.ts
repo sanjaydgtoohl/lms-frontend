@@ -147,17 +147,10 @@ class ApiClient {
   }
 
   // Token Management
-  setToken(token: string): void {
-    // store token in cookie (recommend server-set HttpOnly cookie instead)
-    try {
-      // default expiry 1 hour
-      const expires = 3600;
-      // write cookie via document.cookie
-      document.cookie = `auth_token=${encodeURIComponent(token)}; Path=/; Max-Age=${expires}; Secure; SameSite=Lax`;
-    } catch (e) {
-      // ignore
-    }
-  }
+ setToken(token: string): void {
+  const expires = 3600;
+  document.cookie = `auth_token=${encodeURIComponent(token)}; Path=/; Max-Age=${expires}; Secure; SameSite=Lax`;
+}
 
   clearToken(): void {
     // Clear cookies

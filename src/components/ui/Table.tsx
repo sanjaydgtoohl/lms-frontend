@@ -129,7 +129,7 @@ const Table = <T,>(props: TableProps<T>) => {
                               : (() => {
                                 const raw = String((item as Record<string, unknown>)[col.key] ?? '-');
                                 // Don't title-case obvious codes, numbers, or hashes
-                                if (raw === '-' || /^[#\d]/.test(raw) || /\d{2}[-\/\.]\d{2}[-\/\.]\d{2,4}/.test(raw)) return raw;
+                               if (raw === '-' || /^[#\d]/.test(raw) || /\d{2}[-/.]\d{2}[-/.]\d{2,4}/.test(raw)) return raw;
                                 return toTitleCase(raw);
                               })();
 
@@ -144,7 +144,7 @@ const Table = <T,>(props: TableProps<T>) => {
                               if (_ex && 'name' in _ex) return String(_ex.name ?? '');
                               try {
                                 return String(JSON.stringify(extracted));
-                              } catch (e) {
+                              } catch {
                                 return String(extracted);
                               }
                             }

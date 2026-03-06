@@ -11,7 +11,8 @@ import Table, { type Column } from '../components/ui/Table';
 import { listLeadSources, deleteLeadSubSource, updateLeadSubSource, type LeadSourceItem } from '../services/LeadSource';
 import { fetchLeadSources } from '../services/CreateSourceForm';
 import { ROUTES } from '../constants';
-import { usePermissions } from '../context/SidebarMenuContext';
+import { usePermissions } from '../hooks/SidebarMenuHooks';
+
 import SweetAlert from '../utils/SweetAlert';
 
 const LeadSource: React.FC = () => {
@@ -33,14 +34,15 @@ const LeadSource: React.FC = () => {
 
   useEffect(() => {
     let isMounted = true;
+
     const fetchData = async (page = currentPage, search = searchQuery) => {
       setLoading(true);
       setError(null);
       try {
-        const resp = await listLeadSources(page, itemsPerPage);
+        const resp = await listLeadSources(page, itemsPerPage); // uses itemsPerPage
         if (!isMounted) return;
         let mapped = resp.data;
-        // If search is present, filter client-side (optional)
+
         if (search) {
           const _q_ls = String(search).trim().toLowerCase();
           mapped = mapped.filter((it) => (
@@ -49,9 +51,9 @@ const LeadSource: React.FC = () => {
             (String(it.subSource || '').toLowerCase().startsWith(_q_ls))
           ));
         }
+
         setItems(mapped);
-        // When a search is active we want the footer and pagination to reflect
-        // the filtered result set (client-side). Otherwise use server total if available.
+
         if (search) {
           setTotalItems(mapped.length);
         } else {
@@ -63,10 +65,11 @@ const LeadSource: React.FC = () => {
         if (isMounted) setLoading(false);
       }
     };
-    // Expose refresh function by assigning to a stable name in outer scope via closure
+
     (async () => { await fetchData(); })();
+
     return () => { isMounted = false; };
-  }, [currentPage, searchQuery]);
+  }, [currentPage, searchQuery, itemsPerPage]); // ✅ added itemsPerPage
 
   // Helper so other handlers can reload the list after actions
   const refresh = async (page = currentPage, search = searchQuery) => {
@@ -255,13 +258,13 @@ const LeadSource: React.FC = () => {
             <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-semibold text-gray-900">Lead Sources</h2>
-                <SearchBar 
-                  placeholder="Search Lead Source" 
+                <SearchBar
+                  placeholder="Search Lead Source"
                   delay={300}
-                  onSearch={(q: string) => { 
-                    setSearchQuery(q); 
-                    setCurrentPage(1); 
-                  }} 
+                  onSearch={(q: string) => {
+                    setSearchQuery(q);
+                    setCurrentPage(1);
+                  }}
                 />
               </div>
             </div>
@@ -277,29 +280,30 @@ const LeadSource: React.FC = () => {
 
             <div className="pt-0 overflow-visible">
               <Table
-              data={currentData}
-              startIndex={startIndex}
-              loading={loading}
-              desktopOnMobile={true}
-              keyExtractor={(it: any, idx: number) => `${it.id}-${idx}`}
-              columns={([
-                { key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },
-                { key: 'source', header: 'Source', render: (it: any) => it.source || '-' },
-                { key: 'subSource', header: 'Sub-Source', render: (it: any) => it.subSource || '-' },
-                { key: 'dateTime', header: 'Date & Time', render: (it: any) => {
-                    if (!it.dateTime) return '-';
-                    const d = new Date(it.dateTime);
-                    return isNaN(d.getTime()) ? String(it.dateTime) : d.toLocaleString();
-                  }
-                },
-              ] as Column<any>[])}
-              onEdit={(it: any) => handleEdit(it)}
-              onView={(it: any) => handleView(it)}
-              onDelete={(it: any) => handleDelete(it)}
-              editPermissionSlug="source.edit"
-              viewPermissionSlug="source.view"
-              deletePermissionSlug="source.delete"
-            />
+                data={currentData}
+                startIndex={startIndex}
+                loading={loading}
+                desktopOnMobile={true}
+                keyExtractor={(it: any, idx: number) => `${it.id}-${idx}`}
+                columns={([
+                  { key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },
+                  { key: 'source', header: 'Source', render: (it: any) => it.source || '-' },
+                  { key: 'subSource', header: 'Sub-Source', render: (it: any) => it.subSource || '-' },
+                  {
+                    key: 'dateTime', header: 'Date & Time', render: (it: any) => {
+                      if (!it.dateTime) return '-';
+                      const d = new Date(it.dateTime);
+                      return isNaN(d.getTime()) ? String(it.dateTime) : d.toLocaleString();
+                    }
+                  },
+                ] as Column<any>[])}
+                onEdit={(it: any) => handleEdit(it)}
+                onView={(it: any) => handleView(it)}
+                onDelete={(it: any) => handleDelete(it)}
+                editPermissionSlug="source.edit"
+                viewPermissionSlug="source.view"
+                deletePermissionSlug="source.delete"
+              />
             </div>
           </div>
 

@@ -50,7 +50,7 @@ interface ContactPersonsCardProps {
   errors?: Record<string, Partial<Record<string, string>>>;
 }
 
-const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({ 
+const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
   initialContacts,
   onChange
   , errors
@@ -248,16 +248,16 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
   // Fetch states when any contact's country changes
   useEffect(() => {
     let isMounted = true;
-    
+
     // Check if any contact has a country selected
     const selectedCountry = contacts.find(c => c.country)?.country;
-    
+
     if (!selectedCountry) {
       setStateOptions([]);
       setStateError(null);
       return;
     }
-    
+
     setStateLoading(true);
     setStateError(null);
     getStates({ country_id: selectedCountry }).then((data: any) => {
@@ -298,7 +298,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
         stateName: po.State || '',
         cityName: po.District || po.Block || po.Name || '',
       };
-    } catch (e) {
+    } catch {
       return null;
     }
   };
@@ -322,17 +322,14 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
 
         const { countryName, stateName, cityName } = pinRes;
 
-        // Try to map country name to an existing option value
         const countryOpt = countryOptions.find(o => o.label.toLowerCase() === countryName.toLowerCase());
         if (countryOpt) {
-          // Update country asynchronously
           setContacts(prev => {
             const next = prev.map(c => c.id === contact.id ? { ...c, country: countryOpt.value } : c);
             onChange?.(next);
             return next;
           });
 
-          // Fetch states for this country and try to map by name
           const statesData = await getStates({ country_id: countryOpt.value });
           if (Array.isArray(statesData)) {
             const matchedState = statesData.find((s: any) => String(s.name).toLowerCase() === String(stateName).toLowerCase());
@@ -344,7 +341,6 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                 return next;
               });
 
-              // Fetch cities for matched state and try to map by name
               const citiesData = await getCities({ state_id: stateId });
               if (Array.isArray(citiesData)) {
                 const matchedCity = citiesData.find((ct: any) => {
@@ -366,25 +362,25 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
             }
           }
         }
-      } catch (err) {
-        // ignore lookup errors silently
+      } catch {
+        // ignore errors
       }
     })();
-  }, [contacts, countryOptions, lastPinLookup]);
+  }, [contacts, countryOptions, lastPinLookup, onChange]); // ✅ added onChange
 
   // Fetch cities when any contact's state changes
   useEffect(() => {
     let isMounted = true;
-    
+
     // Check if any contact has a state selected
     const selectedState = contacts.find(c => c.state)?.state;
-    
+
     if (!selectedState) {
       setCityOptions([]);
       setCityError(null);
       return;
     }
-    
+
     setCityLoading(true);
     setCityError(null);
     getCities({ state_id: selectedState }).then((data: any) => {
@@ -495,7 +491,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                           title="Add another mobile number"
                         >
                           <Plus strokeWidth={2.5} className="w-4 h-4" />
-                         
+
                         </button>
                       )}
                     </div>
@@ -527,7 +523,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                           style={{ backgroundColor: '#D92D20' }}
                         >
                           <XIcon strokeWidth={2.5} className="w-4 h-4" />
-                       
+
                         </button>
                       </div>
                     )}
@@ -556,7 +552,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                     placeholder="Select designation"
                     options={designationOptions}
                     value={c.designation}
-                    onChange={(v) => updateContact(c.id, 'designation', typeof v === 'string' ? v : v[0] ?? '')}      
+                    onChange={(v) => updateContact(c.id, 'designation', typeof v === 'string' ? v : v[0] ?? '')}
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
                     disabled={designationLoading}
                   />
@@ -574,7 +570,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                     placeholder="Select department"
                     options={departmentOptions}
                     value={c.department}
-                    onChange={(v) => updateContact(c.id, 'department', typeof v === 'string' ? v : v[0] ?? '')}       
+                    onChange={(v) => updateContact(c.id, 'department', typeof v === 'string' ? v : v[0] ?? '')}
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
                     disabled={departmentLoading}
                   />

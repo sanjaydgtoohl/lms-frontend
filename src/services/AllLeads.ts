@@ -83,7 +83,7 @@ export async function listLeadsByStatus(
   perPage = 15,
   extraFilters?: Record<string, any>
 ): Promise<LeadListResponse> {
-  let filters: Record<string, any> = { ...extraFilters };
+  const filters: Record<string, any> = { ...extraFilters };
   if (typeof status === 'number') {
     filters.lead_status_id = status;
   } else {

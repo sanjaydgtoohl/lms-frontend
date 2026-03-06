@@ -25,7 +25,9 @@ async function handleResponse<T>(res: any): Promise<T> {
     const error = new Error((res && (res.message || 'Request failed')) || 'Request failed');
     // Attach original response so callers (UI) can extract field-level validation messages
     (error as any).responseData = res;
-    try { handleApiError(error, false); } catch {}
+    try { handleApiError(error, false); } catch { 
+// no need to action
+}
     throw error;
   }
   return res.data as T;

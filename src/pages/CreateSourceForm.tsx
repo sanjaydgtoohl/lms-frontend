@@ -11,7 +11,8 @@ type Props = {
   inline?: boolean;
 };
 
-const CreateSourceForm: React.FC<Props> = ({ onClose, onSave, inline: _inline }) => {
+// const CreateSourceForm: React.FC<Props> = ({ onClose, onSave, inline: _inline }) => {
+const CreateSourceForm: React.FC<Props> = ({ onClose, onSave}) => {
   const [source, setSource] = useState('');
   const [subSource, setSubSource] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -68,7 +69,7 @@ const CreateSourceForm: React.FC<Props> = ({ onClose, onSave, inline: _inline })
 
       // If parent supplied onSave (inline mode), call it so parent can update listing and handle navigation/reload
       if (onSave) {
-        try { onSave(payload); } catch (e) { /* swallow parent errors */ }
+        try { onSave(payload); } catch { /* swallow parent errors */ }
       } else {
         // show local success and fallback to closing the form when not inline
         SweetAlert.showCreateSuccess();
@@ -95,7 +96,9 @@ const CreateSourceForm: React.FC<Props> = ({ onClose, onSave, inline: _inline })
             }
           }
         }
-      } catch (_) {}
+      } catch {
+        // no need to action
+      }
       // Show global popup only when not inline
       if (!onSave) SweetAlert.showError(msg);
     } finally {

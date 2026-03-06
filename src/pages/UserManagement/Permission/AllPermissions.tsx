@@ -43,7 +43,7 @@ const AllPermissions: React.FC = () => {
       setTotalItems(Number(total || 0));
     } catch (err) {
       // keep console error for now; UI-level notifications can be added
-      // eslint-disable-next-line no-console
+       
       console.error('Failed to fetch permissions', err);
       setPermissions([]);
       setTotalItems(0);
@@ -91,11 +91,15 @@ const AllPermissions: React.FC = () => {
       setCurrentPage(1);
       // Reload the table from API
       await fetchPermissions();
-      try { SweetAlert.showDeleteSuccess(); } catch (_) {}
+      try { SweetAlert.showDeleteSuccess(); } catch {
+        // no need to action
+      }
     } catch (err: any) {
-      // eslint-disable-next-line no-console
+       
       console.error('Failed to delete permission', err);
-      try { SweetAlert.showError(err?.message || 'Failed to delete permission'); } catch (_) {}
+      try { SweetAlert.showError(err?.message || 'Failed to delete permission'); } catch {
+        // no need to action
+      }
     } finally {
       setConfirmLoading(false);
       setConfirmDeleteId(null);

@@ -40,10 +40,12 @@ const CreateLead: React.FC = () => {
       }
       if (valid) {
         const { [field]: omit, ...restFields } = prev[contactId] || {};
+        void omit; // mark as intentionally unused
         const updated = { ...prev, [contactId]: restFields };
-        // Remove contactId if no errors left
+
         if (Object.keys(updated[contactId] || {}).length === 0) {
           const { [contactId]: omitId, ...rest } = updated;
+          void omitId; // mark as intentionally unused
           return rest;
         }
         return updated;
@@ -216,7 +218,9 @@ const CreateLead: React.FC = () => {
       } catch (err: any) {
         const msg = err?.message || 'Failed to create lead';
         setError(msg);
-        try { SweetAlert.showError(msg); } catch (_) {}
+        try { SweetAlert.showError(msg); } catch {
+          // no need to action
+        }
       } finally {
         setSaving(false);
       }

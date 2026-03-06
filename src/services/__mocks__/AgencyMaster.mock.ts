@@ -7,6 +7,7 @@ export const mockAgenciesResponse = {
   meta: { pagination: { current_page: 1, per_page: 10, total: 2, last_page: 1, from: 1, to: 2 } }
 };
 
-export function mockListAgencies(page = 1, perPage = 10) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function mockListAgencies(_page = 1, _perPage = 10) {
   return Promise.resolve(mockAgenciesResponse);
 }

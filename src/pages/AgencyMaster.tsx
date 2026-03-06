@@ -13,7 +13,8 @@ import ConfirmDialog from '../components/ui/ConfirmDialog';
 import Pagination from '../components/ui/Pagination';
 import SweetAlert from '../utils/SweetAlert';
 import SearchBar from '../components/ui/SearchBar';
-import { usePermissions } from '../context/SidebarMenuContext';
+import { usePermissions } from '../hooks/SidebarMenuHooks';
+
 
 // Robust parser: normalize various API date formats into an ISO timestamp (returns empty string on failure)
 const parseApiDateToISO = (s?: string): string => {
