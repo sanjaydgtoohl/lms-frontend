@@ -38,7 +38,7 @@ async function handleResponse<T>(res: any): Promise<T> {
     const error = new Error('No response from server');
     try {
       handleApiError(error);
-    } catch {}
+    } catch (err: any) { void err; }
     throw error;
   }
 
@@ -47,7 +47,7 @@ async function handleResponse<T>(res: any): Promise<T> {
     const error = new Error(res.message || 'Request failed');
     try {
       handleApiError(error);
-    } catch {}
+    } catch (err: any) { void err; }
     throw error;
   }
 
@@ -78,7 +78,7 @@ export async function getPermissionForEdit(id: string): Promise<PermissionEditDe
     const error = new Error(err?.message || 'Failed to fetch permission');
     try {
       handleApiError(error);
-    } catch {}
+    } catch (e: any) { void e; }
     throw error;
   }
 }
@@ -120,7 +120,7 @@ export async function updatePermissionWithFile(
     const error = new Error(err?.message || 'Failed to update permission');
     try {
       handleApiError(error);
-    } catch {}
+    } catch (e: any) { void e; }
     throw error;
   }
 }
@@ -144,7 +144,7 @@ export async function updatePermissionOnly(
     const error = new Error(err?.message || 'Failed to update permission');
     try {
       handleApiError(error);
-    } catch {}
+    } catch (e: any) { void e; }
     throw error;
   }
 }

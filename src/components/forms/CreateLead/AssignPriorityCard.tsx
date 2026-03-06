@@ -118,7 +118,7 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
         setPriorityLoading(false);
       });
     return () => { isMounted = false; };
-  }, [callFeedback]);
+  }, [callFeedback, priority, assignTo, onChange]);
 
   return (
     <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)]">

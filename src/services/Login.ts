@@ -163,7 +163,8 @@ class LoginService {
       const name = 'auth_token';
       const match = document.cookie.match(new RegExp('(?:^|; )' + encodeURIComponent(name) + '=([^;]*)'));
       return match ? decodeURIComponent(match[1]) : null;
-    } catch (e) {
+    } catch (err: any) {
+      void err;
       return null;
     }
   }

@@ -101,11 +101,11 @@ const View: React.FC = () => {
   const handleCreate = () => navigate('/miss-campaign/create');
 
   const handleSave = async (data: any) => {
-    try {
-      const newCampaign = await createMissCampaign(data);
-      setCampaigns(prev => [newCampaign, ...prev]);
-      setCurrentPage(1);
-      try { SweetAlert.showCreateSuccess(); } catch (_) {}
+      try {
+        const newCampaign = await createMissCampaign(data);
+        setCampaigns(prev => [newCampaign, ...prev]);
+        setCurrentPage(1);
+        try { SweetAlert.showCreateSuccess(); } catch { void 0; }
     } catch (error) {
       console.error('Failed to create campaign:', error);
     }
@@ -116,11 +116,11 @@ const View: React.FC = () => {
     setConfirmLoading(true);
     try {
       await deleteMissCampaign(confirmDeleteId);
-      try { SweetAlert.showDeleteSuccess(); } catch (_) {}
+      try { SweetAlert.showDeleteSuccess(); } catch { void 0; }
       await fetchCampaigns(currentPage); // Refresh table from server
     } catch (error) {
       console.error('Failed to delete campaign:', error);
-      try { SweetAlert.showError((error as any)?.message || 'Failed to delete campaign'); } catch (_) {}
+      try { SweetAlert.showError((error as any)?.message || 'Failed to delete campaign'); } catch { void 0; }
     } finally {
       setConfirmLoading(false);
       setConfirmDeleteId(null);
@@ -177,7 +177,7 @@ const View: React.FC = () => {
     try {
       await updateMissCampaign(updated.id, updated);
       await fetchCampaigns(currentPage); // Refresh table from server
-      try { SweetAlert.showUpdateSuccess(); } catch (_) {}
+      try { SweetAlert.showUpdateSuccess(); } catch { /* no-op */ }
     } catch (error) {
       console.error('Failed to update campaign:', error);
     }
@@ -186,7 +186,7 @@ const View: React.FC = () => {
   // Fetch campaigns on mount and when page changes
   useEffect(() => {
     fetchCampaigns(currentPage);
-  }, [currentPage]);
+  }, [currentPage, location.pathname]);
 
   // Listen for external updates (create/edit from other routes) and refresh list
   useEffect(() => {
@@ -197,7 +197,9 @@ const View: React.FC = () => {
     };
 
     window.addEventListener('missCampaigns:update', onExternalUpdate);
-    return () => window.removeEventListener('missCampaigns:update', onExternalUpdate);
+    return () => {
+      window.removeEventListener('missCampaigns:update', onExternalUpdate);
+    };
   }, []);
 
   // If navigated back with a refresh flag in location.state, refresh and clear state
@@ -209,9 +211,9 @@ const View: React.FC = () => {
       // clear the navigation state so this runs only once
       try {
         navigate(location.pathname, { replace: true, state: {} });
-      } catch (_) {}
+      } catch { /* no-op */ }
     }
-  }, [location.state, navigate]);
+  }, [location.state, navigate, location.pathname]);
 
   const handlePageChange = (page: number) => setCurrentPage(page);
 

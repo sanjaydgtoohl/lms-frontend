@@ -24,11 +24,11 @@ const Profile: React.FC = () => {
           // Try to get user profile from /users/{id}
           const userProfile = await getUserProfile(Number(userId));
           if (isMounted) setProfile(userProfile);
-        } catch (err) {
+        } catch {
           // If /users/{id} fails, fallback to /auth/me data
           if (isMounted) setProfile(userData);
         }
-      } catch (e) {
+      } catch {
         if (isMounted) setError(true);
       } finally {
         if (isMounted) setLoading(false);

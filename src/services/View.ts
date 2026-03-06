@@ -22,7 +22,7 @@ const ENDPOINTS = {
 async function handleResponse<T>(res: any): Promise<T> {
   if (!res || !res.success) {
     const error = new Error((res && (res.message || 'Request failed')) || 'Request failed');
-    try { handleApiError(error); } catch {}
+    try { handleApiError(error); } catch (err: any) { void err; }
     throw error;
   }
   return res.data as T;
@@ -95,7 +95,7 @@ export async function getMissCampaign(id: string): Promise<any> {
   const res = await apiClient.get<any>(ENDPOINTS.DETAIL(id));
   if (!res || !res.success) {
     const error = new Error((res && (res.message || 'Request failed')) || 'Request failed');
-    try { handleApiError(error); } catch {}
+    try { handleApiError(error); } catch (err: any) { void err; }
     throw error;
   }
   // Return raw data with all fields (including IDs) for editing

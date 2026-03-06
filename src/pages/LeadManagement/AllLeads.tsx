@@ -68,7 +68,7 @@ const AllLeads: React.FC = () => {
             ? resp.map((item: any) => ({ id: item.id, name: item.name })).filter((item: any) => item.id && item.name)
             : [];
           setCallStatusOptions(options);
-        } catch (err) {
+        } catch {
           setCallStatusOptions([]);
         }
       };
@@ -82,9 +82,9 @@ const AllLeads: React.FC = () => {
           const res = await apiClient.get('/users/list');
           const users = Array.isArray(res.data) ? res.data : [];
           setAssignToOptions(users.map((u: any) => ({ id: u.id, name: u.name })));
-        } catch (err) {
-          setAssignToOptions([]);
-        }
+        } catch {
+            setAssignToOptions([]);
+          }
       };
       loadUsers();
     }, []);
@@ -180,16 +180,16 @@ const AllLeads: React.FC = () => {
           await updateLead(numericId, { current_assign_user: newSalesMan });
         }
         SweetAlert.showUpdateSuccess();
-      } catch (err) {
+        } catch (err) {
         console.warn('Failed to persist assignTo change', err);
-        try { SweetAlert.showError('Failed to update assignment'); } catch (_) {}
+        try { SweetAlert.showError('Failed to update assignment'); } catch { void 0; }
       }
     })();
   };
 
-  const handleAssignConfirm = async (_newSalesMan: string) => {
-    // This is called when user confirms the assignment in the dialog
-    // The actual API call happens after confirmation in handleAssignToChange
+  const handleAssignConfirm = async () => {
+    // This is called when user confirms the assignment in the dialog; no-op here
+    void 0;
   };
 
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -216,7 +216,7 @@ const AllLeads: React.FC = () => {
       if (isLastOnPage && currentPage > 1) setCurrentPage((p) => p - 1);
     } catch (err: any) {
       console.error('Failed to delete lead', err);
-      try { SweetAlert.showError(err?.message || 'Failed to delete lead'); } catch (_) {}
+      try { SweetAlert.showError(err?.message || 'Failed to delete lead'); } catch { void 0; }
     } finally {
       setConfirmLoading(false);
       setConfirmDeleteId(null);
@@ -252,13 +252,13 @@ const AllLeads: React.FC = () => {
       SweetAlert.showUpdateSuccess();
     } catch (err) {
       console.warn('Failed to persist call status change', err);
-      try { SweetAlert.showError('Failed to update call status'); } catch (_) {}
+      try { SweetAlert.showError('Failed to update call status'); } catch { void 0; }
     }
   };
 
-  const handleCallStatusConfirm = async (_newStatus: string) => {
-    // This is called when user confirms the call status change in the dialog
-    // The actual API call happens after confirmation in handleCallStatusChange
+  const handleCallStatusConfirm = async () => {
+    // Called when user confirms the call status change in the dialog; no-op here
+    void 0;
   };
 
   // Fetch leads from API

@@ -37,7 +37,7 @@ const ENDPOINTS = {
 async function handleResponse<T>(res: any): Promise<T> {
   if (!res || !res.success) {
     const error = new Error((res && (res.message || 'Request failed')) || 'Request failed');
-    try { handleApiError(error); } catch {};
+    try { handleApiError(error); } catch { void 0; }
     throw error;
   }
   return res.data as T;
@@ -91,7 +91,7 @@ export async function listUsers(page = 1, perPage = 10, search?: string): Promis
     }
     // Preserve all roles array for UI rendering
     let role = '';
-    let roles: any[] = Array.isArray(it.roles) ? it.roles : [];
+    const roles: any[] = Array.isArray(it.roles) ? it.roles : [];
     if (roles.length > 0) {
       role = roles[0].name ?? roles[0] ?? '';
     } else {
@@ -175,7 +175,7 @@ export async function listAttendees(page = 1, perPage = 100, search?: string): P
     }
     // Preserve all roles array for UI rendering
     let role = '';
-    let roles: any[] = Array.isArray(it.roles) ? it.roles : [];
+    const roles: any[] = Array.isArray(it.roles) ? it.roles : [];
     if (roles.length > 0) {
       role = roles[0].name ?? roles[0] ?? '';
     } else {

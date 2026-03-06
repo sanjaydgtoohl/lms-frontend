@@ -200,7 +200,7 @@ const DesignationMaster: React.FC = () => {
               if (vals.length) message = vals[0];
             }
           }
-        } catch (ex) {
+        } catch {
           // fallback to generic message on any extraction error
           message = e?.message || 'Failed to create designation';
         }
@@ -247,7 +247,7 @@ const DesignationMaster: React.FC = () => {
   const [viewItem, setViewItem] = useState<Designation | null>(null);
   const [editItem, setEditItem] = useState<Designation | null>(null);
 
-  const refresh = async (page = currentPage, search = searchQuery) => {
+  const refresh = React.useCallback(async (page = currentPage, search = searchQuery) => {
     setLoading(true);
     setError(null);
     try {
@@ -281,9 +281,9 @@ const DesignationMaster: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, searchQuery, itemsPerPage]);
 
-  useEffect(() => { refresh(currentPage, searchQuery); }, [currentPage, searchQuery]);
+  useEffect(() => { refresh(currentPage, searchQuery); }, [currentPage, searchQuery, refresh]);
 
   useEffect(() => {
     const rawId = params.id;
@@ -342,7 +342,7 @@ const DesignationMaster: React.FC = () => {
               if (vals.length) message = vals[0];
             }
           }
-        } catch (_) {
+        } catch {
           message = e?.message || message;
         }
 

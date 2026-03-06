@@ -51,7 +51,6 @@ const FilePreviewModal: React.FC<{
         </div>
         <div className="p-4">
           {src && isImage(ext) && (
-            // eslint-disable-next-line jsx-a11y/img-redundant-alt
             <img src={src} alt={name || 'image'} className="mx-auto max-h-[70vh]" />
           )}
 

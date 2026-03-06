@@ -64,12 +64,6 @@ const PermissionTree: React.FC<PermissionTreeProps> = ({ data, selectedPermissio
     return ids;
   };
 
-  // Recursively check if all children are checked
-  const areAllChildrenChecked = (node: PermissionNode): boolean => {
-    if (!node.children || node.children.length === 0) return isChecked(node.id);
-    return node.children.every((child) => areAllChildrenChecked(child));
-  };
-
   // Recursively check if any child is checked
   const isAnyChildChecked = (node: PermissionNode): boolean => {
     if (!node.children || node.children.length === 0) return isChecked(node.id);

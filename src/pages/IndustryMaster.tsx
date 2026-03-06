@@ -97,7 +97,7 @@ const IndustryMaster: React.FC = () => {
   const [viewItem, setViewItem] = useState<Industry | null>(null);
   const [editItem, setEditItem] = useState<Industry | null>(null);
 
-  const refresh = async (page = currentPage, search = searchQuery) => {
+  const refresh = React.useCallback(async (page = currentPage, search = searchQuery) => {
     setLoading(true);
     setError(null);
     try {
@@ -152,9 +152,9 @@ const IndustryMaster: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, searchQuery, itemsPerPage]);
 
-  useEffect(() => { refresh(currentPage, searchQuery); }, [currentPage, searchQuery]);
+  useEffect(() => { refresh(currentPage, searchQuery); }, [currentPage, searchQuery, refresh]);
 
   // sync UI with route
   useEffect(() => {

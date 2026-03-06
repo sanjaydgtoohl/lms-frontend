@@ -20,7 +20,7 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
   const [loadingOptions, setLoadingOptions] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  if (!item) return null;
+  
 
   const handleChange = (key: string, value: any) => {
     setForm(prev => ({ ...prev, [key]: value }));
@@ -80,7 +80,7 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
         setLoadingOptions(false);
       });
     return () => { mounted = false; };
-  }, [item]);
+  }, [item, form.source, hideSource]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,7 +119,7 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
         return;
       } catch (err) {
           // Try to pick field-specific errors from API response if present
-          let message = err instanceof Error ? err.message : 'Failed to update record';
+          const message = err instanceof Error ? err.message : 'Failed to update record';
           try {
             const resp = (err as any).original?.responseData || (err as any).responseData || err;
             const errorsObj = resp && (resp.errors || resp.data?.errors || resp.errors);
@@ -140,7 +140,7 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
               }
               if (handled) return;
             }
-          } catch (_) {
+          } catch {
             // ignore parsing errors
           }
 
@@ -153,6 +153,8 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
 
   return (
     <>
+      { !item ? null : (
+        <>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div className="flex flex-col">
           <Breadcrumb />
@@ -238,7 +240,9 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
           <button type="submit" className="px-4 py-2 rounded-lg btn-primary text-white shadow-sm">Update</button>
         </div>
       </div>
-    </motion.form>
+      </motion.form>
+        </>
+      )}
     </>
   );
 };

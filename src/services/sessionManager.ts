@@ -29,7 +29,7 @@ export async function scheduleRefresh() {
   refreshTimer = window.setTimeout(async () => {
     try {
       await refreshTokens();
-    } catch (err) {
+    } catch {
       // refresh failed — clear session (http interceptor will redirect)
       deleteCookie('auth_token');
       deleteCookie('refresh_token');

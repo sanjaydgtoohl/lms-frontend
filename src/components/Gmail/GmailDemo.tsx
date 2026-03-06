@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react';
 import gmailService from '../../services/gmailService';
 
-const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'YOUR_CLIENT_ID';
 
 export default function GmailDemo() {
   const [token, setToken] = useState<string | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
 
   useEffect(() => {
-    gmailService.initGmail(CLIENT_ID);
+    gmailService.initGmail();
   }, []);
 
   async function handleSignIn() {

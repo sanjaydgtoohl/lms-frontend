@@ -154,7 +154,7 @@ class ApiClient {
       const expires = 3600;
       // write cookie via document.cookie
       document.cookie = `auth_token=${encodeURIComponent(token)}; Path=/; Max-Age=${expires}; Secure; SameSite=Lax`;
-    } catch (e) {
+    } catch {
       // ignore
     }
   }

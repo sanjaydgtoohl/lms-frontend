@@ -298,7 +298,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
         stateName: po.State || '',
         cityName: po.District || po.Block || po.Name || '',
       };
-    } catch (e) {
+    } catch {
       return null;
     }
   };
@@ -366,11 +366,11 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
             }
           }
         }
-      } catch (err) {
+      } catch {
         // ignore lookup errors silently
       }
     })();
-  }, [contacts, countryOptions, lastPinLookup]);
+  }, [contacts, countryOptions, lastPinLookup, onChange]);
 
   // Fetch cities when any contact's state changes
   useEffect(() => {

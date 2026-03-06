@@ -110,15 +110,15 @@ export async function fetchPermissionsAsModulePermissions(): Promise<ModulePermi
         configurable: true,
         writable: false,
       });
-    } catch (e) {
-      // ignore if defineProperty is not allowed
+    } catch (err: any) {
+      void err;
     }
 
     return out;
   } catch (err: any) {
     try {
       handleApiError(err);
-    } catch {}
+    } catch { void 0; }
     // Fallback: clear latest index and return empty object so UI uses static defaults
     latestPermissionIdIndex = undefined;
     return {};
@@ -173,7 +173,7 @@ export async function createRole(payload: Record<string, any>) {
     const res = await apiClient.post<any>(ENDPOINTS.ROLES, body);
     return res.data;
   } catch (err: any) {
-    try { handleApiError(err); } catch {}
+    try { handleApiError(err); } catch (e: any) { void e; }
     throw err;
   }
 }

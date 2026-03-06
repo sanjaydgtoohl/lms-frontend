@@ -47,8 +47,9 @@ const MeetingPipeline: React.FC = () => {
         const res = await fetchMeetings(params);
         setMeetings(res.data);
         setTotalItems(res.meta.pagination.total);
-      } catch (err) {
+      } catch {
         // Optionally handle error
+        void 0;
       }
       setLoading(false);
     };

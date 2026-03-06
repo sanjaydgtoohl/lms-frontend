@@ -46,15 +46,11 @@ export async function uploadPlanSubmission(
   if (backupFile) {
     formData.append('backup_plan', backupFile);
   }
-  try {
-    const response = await api.customRequest<PlanSubmissionResponse>(
-      `/briefs/${briefId}/planners`,
-      { method: 'POST', data: formData }
-    );
-    return response.data;
-  } catch (error: any) {
-    throw error;
-  }
+  const response = await api.customRequest<PlanSubmissionResponse>(
+    `/briefs/${briefId}/planners`,
+    { method: 'POST', data: formData }
+  );
+  return response.data;
 }
 
 import api from './api';
@@ -119,11 +115,7 @@ export interface GetBriefByIdResponse {
  * @returns BriefDetail object
  */
 export async function getBriefById(id: number): Promise<BriefDetail> {
-  try {
-    const response = await api.customRequest<BriefDetail>(`/briefs/${id}`);
-    console.log('Raw API response:', response);
-    return response.data;
-  } catch (error: any) {
-    throw error;
-  }
+  const response = await api.customRequest<BriefDetail>(`/briefs/${id}`);
+  console.log('Raw API response:', response);
+  return response.data;
 }

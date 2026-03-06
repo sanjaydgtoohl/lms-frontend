@@ -123,7 +123,7 @@ const Dashboard: React.FC = () => {
     if (!Number.isNaN(parsed)) {
       try {
         return new Date(parsed).toLocaleString();
-      } catch (e) {
+      } catch {
         return txt;
       }
     }

@@ -90,7 +90,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
 
   useEffect(() => {
     if (initialData) {
-      let patched = { ...initialData };
+      const patched = { ...initialData };
       // Autofill 'type' from mediaType or media_type
       if (!patched.type && (patched.mediaType || patched.media_type)) {
         let mediaTypeVal = patched.mediaType || patched.media_type;
@@ -132,7 +132,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
       }
 
       // Autofill Submission Date and Time from initialData.submission_date or initialData.submissionDate
-      let isoDateStr = initialData.submission_date || initialData.submissionDate;
+      const isoDateStr = initialData.submission_date || initialData.submissionDate;
       if (isoDateStr && typeof isoDateStr === 'string') {
         // If the string contains both date and time (with a space)
         const [datePart, timePartRaw] = isoDateStr.split(' ');
@@ -224,7 +224,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
           setForm(prev => ({ ...prev, createdBy: String(agencyId) }));
           lastChangedFieldRef.current = 'brand'; // Mark brand as the last changed field
         }
-      } catch (e) {
+      } catch {
         // noop — do not overwrite existing agency on failure
       } finally {
         if (mounted) setBrandAgencyLoading(false);
@@ -359,7 +359,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
           const found = opts.find(o => o.value === String(form.brandName));
           if (!found) setForm(prev => ({ ...prev, brandName: '' }));
         }
-      } catch (e) {
+      } catch {
         // ignore errors — keep existing brands list
       } finally {
         if (mounted) setBrandsLoading(false);
@@ -368,7 +368,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
 
     fetchBrandsForAgency();
     return () => { mounted = false; };
-  }, [form.createdBy]);
+  }, [form.createdBy, form.brandName]);
 
   // Load user options on mount (for Assign To)
   useEffect(() => {
@@ -567,10 +567,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
           }
         }
         
-        if (false) {
-          console.error('Error loading priorities:');
-          setPriorityError('Error loading priorities');
-        }
+        // removed dead/temporary debug branch
       } catch (err: any) {
         console.error('Failed to load priorities', err);
         if (!mounted) return;
@@ -632,7 +629,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
 
     fetchByPriority();
     return () => { mounted = false; };
-  }, [form.priority]);
+  }, [form.priority, form.status]);
 
   // When Brief Status changes, fetch Priority options related to that status
   useEffect(() => {
@@ -659,7 +656,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
         
         // API response structure: { success, message, meta, data: {id, name} OR [...] }
         let items: any[] = [];
-        let responseData = res?.data || res;
+        const responseData = res?.data || res;
         console.log('Response data:', responseData);
         
         // Check what type of data we have
@@ -720,7 +717,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
 
     fetchPrioritiesForStatus();
     return () => { mounted = false; };
-  }, [form.status, briefStatuses]);
+  }, [form.status, briefStatuses, form.priority]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -847,8 +844,9 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
       setTimeout(() => {
         onClose();
       }, 1800);
-    } catch (err) {
+    } catch {
       // noop - parent handles errors
+      void 0;
     } finally {
       setSaving(false);
     }
@@ -1165,7 +1163,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                             const min = String(d.getMinutes()).padStart(2,'0');
                             return `${dd}-${mm}-${yyyy} ${hh}:${min}`;
                           }
-                        } catch (e) {}
+                        } catch (e: unknown) { void e; }
                         return String(submissionRaw);
                       })()
                     ) : '-';

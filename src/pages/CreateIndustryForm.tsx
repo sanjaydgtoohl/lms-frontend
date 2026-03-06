@@ -38,8 +38,9 @@ const CreateIndustryForm: React.FC<Props> = ({ onClose, onSave }) => {
       if (onSave) {
         try {
           onSave({ name: created?.name || name, dateTime: formatDateTime(new Date()), id: created?.id });
-        } catch (e) {
+        } catch {
           // swallow parent errors
+          void 0;
         }
       } else {
         // Use global notification (same behaviour as Lead Source)
@@ -68,7 +69,7 @@ const CreateIndustryForm: React.FC<Props> = ({ onClose, onSave }) => {
             }
           }
         }
-      } catch (_) {}
+      } catch { void 0; }
       // Show global popup only when not inline
       if (!onSave) showError(msg);
     } finally {

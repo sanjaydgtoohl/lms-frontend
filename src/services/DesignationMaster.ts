@@ -24,7 +24,7 @@ async function handleResponse<T>(res: any): Promise<T> {
     const error = new Error((res && (res.message || 'Request failed')) || 'Request failed');
     // Attach original response data so callers can extract field-level errors
     (error as any).responseData = res;
-    try { handleApiError(error, false); } catch {}
+    try { handleApiError(error, false); } catch (err: any) { void err; }
     throw error;
   }
   return res.data as T;

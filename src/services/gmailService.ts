@@ -1,3 +1,38 @@
+let pendingResolver: ((token: string | null) => void) | null = null;
+
+// Module-level variables for Google Identity Services
+
+let accessToken: string | null = null;
+let tokenClient: any = null;
+
+
+// Initialize Google Identity Services client
+export function initGmail() {
+  // Initialize the Google Identity Services token client
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'YOUR_CLIENT_ID';
+  const scopes = 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send';
+  if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
+    throw new Error('Google Identity Services SDK not loaded.');
+  }
+  tokenClient = window.google.accounts.oauth2.initTokenClient({
+    client_id: clientId,
+    scope: scopes,
+    callback: (response: { access_token?: string; error?: string }) => {
+      if (response && response.access_token) {
+        accessToken = response.access_token;
+        if (pendingResolver) {
+          pendingResolver(response.access_token);
+          pendingResolver = null;
+        }
+      } else {
+        if (pendingResolver) {
+          pendingResolver(null);
+          pendingResolver = null;
+        }
+      }
+    },
+  });
+}
 // Gmail integration using Google Identity Services (browser)
 // Usage:
 // 1. Set your client id in an env var: VITE_GOOGLE_CLIENT_ID
@@ -12,49 +47,7 @@
 // async function signInAndSend() {
 //   await gmailService.requestAccessToken();
 //   await gmailService.sendEmail('recipient@example.com', 'Hello', '<p>Hi</p>')
-// }
 
-let tokenClient: any = null;
-let accessToken: string | null = null;
-let pendingResolver: ((token: string | null) => void) | null = null;
-
-export function initGmail(clientId: string, scopes: string[] = [
-  'https://www.googleapis.com/auth/gmail.send',
-  'https://www.googleapis.com/auth/gmail.readonly',
-]) {
-  if (!(window as any).google) {
-    throw new Error('Google Identity Services script not loaded. Add the script to index.html');
-  }
-
-  // Basic runtime validation to help debug invalid_client errors
-  try {
-    const origin = window.location.origin;
-    // log helpful info to console for debugging
-    // eslint-disable-next-line no-console
-    console.info('[gmailService] initGmail', { clientId, origin, scopes });
-
-    if (!clientId || clientId === 'YOUR_CLIENT_ID' || clientId.indexOf('apps.googleusercontent.com') === -1) {
-      // eslint-disable-next-line no-console
-      console.error('[gmailService] Invalid Google client id. Please set VITE_GOOGLE_CLIENT_ID in .env to your Web OAuth Client ID.');
-      throw new Error('Invalid Google client id. Please set VITE_GOOGLE_CLIENT_ID to your Web OAuth Client ID.');
-    }
-  } catch (e) {
-    // Re-throw after logging
-    throw e;
-  }
-
-  tokenClient = (window as any).google.accounts.oauth2.initTokenClient({
-    client_id: clientId,
-    scope: scopes.join(' '),
-    callback: (resp: any) => {
-      accessToken = resp?.access_token || null;
-      if (pendingResolver) {
-        pendingResolver(accessToken);
-        pendingResolver = null;
-      }
-    },
-  });
-}
 
 export function getAccessToken(): string | null {
   return accessToken;
@@ -63,7 +56,7 @@ export function getAccessToken(): string | null {
 export function requestAccessToken(prompt: 'none' | 'consent' | 'select_account' = 'consent') {
   return new Promise<string>((resolve, reject) => {
     if (!tokenClient) return reject(new Error('tokenClient not initialized. Call initGmail(clientId)'));
-    pendingResolver = (token) => {
+    pendingResolver = (token: string | null) => {
       if (token) resolve(token);
       else reject(new Error('Failed to obtain access token'));
     };
@@ -132,7 +125,7 @@ async function attemptFetchWithRetries(path: string, opts: RequestInit = {}) {
         // If 'none' fails (user not signed in), request consent
         return requestAccessToken('consent');
       });
-    } catch (e) {
+    } catch {
       throw new Error('No access token. User authentication required. Call requestAccessToken()');
     }
   }
@@ -150,7 +143,7 @@ async function attemptFetchWithRetries(path: string, opts: RequestInit = {}) {
       // Handle 401 Unauthorized - token likely expired
       if (res.status === 401) {
         accessToken = null;
-        // eslint-disable-next-line no-console
+         
         console.warn('[gmailService] Access token expired, requesting new one');
         try {
           await requestAccessToken('none').catch(() => {
@@ -164,7 +157,7 @@ async function attemptFetchWithRetries(path: string, opts: RequestInit = {}) {
               return retryRes.json();
             }
           }
-        } catch (e) {
+        } catch {
           throw new Error('Failed to refresh access token');
         }
         throw new Error(`Gmail API error ${res.status}: ${body}`);
@@ -277,10 +270,10 @@ function base64UrlDecode(input: string) {
     // Decode UTF-8
     try {
       return decodeURIComponent(escape(decoded));
-    } catch (e) {
+    } catch {
       return decoded;
     }
-  } catch (e) {
+  } catch {
     return '';
   }
 }
@@ -380,7 +373,7 @@ export async function downloadAttachment(messageId: string, attachmentId: string
   try {
     // Check if token exists, if not request one
     if (!accessToken) {
-      // eslint-disable-next-line no-console
+       
       console.warn('[gmailService] Access token missing, requesting new one for download');
       await requestAccessToken('none').catch(() => {
         // If 'none' fails (token expired), try with consent
@@ -398,10 +391,10 @@ export async function downloadAttachment(messageId: string, attachmentId: string
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     
-    // eslint-disable-next-line no-console
+     
     console.debug('[gmailService] Downloaded attachment:', filename);
   } catch (err) {
-    // eslint-disable-next-line no-console
+     
     console.error('[gmailService] Failed to download attachment:', err);
     throw err;
   }
@@ -420,7 +413,7 @@ export async function fetchAttachmentBlob(messageId: string, attachmentId: strin
     const blob = new Blob([bytes], { type: mimeType || 'application/octet-stream' });
     return blob;
   } catch (err) {
-    // eslint-disable-next-line no-console
+     
     console.error('[gmailService] fetchAttachmentBlob error', err);
     throw err;
   }

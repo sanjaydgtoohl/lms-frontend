@@ -242,7 +242,7 @@ const AgencyMaster: React.FC = () => {
     if (!location.pathname.endsWith('/create') && !location.pathname.endsWith('/edit')) {
       loadAgencies(page, searchValue);
     }
-  }, [page, location.pathname]);
+  }, [page, location.pathname, searchValue]);
 
 
 
