@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Table, { type Column } from '../../components/ui/Table';
 import AssignDropdown from '../../components/ui/AssignDropdown';
 import CallStatusDropdown from '../../components/ui/CallStatusDropdown';
@@ -162,13 +162,12 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
   const [confirmLoading, setConfirmLoading] = useState(false);
 
   // Fetch leads from API
-  const fetchLeads = async () => {
+  // Wrap fetchLeads in useCallback
+  const fetchLeads = useCallback(async () => {
     try {
       setLoading(true);
       let response;
-      // Use server-side filtering if filterStatus is provided
       if (filterStatus && filterStatus !== 'All') {
-        // Map status name to ID if needed (update this mapping as per your backend)
         const statusIdMap: Record<string, number> = {
           'Interested': 1,
           'Pending': 2,
@@ -188,16 +187,21 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
       } else {
         response = await listLeads(currentPage, itemsPerPage);
       }
+
       const transformedLeads = response.data.map((item: any) => ({
         id: item.id ? String(item.id) : '',
         agencyName: item.agency?.name || item.agency_name || '',
         brandName: item.brand_name || item.brand?.name || String(item.brand_id || ''),
         contactPerson: item.contact_person || item.name || '',
-        phoneNumber: Array.isArray(item.mobile_number) && item.mobile_number.length > 0 ? item.mobile_number[0].number : (item.mobile_number || item.number || item.phone || item.email || ''),
+        phoneNumber: Array.isArray(item.mobile_number) && item.mobile_number.length > 0
+          ? item.mobile_number[0].number
+          : (item.mobile_number || item.number || item.phone || item.email || ''),
         source: item.lead_source || item.source || '',
         subSource: item.sub_source?.name || item.lead_sub_source?.name || item.lead_sub_source_name || item.lead_sub_source || '',
         assignBy: item.created_by_user?.name || item.assign_by_name || item.created_by || '',
-        assignTo: item.current_assign_user_name || item.assigned_user?.name || (item.current_assign_user && typeof item.current_assign_user === 'object' ? item.current_assign_user.name : '') || item.assign_to_name || '',
+        assignTo: item.current_assign_user_name || item.assigned_user?.name
+          || (item.current_assign_user && typeof item.current_assign_user === 'object' ? item.current_assign_user.name : '')
+          || item.assign_to_name || '',
         dateTime: item.created_at || new Date().toLocaleString(),
         status: item.lead_status_relation?.name || item.lead_status || '',
         callStatus: (() => {
@@ -207,6 +211,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
         callAttempt: Number(item.call_attempt ?? item.callAttempt ?? 0),
         comment: item.comment || item.notes || '',
       }));
+
       setLeads(transformedLeads);
     } catch (error) {
       console.error('Error fetching leads:', error);
@@ -214,7 +219,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterStatus, currentPage, itemsPerPage]); // <- Add all external dependencies here
 
   useEffect(() => {
     fetchLeads();
@@ -335,9 +340,9 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
     })();
   };
 
-      const handleAssignConfirm = async (_newSalesMan: string) => {
-        void _newSalesMan; // mark as intentionally unused
-      };
+  const handleAssignConfirm = async (_newSalesMan: string) => {
+    void _newSalesMan; // mark as intentionally unused
+  };
 
   const handleDelete = (leadId: string) => {
     const found = leads.find((l) => l.id === leadId);
@@ -406,7 +411,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
 
   // const handleCallStatusConfirm = async (_newStatus: string) => {
   const handleCallStatusConfirm = async (_newStatus: string) => {
-      void _newStatus; // mark as intentionally unused
+    void _newStatus; // mark as intentionally unused
     // This is called when user confirms the call status change in the dialog
     // The actual API call happens after confirmation in handleCallStatusChange
   };

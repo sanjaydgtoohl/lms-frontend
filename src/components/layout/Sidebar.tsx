@@ -1,5 +1,5 @@
 import { useSidebarMenu } from "../../hooks/SidebarMenuHooks";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import LogoutIcon from "../../assets/icons/LogoutIcon";
@@ -97,48 +97,50 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
   // considered active. This lets us treat `/lead-management/create` as if the
   // user is on `/lead-management/all-leads` so the sidebar highlights the
   // All Leads item while the Create Lead page is open.
-  const routeAliases: Record<string, string> = {
+  const routeAliases = useMemo<Record<string, string>>(() => ({
     "/lead-management/create": "/lead-management/all-leads",
     "/user-management/permission/create": "/user-management/permission",
     "/user-management/role/create": "/user-management/role",
     "/user-management/user/create": "/user-management/user",
     "/brief/plan-submission": "/brief/log",
-  };
+  }), []);
 
-  const getEffectivePath = (pathname: string) => {
-    // Handle edit routes with IDs like /user-management/permission/edit/:id, /user-management/role/edit/:id, and /user-management/user/edit/:id
+  const getEffectivePath = useCallback((pathname: string) => {
+
     if (pathname.match(/^\/user-management\/(permission|role|user)\/edit\//)) {
       const match = pathname.match(/^\/user-management\/(\w+)\/edit\//);
       if (match) {
         return `/user-management/${match[1]}`;
       }
     }
-    // Handle /lead-management/edit/:id to highlight All Leads
+
     if (pathname.match(/^\/lead-management\/edit\//)) {
       return "/lead-management/all-leads";
     }
-    // Handle /lead-management/:id to highlight All Leads
+
     if (pathname.match(/^\/lead-management\/\d+$/)) {
       return "/lead-management/all-leads";
     }
-    // Handle /brief/edit-submitted-plan/:id to highlight Brief Log
+
     if (pathname.match(/^\/brief\/edit-submitted-plan\//)) {
       return "/brief/log";
     }
-    // Handle /brief/plan-history/:id to highlight Brief Log
+
     if (pathname.match(/^\/brief\/plan-history\//)) {
       return "/brief/log";
     }
-    // Handle /brief/plan-submission/:id to highlight Brief Log
+
     if (pathname.match(/^\/brief\/plan-submission\//)) {
       return "/brief/log";
     }
-    // Handle /brief/:id to highlight Brief Pipeline
+
     if (pathname.match(/^\/brief\/(?!create|log|Brief_Pipeline|plan-history|plan-submission|edit-submitted-plan)[^/]+$/)) {
       return "/brief/Brief_Pipeline";
     }
+
     return routeAliases[pathname] ?? pathname;
-  };
+
+  }, [routeAliases]);
 
   // Treat a path as active when the effective pathname is exactly the path
   // or when the effective pathname is a nested route under that path.
@@ -172,14 +174,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
 
     // Always expand Miss Campaign on /miss-campaign/create
     if (location.pathname === "/miss-campaign/create") {
-      const missCampaignSlug = navigationItems.find(item => item.name === "Miss Campaign")?.name.toLowerCase().replace(/\s+/g, "-");
+      const missCampaignSlug = navigationItems
+        .find(item => item.name === "Miss Campaign")
+        ?.name.toLowerCase()
+        .replace(/\s+/g, "-");
+
       if (missCampaignSlug && !activeParents.includes(missCampaignSlug)) {
         activeParents.push(missCampaignSlug);
       }
     }
 
     dispatch(setExpandedItems(activeParents));
-  }, [location.pathname, navigationItems]);
+  }, [location.pathname, navigationItems, dispatch, getEffectivePath]);
 
   const renderNavigationItem = (item: NavigationItem, level = 0) => {
     const hasChildren = item.children && item.children.length > 0;

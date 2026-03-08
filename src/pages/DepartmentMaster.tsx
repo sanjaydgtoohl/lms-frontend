@@ -257,7 +257,10 @@ const DepartmentMaster: React.FC = () => {
 		}
 	};
 
-	useEffect(() => { refresh(currentPage, searchQuery); }, [currentPage, searchQuery]);
+	useEffect(() => {
+		refresh(currentPage, searchQuery);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [currentPage, searchQuery]);
 
 	useEffect(() => {
 		const rawId = params.id;

@@ -114,7 +114,7 @@ const AgencyMaster: React.FC = () => {
         const rawCount = a.contact_person_count ?? a.contactPersonCount;
         const contactPersonValue = (typeof rawCount === 'number') ? String(rawCount)
           : (typeof rawCount === 'string' && rawCount.trim() !== '') ? rawCount
-          : (a.contact_person ?? '') ;
+            : (a.contact_person ?? '');
 
         return {
           id: String(a.id),
@@ -128,7 +128,7 @@ const AgencyMaster: React.FC = () => {
       setAgenciesList(mapped);
       // attempt to read pagination meta if present
       const total = res.meta?.pagination?.total;
-  if (typeof total === 'number') setTotalItems(total);
+      if (typeof total === 'number') setTotalItems(total);
     } catch (err) {
       // handled by service error handler
       console.error('Failed to load agencies', err);
@@ -243,7 +243,7 @@ const AgencyMaster: React.FC = () => {
     if (!location.pathname.endsWith('/create') && !location.pathname.endsWith('/edit')) {
       loadAgencies(page, searchValue);
     }
-  }, [page, location.pathname]);
+  }, [page, location.pathname, searchValue]);
 
 
 
@@ -272,14 +272,14 @@ const AgencyMaster: React.FC = () => {
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
             <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-200">
               <h2 className="text-base font-semibold text-gray-900">Agency Master</h2>
-              <SearchBar 
+              <SearchBar
                 delay={300}
                 placeholder="Please Search Agency"
-                onSearch={(q: string) => { 
-                  setSearchValue(q); 
-                  setPage(1); 
+                onSearch={(q: string) => {
+                  setSearchValue(q);
+                  setPage(1);
                   loadAgencies(1, q);
-                }} 
+                }}
               />
             </div>
 
@@ -298,11 +298,13 @@ const AgencyMaster: React.FC = () => {
                 data={agenciesList}
                 loading={loadingList}
                 columns={([
-                  { key: 'sr', header: 'Sr. No.', render: (it: Agency) => {
-                    const startIndex = (page - 1) * perPage;
-                    const currentData = agenciesList;
-                    return String(startIndex + currentData.indexOf(it) + 1);
-                  }},
+                  {
+                    key: 'sr', header: 'Sr. No.', render: (it: Agency) => {
+                      const startIndex = (page - 1) * perPage;
+                      const currentData = agenciesList;
+                      return String(startIndex + currentData.indexOf(it) + 1);
+                    }
+                  },
                   { key: 'agencyGroup', header: 'Agency Group', render: (it: Agency) => it.agencyGroup || '-' },
                   { key: 'agencyName', header: 'Agency Name', render: (it: Agency) => it.agencyName || '-' },
                   { key: 'agencyType', header: 'Agency Type', render: (it: Agency) => it.agencyType || '-' },

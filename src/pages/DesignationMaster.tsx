@@ -106,9 +106,8 @@ const CreateDesignationForm: React.FC<{
                 name="designationName"
                 value={name}
                 onChange={(e) => { setName(e.target.value); setError(''); }}
-                className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 transition-colors ${
-                  error ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 transition-colors ${error ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                  }`}
                 placeholder="Please Enter Designation Name"
                 aria-invalid={error ? 'true' : 'false'}
                 aria-describedby={error ? 'designationName-error' : undefined}
@@ -141,7 +140,7 @@ const CreateDesignationForm: React.FC<{
 const DesignationMaster: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);
-  
+
   const itemsPerPage = 10;
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
@@ -172,16 +171,16 @@ const DesignationMaster: React.FC = () => {
     return (async () => {
       try {
         // API expects `title` for designation payload (see Postman traces)
-	await createDesignation({ title: data.name } as any);
-	await refresh();
-	setCurrentPage(1);
+        await createDesignation({ title: data.name } as any);
+        await refresh();
+        setCurrentPage(1);
 
-	// Show SweetAlert success then navigate back to listing and reload
-	SweetAlert.showCreateSuccess();
-	setTimeout(() => {
-	  navigate(ROUTES.DESIGNATION_MASTER);
-	  window.location.reload();
-	}, 1800);
+        // Show SweetAlert success then navigate back to listing and reload
+        SweetAlert.showCreateSuccess();
+        setTimeout(() => {
+          navigate(ROUTES.DESIGNATION_MASTER);
+          window.location.reload();
+        }, 1800);
       } catch (e: any) {
         // Try to extract field-specific validation messages from the API error
         let message = 'Failed to create designation';
@@ -284,7 +283,10 @@ const DesignationMaster: React.FC = () => {
     }
   };
 
-  useEffect(() => { refresh(currentPage, searchQuery); }, [currentPage, searchQuery]);
+  useEffect(() => {
+    refresh(currentPage, searchQuery);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, searchQuery]);
 
   useEffect(() => {
     const rawId = params.id;
@@ -382,11 +384,11 @@ const DesignationMaster: React.FC = () => {
       ) : viewItem ? (
         <MasterView item={viewItem} onClose={() => navigate(ROUTES.DESIGNATION_MASTER)} />
       ) : editItem ? (
-  <MasterEdit item={editItem} onClose={() => navigate(ROUTES.DESIGNATION_MASTER)} onSave={handleSaveEditedDesignation} hideSource nameLabel="Designation" />
+        <MasterEdit item={editItem} onClose={() => navigate(ROUTES.DESIGNATION_MASTER)} onSave={handleSaveEditedDesignation} hideSource nameLabel="Designation" />
       ) : (
         <>
-          <MasterHeader 
-            onCreateClick={handleCreateDesignation} 
+          <MasterHeader
+            onCreateClick={handleCreateDesignation}
             createButtonLabel="Create Designation"
             showBreadcrumb={true}
             showCreateButton={hasPermission('designation.create')}
@@ -395,14 +397,14 @@ const DesignationMaster: React.FC = () => {
             <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-semibold text-gray-900">Designation Master</h2>
-                <SearchBar 
-                  placeholder="Search Designation" 
+                <SearchBar
+                  placeholder="Search Designation"
                   delay={300}
-                  onSearch={(q: string) => { 
-                    setSearchQuery(q); 
-                    setCurrentPage(1); 
-                    refresh(1, q); 
-                  }} 
+                  onSearch={(q: string) => {
+                    setSearchQuery(q);
+                    setCurrentPage(1);
+                    refresh(1, q);
+                  }}
                 />
               </div>
             </div>
@@ -418,23 +420,23 @@ const DesignationMaster: React.FC = () => {
 
             <div className="pt-0 overflow-visible">
               <Table
-              data={currentData}
-              startIndex={startIndex}
-              loading={loading}
-              desktopOnMobile={true}
-              keyExtractor={(it: any, idx: number) => `${it.id}-${idx}`}
-              columns={([
-                { key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },
-                { key: 'name', header: 'Designation Name', render: (it: any) => it.name || '-' },
-                { key: 'dateTime', header: 'Date & Time', render: (it: any) => it.dateTime ? formatDisplayDate(it.dateTime) : '-' },
-              ] as Column<any>[]) }
-              onEdit={(it: any) => handleEdit(it.id)}
-              onView={(it: any) => handleView(it.id)}
-              onDelete={(it: any) => handleDelete(it.id)}
-              editPermissionSlug="designation.edit"
-              viewPermissionSlug="designation.view"
-              deletePermissionSlug="designation.delete"
-            />
+                data={currentData}
+                startIndex={startIndex}
+                loading={loading}
+                desktopOnMobile={true}
+                keyExtractor={(it: any, idx: number) => `${it.id}-${idx}`}
+                columns={([
+                  { key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },
+                  { key: 'name', header: 'Designation Name', render: (it: any) => it.name || '-' },
+                  { key: 'dateTime', header: 'Date & Time', render: (it: any) => it.dateTime ? formatDisplayDate(it.dateTime) : '-' },
+                ] as Column<any>[])}
+                onEdit={(it: any) => handleEdit(it.id)}
+                onView={(it: any) => handleView(it.id)}
+                onDelete={(it: any) => handleDelete(it.id)}
+                editPermissionSlug="designation.edit"
+                viewPermissionSlug="designation.view"
+                deletePermissionSlug="designation.delete"
+              />
             </div>
           </div>
 
