@@ -30,7 +30,7 @@ interface Props {
 
 // helper to create a new blank child entry
 const blankChild = (): ChildAgency => ({
-  id: `child-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
+  id: `child-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
   name: '',
   type: '',
   client: [],
@@ -55,11 +55,11 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
     let mounted = true;
     (async () => {
       try {
-  const items = await listAgencyTypes();
-  if (!mounted) return;
-  // keep both id and label so SelectField provides id as value (server expects numeric id)
-  const opts = items.map((it: any) => ({ value: String(it.id), label: it.name || String(it.id) }));
-  setAgencyTypes(opts);
+        const items = await listAgencyTypes();
+        if (!mounted) return;
+        // keep both id and label so SelectField provides id as value (server expects numeric id)
+        const opts = items.map((it: any) => ({ value: String(it.id), label: it.name || String(it.id) }));
+        setAgencyTypes(opts);
       } catch (err) {
         console.error('Failed to load agency types', err);
       } finally {
@@ -82,7 +82,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
     // If initialData provided (edit mode), populate the form
     if (initialData && mode === 'edit') {
       const parentData = initialData.parent || initialData;
-      
+
       // Extract agency type - could be nested object or string
       let parentTypeId = '';
       const rawParentType = parentData.type || parentData.agency_type;
@@ -96,12 +96,12 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
       // Also check for brand data in the response
       let parentClientIds: string[] = [];
       let rawParentClient = parentData.client || parentData.clients || [];
-      
+
       // If no client data but brand data exists, use brand IDs as clients
       if ((!rawParentClient || rawParentClient.length === 0) && parentData.brand && Array.isArray(parentData.brand)) {
         rawParentClient = parentData.brand;
       }
-      
+
       if (Array.isArray(rawParentClient)) {
         parentClientIds = rawParentClient.map((c: any) => {
           if (typeof c === 'object' && c?.id) return String(c.id);
@@ -115,53 +115,53 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
         client: parentClientIds,
       });
 
-        // Handle child agencies (support both 'children' and 'childs' keys)
-        const childAgencies = Array.isArray(initialData.children)
-          ? initialData.children
-          : Array.isArray(initialData.childs)
-            ? initialData.childs
-            : [];
+      // Handle child agencies (support both 'children' and 'childs' keys)
+      const childAgencies = Array.isArray(initialData.children)
+        ? initialData.children
+        : Array.isArray(initialData.childs)
+          ? initialData.childs
+          : [];
 
-        if (childAgencies.length > 0) {
-          setChildren(childAgencies.map((c: any, idx: number) => {
-            // Extract child agency type
-            let childTypeId = '';
-            const rawChildType = c.type || c.agency_type;
-            if (typeof rawChildType === 'object' && rawChildType?.id) {
-              childTypeId = String(rawChildType.id);
-            } else if (rawChildType) {
-              childTypeId = String(rawChildType);
-            }
+      if (childAgencies.length > 0) {
+        setChildren(childAgencies.map((c: any, idx: number) => {
+          // Extract child agency type
+          let childTypeId = '';
+          const rawChildType = c.type || c.agency_type;
+          if (typeof rawChildType === 'object' && rawChildType?.id) {
+            childTypeId = String(rawChildType.id);
+          } else if (rawChildType) {
+            childTypeId = String(rawChildType);
+          }
 
-            // Extract child agency clients
-            // Also check for brand data in the response
-            let childClientIds: string[] = [];
-            let rawChildClient = c.client || c.clients || [];
+          // Extract child agency clients
+          // Also check for brand data in the response
+          let childClientIds: string[] = [];
+          let rawChildClient = c.client || c.clients || [];
 
-            // If no client data but brand data exists, use brand IDs as clients
-            if ((!rawChildClient || rawChildClient.length === 0) && c.brand && Array.isArray(c.brand)) {
-              rawChildClient = c.brand;
-            }
+          // If no client data but brand data exists, use brand IDs as clients
+          if ((!rawChildClient || rawChildClient.length === 0) && c.brand && Array.isArray(c.brand)) {
+            rawChildClient = c.brand;
+          }
 
-            if (Array.isArray(rawChildClient)) {
-              childClientIds = rawChildClient.map((cc: any) => {
-                if (typeof cc === 'object' && cc?.id) return String(cc.id);
-                return String(cc);
-              });
-            }
+          if (Array.isArray(rawChildClient)) {
+            childClientIds = rawChildClient.map((cc: any) => {
+              if (typeof cc === 'object' && cc?.id) return String(cc.id);
+              return String(cc);
+            });
+          }
 
-            return {
-              id: `child-${idx}-${Date.now()}`,
-              name: c.name || '',
-              type: childTypeId,
-              client: childClientIds,
-            };
-          }));
-        }
+          return {
+            id: `child-${idx}-${Date.now()}`,
+            name: c.name || '',
+            type: childTypeId,
+            client: childClientIds,
+          };
+        }));
+      }
     }
 
     return () => { mounted = false; };
-  }, [initialData, mode]);
+  }, [mode, initialData]);
 
   // Confirmation modal removed
   // Remove unused modal-related functions
@@ -189,7 +189,10 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
       if (el) {
         try {
           el.focus();
-        } catch (e: unknown) { void e; }
+        } catch (e) {
+          // ignore
+            console.error(e);
+        }
         setLastAddedId(null);
         return true;
       }
@@ -286,7 +289,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
       } else {
         await createGroupAgency(form);
       }
-      
+
       if (onSave && typeof onSave === 'function') {
         const payload = {
           parent: { ...parent, name: parent.name.trim() },
@@ -338,7 +341,9 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
       console.error('Submit failed', err);
       try {
         SweetAlert.showError((err as any)?.message || `Failed to ${mode === 'edit' ? 'update' : 'create'} agency`);
-      } catch { /* no-op */ }
+      } catch (e) {
+            console.error(e);
+       }
     } finally {
       setSubmitting(false);
     }
@@ -352,12 +357,11 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
       transition={{ duration: 0.22 }}
       className="flex-1 overflow-hidden w-full overflow-x-hidden bg-[#F6F8FB] min-h-screen"
     >
-      {/* notification UI handled elsewhere */}
 
       <div className="">
         <MasterFormHeader onBack={onClose} title={mode === 'edit' ? 'Edit Group Agency' : 'Create Group Agency'} />
 
-  <div className="w-full max-w-full mx-auto bg-white rounded-2xl shadow-lg border border-[#E3E8EF] overflow-hidden">
+        <div className="w-full max-w-full mx-auto bg-white rounded-2xl shadow-lg border border-[#E3E8EF] overflow-hidden">
           <div className="p-8 bg-[#F9FAFB] space-y-8">
             <div className="space-y-3">
               <div className="text-base font-semibold text-[#344054] mb-2">Group Agency Details</div>
@@ -380,14 +384,14 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
 
                 <div>
                   <label className="block text-sm text-[#667085] mb-1">Agency Type <span className="text-red-500">*</span></label>
-                    <SelectField
-                      name="parentType"
-                      value={parent.type}
-                      options={agencyTypes}
-                      onChange={(v) => { setParent(prev => ({ ...prev, type: typeof v === 'string' ? v : v[0] ?? '' })); setParentErrors(prev => ({ ...prev, type: undefined })); }}
-                      placeholder="Please Select Agency Type"
-                      inputClassName={`${parentErrors.type ? 'border-red-500' : 'border-[#D0D5DD]'} px-3 py-2 h-11`}
-                    />
+                  <SelectField
+                    name="parentType"
+                    value={parent.type}
+                    options={agencyTypes}
+                    onChange={(v) => { setParent(prev => ({ ...prev, type: typeof v === 'string' ? v : v[0] ?? '' })); setParentErrors(prev => ({ ...prev, type: undefined })); }}
+                    placeholder="Please Select Agency Type"
+                    inputClassName={`${parentErrors.type ? 'border-red-500' : 'border-[#D0D5DD]'} px-3 py-2 h-11`}
+                  />
                   {parentErrors.type && (
                     <div className="text-xs text-red-500 mt-1">{parentErrors.type}</div>
                   )}
@@ -400,7 +404,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                       name="parentClient"
                       value={parent.client}
                       options={agencyClients.map((c: any) => ({ value: String(c.id), label: c.name }))}
-                       onChange={(v) => { setParent(prev => ({ ...prev, client: Array.isArray(v) ? v : [v] })); setParentErrors(prev => ({ ...prev, client: undefined })); }}
+                      onChange={(v) => { setParent(prev => ({ ...prev, client: Array.isArray(v) ? v : [v] })); setParentErrors(prev => ({ ...prev, client: undefined })); }}
                       placeholder={isLoading.agencyClients ? 'Loading clients...' : 'Search or select options'}
                       inputClassName={`border ${parentErrors.client ? 'border-red-500' : 'border-[#D0D5DD]'} px-3 py-2 h-11`}
                       disabled={isLoading.agencyClients}
@@ -455,8 +459,8 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                             setChildErrors(prev => ({ ...prev, [c.id]: { ...prev[c.id], name: undefined } }));
                           }}
                           placeholder="Please Enter Agency Name"
-                            ref={el => { childNameRefs.current[c.id] = el }}
-                            className={`w-full px-3 py-2 h-11 text-sm border rounded-lg bg-white text-[#344054] focus:outline-none focus:ring-2 focus:ring-[#1570EF] ${childErrors[c.id]?.name ? 'border-red-500' : 'border-[#D0D5DD]'}`}
+                          ref={el => { childNameRefs.current[c.id] = el }}
+                          className={`w-full px-3 py-2 h-11 text-sm border rounded-lg bg-white text-[#344054] focus:outline-none focus:ring-2 focus:ring-[#1570EF] ${childErrors[c.id]?.name ? 'border-red-500' : 'border-[#D0D5DD]'}`}
                         />
                         {childErrors[c.id]?.name && (
                           <div className="text-xs text-red-500 mt-1">{childErrors[c.id].name}</div>
@@ -483,7 +487,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                             name={`child-${c.id}-client`}
                             value={Array.isArray(c.client) ? c.client : (c.client ? [c.client] : [])}
                             options={agencyClients.map((cc: any) => ({ value: String(cc.id), label: cc.name }))}
-                             onChange={(v) => { handleUpdateChild(c.id, 'client', Array.isArray(v) ? v : [v]); setChildErrors(prev => ({ ...prev, [c.id]: { ...prev[c.id], client: undefined } })); }}
+                            onChange={(v) => { handleUpdateChild(c.id, 'client', Array.isArray(v) ? v : [v]); setChildErrors(prev => ({ ...prev, [c.id]: { ...prev[c.id], client: undefined } })); }}
                             placeholder={isLoading.agencyClients ? 'Loading clients...' : 'Search or select options'}
                             inputClassName={`border ${childErrors[c.id]?.client ? 'border-red-500' : 'border-[#D0D5DD]'} px-3 py-2 h-11`}
                             disabled={isLoading.agencyClients}

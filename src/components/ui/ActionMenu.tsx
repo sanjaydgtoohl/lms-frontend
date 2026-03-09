@@ -2,7 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { MoreHorizontal, Edit, Eye, Trash, Upload } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { usePermissions } from '../../context/SidebarMenuContext';
+// import { usePermissions } from '../../hooks/SidebarMenuHooks';
+import { usePermissions } from '../../hooks/SidebarMenuHooks';
+
 
 interface ActionMenuProps {
   onEdit?: () => void;

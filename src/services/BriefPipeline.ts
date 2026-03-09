@@ -85,7 +85,9 @@ export async function listBriefs(page = 1, perPage = 10, search?: string): Promi
   const json = res;
   if (!json || !json.success) {
     const message = (json && (json.message || 'Request failed')) || 'Request failed';
-    try { useUiStore.getState().pushError(message); } catch { void 0; }
+    try { useUiStore.getState().pushError(message); } catch {
+      //no need to action
+    }
     throw new Error(message);
   }
 
@@ -162,7 +164,9 @@ export async function getBrief(id: string): Promise<BriefItem> {
   const json = res;
   if (!json || !json.success) {
     const message = (json && (json.message || 'Request failed')) || 'Request failed';
-    try { useUiStore.getState().pushError(message); } catch { void 0; }
+    try { useUiStore.getState().pushError(message); } catch {
+      //no need to action
+    }
     throw new Error(message);
   }
   const raw = json.data as Record<string, unknown>;
@@ -253,7 +257,9 @@ export async function createBrief(payload: Partial<BriefItem>): Promise<BriefIte
   const json = res;
   if (!json || !json.success) {
     const message = (json && (json.message || 'Create failed')) || 'Create failed';
-    try { useUiStore.getState().pushError(message); } catch { void 0; }
+    try { useUiStore.getState().pushError(message); } catch {
+      //no need to action
+    }
     throw new Error(message);
   }
   // normalize single item response
@@ -267,7 +273,9 @@ export async function updateBrief(id: string, payload: Partial<BriefItem>): Prom
   const json = res;
   if (!json || !json.success) {
     const message = (json && (json.message || 'Update failed')) || 'Update failed';
-    try { useUiStore.getState().pushError(message); } catch { void 0; }
+    try { useUiStore.getState().pushError(message); } catch {
+      //no need to action
+    }
     throw new Error(message);
   }
   return ({ id: String(id), ...(json.data || {}) } as BriefItem);
@@ -278,7 +286,9 @@ export async function deleteBrief(id: string): Promise<void> {
   const json = res;
   if (!json || !json.success) {
     const message = (json && (json.message || 'Delete failed')) || 'Delete failed';
-    try { useUiStore.getState().pushError(message); } catch { void 0; }
+    try { useUiStore.getState().pushError(message); } catch {
+      //no need to action
+    }
     throw new Error(message);
   }
 }

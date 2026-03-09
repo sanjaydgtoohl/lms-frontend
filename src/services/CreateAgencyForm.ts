@@ -59,7 +59,9 @@ async function handleResponse<T>(res: any): Promise<T> {
   // resp is ApiResponse<T>
   if (!res || !res.success) {
     const message = (res && (res.message || 'Request failed')) || 'Request failed';
-    try { useUiStore.getState().pushError(message); } catch { void 0; }
+    try { useUiStore.getState().pushError(message); } catch { 
+// no need to action
+}
     throw new Error(message);
   }
   return res.data as T;

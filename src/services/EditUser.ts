@@ -65,7 +65,9 @@ const ENDPOINTS = {
 async function handleResponse<T>(res: any): Promise<T> {
   if (!res) {
     const error = new Error('No response from server');
-    try { handleApiError(error); } catch (err: any) { void err; }
+    try { handleApiError(error); } catch {
+        // no action needed
+    }
     throw error;
   }
 
@@ -74,14 +76,18 @@ async function handleResponse<T>(res: any): Promise<T> {
 
   if (!payload) {
     const error = new Error('Empty response payload');
-    try { handleApiError(error); } catch (err: any) { void err; }
+    try { handleApiError(error); } catch {
+        // no action needed
+    }
     throw error;
   }
 
   // If API indicates failure explicitly
   if (payload.success === false) {
     const error = new Error(payload.message || 'Request failed');
-    try { handleApiError(error); } catch (err: any) { void err; }
+    try { handleApiError(error); } catch {
+        // no action needed
+    }
     throw error;
   }
 
@@ -110,7 +116,9 @@ export async function getUserForEdit(id: string): Promise<EditUserDetail> {
     const error = new Error(err?.message || 'Failed to fetch user');
     try {
       handleApiError(error);
-    } catch (e: any) { void e; }
+    } catch {
+        // no action needed
+    }
     throw error;
   }
 }
@@ -161,7 +169,9 @@ export async function updateUserDetails(
     const error = new Error(err?.message || 'Failed to update user');
     try {
       handleApiError(error);
-    } catch (e: any) { void e; }
+    } catch {
+        // no action needed
+    }
     throw error;
   }
 }

@@ -270,7 +270,9 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
         setErrors((prev) => ({ ...prev, ...nextErrs }));
       } else {
         const msg = respData?.message || err?.message || 'Failed to save user';
-                    try { SweetAlert.showError(String(msg)); } catch { void 0; }
+        try { SweetAlert.showError(String(msg)); } catch{
+          // no need to action
+        }
       }
     } finally {
       setSaving(false);

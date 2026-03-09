@@ -55,12 +55,16 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
       try {
         const { data, error } = await fetchParentPermissions();
         if (!isMounted) return;
+
         if (error) {
           setParentError(error);
           setParentOptions([]);
         } else {
           const opts = Array.isArray(data)
-            ? data.map((p: any) => ({ value: String(p.id), label: p.display_name || p.name || String(p.id) }))
+            ? data.map((p: any) => ({
+              value: String(p.id),
+              label: p.display_name || p.name || String(p.id),
+            }))
             : [];
           setParentOptions(opts);
         }
@@ -69,7 +73,10 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
         setParentError(err?.message || 'Failed to load parent permissions');
         setParentOptions([]);
       } finally {
-        if (isMounted) setParentLoading(false);
+        // Avoid return inside finally
+        if (isMounted) {
+          setParentLoading(false);
+        }
       }
     };
 
@@ -119,7 +126,7 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
         await createPermission(payload);
         SweetAlert.showCreateSuccess();
       }
-      
+
       setTimeout(() => {
         navigate(ROUTES.PERMISSION.ROOT);
       }, 1800);
@@ -158,9 +165,9 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
       transition={{ duration: 0.22 }}
       className="space-y-6"
     >
-      <MasterFormHeader 
-        onBack={handleBack} 
-        title={mode === 'edit' ? 'Edit Permission' : 'Create Permission'} 
+      <MasterFormHeader
+        onBack={handleBack}
+        title={mode === 'edit' ? 'Edit Permission' : 'Create Permission'}
       />
 
       <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
@@ -181,11 +188,10 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
                     setErrors((prev) => ({ ...prev, displayName: '' }));
                   }}
                   placeholder="Please enter display name"
-                  className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
-                    errors.displayName
+                  className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${errors.displayName
                       ? 'border border-red-500 bg-red-50 focus:ring-red-500'
                       : 'border border-[var(--border-color)] focus:ring-blue-500'
-                  }`}
+                    }`}
                   aria-invalid={errors.displayName ? 'true' : 'false'}
                   aria-describedby={errors.displayName ? 'displayName-error' : undefined}
                 />
@@ -216,11 +222,10 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
                     setErrors((prev) => ({ ...prev, name: '' }));
                   }}
                   placeholder="Please enter name"
-                  className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
-                    errors.name
+                  className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${errors.name
                       ? 'border border-red-500 bg-red-50 focus:ring-red-500'
                       : 'border border-[var(--border-color)] focus:ring-blue-500'
-                  }`}
+                    }`}
                   aria-invalid={errors.name ? 'true' : 'false'}
                   aria-describedby={errors.name ? 'name-error' : undefined}
                 />
@@ -266,11 +271,10 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
                   value={form.order}
                   onChange={handleChange}
                   placeholder="Please enter order"
-                  className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
-                    errors.order
+                  className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${errors.order
                       ? 'border border-red-500 bg-red-50 focus:ring-red-500'
                       : 'border border-[var(--border-color)] focus:ring-blue-500'
-                  }`}
+                    }`}
                   aria-invalid={errors.order ? 'true' : 'false'}
                   aria-describedby={errors.order ? 'order-error' : undefined}
                 />
@@ -362,7 +366,7 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
                   options={parentOptions}
                   value={form.parentPermission}
                   onChange={(v) => {
-                    setForm((prev) => ({ ...prev, parentPermission: typeof v === 'string' ? v : v[0] ?? '' }));       
+                    setForm((prev) => ({ ...prev, parentPermission: typeof v === 'string' ? v : v[0] ?? '' }));
                     setErrors((prev) => ({ ...prev, parentPermission: '' }));
                   }}
                   searchable
@@ -388,11 +392,10 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
                 value={form.description}
                 onChange={handleChange}
                 rows={4}
-                className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors resize-none ${
-                  errors.description
+                className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors resize-none ${errors.description
                     ? 'border border-red-500 bg-red-50 focus:ring-red-500'
                     : 'border border-[var(--border-color)] focus:ring-blue-500'
-                }`}
+                  }`}
                 aria-invalid={errors.description ? 'true' : 'false'}
                 aria-describedby={errors.description ? 'description-error' : undefined}
               />

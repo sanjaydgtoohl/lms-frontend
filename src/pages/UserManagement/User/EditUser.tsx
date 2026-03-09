@@ -297,7 +297,9 @@ const EditUser: React.FC = () => {
         setErrors((prev) => ({ ...prev, ...nextErrs }));
       } else {
         const msg = respData?.message || err?.message || 'Failed to update user';
-        try { SweetAlert.showError(String(msg)); } catch { void 0; }
+        try { SweetAlert.showError(String(msg)); } catch {
+          // no need to action
+        }
       }
     } finally {
       setSaving(false);

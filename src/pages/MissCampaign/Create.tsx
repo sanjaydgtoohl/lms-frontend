@@ -200,8 +200,6 @@ const Create: React.FC<CreateProps> = ({
     // normalized string IDs with nested objects (e.g. `lead_sub_source` object),
     // causing select inputs to lose their selected label.
     // Intentionally leave this effect empty to avoid clobbering normalized values.
-     
-    void 0;
   }, [initialData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -273,7 +271,9 @@ const Create: React.FC<CreateProps> = ({
       // dispatch a global update so lists can refresh when user returns
       try {
         window.dispatchEvent(new CustomEvent('missCampaigns:update', { detail: { id: (result as any)?.id } }));
-      } catch { /* no-op */ }
+      } catch {
+        // no need to action
+      }
 
       // For inline mode or if no navigation available, just close
       if (inline || !navigate) {
@@ -288,7 +288,9 @@ const Create: React.FC<CreateProps> = ({
       console.error('Create/Update failed', err);
       const errorMsg = err?.message || 'Failed to save campaign';
       setError(errorMsg);
-      try { SweetAlert.showError(errorMsg); } catch { /* no-op */ }
+      try { SweetAlert.showError(errorMsg); } catch {
+        // no need to action
+      }
     } finally {
       setSaving(false);
     }

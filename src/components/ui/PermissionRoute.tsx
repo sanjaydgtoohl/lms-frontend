@@ -1,7 +1,7 @@
+import { useSidebarMenu } from '../../hooks/SidebarMenuHooks';
 import React from 'react';
 import { PermissionDenied } from './index';
 import { useLocation } from 'react-router-dom';
-import { useSidebarMenu } from '../../context/SidebarMenuContext';
 
 interface PermissionRouteProps {
   children: React.ReactNode;

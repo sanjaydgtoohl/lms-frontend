@@ -90,10 +90,13 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
     let isMounted = true;
     setPriorityLoading(true);
     setPriorityError(null);
+
     const fetchFn = callFeedback ? getPrioritiesByCallStatus(callFeedback) : getPriorities();
+
     fetchFn
       .then((data: any) => {
         if (!isMounted) return;
+
         const fetched = Array.isArray(data)
           ? data.map((item: any) => ({ value: String(item.id), label: item.name }))
           : [];
@@ -109,6 +112,7 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
         if (fetched.length === 1 && !priority) {
           onChange?.({ assignTo, priority: fetched[0].value, callFeedback });
         }
+
         setPriorityLoading(false);
       })
       .catch((error: any) => {
@@ -117,8 +121,11 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
         setPriorityOptions([]);
         setPriorityLoading(false);
       });
-    return () => { isMounted = false; };
-  }, [callFeedback, priority, assignTo, onChange]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [callFeedback, priority, assignTo, onChange]); // ✅ Added all missing dependencies
 
   return (
     <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)]">

@@ -22,10 +22,12 @@ export const updateRoleById = async (
     }
   });
   formData.append('_method', 'Put');
+
   // Use the public request method of apiClient
   const response = await apiClient.customRequest(`/roles/${id}`, {
     method: 'POST',
     data: formData,
   });
+
   return response.data;
 };

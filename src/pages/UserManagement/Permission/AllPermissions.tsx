@@ -91,11 +91,15 @@ const AllPermissions: React.FC = () => {
       setCurrentPage(1);
       // Reload the table from API
       await fetchPermissions();
-      try { SweetAlert.showDeleteSuccess(); } catch { void 0; }
+      try { SweetAlert.showDeleteSuccess(); } catch {
+        // no need to action
+      }
     } catch (err: any) {
        
       console.error('Failed to delete permission', err);
-      try { SweetAlert.showError(err?.message || 'Failed to delete permission'); } catch { void 0; }
+      try { SweetAlert.showError(err?.message || 'Failed to delete permission'); } catch {
+        // no need to action
+      }
     } finally {
       setConfirmLoading(false);
       setConfirmDeleteId(null);

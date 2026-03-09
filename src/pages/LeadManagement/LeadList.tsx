@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Table, { type Column } from '../../components/ui/Table';
 import AssignDropdown from '../../components/ui/AssignDropdown';
 import CallStatusDropdown from '../../components/ui/CallStatusDropdown';
@@ -11,7 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants';
 import { listLeads, listLeadsByStatus, updateLead, deleteLead } from '../../services/AllLeads';
 import { assignUserToLead } from '../../services/leadAssignTo';
-import { usePermissions } from '../../context/SidebarMenuContext';
+import { usePermissions } from '../../hooks/SidebarMenuHooks';
 
 interface Lead {
   id: string;
@@ -131,8 +131,8 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
         const users = Array.isArray(res.data) ? res.data : [];
         setAssignToOptions(users.map((u: any) => ({ id: u.id, name: u.name })));
       } catch {
-          setAssignToOptions([]);
-        }
+        setAssignToOptions([]);
+      }
     };
     loadUsers();
   }, []);
@@ -147,8 +147,8 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
         const options = Array.isArray(resp) ? resp.map((item: any) => item.name).filter(Boolean) : [];
         setCallStatusOptions(options);
       } catch {
-          setCallStatusOptions([]);
-        }
+        setCallStatusOptions([]);
+      }
     };
     loadCallStatuses();
   }, []);
@@ -162,19 +162,20 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
   const [confirmLoading, setConfirmLoading] = useState(false);
 
   // Fetch leads from API
-  const fetchLeads = React.useCallback(async () => {
+  // Wrap fetchLeads in useCallback
+  const fetchLeads = useCallback(async () => {
     try {
       setLoading(true);
       let response;
-      // Use server-side filtering if filterStatus is provided
       if (filterStatus && filterStatus !== 'All') {
-        // Map status name to ID if needed (update this mapping as per your backend)
         const statusIdMap: Record<string, number> = {
           'Interested': 1,
           'Pending': 2,
           'Meeting Done': 3,
           'Brief Pending': 4,
+          'Brief Recieved': 5,
           'Brief Received': 5,
+          'Meeting Scheduled': 6,
           'Meeting Schedule': 6
         };
         const statusId = statusIdMap[filterStatus] || undefined;
@@ -186,16 +187,21 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
       } else {
         response = await listLeads(currentPage, itemsPerPage);
       }
+
       const transformedLeads = response.data.map((item: any) => ({
         id: item.id ? String(item.id) : '',
         agencyName: item.agency?.name || item.agency_name || '',
         brandName: item.brand_name || item.brand?.name || String(item.brand_id || ''),
         contactPerson: item.contact_person || item.name || '',
-        phoneNumber: Array.isArray(item.mobile_number) && item.mobile_number.length > 0 ? item.mobile_number[0].number : (item.mobile_number || item.number || item.phone || item.email || ''),
+        phoneNumber: Array.isArray(item.mobile_number) && item.mobile_number.length > 0
+          ? item.mobile_number[0].number
+          : (item.mobile_number || item.number || item.phone || item.email || ''),
         source: item.lead_source || item.source || '',
         subSource: item.sub_source?.name || item.lead_sub_source?.name || item.lead_sub_source_name || item.lead_sub_source || '',
         assignBy: item.created_by_user?.name || item.assign_by_name || item.created_by || '',
-        assignTo: item.current_assign_user_name || item.assigned_user?.name || (item.current_assign_user && typeof item.current_assign_user === 'object' ? item.current_assign_user.name : '') || item.assign_to_name || '',
+        assignTo: item.current_assign_user_name || item.assigned_user?.name
+          || (item.current_assign_user && typeof item.current_assign_user === 'object' ? item.current_assign_user.name : '')
+          || item.assign_to_name || '',
         dateTime: item.created_at || new Date().toLocaleString(),
         status: item.lead_status_relation?.name || item.lead_status || '',
         callStatus: (() => {
@@ -205,6 +211,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
         callAttempt: Number(item.call_attempt ?? item.callAttempt ?? 0),
         comment: item.comment || item.notes || '',
       }));
+
       setLeads(transformedLeads);
     } catch (error) {
       console.error('Error fetching leads:', error);
@@ -212,11 +219,11 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, filterStatus]);
+  }, [filterStatus, currentPage, itemsPerPage]); // <- Add all external dependencies here
 
   useEffect(() => {
     fetchLeads();
-  }, [currentPage, filterStatus, fetchLeads]);
+  }, [currentPage, filterStatus, fetchLeads]); // ✅ added fetchLeads
 
   // Tooltip state for Comment hover
   const [tooltipVisible, setTooltipVisible] = useState(false);
@@ -272,7 +279,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
       // Special handling for 'Brief' group: include both Received and Pending
       if (filterStatus === 'Brief') {
         if (!(l.status === 'Brief Recieved' || l.status === 'Brief Pending')) return false;
-      } 
+      }
       // Special handling for 'Meeting Scheduled' group: only Meeting Schedule (not Meeting Done)
       else if (filterStatus === 'Meeting Scheduled') {
         if (l.status !== 'Meeting Schedule') return false;
@@ -326,14 +333,15 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
         SweetAlert.showUpdateSuccess();
       } catch (err) {
         console.warn('Failed to persist assignTo change', err);
-        try { SweetAlert.showError('Failed to update assignment'); } catch { /* no-op */ }
+        try { SweetAlert.showError('Failed to update assignment'); } catch {
+          // no need to action
+        }
       }
     })();
   };
 
-  const handleAssignConfirm = async () => {
-    // This is called when user confirms the assignment in the dialog
-    // The actual API call happens after confirmation in handleAssignToChange
+  const handleAssignConfirm = async (_newSalesMan: string) => {
+    void _newSalesMan; // mark as intentionally unused
   };
 
   const handleDelete = (leadId: string) => {
@@ -401,12 +409,14 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
     updateCallStatus();
   };
 
-  const handleCallStatusConfirm = async () => {
+  // const handleCallStatusConfirm = async (_newStatus: string) => {
+  const handleCallStatusConfirm = async (_newStatus: string) => {
+    void _newStatus; // mark as intentionally unused
     // This is called when user confirms the call status change in the dialog
     // The actual API call happens after confirmation in handleCallStatusChange
   };
 
-  
+
 
   // Status is rendered as a non-clickable pill (same as AllLeads)
 
@@ -433,9 +443,9 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
       className: 'min-w-[140px]',
     } as Column<Lead>] : []),
     { key: 'dateTime', header: 'Date & Time', render: (it: Lead) => it.dateTime || '-', className: 'whitespace-nowrap' },
-    { 
-      key: 'status', 
-      header: 'Status', 
+    {
+      key: 'status',
+      header: 'Status',
       render: (it: Lead) => (
         <StatusPill
           label={it.status ?? '-'}
@@ -465,9 +475,9 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
     },
     { key: 'followUp', header: 'Follow-Up / Meeting Type', render: (it: Lead) => it.dateTime || '-', className: 'whitespace-nowrap' },
     { key: 'callAttempt', header: 'Call Attempt', render: (it: Lead) => it.callAttempt ? String(it.callAttempt) : '-', className: 'whitespace-nowrap' },
-    { 
-      key: 'comment', 
-      header: 'Comment', 
+    {
+      key: 'comment',
+      header: 'Comment',
       render: (it: Lead) => (
         <div
           className="cursor-help max-w-[220px]"

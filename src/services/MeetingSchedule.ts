@@ -111,10 +111,10 @@ export async function listMeetings(page = 1, perPage = 10, search?: string): Pro
 
     if (!json || !json.success) {
       const message = (json && (json.message || 'Request failed')) || 'Request failed';
-        try {
+      try {
         useUiStore.getState().pushError(message);
-      } catch (err: any) {
-        void err;
+      } catch {
+        //no need to action
       }
       throw new Error(message);
     }
@@ -146,8 +146,8 @@ export async function getMeeting(id: string): Promise<MeetingScheduleItem> {
       const message = (json && (json.message || 'Request failed')) || 'Request failed';
       try {
         useUiStore.getState().pushError(message);
-      } catch (err: any) {
-        void err;
+      } catch(err){
+        console.log(err);
       }
       throw new Error(message);
     }
@@ -172,8 +172,8 @@ export async function createMeeting(payload: Partial<MeetingScheduleItem>): Prom
       const message = (json && (json.message || 'Create failed')) || 'Create failed';
       try {
         useUiStore.getState().pushError(message);
-      } catch (err: any) {
-        void err;
+      } catch (err){
+        console.log(err);
       }
       throw new Error(message);
     }
@@ -198,8 +198,8 @@ export async function updateMeeting(id: string, payload: Partial<MeetingSchedule
       const message = (json && (json.message || 'Update failed')) || 'Update failed';
       try {
         useUiStore.getState().pushError(message);
-      } catch (err: any) {
-        void err;
+      } catch(err) {
+        console.log(err);
       }
       throw new Error(message);
     }
@@ -224,8 +224,8 @@ export async function deleteMeeting(id: string): Promise<void> {
       const message = (json && (json.message || 'Delete failed')) || 'Delete failed';
       try {
         useUiStore.getState().pushError(message);
-      } catch (err: any) {
-        void err;
+      } catch {
+        // no need to action
       }
       throw new Error(message);
     }

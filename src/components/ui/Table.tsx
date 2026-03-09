@@ -129,8 +129,7 @@ const Table = <T,>(props: TableProps<T>) => {
                               : (() => {
                                 const raw = String((item as Record<string, unknown>)[col.key] ?? '-');
                                 // Don't title-case obvious codes, numbers, or hashes
-                                const datePattern = new RegExp("\\d{2}[-/.]\\d{2}[-/.]\\d{2,4}");
-                                if (raw === '-' || /^[#\d]/.test(raw) || datePattern.test(raw)) return raw;
+                               if (raw === '-' || /^[#\d]/.test(raw) || /\d{2}[-/.]\d{2}[-/.]\d{2,4}/.test(raw)) return raw;
                                 return toTitleCase(raw);
                               })();
 

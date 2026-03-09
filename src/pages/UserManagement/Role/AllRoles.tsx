@@ -83,11 +83,15 @@ const AllRoles: React.FC = () => {
       setCurrentPage(1);
       // Reload the table from API
       await fetchRoles();
-      try { SweetAlert.showDeleteSuccess(); } catch { void 0; }
+      try { SweetAlert.showDeleteSuccess(); } catch {
+        // no need to action
+      }
     } catch (err: any) {
        
       console.error('Failed to delete role', err);
-      try { SweetAlert.showError(err?.message || 'Failed to delete role'); } catch { void 0; }
+      try { SweetAlert.showError(err?.message || 'Failed to delete role'); } catch {
+        // no need to action
+      }
     } finally {
       setConfirmLoading(false);
       setConfirmDeleteId(null);

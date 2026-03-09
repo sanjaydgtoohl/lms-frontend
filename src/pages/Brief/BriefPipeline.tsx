@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import CreateBriefForm from './CreateBriefForm';
 import { apiClient } from '../../utils/apiClient';
-import { usePermissions } from '../../context/SidebarMenuContext';
+import { usePermissions } from '../../hooks/SidebarMenuHooks';
 import MasterView from '../../components/ui/MasterView';
 import Pagination from '../../components/ui/Pagination';
 import Table, { type Column } from '../../components/ui/Table';
@@ -65,14 +65,18 @@ const BriefPipeline: React.FC = () => {
   const confirmDelete = async () => {
     if (!confirmDeleteId) return;
     setConfirmLoading(true);
-      try {
-        await deleteBrief(confirmDeleteId);
-        setBriefs(prev => prev.filter(b => b.id !== confirmDeleteId));
-        setTotalItems(prev => Math.max(0, prev - 1));
-        try { SweetAlert.showDeleteSuccess(); } catch { void 0; }
-      } catch (err) {
+    try {
+      await deleteBrief(confirmDeleteId);
+      setBriefs(prev => prev.filter(b => b.id !== confirmDeleteId));
+      setTotalItems(prev => Math.max(0, prev - 1));
+      try { SweetAlert.showDeleteSuccess(); } catch {
+        //no need to action
+      }
+    } catch (err) {
       console.error('Failed to delete brief', err);
-      try { SweetAlert.showError((err as any)?.message || 'Failed to delete brief'); } catch { void 0; }
+      try { SweetAlert.showError((err as any)?.message || 'Failed to delete brief'); } catch {
+        // no need to action
+      }
     } finally {
       setConfirmLoading(false);
       setConfirmDeleteId(null);
@@ -112,7 +116,7 @@ const BriefPipeline: React.FC = () => {
       const found = briefs.find(b => b.id === id) || null;
       const patchSubmissionFields = (item: any) => {
         // If item.submission_date exists, parse and add submissionDate/submissionTime
-            if (item && item.submission_date) {
+        if (item && item.submission_date) {
           try {
             const dateObj = new Date(item.submission_date);
             if (!isNaN(dateObj.getTime())) {
@@ -124,7 +128,9 @@ const BriefPipeline: React.FC = () => {
               item.submissionDate = `${dd}-${mm}-${yyyy}`;
               item.submissionTime = `${hh}:${min}`;
             }
-          } catch { void 0; }
+          } catch { 
+// no need to action
+}
         }
         return item;
       };
@@ -204,8 +210,8 @@ const BriefPipeline: React.FC = () => {
         const users = Array.isArray(res.data) ? res.data : [];
         setAssignToOptions(users.map((u: any) => ({ id: u.id, name: u.name })));
       } catch {
-          setAssignToOptions([]);
-        }
+        setAssignToOptions([]);
+      }
     };
     loadUsers();
   }, []);
@@ -226,16 +232,20 @@ const BriefPipeline: React.FC = () => {
       }
     } catch (err) {
       console.error('Failed to update assignee', err);
-      try { SweetAlert.showError('Failed to update assignment'); } catch { void 0; }
+      try { SweetAlert.showError('Failed to update assignment'); } catch {
+        // no need to action
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAssignConfirm = async () => {
-    // This is called when user confirms the assignment in the dialog; no-op here
-    void 0;
-  };
+  const handleAssignConfirm = async (_newPlanner: string) => {
+    void _newPlanner; 
+  // This is called when user confirms the assignment in the dialog
+  // The actual API call happens after confirmation in handleAssignToChange
+  // intentionally empty for now
+};
 
   const handleSaveEdited = async (updated: Partial<Brief>) => {
     if (!updated.id) return;
@@ -338,17 +348,22 @@ const BriefPipeline: React.FC = () => {
         }
       } catch (err) {
         console.error('Failed to update status', err);
-        try { SweetAlert.showError('Failed to update status'); } catch { void 0; }
+        try { SweetAlert.showError('Failed to update status'); } catch {
+          // no need to action
+        }
       } finally {
         setLoading(false);
       }
     })();
   };
 
-  const handleStatusConfirm = async () => {
-    // This is called when user confirms the status change in the dialog; no-op here
-    void 0;
-  };
+    const handleStatusConfirm = async (_newStatus: string) => {
+        void _newStatus; // mark as intentionally unused
+      // This is called when user confirms the status change in the dialog
+      // The actual API call happens after confirmation in handleSelectStatus
+      // intentionally empty for now
+    };
+
 
   return (
     <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">

@@ -1,38 +1,3 @@
-let pendingResolver: ((token: string | null) => void) | null = null;
-
-// Module-level variables for Google Identity Services
-
-let accessToken: string | null = null;
-let tokenClient: any = null;
-
-
-// Initialize Google Identity Services client
-export function initGmail() {
-  // Initialize the Google Identity Services token client
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'YOUR_CLIENT_ID';
-  const scopes = 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send';
-  if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
-    throw new Error('Google Identity Services SDK not loaded.');
-  }
-  tokenClient = window.google.accounts.oauth2.initTokenClient({
-    client_id: clientId,
-    scope: scopes,
-    callback: (response: { access_token?: string; error?: string }) => {
-      if (response && response.access_token) {
-        accessToken = response.access_token;
-        if (pendingResolver) {
-          pendingResolver(response.access_token);
-          pendingResolver = null;
-        }
-      } else {
-        if (pendingResolver) {
-          pendingResolver(null);
-          pendingResolver = null;
-        }
-      }
-    },
-  });
-}
 // Gmail integration using Google Identity Services (browser)
 // Usage:
 // 1. Set your client id in an env var: VITE_GOOGLE_CLIENT_ID
@@ -47,7 +12,47 @@ export function initGmail() {
 // async function signInAndSend() {
 //   await gmailService.requestAccessToken();
 //   await gmailService.sendEmail('recipient@example.com', 'Hello', '<p>Hi</p>')
+// }
 
+let tokenClient: any = null;
+let accessToken: string | null = null;
+let pendingResolver: ((token: string | null) => void) | null = null;
+
+export function initGmail(clientId: string, scopes: string[] = [
+  'https://www.googleapis.com/auth/gmail.send',
+  'https://www.googleapis.com/auth/gmail.readonly',
+]) {
+  if (!(window as any).google) {
+    throw new Error('Google Identity Services script not loaded. Add the script to index.html');
+  }
+
+  // Basic runtime validation to help debug invalid_client errors
+  try {
+    const origin = window.location.origin;
+
+    console.info('[gmailService] initGmail', { clientId, origin, scopes });
+
+    if (!clientId || clientId === 'YOUR_CLIENT_ID' || clientId.indexOf('apps.googleusercontent.com') === -1) {
+      console.error('[gmailService] Invalid Google client id. Please set VITE_GOOGLE_CLIENT_ID in .env to your Web OAuth Client ID.');
+      throw new Error('Invalid Google client id. Please set VITE_GOOGLE_CLIENT_ID to your Web OAuth Client ID.');
+    }
+  } catch (error) {
+    console.error('[gmailService] initGmail unexpected error', error);
+    throw error; // re-throw to keep original functionality
+  }
+
+  tokenClient = (window as any).google.accounts.oauth2.initTokenClient({
+    client_id: clientId,
+    scope: scopes.join(' '),
+    callback: (resp: any) => {
+      accessToken = resp?.access_token || null;
+      if (pendingResolver) {
+        pendingResolver(accessToken);
+        pendingResolver = null;
+      }
+    },
+  });
+}
 
 export function getAccessToken(): string | null {
   return accessToken;
@@ -56,7 +61,7 @@ export function getAccessToken(): string | null {
 export function requestAccessToken(prompt: 'none' | 'consent' | 'select_account' = 'consent') {
   return new Promise<string>((resolve, reject) => {
     if (!tokenClient) return reject(new Error('tokenClient not initialized. Call initGmail(clientId)'));
-    pendingResolver = (token: string | null) => {
+    pendingResolver = (token) => {
       if (token) resolve(token);
       else reject(new Error('Failed to obtain access token'));
     };
@@ -143,7 +148,7 @@ async function attemptFetchWithRetries(path: string, opts: RequestInit = {}) {
       // Handle 401 Unauthorized - token likely expired
       if (res.status === 401) {
         accessToken = null;
-         
+
         console.warn('[gmailService] Access token expired, requesting new one');
         try {
           await requestAccessToken('none').catch(() => {
@@ -196,7 +201,7 @@ export async function sendEmail(to: string, subject: string, htmlBody: string, a
   } else {
     // Complex case: build multipart message with attachments
     const boundary = `boundary_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     // Build headers
     const headers = [
       `To: ${to}`,
@@ -215,7 +220,7 @@ export async function sendEmail(to: string, subject: string, htmlBody: string, a
     for (const file of attachmentFiles) {
       const fileBuffer = await file.arrayBuffer();
       const fileBytes = new Uint8Array(fileBuffer);
-      
+
       // Convert to base64 without causing stack overflow
       let base64Data = '';
       const chunkSize = 8192;
@@ -291,10 +296,10 @@ function findBodyFromPayload(payload: any): { text?: string; html?: string } {
   if (payload.parts && Array.isArray(payload.parts)) {
     let htmlBody: string | undefined;
     let textBody: string | undefined;
-    
+
     for (const part of payload.parts) {
       const mimeType = (part.mimeType || '').toLowerCase();
-      
+
       // Prefer multipart/alternative structure: text/plain first, then text/html
       if (mimeType === 'text/html' && part.body?.data) {
         if (!htmlBody) {
@@ -311,11 +316,11 @@ function findBodyFromPayload(payload: any): { text?: string; html?: string } {
         if (found.text && !textBody) textBody = found.text;
       }
     }
-    
+
     // Return HTML if available, else text
     if (htmlBody) return { html: htmlBody };
     if (textBody) return { text: textBody };
-    
+
     // Fallback: try recursion on first part that isn't explicitly a multipart
     for (const part of payload.parts) {
       const found = findBodyFromPayload(part);
@@ -373,7 +378,7 @@ export async function downloadAttachment(messageId: string, attachmentId: string
   try {
     // Check if token exists, if not request one
     if (!accessToken) {
-       
+
       console.warn('[gmailService] Access token missing, requesting new one for download');
       await requestAccessToken('none').catch(() => {
         // If 'none' fails (token expired), try with consent
@@ -390,11 +395,11 @@ export async function downloadAttachment(messageId: string, attachmentId: string
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    
-     
+
+
     console.debug('[gmailService] Downloaded attachment:', filename);
   } catch (err) {
-     
+
     console.error('[gmailService] Failed to download attachment:', err);
     throw err;
   }
@@ -413,7 +418,7 @@ export async function fetchAttachmentBlob(messageId: string, attachmentId: strin
     const blob = new Blob([bytes], { type: mimeType || 'application/octet-stream' });
     return blob;
   } catch (err) {
-     
+
     console.error('[gmailService] fetchAttachmentBlob error', err);
     throw err;
   }

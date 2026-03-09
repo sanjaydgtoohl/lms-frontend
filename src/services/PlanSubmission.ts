@@ -46,6 +46,7 @@ export async function uploadPlanSubmission(
   if (backupFile) {
     formData.append('backup_plan', backupFile);
   }
+
   const response = await api.customRequest<PlanSubmissionResponse>(
     `/briefs/${briefId}/planners`,
     { method: 'POST', data: formData }
@@ -96,7 +97,7 @@ export interface BriefDetail {
     percentage?: string | null;
   };
   priority: {
-      // Removed duplicate import statement
+    // Removed duplicate import statement
     name: string;
   };
   planner_status?: string | null;
@@ -115,7 +116,7 @@ export interface GetBriefByIdResponse {
  * @returns BriefDetail object
  */
 export async function getBriefById(id: number): Promise<BriefDetail> {
-  const response = await api.customRequest<BriefDetail>(`/briefs/${id}`);
-  console.log('Raw API response:', response);
-  return response.data;
+ const response = await api.customRequest<BriefDetail>(`/briefs/${id}`);
+console.log('Raw API response:', response);
+return response.data;
 }

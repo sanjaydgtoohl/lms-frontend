@@ -10,7 +10,8 @@ import { MasterHeader } from '../components/ui';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import SearchBar from '../components/ui/SearchBar';
 import { listIndustries, deleteIndustry, updateIndustry, type Industry as ApiIndustry } from '../services/IndustryMaster';
-import { usePermissions } from '../context/SidebarMenuContext';
+import { usePermissions } from '../hooks/SidebarMenuHooks';
+
 import SweetAlert from '../utils/SweetAlert';
 
 interface Industry {
@@ -22,7 +23,7 @@ interface Industry {
 const IndustryMaster: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);
-  
+
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const itemsPerPage = 10;
@@ -97,7 +98,7 @@ const IndustryMaster: React.FC = () => {
   const [viewItem, setViewItem] = useState<Industry | null>(null);
   const [editItem, setEditItem] = useState<Industry | null>(null);
 
-  const refresh = React.useCallback(async (page = currentPage, search = searchQuery) => {
+  const refresh = async (page = currentPage, search = searchQuery) => {
     setLoading(true);
     setError(null);
     try {
@@ -152,9 +153,13 @@ const IndustryMaster: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchQuery, itemsPerPage]);
+  };
 
-  useEffect(() => { refresh(currentPage, searchQuery); }, [currentPage, searchQuery, refresh]);
+  useEffect(() => {
+    refresh(currentPage, searchQuery);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, searchQuery]);
+
 
   // sync UI with route
   useEffect(() => {
@@ -227,7 +232,7 @@ const IndustryMaster: React.FC = () => {
       ) : viewItem ? (
         <MasterView item={viewItem} onClose={() => navigate(ROUTES.INDUSTRY_MASTER)} />
       ) : editItem ? (
-  <MasterEdit item={editItem} onClose={() => navigate(ROUTES.INDUSTRY_MASTER)} onSave={handleSaveEditedIndustry} hideSource nameLabel="Industry" />
+        <MasterEdit item={editItem} onClose={() => navigate(ROUTES.INDUSTRY_MASTER)} onSave={handleSaveEditedIndustry} hideSource nameLabel="Industry" />
       ) : (
         <>
           <MasterHeader
@@ -240,14 +245,14 @@ const IndustryMaster: React.FC = () => {
             <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-semibold text-gray-900">Industry Master</h2>
-                <SearchBar 
-                  placeholder="Search Industry" 
+                <SearchBar
+                  placeholder="Search Industry"
                   delay={300}
-                  onSearch={(q: string) => { 
-                    setSearchQuery(q); 
-                    setCurrentPage(1); 
-                    refresh(1, q); 
-                  }} 
+                  onSearch={(q: string) => {
+                    setSearchQuery(q);
+                    setCurrentPage(1);
+                    refresh(1, q);
+                  }}
                 />
               </div>
             </div>
@@ -263,28 +268,29 @@ const IndustryMaster: React.FC = () => {
 
             <div className="pt-0 overflow-visible">
               <Table
-              data={currentData}
-              startIndex={startIndex}
-              loading={loading}
-              desktopOnMobile={true}
-              keyExtractor={(it: any, idx: number) => `${it.id}-${idx}`}
-              columns={([
-                { key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },
-                { key: 'name', header: 'Industry Name', render: (it: any) => it.name || '-' },
-                { key: 'dateTime', header: 'Date & Time', render: (it: any) => {
-                    if (!it.dateTime) return '-';
-                    const d = new Date(it.dateTime);
-                    return isNaN(d.getTime()) ? String(it.dateTime) : d.toLocaleString();
-                  }
-                },
-              ] as Column<any>[])}
-              onEdit={(it: any) => handleEdit(it.id)}
-              onView={(it: any) => handleView(it.id)}
-              onDelete={(it: any) => handleDelete(it.id)}
-              editPermissionSlug="industry.edit"
-              viewPermissionSlug="industry.view"
-              deletePermissionSlug="industry.delete"
-            />
+                data={currentData}
+                startIndex={startIndex}
+                loading={loading}
+                desktopOnMobile={true}
+                keyExtractor={(it: any, idx: number) => `${it.id}-${idx}`}
+                columns={([
+                  { key: 'sr', header: 'Sr. No.', render: (it: any) => String(startIndex + currentData.indexOf(it) + 1) },
+                  { key: 'name', header: 'Industry Name', render: (it: any) => it.name || '-' },
+                  {
+                    key: 'dateTime', header: 'Date & Time', render: (it: any) => {
+                      if (!it.dateTime) return '-';
+                      const d = new Date(it.dateTime);
+                      return isNaN(d.getTime()) ? String(it.dateTime) : d.toLocaleString();
+                    }
+                  },
+                ] as Column<any>[])}
+                onEdit={(it: any) => handleEdit(it.id)}
+                onView={(it: any) => handleView(it.id)}
+                onDelete={(it: any) => handleDelete(it.id)}
+                editPermissionSlug="industry.edit"
+                viewPermissionSlug="industry.view"
+                deletePermissionSlug="industry.delete"
+              />
             </div>
           </div>
 

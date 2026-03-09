@@ -175,10 +175,8 @@ const MeetingSchedule: React.FC = () => {
       }, 1800);
     } catch (error: any) {
       console.error('Error saving meeting:', error);
-      try {
-        SweetAlert.showError(error?.message || 'Failed to save meeting');
-      } catch (err: any) {
-        void err;
+      try { SweetAlert.showError(error?.message || 'Failed to save meeting'); } catch {
+        //  no need to action
       }
     }
   };

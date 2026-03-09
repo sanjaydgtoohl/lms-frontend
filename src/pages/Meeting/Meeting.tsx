@@ -10,7 +10,7 @@ import MasterHeader from '../../components/ui/MasterHeader';
 import SearchBar from '../../components/ui/SearchBar';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import AttendeesModal from '../../components/ui/AttendeesModal';
-import { usePermissions } from '../../context/SidebarMenuContext';
+import { usePermissions } from '../../hooks/SidebarMenuHooks';
 
 // Dummy data and functions for Meeting pipeline (replace with real API calls)
 

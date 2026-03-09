@@ -12,7 +12,8 @@ import ConfirmDialog from '../components/ui/ConfirmDialog';
 import AgenciesModal from '../components/ui/AgenciesModal';
 import { deleteBrand } from '../services/BrandMaster';
 import { listBrands, getBrand, type BrandItem as ServiceBrandItem } from '../services/BrandMaster';
-import { usePermissions } from '../context/SidebarMenuContext';
+import { usePermissions } from '../hooks/SidebarMenuHooks';
+
 import SweetAlert from '../utils/SweetAlert';
 
 type Brand = ServiceBrandItem;

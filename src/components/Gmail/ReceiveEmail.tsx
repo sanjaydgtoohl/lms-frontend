@@ -6,6 +6,7 @@ import gmailService from '../../services/gmailService';
 import SweetAlert from '../../utils/SweetAlert';
 import DOMPurify from 'dompurify';
 
+const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'YOUR_CLIENT_ID';
 
 interface EmailAttachment {
   id: string; // attachmentId
@@ -241,7 +242,7 @@ export default function ReceiveEmail() {
     // simple bold for *text*
     const bolded = escaped.replace(/\*(.*?)\*/g, '<strong>$1</strong>');
     // convert URLs to clickable links
-    const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`]+)/g;
+    const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`[\]]*)/g;
     const withLinks = bolded.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: #0066cc; text-decoration: underline; word-break: break-word;">$1</a>');
     // paragraphs: two newlines -> paragraph, single newline -> <br />
     const paragraphs = withLinks.split(/\n\n+/g).map((p) => p.replace(/\n/g, '<br/>'));
@@ -274,7 +275,10 @@ export default function ReceiveEmail() {
     // Escape and preserve line breaks for forwarded block
     const escape = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const forwardedEscaped = escape(after)
-      .replace(/(https?:\/\/[^\s<>"{}|\\^`]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:#0066cc;text-decoration:underline;">$1</a>')
+.replace(
+  /(https?:\/\/[^\s<>"{}|\\^`[\]]*)/g, 
+  '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:#0066cc;text-decoration:underline;">$1</a>'
+)
       .replace(/\n\n+/g, '</p><p>')
       .replace(/\n/g, '<br/>');
 
@@ -286,7 +290,7 @@ export default function ReceiveEmail() {
 
   useEffect(() => {
     try {
-      gmailService.initGmail();
+      gmailService.initGmail(CLIENT_ID);
     } catch (e) {
       console.warn('Gmail init error', e);
     }

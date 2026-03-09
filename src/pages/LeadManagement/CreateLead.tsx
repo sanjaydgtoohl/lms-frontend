@@ -39,14 +39,14 @@ const CreateLead: React.FC = () => {
         valid = !!value;
       }
       if (valid) {
-        const restFields = { ...(prev[contactId] || {}) };
-        delete restFields[field as string];
+        const { [field]: omit, ...restFields } = prev[contactId] || {};
+        void omit; // mark as intentionally unused
         const updated = { ...prev, [contactId]: restFields };
-        // Remove contactId if no errors left
+
         if (Object.keys(updated[contactId] || {}).length === 0) {
-          const newPrev = { ...updated } as Record<string, Partial<Record<string, string>>>;
-          delete newPrev[contactId];
-          return newPrev;
+          const { [contactId]: omitId, ...rest } = updated;
+          void omitId; // mark as intentionally unused
+          return rest;
         }
         return updated;
       }
@@ -218,7 +218,9 @@ const CreateLead: React.FC = () => {
       } catch (err: any) {
         const msg = err?.message || 'Failed to create lead';
         setError(msg);
-        try { SweetAlert.showError(msg); } catch { void 0; }
+        try { SweetAlert.showError(msg); } catch {
+          // no need to action
+        }
       } finally {
         setSaving(false);
       }
