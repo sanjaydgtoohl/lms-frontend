@@ -136,6 +136,33 @@ const Dashboard: React.FC = () => {
 
   const dismissMeeting = (id: number) => setMeetings(prev => prev.filter(m => m.id !== id));
 
+  const progressTopics = [
+    {
+      abbr: 'ST',
+      title: 'Sales Team Onboarding',
+      meta: 'Assigned to: Mike, Ashish',
+      percent: 76,
+      colorBg: 'bg-indigo-100',
+      colorText: 'text-indigo-700',
+    },
+    {
+      abbr: 'CM',
+      title: 'Campaign Manager Training',
+      meta: 'Assigned to: Parul, Rakesh',
+      percent: 52,
+      colorBg: 'bg-rose-100',
+      colorText: 'text-rose-700',
+    },
+    {
+      abbr: 'PR',
+      title: 'Product Review Cycle',
+      meta: 'Due: Dec 20',
+      percent: 34,
+      colorBg: 'bg-emerald-100',
+      colorText: 'text-emerald-700',
+    },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Top stats */}
@@ -291,10 +318,10 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Progress */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-800">Progress Topics</h2>
+      {/* Progress Topics */}
+      <SimpleListCard
+        title={`Progress Topics`}
+        headerRight={(
           <div className="flex items-center gap-3">
             <p className="text-xs text-gray-500">Overview</p>
             <select className="text-xs border border-gray-200 rounded px-2 py-1 bg-white">
@@ -303,64 +330,28 @@ const Dashboard: React.FC = () => {
               <option>All time</option>
             </select>
           </div>
-        </div>
-
-        <div className="mt-4 space-y-4">
+        )}
+        items={progressTopics}
+        renderItem={(topic) => (
           <div className="flex items-center justify-between">
             <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-semibold">ST</div>
+              <div className={`flex-shrink-0 w-10 h-10 rounded-full ${topic.colorBg} ${topic.colorText} flex items-center justify-center font-semibold`}>{topic.abbr}</div>
               <div>
-                <p className="text-sm font-medium text-gray-900">Sales Team Onboarding</p>
-                <p className="text-xs text-gray-500 mt-1">Assigned to: <span className="text-gray-700 font-medium">Mike, Ashish</span></p>
+                <p className="text-sm font-medium text-gray-900">{topic.title}</p>
+                <p className="text-xs text-gray-500 mt-1">{topic.meta.includes('Assigned') ? <><span className="text-gray-700 font-medium">{topic.meta.replace('Assigned to: ', '')}</span></> : topic.meta}</p>
               </div>
             </div>
             <div className="w-1/3 text-right">
               <div className="flex items-center justify-end gap-3">
-                <span className="text-xs text-gray-600 font-medium">76%</span>
+                <span className="text-xs text-gray-600 font-medium">{topic.percent}%</span>
               </div>
               <div className="w-full bg-gray-100 rounded-full h-2 mt-2">
-                <div className="bg-indigo-600 h-2 rounded-full" style={{ width: '76%' }} />
+                <div className="bg-indigo-600 h-2 rounded-full" style={{ width: `${topic.percent}%` }} />
               </div>
             </div>
           </div>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center font-semibold">CM</div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">Campaign Manager Training</p>
-                <p className="text-xs text-gray-500 mt-1">Assigned to: <span className="text-gray-700 font-medium">Parul, Rakesh</span></p>
-              </div>
-            </div>
-            <div className="w-1/3 text-right">
-              <div className="flex items-center justify-end gap-3">
-                <span className="text-xs text-gray-600 font-medium">52%</span>
-              </div>
-              <div className="w-full bg-gray-100 rounded-full h-2 mt-2">
-                <div className="bg-indigo-600 h-2 rounded-full" style={{ width: '52%' }} />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-semibold">PR</div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">Product Review Cycle</p>
-                <p className="text-xs text-gray-500 mt-1">Due: <span className="text-gray-700 font-medium">Dec 20</span></p>
-              </div>
-            </div>
-            <div className="w-1/3 text-right">
-              <div className="flex items-center justify-end gap-3">
-                <span className="text-xs text-gray-600 font-medium">34%</span>
-              </div>
-              <div className="w-full bg-gray-100 rounded-full h-2 mt-2">
-                <div className="bg-indigo-600 h-2 rounded-full" style={{ width: '34%' }} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+        )}
+      />
     </div>
   );
 };

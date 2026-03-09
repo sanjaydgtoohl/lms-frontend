@@ -266,9 +266,31 @@ body {
   min-height: 100vh;
 }
 
-/* Bell button: only the inner SVG icon should show active/click feedback.
-   The outer button remains transparent and borderless. */
-/* Notification button styles */
+html {
+  overflow-y: scroll;
+
+  scrollbar-gutter: stable;
+}
+
+body {
+  scrollbar-gutter: stable;
+}
+
+body.swal2-shown,
+body.swal2-height-auto,
+html.swal2-shown,
+html.swal2-height-auto {
+  padding-right: 0 !important;
+  margin-right: 0 !important;
+  overflow-y: auto !important;
+  scrollbar-gutter: stable;
+}
+
+/* Ensure the SweetAlert2 container doesn't cause document reflow */
+.swal2-container {
+  -webkit-overflow-scrolling: touch;
+}
+
 .notification-btn {
   position: relative;
   width: 36px;

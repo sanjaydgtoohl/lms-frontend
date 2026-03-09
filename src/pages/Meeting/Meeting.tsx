@@ -49,6 +49,7 @@ const MeetingPipeline: React.FC = () => {
         setTotalItems(res.meta.pagination.total);
       } catch {
         // Optionally handle error
+        void 0;
       }
       setLoading(false);
     };

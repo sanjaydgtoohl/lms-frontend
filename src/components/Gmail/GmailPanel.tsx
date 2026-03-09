@@ -4,7 +4,6 @@ import SweetAlert from '../../utils/SweetAlert';
 
 import './gmailPanel.css';
 
-const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'YOUR_CLIENT_ID';
 
 export default function GmailPanel() {
   const [messages, setMessages] = useState<any[]>([]);
@@ -18,7 +17,7 @@ export default function GmailPanel() {
 
   useEffect(() => {
     try {
-      gmailService.initGmail(CLIENT_ID);
+      gmailService.initGmail();
     } catch (e) {
       console.warn('Gmail init error', e);
     }

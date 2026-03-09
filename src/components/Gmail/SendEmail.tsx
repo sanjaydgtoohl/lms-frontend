@@ -3,7 +3,6 @@ import gmailService from '../../services/gmailService';
 import { MasterFormHeader } from '../../components/ui';
 import { Trash2 } from 'lucide-react';
 
-const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'YOUR_CLIENT_ID';
 
 interface AttachedFile {
   name: string;
@@ -20,7 +19,7 @@ export default function SendEmail() {
 
   useEffect(() => {
     try {
-      gmailService.initGmail(CLIENT_ID);
+      gmailService.initGmail();
     } catch (e) {
       console.warn('Gmail init error', e);
     }
