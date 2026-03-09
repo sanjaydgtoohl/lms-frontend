@@ -146,9 +146,8 @@ const EditLead: React.FC = () => {
 
   // Initialize Gmail service
   useEffect(() => {
-    const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'YOUR_CLIENT_ID';
     try {
-      gmailService.initGmail(CLIENT_ID);
+      gmailService.initGmail();
     } catch (e) {
       console.warn('Gmail init error', e);
     }
@@ -162,14 +161,11 @@ const EditLead: React.FC = () => {
       setHistoryLoading(true);
       try {
         const data = await fetchLeadHistory(lead.id);
-        if (!mounted) return;
-        setHistory(Array.isArray(data) ? data : []);
-      } catch (err) {
-        if (!mounted) return;
-        setHistory([]);
+        if (mounted) setHistory(Array.isArray(data) ? data : []);
+      } catch {
+        if (mounted) setHistory([]);
       } finally {
-        if (!mounted) return;
-        setHistoryLoading(false);
+        if (mounted) setHistoryLoading(false);
       }
     };
 
@@ -216,13 +212,13 @@ const EditLead: React.FC = () => {
           }
         }
         setOptions(fetched);
-      } catch (err) {
+      } catch {
         if (!isMounted) return;
         setOptionsError('Failed to load options');
         setOptions([]);
       } finally {
-        if (!isMounted) return;
-        setOptionsLoading(false);
+        // Only set loading to false if still mounted
+        if (isMounted) setOptionsLoading(false);
       }
     };
 
@@ -290,7 +286,7 @@ const EditLead: React.FC = () => {
       navigate('/lead-management/all-leads');
     } catch (error: any) {
       console.error('Error updating lead:', error);
-      try { SweetAlert.showError(error?.message || 'Failed to update lead'); } catch (_) {}
+      try { SweetAlert.showError(error?.message || 'Failed to update lead'); } catch { /* no-op */ }
     }
   };
 

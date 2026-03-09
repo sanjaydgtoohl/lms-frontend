@@ -335,7 +335,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
       try {
         const citiesList = await listCities(stateId ? { state_id: stateId } : undefined);
         newCities = (citiesList || []).map((c: any) => ({ id: String(c.id), name: c.name }));
-        let matched = newCities.find((c: any) => {
+        const matched = newCities.find((c: any) => {
           const nm = String(c.name || '').toLowerCase();
           return nm === String(districtOrName).toLowerCase() || nm === String(po.Name || '').toLowerCase();
         });
@@ -347,7 +347,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
         }
         // Optionally, you can set a state for cities if you want to use it elsewhere
         // setCities(newCities); // Uncomment if you want to keep cities in state
-      } catch (e) {
+      } catch {
         cityValue = districtOrName;
         // setCities([{ id: districtOrName, name: districtOrName }]); // Uncomment if you want to keep cities in state
       }
@@ -441,7 +441,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             }
           }
         }
-      } catch (e) {
+      } catch {
         setAgencies([]);
       }
     }).catch(() => {
@@ -460,15 +460,15 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
           if (items && items.length) {
             const normalized = (items || []).map((it: any) => ({ id: it.id ?? it._id ?? String(it.name || ''), name: it.name ?? it.title ?? it.label ?? '' }));
             setBrandTypes(normalized);
-            // eslint-disable-next-line no-console
+             
             console.warn('Brand types loaded via fallback apiClient.get', normalized);
           } else {
-            // eslint-disable-next-line no-console
+             
             console.warn('Brand types: no items returned from fallback');
           }
         }
       } catch (e) {
-        // eslint-disable-next-line no-console
+         
         console.error('Brand types fallback fetch failed', e);
       }
     })();
@@ -484,15 +484,15 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
           if (items && items.length) {
             const normalized = (items || []).map((it: any) => ({ id: it.id ?? it._id ?? String(it.slug || ''), name: it.name ?? it.title ?? it.label ?? '' }));
             setAgencies(normalized as Agency[]);
-            // eslint-disable-next-line no-console
+             
             console.warn('Agencies loaded via fallback apiClient.get', normalized);
           } else {
-            // eslint-disable-next-line no-console
+             
             console.warn('Agencies: no items returned from fallback');
           }
         }
       } catch (e) {
-        // eslint-disable-next-line no-console
+         
         console.error('Agencies fallback fetch failed', e);
       }
     })();
@@ -508,15 +508,15 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
           if (items && items.length) {
             const normalized = (items || []).map((it: any) => ({ id: it.id ?? it._id ?? String(it.slug || ''), name: it.name ?? it.title ?? it.label ?? '' }));
             setCountries(normalized);
-            // eslint-disable-next-line no-console
+             
             console.warn('Countries loaded via fallback apiClient.get', normalized);
           } else {
-            // eslint-disable-next-line no-console
+             
             console.warn('Countries: no items returned from fallback');
           }
         }
       } catch (e) {
-        // eslint-disable-next-line no-console
+         
         console.error('Countries fallback fetch failed', e);
       }
     })();
@@ -530,7 +530,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
     });
 
     return () => { mounted = false; };
-  }, []);
+  }, [agencies, brandTypes, countries, initialData]);
 
   const formContent = (
     <form onSubmit={handleSubmit} className="space-y-6">

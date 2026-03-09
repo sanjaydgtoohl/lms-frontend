@@ -209,7 +209,7 @@ const EditUser: React.FC = () => {
   };
 
   const validatePhone = (phone: string): boolean => {
-    const phoneRegex = /^[\d\s\-\+\(\)]+$/;
+    const phoneRegex = /^[\d\s\-+()]+$/;
     return phoneRegex.test(phone) && phone.length >= 10;
   };
 
@@ -297,7 +297,7 @@ const EditUser: React.FC = () => {
         setErrors((prev) => ({ ...prev, ...nextErrs }));
       } else {
         const msg = respData?.message || err?.message || 'Failed to update user';
-        try { SweetAlert.showError(String(msg)); } catch (_) {}
+        try { SweetAlert.showError(String(msg)); } catch { void 0; }
       }
     } finally {
       setSaving(false);

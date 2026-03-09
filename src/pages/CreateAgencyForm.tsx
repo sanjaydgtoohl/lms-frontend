@@ -161,7 +161,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
     }
 
     return () => { mounted = false; };
-  }, []);
+  }, [initialData, mode]);
 
   // Confirmation modal removed
   // Remove unused modal-related functions
@@ -189,9 +189,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
       if (el) {
         try {
           el.focus();
-        } catch (e) {
-          // ignore
-        }
+        } catch (e: unknown) { void e; }
         setLastAddedId(null);
         return true;
       }
@@ -340,7 +338,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
       console.error('Submit failed', err);
       try {
         SweetAlert.showError((err as any)?.message || `Failed to ${mode === 'edit' ? 'update' : 'create'} agency`);
-      } catch (e) {}
+      } catch { /* no-op */ }
     } finally {
       setSubmitting(false);
     }
@@ -354,7 +352,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
       transition={{ duration: 0.22 }}
       className="flex-1 overflow-hidden w-full overflow-x-hidden bg-[#F6F8FB] min-h-screen"
     >
-      {/* global notification used via showSuccess/showError; local popup removed */}
+      {/* notification UI handled elsewhere */}
 
       <div className="">
         <MasterFormHeader onBack={onClose} title={mode === 'edit' ? 'Edit Group Agency' : 'Create Group Agency'} />

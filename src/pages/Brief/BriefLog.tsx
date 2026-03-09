@@ -42,7 +42,7 @@ const BriefLog: React.FC = () => {
           setPlannerStatusOptions(res.data.map((item: any) => ({ id: item.id, name: item.name })));
         }
       } catch (e) {
-        // ignore
+        void e;
       }
     };
     load();

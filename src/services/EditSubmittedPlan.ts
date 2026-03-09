@@ -63,7 +63,7 @@ export async function updateSubmittedPlan(
     );
     return response.data;
   } catch (error: any) {
-    // eslint-disable-next-line no-console
+     
     console.error('API error in updateSubmittedPlan:', error, error?.response);
     if (error.response && error.response.data && error.response.data.message) {
       throw new Error(error.response.data.message);

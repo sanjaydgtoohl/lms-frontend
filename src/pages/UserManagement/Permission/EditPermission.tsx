@@ -87,8 +87,7 @@ const EditPermission: React.FC = () => {
         setParentError(err?.message || 'Failed to load parent permissions');
         setParentOptions([]);
       } finally {
-        if (!isMounted) return;
-        setParentLoading(false);
+        if (isMounted) setParentLoading(false);
       }
     };
 

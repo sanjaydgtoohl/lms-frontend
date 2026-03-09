@@ -178,15 +178,10 @@ const DepartmentMaster: React.FC = () => {
 	const handleSaveDepartment = (data: any) => {
 		// Return the promise so the calling form can handle validation errors inline
 		return (async () => {
-			try {
-				await createDepartment({ name: data.name });
-				await refresh();
-				setCurrentPage(1);
-				SweetAlert.showCreateSuccess();
-			} catch (e: any) {
-				// Rethrow so caller can decide whether to show a popup or render inline errors
-				throw e;
-			}
+			await createDepartment({ name: data.name });
+			await refresh();
+			setCurrentPage(1);
+			SweetAlert.showCreateSuccess();
 		})();
 	};
 
@@ -224,7 +219,7 @@ const DepartmentMaster: React.FC = () => {
 	const [viewItem, setViewItem] = useState<Department | null>(null);
 	const [editItem, setEditItem] = useState<Department | null>(null);
 
-	const refresh = async (page = currentPage, search = searchQuery) => {
+	const refresh = React.useCallback(async (page = currentPage, search = searchQuery) => {
 		setLoading(true);
 		setError(null);
 		try {
@@ -260,9 +255,9 @@ const DepartmentMaster: React.FC = () => {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [currentPage, searchQuery, itemsPerPage]);
 
-	useEffect(() => { refresh(currentPage, searchQuery); }, [currentPage, searchQuery]);
+	useEffect(() => { refresh(currentPage, searchQuery); }, [currentPage, searchQuery, refresh]);
 
 	useEffect(() => {
 		const rawId = params.id;

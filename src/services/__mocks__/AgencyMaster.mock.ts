@@ -8,5 +8,8 @@ export const mockAgenciesResponse = {
 };
 
 export function mockListAgencies(page = 1, perPage = 10) {
+  // reference params to avoid unused-var lint errors in mocks
+  void page;
+  void perPage;
   return Promise.resolve(mockAgenciesResponse);
 }

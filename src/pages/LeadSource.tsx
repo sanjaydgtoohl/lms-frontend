@@ -66,7 +66,7 @@ const LeadSource: React.FC = () => {
     // Expose refresh function by assigning to a stable name in outer scope via closure
     (async () => { await fetchData(); })();
     return () => { isMounted = false; };
-  }, [currentPage, searchQuery]);
+  }, [currentPage, searchQuery, itemsPerPage]);
 
   // Helper so other handlers can reload the list after actions
   const refresh = async (page = currentPage, search = searchQuery) => {

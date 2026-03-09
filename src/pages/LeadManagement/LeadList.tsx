@@ -130,9 +130,9 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
         const res = await apiClient.get('/users/list');
         const users = Array.isArray(res.data) ? res.data : [];
         setAssignToOptions(users.map((u: any) => ({ id: u.id, name: u.name })));
-      } catch (err) {
-        setAssignToOptions([]);
-      }
+      } catch {
+          setAssignToOptions([]);
+        }
     };
     loadUsers();
   }, []);
@@ -146,9 +146,9 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
         const resp = await getCallStatuses();
         const options = Array.isArray(resp) ? resp.map((item: any) => item.name).filter(Boolean) : [];
         setCallStatusOptions(options);
-      } catch (err) {
-        setCallStatusOptions([]);
-      }
+      } catch {
+          setCallStatusOptions([]);
+        }
     };
     loadCallStatuses();
   }, []);
@@ -162,7 +162,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
   const [confirmLoading, setConfirmLoading] = useState(false);
 
   // Fetch leads from API
-  const fetchLeads = async () => {
+  const fetchLeads = React.useCallback(async () => {
     try {
       setLoading(true);
       let response;
@@ -174,9 +174,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
           'Pending': 2,
           'Meeting Done': 3,
           'Brief Pending': 4,
-          'Brief Recieved': 5,
           'Brief Received': 5,
-          'Meeting Scheduled': 6,
           'Meeting Schedule': 6
         };
         const statusId = statusIdMap[filterStatus] || undefined;
@@ -214,11 +212,11 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, filterStatus]);
 
   useEffect(() => {
     fetchLeads();
-  }, [currentPage, filterStatus]);
+  }, [currentPage, filterStatus, fetchLeads]);
 
   // Tooltip state for Comment hover
   const [tooltipVisible, setTooltipVisible] = useState(false);
@@ -328,12 +326,12 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
         SweetAlert.showUpdateSuccess();
       } catch (err) {
         console.warn('Failed to persist assignTo change', err);
-        try { SweetAlert.showError('Failed to update assignment'); } catch (_) {}
+        try { SweetAlert.showError('Failed to update assignment'); } catch { /* no-op */ }
       }
     })();
   };
 
-  const handleAssignConfirm = async (_newSalesMan: string) => {
+  const handleAssignConfirm = async () => {
     // This is called when user confirms the assignment in the dialog
     // The actual API call happens after confirmation in handleAssignToChange
   };
@@ -394,7 +392,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
         } else {
           SweetAlert.showError(result.message || 'Failed to update call status');
         }
-      } catch (error) {
+      } catch {
         SweetAlert.showError('Error updating call status');
       } finally {
         setLoading(false);
@@ -403,7 +401,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
     updateCallStatus();
   };
 
-  const handleCallStatusConfirm = async (_newStatus: string) => {
+  const handleCallStatusConfirm = async () => {
     // This is called when user confirms the call status change in the dialog
     // The actual API call happens after confirmation in handleCallStatusChange
   };

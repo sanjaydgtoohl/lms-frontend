@@ -40,7 +40,7 @@ const AllRoles: React.FC = () => {
       const total = res.meta?.pagination?.total ?? res.meta?.total ?? data.length;
       setTotalItems(Number(total || 0));
     } catch (err) {
-      // eslint-disable-next-line no-console
+       
       console.error('Failed to fetch roles', err);
       setRoles([]);
       setTotalItems(0);
@@ -83,11 +83,11 @@ const AllRoles: React.FC = () => {
       setCurrentPage(1);
       // Reload the table from API
       await fetchRoles();
-      try { SweetAlert.showDeleteSuccess(); } catch (_) {}
+      try { SweetAlert.showDeleteSuccess(); } catch { void 0; }
     } catch (err: any) {
-      // eslint-disable-next-line no-console
+       
       console.error('Failed to delete role', err);
-      try { SweetAlert.showError(err?.message || 'Failed to delete role'); } catch (_) {}
+      try { SweetAlert.showError(err?.message || 'Failed to delete role'); } catch { void 0; }
     } finally {
       setConfirmLoading(false);
       setConfirmDeleteId(null);

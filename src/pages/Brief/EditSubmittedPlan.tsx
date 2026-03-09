@@ -47,7 +47,7 @@ const EditSubmittedPlan: React.FC = () => {
         setPlannerData(resp.data.data);
       } catch (error) {
         setPlannerData(null);
-        // eslint-disable-next-line no-console
+         
         console.error('Failed to fetch planner data:', error);
       }
     };
@@ -72,10 +72,10 @@ const EditSubmittedPlan: React.FC = () => {
       formData.append('backup_plan', backupFiles[0]);
     }
     // Debug: log FormData keys and values
-    // eslint-disable-next-line no-console
+     
     console.log('Submitting plan:', { briefId: id, plannerId, planFiles, backupFiles });
     for (const pair of formData.entries()) {
-      // eslint-disable-next-line no-console
+       
       console.log(pair[0], pair[1]);
     }
     try {
@@ -90,7 +90,7 @@ const EditSubmittedPlan: React.FC = () => {
       }
       navigate(-1);
     } catch (err: any) {
-      // eslint-disable-next-line no-console
+       
       console.error('Update plan error:', err, err?.response);
       if (window && (window as any).toast) {
         (window as any).toast.error(err.message || 'Failed to update plan');

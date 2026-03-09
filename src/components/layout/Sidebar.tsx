@@ -74,7 +74,9 @@ const Sidebar: React.FC<SidebarProps> = ({isMobile = false, mobileOpen = false, 
   useEffect(() => {
     if (!isMobile) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onCloseMobile && onCloseMobile();
+      if (e.key === 'Escape') {
+        if (onCloseMobile) onCloseMobile();
+      }
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
@@ -89,19 +91,20 @@ const Sidebar: React.FC<SidebarProps> = ({isMobile = false, mobileOpen = false, 
           dispatch(toggleExpandedItem(itemName));
         };
 
-  // Route aliases map specific routes to the navigation path that should be
-  // considered active. This lets us treat `/lead-management/create` as if the
-  // user is on `/lead-management/all-leads` so the sidebar highlights the
-  // All Leads item while the Create Lead page is open.
-  const routeAliases: Record<string, string> = {
-    "/lead-management/create": "/lead-management/all-leads",
-    "/user-management/permission/create": "/user-management/permission",
-    "/user-management/role/create": "/user-management/role",
-    "/user-management/user/create": "/user-management/user",
-    "/brief/plan-submission": "/brief/log",
-  };
 
-  const getEffectivePath = (pathname: string) => {
+
+  const getEffectivePath = useCallback((pathname: string) => {
+    // Route aliases map specific routes to the navigation path that should be
+    // considered active. This lets us treat `/lead-management/create` as if the
+    // user is on `/lead-management/all-leads` so the sidebar highlights the
+    // All Leads item while the Create Lead page is open.
+    const routeAliases: Record<string, string> = {
+      "/lead-management/create": "/lead-management/all-leads",
+      "/user-management/permission/create": "/user-management/permission",
+      "/user-management/role/create": "/user-management/role",
+      "/user-management/user/create": "/user-management/user",
+      "/brief/plan-submission": "/brief/log",
+    };
     // Handle edit routes with IDs like /user-management/permission/edit/:id, /user-management/role/edit/:id, and /user-management/user/edit/:id
     if (pathname.match(/^\/user-management\/(permission|role|user)\/edit\//)) {
       const match = pathname.match(/^\/user-management\/(\w+)\/edit\//);
@@ -114,7 +117,7 @@ const Sidebar: React.FC<SidebarProps> = ({isMobile = false, mobileOpen = false, 
       return "/lead-management/all-leads";
     }
     // Handle /lead-management/:id to highlight All Leads
-    if (pathname.match(/^\/lead-management\/\d+$/)) {
+    if (pathname.match(/^\/lead-management\/[0-9]+$/)) {
       return "/lead-management/all-leads";
     }
     // Handle /brief/edit-submitted-plan/:id to highlight Brief Log
@@ -130,11 +133,11 @@ const Sidebar: React.FC<SidebarProps> = ({isMobile = false, mobileOpen = false, 
       return "/brief/log";
     }
     // Handle /brief/:id to highlight Brief Pipeline
-    if (pathname.match(/^\/brief\/(?!create|log|Brief_Pipeline|plan-history|plan-submission|edit-submitted-plan)[^\/]+$/)) {
+    if (pathname.match(/^\/brief\/(?!create|log|Brief_Pipeline|plan-history|plan-submission|edit-submitted-plan)[^/]+$/)) {
       return "/brief/Brief_Pipeline";
     }
     return routeAliases[pathname] ?? pathname;
-  };
+  }, []);
 
   // Treat a path as active when the effective pathname is exactly the path
   // or when the effective pathname is a nested route under that path.
@@ -156,7 +159,7 @@ const Sidebar: React.FC<SidebarProps> = ({isMobile = false, mobileOpen = false, 
   useEffect(() => {
     const effectivePath = getEffectivePath(location.pathname);
 
-    let activeParents = navigationItems
+    const activeParents = navigationItems
       .filter((item) =>
         item.children &&
         item.children.some((child) => {
@@ -332,7 +335,7 @@ const Sidebar: React.FC<SidebarProps> = ({isMobile = false, mobileOpen = false, 
           <div
             onClick={() => {
               handleLogout();
-              onCloseMobile && onCloseMobile();
+              if (onCloseMobile) onCloseMobile();
             }}
             className={`flex items-center px-2 py-2 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-all cursor-pointer justify-center`}
           >
@@ -389,7 +392,7 @@ const Sidebar: React.FC<SidebarProps> = ({isMobile = false, mobileOpen = false, 
         </div>
 
         <div
-          onClick={handleLogout}
+          onClick={() => { handleLogout(); }}
           className={`flex items-center px-4 py-2.5 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-all cursor-pointer ${
             isCollapsed ? "px-2 justify-center" : ""
           }`}

@@ -46,7 +46,7 @@ const AllUsers: React.FC = () => {
       const total = res.meta?.pagination?.total ?? res.meta?.total ?? data.length;
       setTotalItems(Number(total || 0));
     } catch (err) {
-      // eslint-disable-next-line no-console
+       
       console.error('Failed to fetch users', err);
       SweetAlert.showError('Failed to fetch users.');
     } finally {
@@ -67,12 +67,12 @@ const AllUsers: React.FC = () => {
       await deleteUser(deleteTarget.id);
       setConfirmOpen(false);
       setDeleteTarget(null);
-      try { SweetAlert.showDeleteSuccess(); } catch (_) {}
+      try { SweetAlert.showDeleteSuccess(); } catch { void 0; }
       fetchUsers();
     } catch (err) {
-      // eslint-disable-next-line no-console
+       
       console.error('Failed to delete user', err);
-      try { SweetAlert.showError('Failed to delete user.'); } catch (_) {}
+      try { SweetAlert.showError('Failed to delete user.'); } catch { void 0; }
     } finally {
       setDeleteLoading(false);
     }
@@ -303,7 +303,7 @@ const AllUsers: React.FC = () => {
           <ConfirmDialog
             isOpen={confirmOpen}
             title="Delete User?"
-            message={deleteTarget ? `Are you sure you want to delete user \"${deleteTarget.name}\"? This action cannot be undone.` : ''}
+            message={deleteTarget ? `Are you sure you want to delete user "${deleteTarget.name}"? This action cannot be undone.` : ''}
             confirmLabel="Delete"
             cancelLabel="Cancel"
             loading={deleteLoading}
