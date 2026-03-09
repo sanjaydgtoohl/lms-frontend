@@ -465,3 +465,51 @@ button[data-btn-label="Update"]:hover {
 .hide-scrollbar::-webkit-scrollbar {
   display: none;  /* Chrome, Safari, Opera */
 }
+
+
+
+
+/* login page css start  */
+
+.login-page{ 
+  @apply bg-[#121212];
+}
+
+.login-card-wrapper {
+  @apply px-8 py-14 rounded-2xl w-[400px] z-20 border-gray-300;
+             border-radius: 50px;
+background: #1E1E1E;
+box-shadow:  5px 5px 10px #131313,
+             -5px -5px 10px #292929;
+}
+
+.login-card-wrapper img {
+  @apply w-60 object-contain mx-auto;
+}
+
+@layer components {
+.login-card-wrapper .input-item {
+    @apply py-4 px-5 w-full rounded-full bg-[#1E1E1E] text-white
+           /* shadow-[inset_5px_5px_1px_#1a1a1a,inset_-5px_-5px_1px_#232323] */
+           border-[#363636] border-2
+           transition-all duration-300 ease-in-out
+           focus:outline-none;
+  }
+}
+
+#particles-js {
+  @apply absolute top-0 left-0 w-full h-full z-10 opacity-40;
+}
+
+.top-wave {
+  @apply absolute top-0 left-0 w-full h-dvh;
+}
+
+.bottom-wave {
+  @apply absolute bottom-0 left-0 w-full w-dvh h-dvh flex items-end;
+}
+
+
+.login-btn {
+    @apply  bg-[#fe6000] text-white w-full rounded-full hover:bg-[#bd4900] border-0 transition-all;
+}

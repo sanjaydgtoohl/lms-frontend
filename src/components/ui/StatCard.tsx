@@ -10,10 +10,10 @@ interface StatCardProps {
 
 const StatCard: React.FC<StatCardProps> = ({ title, value }) => {
   return (
-    <div className="bg-[var(--hover-bg)] p-4 rounded-lg border border-gray-200">
+    <div className="bg-[var(--hover-bg)] p-4 rounded-2xl border border-gray-200 shadow-sm">
       <div className="text-xs text-gray-500">{title}</div>
       <div className="flex items-center justify-between mt-2">
-        <h3 className="text-2xl font-semibold">{value}</h3>
+        <h3 className="text-xl lg:text-3xl font-semibold">{value}</h3>
       </div>
     </div>
   );
