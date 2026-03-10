@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button, Input } from '../../components/ui';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuthStore } from '../../store/auth';
 import { ROUTES } from '../../constants';
 
@@ -21,8 +21,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginCard() {
   const { login, isLoading } = useAuthStore();
-  const [loginError, setLoginError] = useState<string | null>(null); 
-
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   const {
     register,
@@ -33,6 +32,22 @@ export default function LoginCard() {
     resolver: zodResolver(loginSchema),
     mode: 'onSubmit',
   });
+
+  useEffect(() => {
+    window.particlesJS("particles-js", {
+      particles: {
+        number: { value: 80 },
+        color: { value: "#ffffff" },
+        size: { value: 3 },
+        move: { speed: 2 },
+        line_linked: {
+          enable: true,
+          distance: 150,
+          color: "#ffffff"
+        }
+      }
+    });
+  }, []);
 
 
   const onSubmit = async (data: LoginFormData) => {
@@ -60,15 +75,11 @@ export default function LoginCard() {
   return (
     <>
       <div className="relative min-h-dvh inset-0 w-full h-full flex items-center justify-center overflow-hidden login-page">
-       <div id="particles-js"></div>
-{/* 
-       <div className="top-wave">
-          <img src="/top.svg" alt="wabe abs 1" />
-       </div> */}
+        <div id="particles-js"></div>
 
-       <div className="bottom-wave">
+        <div className="bottom-wave">
           <img src="/bottom.svg" alt="wabe abs 1" />
-       </div>
+        </div>
 
         {/* Compact Login Card - Desktop Optimized */}
         <div className="relative login-card-wrapper z-10">
@@ -130,8 +141,6 @@ export default function LoginCard() {
           </form>
         </div>
       </div>
-
     </>
-
   );
 }

@@ -476,7 +476,7 @@ button[data-btn-label="Update"]:hover {
 }
 
 .login-card-wrapper {
-  @apply px-8 py-14 rounded-2xl w-[400px] z-20 border-gray-300;
+  @apply px-8 py-14 rounded-2xl w-[400px] z-20 border-gray-300 mx-3;
              border-radius: 50px;
 background: #1E1E1E;
 box-shadow:  5px 5px 10px #131313,
@@ -509,7 +509,7 @@ box-shadow:  5px 5px 10px #131313,
   @apply absolute bottom-0 left-0 w-full w-dvh h-dvh flex items-end;
 }
 
-
 .login-btn {
     @apply  bg-[#fe6000] text-white w-full rounded-full hover:bg-[#bd4900] border-0 transition-all;
 }
+
