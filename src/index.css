@@ -67,6 +67,9 @@ button,
   -moz-osx-font-smoothing: grayscale;
 }
 
+
+/* #f26222 */
+
 /* Smooth transitions for all interactive elements */
 * {
   transition: all 0.2s ease-in-out;
@@ -513,3 +516,7 @@ box-shadow:  5px 5px 10px #131313,
     @apply  bg-[#fe6000] text-white w-full rounded-full hover:bg-[#bd4900] border-0 transition-all;
 }
 
+
+.shadow-custom {
+  box-shadow: rgba(149, 157, 165, 0.2) 0px 4px 16px;
+}

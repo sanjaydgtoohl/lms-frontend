@@ -64,7 +64,7 @@ const Layout: React.FC = () => {
           <Header showHamburger={isMobile} onHamburgerClick={toggleMobileSidebar} />
 
           {/* Main Content */}
-          <main className="flex-1 overflow-auto w-full overflow-x-hidden px-3 md:px-6 lg:px-8 py-4">
+          <main className="flex-1 overflow-auto w-full overflow-x-hidden px-4 py-4">
             <ErrorBoundary>
               <Outlet />
             </ErrorBoundary>

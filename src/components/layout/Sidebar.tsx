@@ -204,11 +204,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
     // Highlight parent and child when on /miss-campaign/create or /brief/create
     const highlightClass =
       (isMissCampaignRoute && (isMissCampaign || isLiveCampaign)) ||
-        ((isBriefRoute || isBriefCreateRoute) && isBrief)
-        ? "bg-orange-100"
-        : isItemActive
-          ? "bg-orange-100"
-          : "hover:bg-orange-50";
+        ((isBriefRoute || isBriefCreateRoute) && isBrief) ||
+        isItemActive
+        ? "border-l-4 border-orange-500 text-orange-500 bg-transparent"
+        : "border-l-4 border-transparent hover:bg-orange-50 hover:text-orange-500 transition-all duration-200";
 
     const handleCardClick = () => {
       if (hasChildren) {
@@ -226,7 +225,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
       <div key={item.name}>
         <div
           className={`
-            flex items-center justify-between px-4 py-3 text-sm font-medium cursor-pointer rounded-lg
+           flex items-center justify-between px-4 py-3 text-sm font-medium cursor-pointer rounded-sm
             transition-all duration-200 ease-in-out
             ${level > 0 ? "ml-6" : ""}
             ${highlightClass}
@@ -236,8 +235,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
         >
           <div
             className={`flex items-center w-full ${isCollapsed ? "justify-center" : ""
-              }`}
-          >
+              }`} >
+
             {/* Show icon_file image if present, else fallback to icon component */}
             {item.icon_file ? (
               <img
@@ -255,13 +254,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
             )}
             {!isCollapsed && <span className="text-[var(--text-primary)]">{item.name}</span>}
           </div>
+
           {hasChildren && !isCollapsed && (
             <div className="ml-auto">
-              {isExpanded ? (
-                <ChevronDown className="shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)]" />
-              ) : (
-                <ChevronRight className="shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)]" />
-              )}
+              <ChevronRight
+                className={`
+                  shrink-0 w-4 h-4 text-[var(--text-secondary)]
+                  transition-transform duration-300
+                  ${isExpanded ? "rotate-90" : ""}
+                `}
+              />
             </div>
           )}
         </div>
@@ -300,9 +302,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
           </div>
         )}
 
-        {hasChildren && isExpanded && !isCollapsed && (
-          <div className="mt-2 space-y-1">
-            {item.children?.map((child) => renderNavigationItem(child, level + 1))}
+        {hasChildren && !isCollapsed && (
+          <div
+            className={`
+              overflow-hidden transition-all duration-300 ease-in-out
+              ${isExpanded ? "max-h-96 opacity-100 mt-2" : "max-h-0 opacity-0"}
+            `}
+          >
+            <div className="space-y-1">
+              {item.children?.map((child) => renderNavigationItem(child, level + 1))}
+            </div>
           </div>
         )}
       </div>
@@ -356,9 +365,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
   return (
     <div
       className={`
-        flex flex-col fixed left-0 top-0 h-full bg-white border-r border-gray-200 shadow-sm
-        transition-all duration-300 ease-in-out z-30
-        ${isCollapsed ? "w-16" : "w-64"}
+        flex flex-col fixed left-0 top-0 h-full bg-white border-r border-gray-200 shadow-sm transition-all duration-300 ease-in-out z-30 ${isCollapsed ? "w-16" : "w-64"}
       `}
     >
       {/* Logo Section */}
