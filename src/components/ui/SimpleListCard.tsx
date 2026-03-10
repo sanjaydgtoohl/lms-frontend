@@ -12,8 +12,8 @@ interface SimpleListCardProps<T> {
 const SimpleListCard = <T,>({ title, items, renderItem, footer, headerRight, onItemClick }: SimpleListCardProps<T>) => {
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden h-full flex flex-col">
-      <div className="px-5 min-h-16 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold leading-normal text-gray-900 whitespace-nowrap">{title}</h2>
+      <div className="px-4 min-h-14 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white flex items-center justify-between gap-3 ">
+        <h2 className="text-base font-semibold leading-normal text-gray-900 whitespace-nowrap">{title}</h2>
         <div className="ml-auto flex-shrink-0">
           {headerRight}
         </div>
@@ -24,7 +24,7 @@ const SimpleListCard = <T,>({ title, items, renderItem, footer, headerRight, onI
             <div
               key={index}
               onClick={() => onItemClick?.(item, index)}
-              className={`pb-3 last:pb-0 border-b last:border-b-0 border-gray-100 transition-colors ${onItemClick ? 'hover:bg-gray-50 cursor-pointer px-2 py-2 rounded' : ''}`}
+              className={`pb-3 last:pb-0 border-b last:border-b-0 border-gray-200 transition-colors ${onItemClick ? ' cursor-pointer py-2 rounded' : ''}`}
             >
               {renderItem(item, index)}
             </div>

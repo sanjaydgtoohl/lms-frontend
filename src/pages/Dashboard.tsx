@@ -82,7 +82,7 @@ const Dashboard: React.FC = () => {
   // Note: I've replaced your custom CSS variables like [var(--text-primary)]
   // with standard Tailwind color classes for better integration and readability.
   // If you are using a custom theme with CSS variables, you can revert those parts.
-  
+
   const getCurrentPageItems = (items: any[], page: number) => {
     const start = (page - 1) * ITEMS_PER_PAGE;
     const end = start + ITEMS_PER_PAGE;
@@ -166,11 +166,11 @@ const Dashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Top stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 lg:gap-4">
         <StatCard
           title={
             <div className="flex flex-col items-start">
-              <span className="text-lg lg:text-base font-medium text-gray-700 leading-tight">Total Users</span>
+              <span className="text-base lg:text-sm font-medium text-gray-700 leading-tight">Total Users</span>
             </div>
           }
           value={stats.totalUsers}
@@ -178,14 +178,14 @@ const Dashboard: React.FC = () => {
         />
         <StatCard
           title={
-            <span className="text-lg lg:text-base font-medium text-gray-700 leading-tight">Pending Assignments</span>
+            <span className="text-base lg:text-sm font-medium text-gray-700 leading-tight">Pending Assignments</span>
           }
           value={stats.pendingAssignments}
           icon={<FileCheck className="" />}
         />
         <StatCard
           title={
-            <span className="text-lg lg:text-base font-medium text-gray-700 leading-tight">Team Performance</span>
+            <span className="text-base lg:text-sm font-medium text-gray-700 leading-tight">Team Performance</span>
           }
           value={stats.teamPerformance}
           icon={<BarChart3 className="" />}
@@ -193,7 +193,7 @@ const Dashboard: React.FC = () => {
         <StatCard
           title={
             <div className="flex flex-col items-start">
-              <span className="text-lg lg:text-base font-medium text-gray-700 leading-tight">Monthly Revenue</span>
+              <span className="text-base lg:text-sm font-medium text-gray-700 leading-tight">Monthly Revenue</span>
             </div>
           }
           value={formatNumber(monthlyRevenue)}
@@ -202,13 +202,17 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Assignments & Alerts - Side by Side */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 auto-rows-max lg:auto-rows-fr">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 auto-rows-max lg:auto-rows-fr">
         <div className="flex flex-col h-full">
           <SimpleListCard
             title={`Pending Assignments ${loading ? '(Loading...)' : `(${assignments.length})`}`}
             headerRight={(
               <div className="flex items-center gap-2">
-                <select value={assignmentFilter} onChange={(e) => setAssignmentFilter(e.target.value as any)} className="text-xs border border-gray-200 rounded px-2 py-1 bg-white">
+                <select
+                  value={assignmentFilter}
+                  onChange={(e) => setAssignmentFilter(e.target.value as any)}
+                  className="text-sm border border-gray-200 rounded-lg px-2 pr-4 py-2 bg-white bg-[position:20px_20px]"
+                >
                   <option value="all">All</option>
                   <option value="High">High</option>
                   <option value="Medium">Medium</option>
@@ -219,31 +223,35 @@ const Dashboard: React.FC = () => {
             items={currentAssignments}
             onItemClick={(item) => console.log('open assignment', item)}
             renderItem={(assignment) => (
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-2 min-w-0 flex-1">
-                  <div className="w-9 h-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-semibold flex-shrink-0 mt-0.5">
+              <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div className="flex items-start gap-2 min-w-0 sm:flex-1">
+                  <div className="min-w-10 w-10 sm-w-12 aspect-square  rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center   text-xs font-semibold flex-shrink-0 mt-0.5">
                     {deriveInitials(assignment)}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-gray-900">{formatName(assignment.name)}</p>
-                    {(assignment as any).brand && (
-                      <p className="text-xs text-gray-600 mt-1">
-                        <span className="font-medium">Brand Name:</span> {(assignment as any).brand}
-                      </p>
-                    )}
-                    {(assignment as any).sub_source && (
-                      <p className="text-xs text-gray-600">
-                        <span className="font-medium">Source:</span> {(assignment as any).sub_source}
-                      </p>
-                    )}
-                    {(assignment as any).mobile_numbers && (assignment as any).mobile_numbers.length > 0 && (
-                      <p className="text-xs text-gray-600">
-                        <span className="font-medium">Mobile No.:</span> {(assignment as any).mobile_numbers[0]}
-                      </p>
-                    )}
+                    <h5 className="text-sm font-semibold text-gray-900 mb-1">{formatName(assignment.name)}</h5>
+                 
+                    <div className="flex flex-wrap gap-x-4 gap-y-1">
+                        {(assignment as any).brand && (
+                          <p className="text-xs text-gray-600">
+                            <span className="font-medium text-black">Brand Name:</span> {(assignment as any).brand}
+                          </p>
+                        )}
+                        {(assignment as any).sub_source && (
+                          <p className="text-xs text-gray-600">
+                            <span className="font-medium text-black">Source:</span> {(assignment as any).sub_source}
+                          </p>
+                        )}
+                        {(assignment as any).mobile_numbers && (assignment as any).mobile_numbers.length > 0 && (
+                          <p className="text-xs text-gray-600">
+                            <span className="font-medium text-black">Mobile No.:</span> {(assignment as any).mobile_numbers[0]}
+                          </p>
+                        )}
+                    </div>
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-2">
+
+                <div className="flex flex-col items-end gap-2 w-full sm:w-auto">
                   <p className="text-xs text-gray-500">
                     Created: {formatDate((assignment as any).created_at)}
                   </p>
@@ -276,7 +284,7 @@ const Dashboard: React.FC = () => {
 
         <div className="flex flex-col h-full">
           <SimpleListCard
-          title={`Meeting (${meetings.length})`}
+            title={`Meeting (${meetings.length})`}
             items={currentMeetings}
             onItemClick={(item) => console.log('open meeting', item)}
             renderItem={(meeting) => (
@@ -284,7 +292,7 @@ const Dashboard: React.FC = () => {
                 <div className="flex-1">
                   <p className="text-xs text-gray-500">Lead: {meeting.lead.name}</p>
                   <p className="text-xs font-medium text-gray-900">{meeting.title}</p>
-                  <p className="text-xs text-gray-500">Attendees: {meeting.attendees?.map((a: {name: string}) => a.name).join(', ') || 'None'}</p>
+                  <p className="text-xs text-gray-500">Attendees: {meeting.attendees?.map((a: { name: string }) => a.name).join(', ') || 'None'}</p>
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   <p className="text-xs text-gray-500">

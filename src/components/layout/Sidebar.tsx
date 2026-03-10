@@ -323,13 +323,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
     return (
       <div
         aria-hidden={!mobileOpen}
-        className={`fixed top-0 left-0 h-full bg-white border-r border-gray-200 shadow-sm transition-transform duration-300 ease-in-out z-40 transform ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} w-16`}
+        className={` flex flex-col fixed top-0 left-0 h-full bg-white border-r border-gray-200 shadow-sm transition-transform duration-300 ease-in-out z-40 transform ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} w-64`}
         ref={popupRef}
       >
         {/* Render collapsed (icons-only) content inside */}
         <div className="flex h-16 items-center px-2">
-          <div className="w-12 h-12 rounded-lg flex items-center justify-center">
-            <img src={logoUrl} alt="LMS logo" style={{ width: 72, height: 'auto' }} />
+          <div className="w-full h-auto object-contain rounded-lg flex items-center ">
+            <img src={logoUrl} alt="LMS logo" />
           </div>
         </div>
 
@@ -358,6 +358,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
             <LogoutIcon className="shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-red-600" />
           </div>
         </div>
+        
       </div>
     );
   }
@@ -365,7 +366,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
   return (
     <div
       className={`
-        flex flex-col fixed left-0 top-0 h-full bg-white border-r border-gray-200 shadow-sm transition-all duration-300 ease-in-out z-30 ${isCollapsed ? "w-16" : "w-64"}
+        flex flex-col fixed left-0 top-0 h-full bg-white shadow-custom transition-all sidebar-wrapper duration-300 ease-in-out z-30 ${isCollapsed ? "w-16" : "w-64"}
       `}
     >
       {/* Logo Section */}

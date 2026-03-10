@@ -64,7 +64,7 @@ const Header: React.FC<HeaderProps> = ({
               aria-label="Open menu"
               role="button"
               tabIndex={0}
-              className="cursor-pointer p-2 rounded-md hover:bg-gray-100 transition-colors md:hidden focus:outline-none focus:ring-2 focus:ring-[#344054]"
+              className="cursor-pointer p-2 rounded-md hover:bg-gray-100 transition-colors lg:hidden focus:outline-none focus:ring-2 focus:ring-[#344054]"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   onHamburgerClick?.();
@@ -104,19 +104,19 @@ const Header: React.FC<HeaderProps> = ({
             {isUserMenuOpen && (
               <div className="relative">
                 {/* caret */}
-                <div className="absolute right-4 top-0 -mt-2 w-4 h-4 bg-white transform rotate-45 border-l border-t border-gray-200" aria-hidden="true" />
+                <div className="absolute right-4 top-0 -mt-2 w-4 h-4 bg-white transform rotate-45 border-l border-t border-gray-400 z-60 -mb-2" aria-hidden="true" />
                 <div
                   role="menu"
                   aria-label="User menu"
-                  className="absolute right-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-50 ring-1 ring-black ring-opacity-5 transition transform duration-150"
+                  className="absolute right-0 w-72 bg-white border border-gray-300 rounded-xl shadow-lg overflow-hidden z-50 ring-opacity-5 transition duration-300 ease-in-out"
                 >
                   <div className="px-4 py-4 border-b border-gray-100 bg-white">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 text-blue-700 flex items-center justify-center font-semibold text-lg">
+                      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 text-blue-700 flex items-center justify-center font-semibold text-lg">
                         {user?.name ? user.name[0].toUpperCase() : ''}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-lg font-semibold text-gray-900 truncate">{user?.name}</p>
+                        <p className="text-base font-semibold text-gray-900 truncate">{user?.name}</p>
                         {user?.email && <p className="text-sm text-gray-500 truncate">{user.email}</p>}
                         {Array.isArray(user?.roles) && user.roles.length > 0 && (
                           <div className="mt-2 flex flex-wrap gap-2">
