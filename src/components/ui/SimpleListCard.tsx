@@ -24,7 +24,7 @@ const SimpleListCard = <T,>({ title, items, renderItem, footer, headerRight, onI
             <div
               key={index}
               onClick={() => onItemClick?.(item, index)}
-              className={`pb-3 last:pb-0 border-b last:border-b-0 border-gray-200 transition-colors ${onItemClick ? ' cursor-pointer py-2 rounded' : ''}`}
+              className={`pb-3 last:pb-0 border-b last:border-b-0 border-gray-200 transition-colors ${onItemClick ? ' cursor-pointer py-2 rounded' : ''}`} 
             >
               {renderItem(item, index)}
             </div>

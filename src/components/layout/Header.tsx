@@ -54,7 +54,7 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-  <header className="sticky top-0 z-20 border-b border-gray-200 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70">
+  <header className="sticky top-0 z-20 border-b border-gray-200 bg-[var(--background)]  backdrop-blur supports-[backdrop-filter]:bg-white/70">
       <div className="flex items-center justify-between px-3 md:px-4 sm:px-6 py-3" style={{ paddingTop: '4px', paddingBottom: '4px' }}>
         {/* Left: show hamburger on mobile only */}
         <div className="flex items-center">

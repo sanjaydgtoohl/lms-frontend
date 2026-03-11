@@ -5,7 +5,7 @@ export const logoutUser = createAsyncThunk(
   "auth/logoutUser",
   async (_, { rejectWithValue }) => {
     try {
-      await axios.post("/api/v1/auth/logout");
+      await axios.post("/api/v1/auth/logout", {}, { withCredentials: true });
       return true;
     } catch (error: any) {
       return rejectWithValue(error.response?.data);
@@ -13,19 +13,12 @@ export const logoutUser = createAsyncThunk(
   }
 );
 
-interface AuthState {
-  isAuthenticated: boolean;
-  loading: boolean;
-}
-
-const initialState: AuthState = {
-  isAuthenticated: true,
-  loading: false,
-};
-
 const authSlice = createSlice({
   name: "auth",
-  initialState,
+  initialState: {
+    isAuthenticated: true,
+    loading: false,
+  },
   reducers: {},
   extraReducers: (builder) => {
     builder

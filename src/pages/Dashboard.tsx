@@ -211,8 +211,7 @@ const Dashboard: React.FC = () => {
                 <select
                   value={assignmentFilter}
                   onChange={(e) => setAssignmentFilter(e.target.value as any)}
-                  className="text-sm border border-gray-200 rounded-lg px-2 pr-4 py-2 bg-white bg-[position:20px_20px]"
-                >
+                  className="text-xs sm:text-sm border border-gray-200 rounded-lg px-2 py-2 bg-white">
                   <option value="all">All</option>
                   <option value="High">High</option>
                   <option value="Medium">Medium</option>
@@ -331,8 +330,8 @@ const Dashboard: React.FC = () => {
         title={`Progress Topics`}
         headerRight={(
           <div className="flex items-center gap-3">
-            <p className="text-xs text-gray-500">Overview</p>
-            <select className="text-xs border border-gray-200 rounded px-2 py-1 bg-white">
+            <p className="text-xs sm:text-sm text-gray-500">Overview</p>
+            <select className="text-xs sm:text-sm border border-gray-200 rounded-lg px-2 py-2 bg-white">
               <option>Last 30 days</option>
               <option>Last 7 days</option>
               <option>All time</option>
