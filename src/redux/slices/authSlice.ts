@@ -1,22 +1,29 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+import { apiClient } from "../../services/api";
 
+// Logout thunk
 export const logoutUser = createAsyncThunk(
   "auth/logoutUser",
   async (_, { rejectWithValue }) => {
     try {
-      await axios.post("/api/v1/auth/logout", {}, { withCredentials: true });
+      await apiClient.logout(); // calls backend + clears token
       return true;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data);
+      // Fallback message if backend doesn't return one
+      const message =
+        error.response?.data?.message ||
+        error.message ||
+        "Logout failed";
+      return rejectWithValue(message);
     }
   }
 );
 
+// Auth slice
 const authSlice = createSlice({
   name: "auth",
   initialState: {
-    isAuthenticated: true,
+    isAuthenticated: apiClient.isAuthenticated(), // check cookie/token
     loading: false,
   },
   reducers: {},

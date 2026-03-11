@@ -16,7 +16,6 @@ import type { AppDispatch, RootState } from "../../redux/store";
 import { toggleExpandedItem, setExpandedItems } from "../../redux/slices/sidebarSlice";
 import { logoutUser } from "../../redux/slices/authSlice";
 
-
 interface SidebarProps {
   isCollapsed: boolean
   onToggle: () => void
@@ -27,6 +26,18 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false, onCloseMobile }) => {
   const dispatch = useDispatch<AppDispatch>()
+
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await dispatch(logoutUser()).unwrap(); // unwrap throws if rejected
+      navigate("/login"); // redirect after logout
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
 
   const isCollapsed = useSelector(
@@ -40,19 +51,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
 
   // Use sidebar data from context instead of fetching separately
   const { sidebarMenu: navigationItems } = useSidebarMenu();
-
-
-  const location = useLocation();
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    try {
-      await dispatch(logoutUser());
-      navigate("/login");
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
 
   // const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [showMobilePopup, setShowMobilePopup] = useState(false);
@@ -349,16 +347,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
           <div
             onClick={() => {
               handleLogout();
-              if (onCloseMobile) {
-                onCloseMobile();
-              }
+              if (onCloseMobile) onCloseMobile();
             }}
             className="flex items-center px-2 py-2 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-all cursor-pointer justify-center"
           >
             <LogoutIcon className="shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-red-600" />
           </div>
         </div>
-        
+
       </div>
     );
   }

@@ -4,7 +4,10 @@ import { Plus, User, LogOut, Settings, UserRound, LifeBuoy, ChevronDown, Menu } 
 import ApiErrorNotification from '../ui/ApiErrorNotification';
 import { Button } from '../ui';
 import { fetchCurrentUser } from '../../services/Header';
-import { useAuthStore } from '../../store/auth';
+import { useAuthStore } from '../../store/auth'; // optional if you keep this
+import { useDispatch } from 'react-redux';
+import type { AppDispatch } from '../../redux/store';
+import { logoutUser } from '../../redux/slices/authSlice';
 
 interface HeaderProps {
   onCreateClick?: () => void;
@@ -23,6 +26,7 @@ const Header: React.FC<HeaderProps> = ({
   const userMenuRef = React.useRef<HTMLDivElement | null>(null);
   const [user, setUser] = React.useState<any>(null);
   const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
 
   React.useEffect(() => {
     async function getUser() {
@@ -42,19 +46,19 @@ const Header: React.FC<HeaderProps> = ({
     return () => document.removeEventListener('mousedown', onDocClick);
   }, []);
 
-  const { logout } = useAuthStore();
-
+  // ---- Updated logout handler ----
   const handleLogout = async () => {
     try {
-      await logout();
-      navigate("/login");
+      await dispatch(logoutUser()).unwrap(); // unwrap to throw if rejected
+      navigate("/login"); // redirect after logout
     } catch (error) {
       console.error("Logout failed:", error);
     }
   };
+  // --------------------------------
 
   return (
-  <header className="sticky top-0 z-20 border-b border-gray-200 bg-[var(--background)]  backdrop-blur supports-[backdrop-filter]:bg-white/70">
+    <header className="sticky top-0 z-20 border-b border-gray-200 bg-[var(--background)] backdrop-blur supports-[backdrop-filter]:bg-white/70">
       <div className="flex items-center justify-between px-3 md:px-4 sm:px-6 py-3" style={{ paddingTop: '4px', paddingBottom: '4px' }}>
         {/* Left: show hamburger on mobile only */}
         <div className="flex items-center">
@@ -77,8 +81,8 @@ const Header: React.FC<HeaderProps> = ({
         </div>
 
         <div className="flex items-center gap-3 sm:gap-4">
-          {/* API Error Notification Icon */}
           <ApiErrorNotification />
+
           {/* User Menu */}
           <div className="relative" ref={userMenuRef}>
             <Button
@@ -94,16 +98,13 @@ const Header: React.FC<HeaderProps> = ({
               </div>
               <div className="hidden sm:flex sm:flex-col sm:items-start sm:leading-tight">
                 <span className="text-sm font-medium text-[#344054]">{user?.name}</span>
-                {user?.email && (
-                  <span className="text-xs text-gray-500 truncate">{user.email}</span>
-                )}
+                {user?.email && <span className="text-xs text-gray-500 truncate">{user.email}</span>}
               </div>
               <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} />
             </Button>
 
             {isUserMenuOpen && (
               <div className="relative">
-                {/* caret */}
                 <div className="absolute right-4 top-0 -mt-2 w-4 h-4 bg-white transform rotate-45 border-l border-t border-gray-400 z-60 -mb-2" aria-hidden="true" />
                 <div
                   role="menu"
