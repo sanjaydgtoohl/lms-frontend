@@ -4,7 +4,6 @@ import { Plus, User, LogOut, Settings, UserRound, LifeBuoy, ChevronDown, Menu } 
 import ApiErrorNotification from '../ui/ApiErrorNotification';
 import { Button } from '../ui';
 import { fetchCurrentUser } from '../../services/Header';
-import { useAuthStore } from '../../store/auth'; // optional if you keep this
 import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '../../redux/store';
 import { logoutUser } from '../../redux/slices/authSlice';

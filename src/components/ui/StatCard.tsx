@@ -1,6 +1,4 @@
-import { icons } from 'lucide-react';
 import React from 'react';
-
 interface StatCardProps {
   title: string | React.ReactNode;
   value: string | number;
