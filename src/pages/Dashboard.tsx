@@ -5,6 +5,7 @@ import StatCard from '../components/ui/StatCard';
 import SimpleListCard from '../components/ui/SimpleListCard';
 import { getPendingAssignments, getDashboardStats, getMeetings, type PendingAssignment, type Meeting } from '../services/Dashboard';
 import { getBusinessForecast } from '../services/BusinessForecast';
+import { BsGraphUpArrow } from "react-icons/bs";
 
 const ITEMS_PER_PAGE = 3;
 
@@ -197,12 +198,12 @@ const Dashboard: React.FC = () => {
             </div>
           }
           value={formatNumber(monthlyRevenue)}
-          icon={<AlertTriangle className="" />}
+          icon={<BsGraphUpArrow className=" w-[24px] h-[24px]" />}
         />
       </div>
 
       {/* Assignments & Alerts - Side by Side */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 auto-rows-max lg:auto-rows-fr">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 auto-rows-max lg:auto-rows-fr">
         <div className="flex flex-col h-full">
           <SimpleListCard
             title={`Pending Assignments ${loading ? '(Loading...)' : `(${assignments.length})`}`}
