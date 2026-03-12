@@ -19,7 +19,8 @@ export default function SendEmail() {
 
   useEffect(() => {
     try {
-      gmailService.initGmail();
+      const clientId = "your-google-client-id.apps.googleusercontent.com"; // replace with your actual Google Client ID
+      gmailService.initGmail(clientId);
     } catch (e) {
       console.warn('Gmail init error', e);
     }
@@ -66,17 +67,17 @@ export default function SendEmail() {
 
   function validateForm(): boolean {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.to.trim()) {
       newErrors.to = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.to)) {
       newErrors.to = 'Please enter a valid email address';
     }
-    
+
     if (!formData.body.trim()) {
       newErrors.body = 'Message is required';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }
@@ -91,7 +92,7 @@ export default function SendEmail() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -100,7 +101,7 @@ export default function SendEmail() {
     setResult(null);
     try {
       await ensureToken();
-      
+
       // Send with attachments if any
       const attachmentFilesArray = attachments.length > 0 ? attachments.map((a) => a.file) : undefined;
       const res = await gmailService.sendEmail(formData.to, formData.subject, formData.body, attachmentFilesArray);
@@ -116,7 +117,7 @@ export default function SendEmail() {
 
   return (
     <div className="space-y-6">
-      <MasterFormHeader onBack={() => {}} title="Compose Email" />
+      <MasterFormHeader onBack={() => { }} title="Compose Email" />
 
       {/* Form Card */}
       <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
@@ -246,9 +247,8 @@ export default function SendEmail() {
             <button
               type="submit"
               disabled={sending}
-              className={`px-4 py-2 rounded-lg btn-primary text-white shadow-sm ${
-                sending ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
+              className={`px-4 py-2 rounded-lg btn-primary text-white shadow-sm ${sending ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
             >
               {sending ? 'Sending…' : 'Send Email'}
             </button>
@@ -259,11 +259,10 @@ export default function SendEmail() {
       {/* Result Message */}
       {result && (
         <div
-          className={`rounded-lg border-l-4 p-4 ${
-            result.type === 'success'
+          className={`rounded-lg border-l-4 p-4 ${result.type === 'success'
               ? 'bg-green-50 border-green-400 text-green-800'
               : 'bg-red-50 border-red-400 text-red-800'
-          }`}
+            }`}
         >
           <strong>{result.type === 'success' ? '✓ Success' : '✗ Error'}</strong>
           <p className="text-sm mt-1">{result.message}</p>

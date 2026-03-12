@@ -17,7 +17,8 @@ export default function GmailPanel() {
 
   useEffect(() => {
     try {
-      gmailService.initGmail();
+      const clientId = "your-google-client-id.apps.googleusercontent.com"; // apna actual client ID daal do
+      gmailService.initGmail(clientId);
     } catch (e) {
       console.warn('Gmail init error', e);
     }
