@@ -517,6 +517,7 @@ box-shadow:  5px 5px 10px #131313,
 }
 
 
+<<<<<<< HEAD
 .shadow-custom {
   box-shadow: rgba(149, 157, 165, 0.2) 0px 4px 12px;
 }
@@ -560,3 +561,6 @@ box-shadow:  5px 5px 10px #131313,
   display: inline-block;
   margin-top: 6px;
 }
+=======
+
+>>>>>>> ed0a363361e84a16d8389d98cf87c287eea80fa8
