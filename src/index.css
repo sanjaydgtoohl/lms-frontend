@@ -548,15 +548,28 @@ box-shadow:  5px 5px 10px #131313,
 
 
 /* dashboard-tab-section css start */
-
-
 .dashboard-tab-section .tabs-wrapper  {
+  /* @apply flex-wrap flex-col text-left justify-start; */
   width: 90%;
-  justify-content: space-between;
-  
 }
 
 .dashboard-tab-section .tabs-wrapper span{
   display: inline-block;
   margin-top: 6px;
 }
+
+.dashboard-tab-section .tabs-wrapper > div:not(:first-child) {
+  @apply min-w-[90px];
+}
+
+
+/* recent-activities-section css start */
+.recent-activities-section .card-item div > span, .recent-brief-section .card-item div > span {
+    min-width: 100px;
+    display: inline-block;
+    margin-bottom: 1px;
+}
+/* 
+.recent-activities-section .card-item {
+  @apply flex flex-wrap gap-x-4
+} */
