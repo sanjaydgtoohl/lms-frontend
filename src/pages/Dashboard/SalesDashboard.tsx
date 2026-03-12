@@ -51,7 +51,7 @@ const SalesDashboard: React.FC = () => {
       .catch(() => setRecentBriefs([]));
   }, []);
 
-  const [activeTab, setActiveTab] = useState<'new'|'brief'|'follow'|'meeting'>('new');
+  const [activeTab, setActiveTab] = useState<'new' | 'brief' | 'follow' | 'meeting'>('new');
   const [selectedPriorityLead, setSelectedPriorityLead] = useState<string>('Priority');
   const [selectedPriorityBrief, setSelectedPriorityBrief] = useState<string>('Priority');
   const [selectedPriorityBriefId, setSelectedPriorityBriefId] = useState<number | null>(null);
@@ -59,18 +59,18 @@ const SalesDashboard: React.FC = () => {
   const [isPriorityDropdownOpenLead, setIsPriorityDropdownOpenLead] = useState(false);
   const [isPriorityDropdownOpenBrief, setIsPriorityDropdownOpenBrief] = useState(false);
   const [businessForecast, setBusinessForecast] = useState<{ total_budget: number; total_brief_count: number; business_weightage: number } | null>(null);
-  
+
   useEffect(() => {
     getBusinessForecast()
       .then(setBusinessForecast)
       .catch(() => setBusinessForecast(null));
   }, []);
-  
+
   const [priorities, setPriorities] = useState<{ id: number; name: string; slug: string }[]>([]);
 
   const leadDropdownRef = useRef<HTMLDivElement | null>(null);
   const briefDropdownRef = useRef<HTMLDivElement | null>(null);
-  
+
   useEffect(() => {
     getPriorities()
       .then(data => {
@@ -135,12 +135,12 @@ const SalesDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Top small metric cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 lg:gap-4">
         {/* New Leads Card - styled like Brief */}
-        <div ref={leadDropdownRef} className="bg-[var(--hover-bg)] p-3 md:p-4 rounded-lg relative border border-gray-200">
-          <p className="text-xs text-gray-500">Total Leads</p>
+        <div ref={leadDropdownRef} className="bg-white p-3 md:p-4 xl:p-5 xxl:p-6 rounded-2xl border border-gray-200 gap-3 shadow-custom relative">
+          <p className="text-base lg:text-sm font-medium text-gray-700 leading-tight">Total Leads</p>
           <div className="flex items-center justify-between mt-2">
-            <h3 className="text-xl md:text-2xl font-semibold">
+            <h3 className="text-xl lg:text-2xl font-semibold">
               {leadCount ? `${leadCount.total_leads}/${leadCount.priority_lead_count}` : '--/--'}
             </h3>
             <span onClick={() => setIsPriorityDropdownOpenLead(!isPriorityDropdownOpenLead)} className="text-gray-400 cursor-pointer">{selectedPriorityLead} ▾</span>
@@ -164,8 +164,8 @@ const SalesDashboard: React.FC = () => {
           )}
         </div>
 
-        <div ref={briefDropdownRef} className="bg-[var(--hover-bg)] p-3 md:p-4 rounded-lg relative border border-gray-200">
-          <p className="text-xs text-gray-500">Total Briefs</p>
+        <div ref={briefDropdownRef} className="bg-white p-3 md:p-4 xl:p-5 xxl:p-6 rounded-2xl border border-gray-200 gap-3 shadow-custom relative">
+          <p className="text-base lg:text-sm font-medium text-gray-700 leading-tight">Total Briefs</p>
           <div className="flex items-center justify-between mt-2">
             <h3 className="text-xl md:text-2xl font-semibold">
               {briefCount ? `${briefCount.total_briefs}/${briefCount.priority_brief_count}` : '--/--'}
@@ -191,8 +191,8 @@ const SalesDashboard: React.FC = () => {
           )}
         </div>
 
-        <div className="bg-[var(--hover-bg)] p-3 md:p-4 rounded-lg border border-gray-200">
-          <p className="text-xs text-gray-500">Business Forecast</p>
+        <div className="bg-white p-3 md:p-4 xl:p-5 xxl:p-6 rounded-2xl border border-gray-200 gap-3 shadow-custom relative">
+          <p className="text-base lg:text-sm font-medium text-gray-700 leading-tight">Business Forecast</p>
           <div className="flex items-center justify-between mt-2">
             <h3 className="text-xl md:text-2xl font-semibold">
               {businessForecast ? `₹${businessForecast.total_budget}` : '--'}
@@ -200,8 +200,8 @@ const SalesDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-[var(--hover-bg)] p-3 md:p-4 rounded-lg border border-gray-200">
-          <p className="text-xs text-gray-500">Business Weightage</p>
+        <div className="bg-white p-3 md:p-4 xl:p-5 xxl:p-6 rounded-2xl border border-gray-200 gap-3 shadow-custom relative">
+          <p className="text-base lg:text-sm font-medium text-gray-700 leading-tight">Business Weightage</p>
           <div className="flex items-center justify-between mt-2">
             <h3 className="text-xl md:text-2xl font-semibold">
               {businessForecast ? `${businessForecast.business_weightage}%` : '--'}
@@ -213,26 +213,26 @@ const SalesDashboard: React.FC = () => {
       {/* Tabs and leads list */}
       <div className="bg-[var(--hover-bg)] rounded-xl border border-gray-200 p-3 md:p-4">
         <div className="flex items-center justify-between gap-3 mb-3">
-          <div className="flex items-center gap-1 md:gap-2 bg-white rounded-full p-1 md:p-2 overflow-x-auto border border-gray-200">
+          <div className="flex items-center gap-1 md:gap-2 bg-white rounded-lg overflow-x-auto border border-gray-200 p-1">
             <span
               onClick={() => setActiveTab('new')}
-              className={`px-3 md:px-4 py-2 rounded-full cursor-pointer text-xs md:text-sm transition-all duration-150 whitespace-nowrap ${activeTab==='new' ? 'bg-orange-200 text-orange-800 font-bold shadow' : 'text-gray-600 bg-gray-100 md:bg-white hover:bg-gray-200'}`}
+              className={`px-3 md:px-4 py-2 rounded-lg cursor-pointer font-medium text-xs md:text-sm transition-all duration-300 whitespace-nowrap ${activeTab === 'new' ? 'bg-black text-white shadow' : 'text-gray-600 bg-gray-100 md:bg-white hover:bg-gray-200'}`}
             >Leads</span>
             <span
               onClick={() => setActiveTab('brief')}
-              className={`px-3 md:px-4 py-2 rounded-full cursor-pointer text-xs md:text-sm transition-all duration-150 whitespace-nowrap ${activeTab==='brief' ? 'bg-orange-200 text-orange-800 font-bold shadow' : 'text-gray-600 bg-gray-100 md:bg-white hover:bg-gray-200'}`}
+              className={`px-3 md:px-4 py-2 rounded-lg cursor-pointer font-medium text-xs md:text-sm transition-all  whitespace-nowrap ${activeTab === 'brief' ? 'bg-black text-white shadow' : 'text-gray-600 bg-gray-100 md:bg-white hover:bg-gray-200'}`}
             >Brief</span>
             <span
               onClick={() => setActiveTab('follow')}
-              className={`px-3 md:px-4 py-2 rounded-full cursor-pointer text-xs md:text-sm transition-all duration-150 whitespace-nowrap ${activeTab==='follow' ? 'bg-orange-200 text-orange-800 font-bold shadow' : 'text-gray-600 bg-gray-100 md:bg-white hover:bg-gray-200'}`}
+              className={`px-3 md:px-4 py-2 rounded-lg cursor-pointer font-medium text-xs md:text-sm transition-all  whitespace-nowrap ${activeTab === 'follow' ? 'bg-black text-white shadow' : 'text-gray-600 bg-gray-100 md:bg-white hover:bg-gray-200'}`}
             >Follow Up</span>
             <span
               onClick={() => setActiveTab('meeting')}
-              className={`px-3 md:px-4 py-2 rounded-full cursor-pointer text-xs md:text-sm transition-all duration-150 whitespace-nowrap ${activeTab==='meeting' ? 'bg-orange-200 text-orange-800 font-bold shadow' : 'text-gray-600 bg-gray-100 md:bg-white hover:bg-gray-200'}`}
+              className={`px-3 md:px-4 py-2 rounded-lg cursor-pointer font-medium text-xs md:text-sm transition-all  whitespace-nowrap ${activeTab === 'meeting' ? 'bg-black text-white shadow' : 'text-gray-600 bg-gray-100 md:bg-white hover:bg-gray-200'}`}
             >Meeting Scheduled</span>
           </div>
           <a
-            className="text-xs md:text-sm text-[var(--primary)] font-semibold hover:underline cursor-pointer whitespace-nowrap flex-shrink-0"
+            className="text-xs md:text-sm font-semibold hover:text-white hover:bg-gray-950 bg-orange-600 cursor-pointer whitespace-nowrap  px-4 py-2 rounded-lg a-tab-button"
             onClick={() => {
               if (activeTab === 'brief') {
                 navigate('/brief/Brief_Pipeline');
@@ -240,21 +240,23 @@ const SalesDashboard: React.FC = () => {
                 navigate('/lead-management/all-leads');
               }
             }}
-          >View All</a>
+          >
+            View All
+          </a>
         </div>
 
         <div className="space-y-2 md:space-y-3">
           {activeTab === 'new' && leads.map(l => (
-            <div key={l.id} className="flex flex-row flex-nowrap items-center justify-between bg-white rounded-lg p-3 gap-2 md:gap-0 overflow-x-auto">
-              <div className="flex items-center gap-2 md:gap-6 min-w-0 overflow-x-auto">
-                <div className="px-2 md:px-3 py-1 rounded-full bg-orange-200 text-orange-800 font-semibold text-xs md:text-sm whitespace-nowrap">Brand</div>
-                <div className="text-xs text-gray-500 whitespace-nowrap">Brand Name<br/><span className="text-gray-700 font-medium text-xs">{l.brand?.name || '-'}</span></div>
-                <div className="text-xs text-gray-500 whitespace-nowrap">Contact Person<br/><span className="text-gray-700 font-medium text-xs">{l.name || '-'}</span></div>
-                <div className="text-xs text-gray-500 whitespace-nowrap">Email<br/><span className="text-gray-700 font-medium text-xs text-ellipsis overflow-hidden max-w-xs">{l.email}</span></div>
-                <div className="text-xs text-gray-500 whitespace-nowrap">Priority<br/><span className="text-gray-700 font-medium text-xs">{l.priority?.name || '-'}</span></div>
-                <div className="text-xs text-gray-500 whitespace-nowrap">Call Status<br/><span className="text-gray-700 font-medium text-xs">{l.call_status_relation?.name || '-'}</span></div>
-                <div className="text-xs text-gray-500 whitespace-nowrap">Lead Status<br/><span className="text-gray-700 font-medium text-xs">{l.lead_status_relation?.name || '-'}</span></div>
-                <div className="text-xs text-gray-500 whitespace-nowrap">Call Attempts<br/><span className="text-gray-700 font-medium text-xs">{l.call_attempt}</span></div>
+            <div key={l.id} className="flex flex-row flex-nowrap items-center justify-between bg-white rounded-lg p-3 gap-2 md:gap-0 overflow-x-auto dashboard-tab-section">
+              <div className="flex items-center justify-between gap-2 md:gap-6 min-w-0 overflow-x-auto overflow-y-hidden tabs-wrapper">
+                <div className="px-2 md:px-3 py-1 rounded-full bg-orange-200 text-orange-800 font-semibold text-xs  whitespace-nowrap">Brand</div>
+                <div className="text-xs text-gray-500 whitespace-nowrap">Brand Name<br /><span className="text-gray-700 font-medium text-xs">{l.brand?.name || '-'}</span></div>
+                <div className="text-xs text-gray-500 whitespace-nowrap">Contact Person<br /><span className="text-gray-700 font-medium text-xs">{l.name || '-'}</span></div>
+                <div className="text-xs text-gray-500 whitespace-nowrap">Email<br /><span className="text-gray-700 font-medium text-xs text-ellipsis overflow-hidden max-w-xs">{l.email}</span></div>
+                <div className="text-xs text-gray-500 whitespace-nowrap">Priority<br /><span className="text-gray-700 font-medium text-xs">{l.priority?.name || '-'}</span></div>
+                <div className="text-xs text-gray-500 whitespace-nowrap">Call Status<br /><span className="text-gray-700 font-medium text-xs">{l.call_status_relation?.name || '-'}</span></div>
+                <div className="text-xs text-gray-500 whitespace-nowrap">Lead Status<br /><span className="text-gray-700 font-medium text-xs">{l.lead_status_relation?.name || '-'}</span></div>
+                <div className="text-xs text-gray-500 whitespace-nowrap">Call Attempts<br /><span className="text-gray-700 font-medium text-xs">{l.call_attempt}</span></div>
               </div>
               <div className="flex items-center gap-4 flex-shrink-0">
                 <span
@@ -271,12 +273,12 @@ const SalesDashboard: React.FC = () => {
             <div key={b.id} className="flex flex-row flex-nowrap items-center justify-between bg-white rounded-lg p-3 gap-2 md:gap-0 overflow-x-auto">
               <div className="flex items-center gap-2 md:gap-14 min-w-0 overflow-x-auto">
                 <div className="px-2 md:px-3 py-1 rounded-full bg-orange-200 text-orange-800 font-semibold text-xs md:text-sm whitespace-nowrap">Brief</div>
-                <div className="text-xs text-gray-500 whitespace-nowrap">Brief Name<br/><span className="text-gray-700 font-medium text-xs">{b.name}</span></div>
-                <div className="text-xs text-gray-500 whitespace-nowrap">Brand Name<br/><span className="text-gray-700 font-medium text-xs">{b.brand?.name || '-'}</span></div>
-                <div className="text-xs text-gray-500 whitespace-nowrap">Product<br/><span className="text-gray-700 font-medium text-xs">{b.product_name}</span></div>
-                <div className="text-xs text-gray-500 whitespace-nowrap">Budget<br/><span className="text-gray-700 font-medium text-xs">₹{b.budget}</span></div>
-                <div className="text-xs text-gray-500 whitespace-nowrap">Brief Status<br/><span className="text-xs rounded px-2 py-0.5 text-black">{b.brief_status?.name}</span></div>
-                <div className="text-xs text-gray-500 whitespace-nowrap">Contact Person<br/><span className="text-gray-700 font-medium text-xs">{b.contact_person?.name || '-'}</span></div>
+                <div className="text-xs text-gray-500 whitespace-nowrap">Brief Name<br /><span className="text-gray-700 font-medium text-xs">{b.name}</span></div>
+                <div className="text-xs text-gray-500 whitespace-nowrap">Brand Name<br /><span className="text-gray-700 font-medium text-xs">{b.brand?.name || '-'}</span></div>
+                <div className="text-xs text-gray-500 whitespace-nowrap">Product<br /><span className="text-gray-700 font-medium text-xs">{b.product_name}</span></div>
+                <div className="text-xs text-gray-500 whitespace-nowrap">Budget<br /><span className="text-gray-700 font-medium text-xs">₹{b.budget}</span></div>
+                <div className="text-xs text-gray-500 whitespace-nowrap">Brief Status<br /><span className="text-xs rounded px-2 py-0.5 text-black">{b.brief_status?.name}</span></div>
+                <div className="text-xs text-gray-500 whitespace-nowrap">Contact Person<br /><span className="text-gray-700 font-medium text-xs">{b.contact_person?.name || '-'}</span></div>
               </div>
               <div className="flex items-center gap-4 flex-shrink-0">
                 <span
@@ -293,14 +295,14 @@ const SalesDashboard: React.FC = () => {
             <div key={f.id} className="flex flex-row flex-nowrap items-center justify-between bg-white rounded-lg p-3 gap-2 md:gap-0 overflow-x-auto">
               <div className="flex items-center gap-2 md:gap-6 min-w-0 overflow-x-auto">
                 <div className="px-2 md:px-3 py-1 rounded-full bg-orange-200 text-orange-800 font-semibold text-xs md:text-sm whitespace-nowrap">{f.type}</div>
-                <div className="text-xs text-gray-500 whitespace-nowrap">Contact Person Name<br/><span className="text-gray-700 font-medium text-xs">{f.name}</span></div>
-                <div className="text-xs text-gray-500 whitespace-nowrap">Brand Name<br/><span className="text-gray-700 font-medium text-xs">{f.brand ? f.brand.name : f.agency ? f.agency.name : '-'}</span></div>
-                <div className="text-xs text-gray-500 whitespace-nowrap">Email<br/><span className="text-gray-700 font-medium text-xs text-ellipsis overflow-hidden max-w-xs">{f.email}</span></div>
-                <div className="text-xs text-gray-500 whitespace-nowrap">Mobile<br/><span className="text-gray-700 font-medium text-xs">{f.mobile_number && f.mobile_number.length > 0 ? f.mobile_number[0].number : '-'}</span></div>
-                <div className="text-xs text-gray-500 whitespace-nowrap">Priority<br/><span className="text-gray-700 font-medium text-xs">{f.priority?.name || '-'}</span></div>
-                <div className="text-xs text-gray-500 whitespace-nowrap">Call Status<br/><span className="text-gray-700 font-medium text-xs">{f.call_status_relation?.name || '-'}</span></div>
-                <div className="text-xs text-gray-500 whitespace-nowrap">Lead Status<br/><span className="text-gray-700 font-medium text-xs">{f.lead_status_relation?.name || '-'}</span></div>
-                <div className="text-xs text-gray-500 whitespace-nowrap">Call Attempts<br/><span className="text-gray-700 font-medium text-xs">{f.call_attempt}</span></div>
+                <div className="text-xs text-gray-500 whitespace-nowrap">Contact Person Name<br /><span className="text-gray-700 font-medium text-xs">{f.name}</span></div>
+                <div className="text-xs text-gray-500 whitespace-nowrap">Brand Name<br /><span className="text-gray-700 font-medium text-xs">{f.brand ? f.brand.name : f.agency ? f.agency.name : '-'}</span></div>
+                <div className="text-xs text-gray-500 whitespace-nowrap">Email<br /><span className="text-gray-700 font-medium text-xs text-ellipsis overflow-hidden max-w-xs">{f.email}</span></div>
+                <div className="text-xs text-gray-500 whitespace-nowrap">Mobile<br /><span className="text-gray-700 font-medium text-xs">{f.mobile_number && f.mobile_number.length > 0 ? f.mobile_number[0].number : '-'}</span></div>
+                <div className="text-xs text-gray-500 whitespace-nowrap">Priority<br /><span className="text-gray-700 font-medium text-xs">{f.priority?.name || '-'}</span></div>
+                <div className="text-xs text-gray-500 whitespace-nowrap">Call Status<br /><span className="text-gray-700 font-medium text-xs">{f.call_status_relation?.name || '-'}</span></div>
+                <div className="text-xs text-gray-500 whitespace-nowrap">Lead Status<br /><span className="text-gray-700 font-medium text-xs">{f.lead_status_relation?.name || '-'}</span></div>
+                <div className="text-xs text-gray-500 whitespace-nowrap">Call Attempts<br /><span className="text-gray-700 font-medium text-xs">{f.call_attempt}</span></div>
               </div>
               <div className="flex items-center gap-4 flex-shrink-0">
                 <span
@@ -317,14 +319,14 @@ const SalesDashboard: React.FC = () => {
             <div key={m.id} className="flex flex-row flex-nowrap items-center justify-between bg-white rounded-lg p-3 gap-2 md:gap-0 overflow-x-auto">
               <div className="flex items-center gap-2 md:gap-6 min-w-0 overflow-x-auto">
                 <div className="px-2 md:px-3 py-1 rounded-full bg-orange-200 text-orange-800 font-semibold text-xs md:text-sm whitespace-nowrap">{m.type}</div>
-                <div className="text-xs text-gray-500 whitespace-nowrap">Contact Person Name<br/><span className="text-gray-700 font-medium text-xs">{m.name}</span></div>
-                <div className="text-xs text-gray-500 whitespace-nowrap">Brand Name<br/><span className="text-gray-700 font-medium text-xs">{m.brand ? m.brand.name : m.agency ? m.agency.name : '-'}</span></div>
-                <div className="text-xs text-gray-500 whitespace-nowrap">Email<br/><span className="text-gray-700 font-medium text-xs text-ellipsis overflow-hidden max-w-xs">{m.email}</span></div>
-                <div className="text-xs text-gray-500 whitespace-nowrap">Mobile<br/><span className="text-gray-700 font-medium text-xs">{m.mobile_number && m.mobile_number.length > 0 ? m.mobile_number[0].number : '-'}</span></div>
-                <div className="text-xs text-gray-500 whitespace-nowrap">Priority<br/><span className="text-gray-700 font-medium text-xs">{m.priority?.name || '-'}</span></div>
-                <div className="text-xs text-gray-500 whitespace-nowrap">Call Status<br/><span className="text-gray-700 font-medium text-xs">{m.call_status_relation?.name || '-'}</span></div>
-                <div className="text-xs text-gray-500 whitespace-nowrap">Lead Status<br/><span className="text-gray-700 font-medium text-xs">{m.lead_status_relation?.name || '-'}</span></div>
-                <div className="text-xs text-gray-500 whitespace-nowrap">Call Attempts<br/><span className="text-gray-700 font-medium text-xs">{m.call_attempt}</span></div>
+                <div className="text-xs text-gray-500 whitespace-nowrap">Contact Person Name<br /><span className="text-gray-700 font-medium text-xs">{m.name}</span></div>
+                <div className="text-xs text-gray-500 whitespace-nowrap">Brand Name<br /><span className="text-gray-700 font-medium text-xs">{m.brand ? m.brand.name : m.agency ? m.agency.name : '-'}</span></div>
+                <div className="text-xs text-gray-500 whitespace-nowrap">Email<br /><span className="text-gray-700 font-medium text-xs text-ellipsis overflow-hidden max-w-xs">{m.email}</span></div>
+                <div className="text-xs text-gray-500 whitespace-nowrap">Mobile<br /><span className="text-gray-700 font-medium text-xs">{m.mobile_number && m.mobile_number.length > 0 ? m.mobile_number[0].number : '-'}</span></div>
+                <div className="text-xs text-gray-500 whitespace-nowrap">Priority<br /><span className="text-gray-700 font-medium text-xs">{m.priority?.name || '-'}</span></div>
+                <div className="text-xs text-gray-500 whitespace-nowrap">Call Status<br /><span className="text-gray-700 font-medium text-xs">{m.call_status_relation?.name || '-'}</span></div>
+                <div className="text-xs text-gray-500 whitespace-nowrap">Lead Status<br /><span className="text-gray-700 font-medium text-xs">{m.lead_status_relation?.name || '-'}</span></div>
+                <div className="text-xs text-gray-500 whitespace-nowrap">Call Attempts<br /><span className="text-gray-700 font-medium text-xs">{m.call_attempt}</span></div>
               </div>
               <div className="flex items-center gap-4 flex-shrink-0">
                 <span
@@ -360,7 +362,7 @@ const SalesDashboard: React.FC = () => {
                       <div className="text-xs mb-1"><span className="font-semibold">Call Status:</span> {a.call_status}</div>
                       <div className="text-xs"><span className="font-semibold">Created At:</span> {a.created_at}</div>
                     </div>
-                    
+
                     {/* Right side: Status badge - top right */}
                     {a.lead_status && (
                       <div className="flex-shrink-0">
@@ -403,8 +405,8 @@ const SalesDashboard: React.FC = () => {
                   {/* Percentage/progress circle on the right, centered vertically */}
                   <div className="flex items-center justify-center flex-shrink-0 w-12 h-12 rounded-full bg-gray-100">
                     <svg viewBox="0 0 36 36" className="w-10 h-10">
-                      <path className="text-gray-200" d="M18 2a16 16 0 1 0 0 32 16 16 0 1 0 0-32z" fill="#e6eef6"/>
-                      <path d="M18 2a16 16 0 1 0 0 32" fill="none" stroke="var(--primary)" strokeWidth="3" strokeDasharray={`${Number(b.brief_status?.percentage || 0)},100`} strokeLinecap="round"/>
+                      <path className="text-gray-200" d="M18 2a16 16 0 1 0 0 32 16 16 0 1 0 0-32z" fill="#e6eef6" />
+                      <path d="M18 2a16 16 0 1 0 0 32" fill="none" stroke="var(--primary)" strokeWidth="3" strokeDasharray={`${Number(b.brief_status?.percentage || 0)},100`} strokeLinecap="round" />
                       <text x="18" y="20" fontSize="8" textAnchor="middle" fill="#111827">{b.brief_status?.percentage || 0}%</text>
                     </svg>
                   </div>

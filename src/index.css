@@ -539,3 +539,24 @@ box-shadow:  5px 5px 10px #131313,
   @apply bg-gray-100 min-w-10 h-10 py-2 px-3 text-black transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm hover:bg-black hover:text-white active:bg-black;
 }
 
+
+
+.a-tab-button {
+  @apply text-white hover:text-white;
+}
+
+
+
+/* dashboard-tab-section css start */
+
+
+.dashboard-tab-section .tabs-wrapper  {
+  width: 90%;
+  justify-content: space-between;
+  
+}
+
+.dashboard-tab-section .tabs-wrapper span{
+  display: inline-block;
+  margin-top: 6px;
+}
