@@ -517,7 +517,7 @@ box-shadow:  5px 5px 10px #131313,
 }
 
 
-.shadow-custom {
+ .shadow-custom {
   box-shadow: rgba(149, 157, 165, 0.2) 0px 4px 12px;
 }
 
@@ -538,4 +538,3 @@ box-shadow:  5px 5px 10px #131313,
 .pagination-btn.last {
   @apply bg-gray-100 min-w-10 h-10 py-2 px-3 text-black transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm hover:bg-black hover:text-white active:bg-black;
 }
-

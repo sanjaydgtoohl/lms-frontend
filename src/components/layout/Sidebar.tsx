@@ -1,7 +1,7 @@
 import { useSidebarMenu } from "../../hooks/SidebarMenuHooks";
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import LogoutIcon from "../../assets/icons/LogoutIcon";
 import HelpIcon from "../../assets/icons/HelpIcon";
 import logoUrl from "../../assets/DGTOOHL 360.svg";
