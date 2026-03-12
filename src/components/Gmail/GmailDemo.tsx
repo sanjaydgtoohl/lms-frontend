@@ -7,7 +7,8 @@ export default function GmailDemo() {
   const [messages, setMessages] = useState<any[]>([]);
 
   useEffect(() => {
-    gmailService.initGmail();
+    const clientId = "your-google-client-id.apps.googleusercontent.com"; // replace with your actual client ID
+    gmailService.initGmail(clientId);
   }, []);
 
   async function handleSignIn() {
