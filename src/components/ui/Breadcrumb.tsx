@@ -377,10 +377,14 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({
   // If no crumbs, show dashboard
   if (crumbs.length === 0) {
     return (
-      <nav className="flex items-center space-x-2 text-sm" aria-label="Breadcrumb">
+      <nav className="flex items-center space-x-2 text-sm breadcrumb-wrapper" aria-label="Breadcrumb">
         <ol className="flex items-center space-x-2">
           <li>
-            <Link to="/dashboard" className="text-gray-900 font-semibold">
+            <Link
+              to="/dashboard"
+              className="text-orange-600 font-semibold" // active style
+              aria-current="page"
+            >
               Dashboard
             </Link>
           </li>
