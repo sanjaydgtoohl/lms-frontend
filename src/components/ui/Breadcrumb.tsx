@@ -36,10 +36,10 @@ const segmentNameMap: Record<string, string> = {
   'view': 'View',
 };
 
-const Breadcrumb: React.FC<BreadcrumbProps> = ({ 
-  items, 
+const Breadcrumb: React.FC<BreadcrumbProps> = ({
+  items,
   showHome = true,
-  currentPageTitle 
+  currentPageTitle
 }) => {
   const location = useLocation();
   const { pathname } = location;
@@ -52,8 +52,8 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({
           {showHome && (
             <>
               <li>
-                <Link 
-                  to="/dashboard" 
+                <Link
+                  to="/dashboard"
                   style={{ color: 'var(--color-orange-400)', fontWeight: 600 }}
                 >
                   <Home className="w-4 h-4" />
@@ -86,7 +86,7 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({
 
   // Auto-generate breadcrumbs from pathname
   const parts = pathname.split('/').filter(Boolean);
-  
+
   const getCrumbs = (): BreadcrumbItem[] => {
     const crumbs: BreadcrumbItem[] = [];
 
@@ -94,7 +94,7 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({
     if (pathname.startsWith('/master/')) {
       const masterType = parts[1]; // agency, brand, etc.
       const masterLabel = segmentNameMap[masterType] || masterType.charAt(0).toUpperCase() + masterType.slice(1);
-      
+
       crumbs.push({
         label: 'Master Data',
         path: '/master',
@@ -349,10 +349,10 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({
     const defaultCrumbs: BreadcrumbItem[] = [];
     parts.forEach((part, idx) => {
       const to = '/' + parts.slice(0, idx + 1).join('/');
-      const name = segmentNameMap[part.toLowerCase()] || 
-                   part.replace(/[-_]/g, ' ')
-                       .replace(/\b\w/g, c => c.toUpperCase());
-      
+      const name = segmentNameMap[part.toLowerCase()] ||
+        part.replace(/[-_]/g, ' ')
+          .replace(/\b\w/g, c => c.toUpperCase());
+
       defaultCrumbs.push({
         label: name,
         path: idx < parts.length - 1 ? to : undefined,
@@ -390,14 +390,14 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({
   }
 
   return (
-    <nav className="flex items-center space-x-2 text-sm" aria-label="Breadcrumb">
+    <nav className="flex items-center space-x-2 text-sm breadcrumb-wrapper" aria-label="Breadcrumb">
       <ol className="flex items-center space-x-2 flex-wrap">
         {showHome && (
           <>
             <li>
-              <Link 
-                to="/dashboard" 
-                style={{ color: 'var(--color-orange-400)', fontWeight: 600 }}
+              <Link
+                to="/dashboard"
+                className="text-orange-400 font-semibold"
                 aria-label="Home"
               >
                 <Home className="w-4 h-4" />
@@ -406,23 +406,30 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({
             <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
           </>
         )}
-        {crumbs.map((crumb, index) => (
-          <li key={index} className="flex items-center space-x-2">
-            {index > 0 && <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />}
-            {crumb.path && !crumb.isActive ? (
-              <Link
-                to={crumb.path}
-                style={{ color: 'var(--color-orange-400)', fontWeight: 500 }}
-              >
-                {crumb.label}
-              </Link>
-            ) : (
-              <span style={{ color: 'var(--color-orange-400)', fontWeight: crumb.isActive ? 600 : 500 }}>
-                {crumb.label}
-              </span>
-            )}
-          </li>
-        ))}
+
+        {crumbs.map((crumb, index) => {
+          const isLast = index === crumbs.length - 1; // check if it's the last crumb
+          const isActive = crumb.isActive || isLast;  // last item OR explicit active
+
+          return (
+            <li key={index} className="flex items-center space-x-2">
+              {index > 0 && <ChevronRight className="w-4 h-4 text-black flex-shrink-0" />}
+
+              {crumb.path && !isActive ? (
+                <Link
+                  to={crumb.path}
+                  className="text-orange-400 font-medium hover:underline"
+                >
+                  {crumb.label}
+                </Link>
+              ) : (
+                <span className={isActive ? "text-orange-600 font-semibold" : "text-orange-400 font-medium"}>
+                  {crumb.label}
+                </span>
+              )}
+            </li>
+          );
+        })}
       </ol>
     </nav>
   );

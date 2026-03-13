@@ -232,7 +232,7 @@ const SalesDashboard: React.FC = () => {
             >Meeting Scheduled</span>
           </div>
           <a
-            className="text-xs md:text-sm font-semibold hover:text-white hover:bg-gray-950 bg-orange-600 cursor-pointer whitespace-nowrap  px-4 py-2 rounded-lg a-tab-button"
+            className="a-tag-button"
             onClick={() => {
               if (activeTab === 'brief') {
                 navigate('/brief/Brief_Pipeline');
@@ -249,7 +249,7 @@ const SalesDashboard: React.FC = () => {
           {activeTab === 'new' && leads.map(l => (
             <div key={l.id} className="flex flex-row flex-wrap items-center justify-between bg-white rounded-lg p-3 gap-2 md:gap-0 overflow-x-auto dashboard-tab-section">
 
-              <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-x-3 sm:gap-8 overflow-x-auto overflow-y-hidden tabs-wrapper">
+              <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-x-3 sm:gap-8 overflow-x-auto overflow-y-hidden tabs-wrapper">
 
                 <div className="px-2 md:px-3 py-1 rounded-full bg-orange-200 text-orange-800 font-semibold text-xs whitespace-nowrap inline-block">
                   Brand
@@ -305,7 +305,7 @@ const SalesDashboard: React.FC = () => {
           {activeTab === 'brief' && briefs.map(b => (
             <div key={b.id} className="flex flex-row flex-wrap items-center justify-between bg-white rounded-lg p-3 gap-2 md:gap-0 overflow-x-auto dashboard-tab-section">
 
-              <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-x-3 sm:gap-8 overflow-x-auto overflow-y-hidden tabs-wrapper">
+              <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-x-3 sm:gap-8 overflow-x-auto overflow-y-hidden tabs-wrapper">
 
                 <div className="px-2 md:px-3 py-1 rounded-full bg-orange-200 text-orange-800 font-semibold text-xs whitespace-nowrap">
                   Brief
@@ -372,7 +372,7 @@ const SalesDashboard: React.FC = () => {
           {activeTab === 'follow' && followUpLeads.map(f => (
             <div key={f.id} className="flex flex-row flex-wrap items-center justify-between bg-white rounded-lg p-3 gap-2 md:gap-0 overflow-x-auto dashboard-tab-section">
 
-              <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-x-3 sm:gap-8 overflow-x-auto overflow-y-hidden tabs-wrapper">
+              <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-x-3 sm:gap-8 overflow-x-auto overflow-y-hidden tabs-wrapper">
 
                 <div className="px-2 md:px-3 py-1 rounded-full bg-orange-200 text-orange-800 font-semibold text-xs whitespace-nowrap">
                   {f.type}
@@ -459,7 +459,7 @@ const SalesDashboard: React.FC = () => {
           {activeTab === 'meeting' && meetingLeads.map(m => (
             <div key={m.id} className="flex flex-row flex-wrap items-center justify-between bg-white rounded-lg p-3 gap-2 md:gap-0 overflow-x-auto dashboard-tab-section">
 
-              <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-x-3 sm:gap-8 overflow-x-auto overflow-y-hidden tabs-wrapper">
+              <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-x-3 sm:gap-8 overflow-x-auto overflow-y-hidden tabs-wrapper">
 
                 <div className="px-2 md:px-3 py-1 rounded-full bg-orange-200 text-orange-800 font-semibold text-xs whitespace-nowrap">
                   {m.type}
