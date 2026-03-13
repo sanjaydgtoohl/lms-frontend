@@ -551,7 +551,7 @@ box-shadow:  5px 5px 10px #131313,
 }
 
 .icon-button {
-  @apply flex items-center justify-center w-10 h-10 rounded-lg text-white bg-gray-800 cursor-pointer border-none focus:outline-none hover:bg-black flex-shrink-0;
+  @apply flex items-center justify-center w-10 h-10 rounded-lg text-black bg-gray-200 cursor-pointer border-none focus:outline-none hover:bg-black hover:text-white flex-shrink-0 border border-gray-300;
 }
 
 
