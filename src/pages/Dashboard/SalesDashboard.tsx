@@ -547,7 +547,7 @@ const SalesDashboard: React.FC = () => {
       </div>
 
       {/* Two-column panels */}
-      <div className="grid grid-cols-1 lg:grid-cols-1 gap-0 md:gap-3 lg:gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-1 gap-0 md:gap-x-3 lg:gap-x-4">
         <div className="pb-4 border-b border-gray-200 recent-activities-section">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-sm md:text-base">Recent Activities</h3>
@@ -583,7 +583,7 @@ const SalesDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="pb-4 border-b border-gray-200 recent-brief-section">
+        <div className="py-4 border-b border-gray-200 recent-brief-section">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-sm md:text-base">Recent Brief</h3>
           </div>
@@ -603,7 +603,7 @@ const SalesDashboard: React.FC = () => {
                   </div>
 
                   {/* Percentage/progress circle on the right, centered vertically */}
-                  <div>
+                  <div className='flex flex-col items-end'>
                     {b.brief_status?.name && (
                       <span className="ml-auto mb-3 inline-block px-2 py-0.5 rounded bg-yellow-100 text-yellow-800 font-semibold text-xs">
                         {b.brief_status.name}
