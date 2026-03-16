@@ -87,9 +87,9 @@ const MasterHeader: React.FC<MasterHeaderProps> = ({
         {showCreateButton && canCreate && (
           <button
             onClick={onCreateClick}
-            className="flex items-center justify-center space-x-2 w-full sm:w-auto px-4 py-2.5 btn-primary text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
+            className="btn-primary"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-5 h-5 text-white" />
             <span>{createButtonLabel}</span>
           </button>
         )}

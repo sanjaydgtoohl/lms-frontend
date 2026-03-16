@@ -274,7 +274,7 @@ const BriefLog: React.FC = () => {
   const startIndex = (currentPage - 1) * itemsPerPage;
 
   return (
-    <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
+    <div className="flex-1 w-full max-w-full overflow-x-hidden">
       <MasterHeader
         showBreadcrumb={true}
         breadcrumbItems={[

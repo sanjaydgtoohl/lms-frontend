@@ -307,7 +307,7 @@ const DepartmentMaster: React.FC = () => {
 	};
 
 	return (
-		<div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
+		<div className="flex-1 w-full max-w-full overflow-x-hidden">
 			<ConfirmDialog
 				isOpen={!!confirmDeleteId}
 				title="Delete this department?"

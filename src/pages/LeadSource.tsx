@@ -220,7 +220,7 @@ const LeadSource: React.FC = () => {
   }, [location.pathname, params.id, items]);
 
   return (
-    <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
+    <div className="flex-1 w-full max-w-full overflow-x-hidden">
       <ConfirmDialog
         isOpen={!!confirmDeleteId}
         title={`Delete sub-source "${confirmDeleteLabel}"?`}

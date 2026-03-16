@@ -67,6 +67,9 @@ button,
   -moz-osx-font-smoothing: grayscale;
 }
 
+
+/* #f26222 */
+
 /* Smooth transitions for all interactive elements */
 * {
   transition: all 0.2s ease-in-out;
@@ -350,11 +353,11 @@ button {
      Primary buttons use .btn-primary which is styled separately. */
   background-color: transparent;
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: all 0.3s ease-in-out;
 }
-button:hover {
+/* button:hover {
   border-color: var(--btn-bg-hover);
-}
+} */
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
@@ -396,32 +399,18 @@ button[data-btn-label="Update"]:hover {
 
 /* Primary button helper class used by React Button component and utility buttons */
 .btn-primary {
-  background-color: var(--color-orange-400) !important;
-  color: #000000 !important; /* force black text for create/primary buttons */
-  border-color: transparent !important;
-  /* ensure text color does not change on hover/focus */
-  -webkit-text-fill-color: #000000 !important;
-}
-.btn-primary:hover {
-  background-color: #ff9500 !important;
-  color: #000000 !important;
-  -webkit-text-fill-color: #000000 !important;
+  @apply bg-orange-600 hover:bg-orange-700 text-white border-0 flex items-center justify-center space-x-2 py-2 px-4 text-sm; 
 }
 
-.btn-primary:focus,
-.btn-primary:active {
-  color: #000000 !important;
-  -webkit-text-fill-color: #000000 !important;
-}
 
 /* Ensure icons inside primary buttons match the white text color
    Many icon libraries (lucide-react) use stroke/currentColor - this
    forces svg color and stroke to inherit the text color. */
 .btn-primary svg,
 .btn-primary svg * {
-  color: #000000 !important;
-  fill: #000000 !important;
-  stroke: #000000 !important;
+  color: #ffffff;
+  fill: #ffffff ;
+  stroke: #ffffff;
 }
 
 @layer utilities {
@@ -513,5 +502,65 @@ box-shadow:  5px 5px 10px #131313,
     @apply  bg-[#fe6000] text-white w-full rounded-full hover:bg-[#bd4900] border-0 transition-all;
 }
 
+.shadow-custom {
+  box-shadow: rgba(149, 157, 165, 0.2) 0px 4px 12px;
+}
 
+.sidebar-wrapper {
+  border-radius: 0 30px 30px 0;
+}
+
+.pagination-btn.start {
+  @apply bg-gray-100 min-w-10 h-10 text-black transition-all duration-300 py-2 px-3 m-0 text-sm hover:bg-black hover:text-white active:bg-black;
+}
+
+.pagination-btn.no {
+  @apply bg-gray-100 min-w-10 h-10 text-black transition-all duration-300 py-2 px-3 m-0 text-sm hover:bg-black hover:text-white active:bg-black;
+}
+
+.pagination-btn.last {
+  @apply bg-gray-100 min-w-10 h-10 py-2 px-3 text-black transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm hover:bg-black hover:text-white active:bg-black;
+}
+  
+.a-tag-button {
+  @apply text-white hover:text-white text-xs md:text-sm font-semibold hover:text-white hover:bg-gray-950 bg-orange-600 cursor-pointer whitespace-nowrap  px-4 py-2 rounded-lg;
+}
+
+
+/* dashboard-tab-section css start */
+.dashboard-tab-section .tabs-wrapper  {
+  /* @apply flex-wrap flex-col text-left justify-start; */
+  width: 90%;
+}
+
+.dashboard-tab-section .tabs-wrapper span{
+  display: inline-block;
+  margin-top: 6px;
+}
+
+.dashboard-tab-section .tabs-wrapper > div:not(:first-child) {
+  @apply min-w-[90px];
+}
+
+
+/* recent-activities-section css start */
+.recent-activities-section .card-item div > span, .recent-brief-section .card-item div > span {
+    min-width: 100px;
+    display: inline-block;
+    margin-bottom: 1px;
+}
+
+.icon-button {
+  @apply flex items-center justify-center w-10 h-10 rounded-lg text-white bg-gray-800 cursor-pointer border-none focus:outline-none hover:bg-black flex-shrink-0;
+}
+
+
+/* breadcrumb-wrapper css start  */
+.breadcrumb-wrapper ol li a {
+  @apply text-black hover:text-orange-600;
+}
+
+.breadcrumb-wrapper ol li {
+  @apply text-black
+}
 

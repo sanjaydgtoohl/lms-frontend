@@ -35,24 +35,17 @@ const Pagination: React.FC<PaginationProps> = ({
 
   return (
     <>
-      <style>{`
-        .pagination-container .pagination-btn {
-          background-color: transparent !important;
-        }
-        .pagination-container .pagination-btn:hover {
-          background-color: transparent !important;
-        }
-      `}</style>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-6">
-        <div className="text-sm text-[var(--text-secondary)] mb-4 sm:mb-0 text-center w-full sm:w-auto order-2 sm:order-1">
+    
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-y-2 py-2">
+        <div className="text-sm text-[var(--text-secondary)] sm:mb-0 text-center w-full sm:w-auto order-2 sm:order-1">
           Showing {startIndex + 1} to {Math.min(endIndex, totalItems)} of {totalItems} entries
         </div>
 
-        <div className="pagination-container flex items-center justify-center sm:justify-end bg-transparent px-2 py-1 w-full sm:w-auto order-1 sm:order-2">
+        <div className="pagination-container flex items-center justify-center sm:justify-end bg-transparent px-2 w-full sm:w-auto order-1 sm:order-2 gap-x-1">
           <button
             onClick={() => onPageChange(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
-            className="pagination-btn bg-transparent p-2 text-[var(--text-secondary)] hover:text-black transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="pagination-btn start"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -61,7 +54,7 @@ const Pagination: React.FC<PaginationProps> = ({
             <button
               key={i}
               onClick={() => onPageChange(i)}
-              className={`pagination-btn bg-transparent px-3 py-2 text-sm font-medium transition-all duration-200 ${
+              className={`pagination-btn no ${
                 i === currentPage ? 'text-black font-semibold' : 'text-[var(--text-secondary)] hover:text-black'
               }`}
             >
@@ -72,7 +65,7 @@ const Pagination: React.FC<PaginationProps> = ({
           <button
             onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
             disabled={currentPage === totalPages}
-            className="pagination-btn bg-transparent p-2 text-[var(--text-secondary)] hover:text-black transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="pagination-btn last"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
