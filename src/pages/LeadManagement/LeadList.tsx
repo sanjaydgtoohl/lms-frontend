@@ -504,7 +504,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
   ] as Column<Lead>[]);
 
   return (
-    <div className="flex-1 p-3 md:p-6 w-full max-w-full overflow-x-hidden">
+    <div className="flex-1 w-full max-w-full overflow-x-hidden">
       {hasPermission(createPermissionMap[filterStatus] || 'leads.create') && (
         <MasterHeader
           onCreateClick={handleCreateLead}

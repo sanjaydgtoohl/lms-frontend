@@ -337,21 +337,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
           </div>
         </nav>
 
-        <div className="border-t border-gray-100 p-2 space-y-2">
+        <div className="border-t border-gray-100 p-2">
           <div
-            className={`flex items-center px-2 py-2 text-sm font-medium text-[var(--text-primary)] rounded-lg hover:bg-orange-50 transition-all cursor-pointer justify-center`}
+            className={`flex items-center px-4 py-3 text-sm font-medium text-[var(--text-primary)] rounded-lg hover:bg-orange-50 transition-all cursor-pointer`}
             onClick={() => onCloseMobile && onCloseMobile()}
           >
-            <HelpIcon className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)]`} />
+            <HelpIcon className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)] mr-2.5`} /> Help
           </div>
           <div
             onClick={() => {
               handleLogout();
               if (onCloseMobile) onCloseMobile();
             }}
-            className="flex items-center px-2 py-2 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-all cursor-pointer justify-center"
-          >
-            <LogoutIcon className="shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-red-600" />
+            className="flex items-center px-4 py-3 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-all cursor-pointer"
+          > 
+            <LogoutIcon className="shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-red-600 mr-2.5" /> Logout 
           </div>
         </div>
 

@@ -226,7 +226,7 @@ const View: React.FC = () => {
   const handlePageChange = (page: number) => setCurrentPage(page);
 
   return (
-    <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
+    <div className="flex-1 w-full max-w-full overflow-x-hidden">
       {/* SweetAlert is used for inline success/error notifications */}
       <ConfirmDialog
         isOpen={!!confirmDeleteId}
