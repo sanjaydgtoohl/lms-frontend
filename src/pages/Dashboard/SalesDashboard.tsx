@@ -583,7 +583,7 @@ const SalesDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="pb-4 border-b border-gray-200 recent-brief-section">
+        <div className="py-4 border-b border-gray-200 recent-brief-section">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-sm md:text-base">Recent Brief</h3>
           </div>
