@@ -395,7 +395,7 @@ const AllLeads: React.FC = () => {
           onMouseLeave={() => hideTooltip()}
         >
           <div
-            className="text-sm text-[var(--text-primary)]"
+            className="text-sm text-gray-800"
             style={{
               display: '-webkit-box',
               WebkitLineClamp: 2,
@@ -486,7 +486,7 @@ const AllLeads: React.FC = () => {
           style={{ left: tooltipLeft, top: tooltipTop }}
           className={`fixed z-50 transform -translate-x-1/2 ${tooltipPlacement === 'top' ? '-translate-y-full' : 'translate-y-0'}`}
         >
-          <div className="bg-white border border-[var(--border-color)] rounded-lg shadow-md p-3 max-w-[48ch] text-sm text-[var(--text-primary)]">
+          <div className="bg-white border border-[var(--border-color)] rounded-lg shadow-md p-3 max-w-[48ch] text-sm text-gray-800">
             {tooltipContent}
           </div>
         </div>

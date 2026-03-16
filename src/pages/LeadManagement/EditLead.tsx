@@ -602,7 +602,7 @@ const EditLead: React.FC = () => {
                   <div className="w-8 h-8 rounded-md bg-white flex items-center justify-center">
                     <Mail className="w-4 h-4 text-[var(--text-secondary)]" />
                   </div>
-                  <div className="text-sm text-[var(--text-primary)]">{sub}</div>
+                  <div className="text-sm text-gray-800">{sub}</div>
                 </div>
                 <div className="text-[var(--text-secondary)]">
                   <Eye className="w-5 h-5" />

@@ -64,7 +64,7 @@ const MasterForm: React.FC<MasterFormProps> = ({
           <div key={field.name} className="space-y-2">
             <label
               htmlFor={field.name}
-              className="block text-sm font-medium text-[var(--text-primary)]"
+              className="block text-sm font-medium text-gray-800"
             >
               {field.label} {field.required && <span className="text-[#FF0000]">*</span>}
             </label>

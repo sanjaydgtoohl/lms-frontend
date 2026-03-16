@@ -75,18 +75,18 @@ const ViewRole: React.FC = () => {
           <div className="space-y-4">
             <div>
               <div className="text-sm text-gray-600">ID</div>
-              <div className="text-base text-[var(--text-primary)]">{role.id}</div>
+              <div className="text-base text-gray-800">{role.id}</div>
             </div>
             <div>
               <div className="text-sm text-gray-600">Role Name</div>
-              <div className="text-base text-[var(--text-primary)]">{role.name}</div>
+              <div className="text-base text-gray-800">{role.name}</div>
             </div>
           </div>
 
           <div className="col-span-2">
             <div>
               <div className="text-sm text-gray-600">Description</div>
-              <div className="text-base text-[var(--text-primary)] whitespace-pre-wrap">{role.description}</div>
+              <div className="text-base text-gray-800 whitespace-pre-wrap">{role.description}</div>
             </div>
           </div>
         </div>

@@ -89,7 +89,7 @@ const CreateLeadForm: React.FC<CreateLeadFormProps> = ({ onSubmit, loading = fal
     <form onSubmit={(e) => { e.preventDefault(); onSubmit({ contacts }); }}>
       {/* Lead Management Section */}
       <div className="mb-8">
-        <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">Lead Management</h3>
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Lead Management</h3>
         <div className="flex items-center gap-6 mb-6">
           <label className="flex items-center">
             <input
@@ -99,7 +99,7 @@ const CreateLeadForm: React.FC<CreateLeadFormProps> = ({ onSubmit, loading = fal
               onChange={() => setSelectedOption('brand')}
               className="form-radio h-4 w-4 text-blue-500"
             />
-            <span className="ml-2 text-sm text-[var(--text-primary)]">Select Existing Brand</span>
+            <span className="ml-2 text-sm text-gray-800">Select Existing Brand</span>
           </label>
           <label className="flex items-center">
             <input
@@ -109,7 +109,7 @@ const CreateLeadForm: React.FC<CreateLeadFormProps> = ({ onSubmit, loading = fal
               onChange={() => setSelectedOption('agency')}
               className="form-radio h-4 w-4 text-blue-500"
             />
-            <span className="ml-2 text-sm text-[var(--text-primary)]">Select Existing Agency</span>
+            <span className="ml-2 text-sm text-gray-800">Select Existing Agency</span>
           </label>
           <label className="flex items-center">
             <input
@@ -119,14 +119,14 @@ const CreateLeadForm: React.FC<CreateLeadFormProps> = ({ onSubmit, loading = fal
               onChange={() => setSelectedOption('both')}
               className="form-radio h-4 w-4 text-blue-500"
             />
-            <span className="ml-2 text-sm text-[var(--text-primary)]">Select Existing Brand + Agency</span>
+            <span className="ml-2 text-sm text-gray-800">Select Existing Brand + Agency</span>
           </label>
         </div>
 
         <div className="grid grid-cols-2 gap-6">
           {(selectedOption === 'brand' || selectedOption === 'both') && (
             <div>
-              <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
+              <label className="block text-sm font-medium text-gray-800 mb-2">
                 Select Brand
               </label>
               <SelectField
@@ -140,7 +140,7 @@ const CreateLeadForm: React.FC<CreateLeadFormProps> = ({ onSubmit, loading = fal
           )}
           {(selectedOption === 'agency' || selectedOption === 'both') && (
             <div>
-              <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
+              <label className="block text-sm font-medium text-gray-800 mb-2">
                 Select Agency
               </label>
               <SelectField
@@ -158,7 +158,7 @@ const CreateLeadForm: React.FC<CreateLeadFormProps> = ({ onSubmit, loading = fal
       {/* Contact Persons Section */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-[var(--text-primary)]">Contact Persons</h3>
+          <h3 className="text-lg font-semibold text-gray-800">Contact Persons</h3>
           <button
             type="button"
             onClick={handleAddContact}
@@ -272,7 +272,7 @@ const CreateLeadForm: React.FC<CreateLeadFormProps> = ({ onSubmit, loading = fal
       <div className="mb-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
+            <label className="block text-sm font-medium text-gray-800 mb-2">
               Assign To
             </label>
             <SelectField
@@ -284,7 +284,7 @@ const CreateLeadForm: React.FC<CreateLeadFormProps> = ({ onSubmit, loading = fal
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
+            <label className="block text-sm font-medium text-gray-800 mb-2">
               Priority
             </label>
             <SelectField
@@ -300,7 +300,7 @@ const CreateLeadForm: React.FC<CreateLeadFormProps> = ({ onSubmit, loading = fal
 
       {/* Comment Box */}
       <div className="mb-8">
-        <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
+        <label className="block text-sm font-medium text-gray-800 mb-2">
           Comment
         </label>
         <textarea

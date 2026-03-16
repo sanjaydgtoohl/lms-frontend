@@ -156,7 +156,7 @@ const EditRole: React.FC = () => {
                   setErrors((prev) => ({ ...prev, name: '' }));
                 }}
                 placeholder="Please enter role name"
-                className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
+                className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors ${
                   errors.name
                     ? 'border border-red-500 bg-red-50 focus:ring-red-500'
                     : 'border border-[var(--border-color)] focus:ring-blue-500'
@@ -189,7 +189,7 @@ const EditRole: React.FC = () => {
                 onChange={handleChange}
                 placeholder="Please enter role description"
                 rows={4}
-                className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors resize-none ${
+                className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors resize-none ${
                   errors.description
                     ? 'border border-red-500 bg-red-50 focus:ring-red-500'
                     : 'border border-[var(--border-color)] focus:ring-blue-500'
@@ -264,7 +264,7 @@ const EditRole: React.FC = () => {
               <button
                 type="button"
                 onClick={handleBack}
-                className="px-4 py-2 rounded-lg border border-[var(--border-color)] text-[var(--text-primary)] hover:bg-[#F9FAFB] transition-colors"
+                className="px-4 py-2 rounded-lg border border-[var(--border-color)] text-gray-800 hover:bg-[#F9FAFB] transition-colors"
               >
                 Cancel
               </button>

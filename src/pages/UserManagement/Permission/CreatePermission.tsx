@@ -188,7 +188,7 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
                     setErrors((prev) => ({ ...prev, displayName: '' }));
                   }}
                   placeholder="Please enter display name"
-                  className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${errors.displayName
+                  className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors ${errors.displayName
                       ? 'border border-red-500 bg-red-50 focus:ring-red-500'
                       : 'border border-[var(--border-color)] focus:ring-blue-500'
                     }`}
@@ -222,7 +222,7 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
                     setErrors((prev) => ({ ...prev, name: '' }));
                   }}
                   placeholder="Please enter name"
-                  className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${errors.name
+                  className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors ${errors.name
                       ? 'border border-red-500 bg-red-50 focus:ring-red-500'
                       : 'border border-[var(--border-color)] focus:ring-blue-500'
                     }`}
@@ -256,7 +256,7 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
                   value={form.url}
                   onChange={handleChange}
                   placeholder="Please enter URL"
-                  className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors border border-[var(--border-color)] focus:ring-blue-500`}
+                  className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors border border-[var(--border-color)] focus:ring-blue-500`}
                 />
               </div>
 
@@ -271,7 +271,7 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
                   value={form.order}
                   onChange={handleChange}
                   placeholder="Please enter order"
-                  className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${errors.order
+                  className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors ${errors.order
                       ? 'border border-red-500 bg-red-50 focus:ring-red-500'
                       : 'border border-[var(--border-color)] focus:ring-blue-500'
                     }`}
@@ -315,7 +315,7 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
                   />
                   <label
                     htmlFor="icon-upload"
-                    className="flex-1 px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)] focus:ring-blue-500 cursor-pointer hover:bg-gray-50 transition-colors flex items-center gap-2"
+                    className="flex-1 px-3 py-2 rounded-lg bg-white text-gray-800 border border-[var(--border-color)] focus:ring-blue-500 cursor-pointer hover:bg-gray-50 transition-colors flex items-center gap-2"
                   >
                     <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
@@ -351,7 +351,7 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
                   value={form.iconText}
                   onChange={handleChange}
                   placeholder="Please enter icon text"
-                  className="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors border border-[var(--border-color)] focus:ring-blue-500"
+                  className="w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors border border-[var(--border-color)] focus:ring-blue-500"
                 />
               </div>
 
@@ -392,7 +392,7 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
                 value={form.description}
                 onChange={handleChange}
                 rows={4}
-                className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors resize-none ${errors.description
+                className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors resize-none ${errors.description
                     ? 'border border-red-500 bg-red-50 focus:ring-red-500'
                     : 'border border-[var(--border-color)] focus:ring-blue-500'
                   }`}

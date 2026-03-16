@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+.dark .bg-white,  .dark .bg-gray-100, .dark .bg-gray-50,  .dark .bg-white {
+    @apply bg-gray-800 hover:!bg-none ;
+}
+
+.dark .border-gray-200, .dark .border-gray-100 {
+    @apply !border-gray-600;
+}
+
+ .dark .text-gray-700, .dark .text-gray-800, .dark .text-gray-900 , .dark .text-gray-600 , .dark .text-black, .dark h3 , .dark .text-gray-500 {
+    @apply !text-white;
+ }
+
+ .sidebar-logo-item img {
+    @apply absolute left-0 w-auto !h-[30px] object-contain;
+ }
+
+/* Default: show normal logo, hide white logo */
+.sidebar-logo-item img.dark-theme-logo-white {
+  @apply opacity-0 hidden;
+}
+
+/* Dark mode: show white logo, hide default logo */
+.dark .sidebar-logo-item img.dark-theme-logo-white {
+  @apply opacity-100 block;
+}
+
+.dark .sidebar-logo-item img.default-logo {
+  @apply opacity-0;
+}

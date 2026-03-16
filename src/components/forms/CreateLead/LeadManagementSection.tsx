@@ -72,7 +72,7 @@ const LeadManagementSection: React.FC<Props> = ({
               options={options}
               value={value}
               onChange={(v) => onChange(typeof v === 'string' ? v : v[0] ?? '')}
-              inputClassName="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+              inputClassName="w-full px-3 py-2 rounded-lg bg-white text-gray-800 border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               disabled={loading}
             />
             {loading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}

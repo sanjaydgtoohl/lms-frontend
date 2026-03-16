@@ -215,7 +215,7 @@ const MeetingSchedule: React.FC = () => {
                     setLead(String(v));
                     if (errors.lead && v) setErrors({ ...errors, lead: undefined });
                   }}
-                  inputClassName="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)]"
+                  inputClassName="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-gray-800"
                 />
                 {errors.lead && <div className="text-red-500 text-xs mt-1">{errors.lead}</div>}
               </div>
@@ -229,7 +229,7 @@ const MeetingSchedule: React.FC = () => {
                     setMeetingType(String(v));
                     if (errors.meetingType && v) setErrors({ ...errors, meetingType: undefined });
                   }}
-                  inputClassName="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)]"
+                  inputClassName="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-gray-800"
                 />
                 {errors.meetingType && <div className="text-red-500 text-xs mt-1">{errors.meetingType}</div>}
               </div>
@@ -258,7 +258,7 @@ const MeetingSchedule: React.FC = () => {
                       placeholder="Please Fill Meeting Agenda "
                       value={agenda}
                       onChange={(e) => setAgenda(e.target.value)}
-                      className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)]"
+                      className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-gray-800"
                     />
                   </div>
                 </div>
@@ -279,7 +279,7 @@ const MeetingSchedule: React.FC = () => {
                       dateFormat="yyyy-MM-dd HH:mm"
                       timeFormat="HH:mm"
                       placeholderText="yyyy-mm-dd HH:mm"
-                      className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] w-full"
+                      className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-gray-800 w-full"
                       wrapperClassName="w-full"
                       popperPlacement="bottom-start"
                       showMonthDropdown
@@ -302,7 +302,7 @@ const MeetingSchedule: React.FC = () => {
                       dateFormat="yyyy-MM-dd HH:mm"
                       timeFormat="HH:mm"
                       placeholderText="yyyy-mm-dd HH:mm"
-                      className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] w-full"
+                      className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-gray-800 w-full"
                       wrapperClassName="w-full"
                       popperPlacement="bottom-start"
                       showMonthDropdown
@@ -324,7 +324,7 @@ const MeetingSchedule: React.FC = () => {
                     setTitle(e.target.value);
                     if (errors.title && e.target.value) setErrors({ ...errors, title: undefined });
                   }}
-                  className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)]"
+                  className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-gray-800"
                 />
                 {errors.title && <div className="text-red-500 text-xs mt-1">{errors.title}</div>}
               </div>
@@ -336,7 +336,7 @@ const MeetingSchedule: React.FC = () => {
                   placeholder="Please Fill Meeting Location"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)]"
+                  className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-gray-800"
                 />
               </div>
 

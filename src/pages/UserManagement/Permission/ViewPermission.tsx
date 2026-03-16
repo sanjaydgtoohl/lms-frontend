@@ -65,18 +65,18 @@ const ViewPermission: React.FC = () => {
           <div className="space-y-4">
             <div>
               <div className="text-sm text-gray-600">ID</div>
-              <div className="text-base text-[var(--text-primary)]">{permission.id}</div>
+              <div className="text-base text-gray-800">{permission.id}</div>
             </div>
             <div>
               <div className="text-sm text-gray-600">Permission Name</div>
-              <div className="text-base text-[var(--text-primary)]">{permission.display_name}</div>
+              <div className="text-base text-gray-800">{permission.display_name}</div>
             </div>
           </div>
 
           <div className="col-span-2">
             <div>
               <div className="text-sm text-gray-600">Description</div>
-              <div className="text-base text-[var(--text-primary)] whitespace-pre-wrap">{permission.description}</div>
+              <div className="text-base text-gray-800 whitespace-pre-wrap">{permission.description}</div>
             </div>
           </div>
         </div>

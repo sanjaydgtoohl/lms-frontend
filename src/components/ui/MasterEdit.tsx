@@ -215,7 +215,7 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
                     <input
                       value={form[k] ?? ''}
                       onChange={(e) => handleChange(k, e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-1 transition-colors ${errors[k] ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-[var(--border-color)] focus:ring-black'
+                      className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-1 transition-colors ${errors[k] ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-[var(--border-color)] focus:ring-black'
                         }`}
                     />
                     {errors[k] && (

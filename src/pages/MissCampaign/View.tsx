@@ -260,13 +260,13 @@ const View: React.FC = () => {
             className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden"
           >
             <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)]">
-              <h3 className="text-lg font-semibold text-[var(--text-primary)]">Miss Campaign Details</h3>
+              <h3 className="text-lg font-semibold text-gray-800">Miss Campaign Details</h3>
             </div>
 
             <div className="p-6">
               {/* Header Section */}
               <div className="mb-6">
-                <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-2">{viewItem.brandName}</h1>
+                <h1 className="text-2xl font-bold text-gray-800 mb-2">{viewItem.brandName}</h1>
                 <p className="text-lg text-[var(--text-secondary)]">{viewItem.productName}</p>
               </div>
 
@@ -289,21 +289,21 @@ const View: React.FC = () => {
                 <div className="space-y-4">
                   <div>
                     <div className="text-sm text-[var(--text-secondary)]">Source</div>
-                    <div className="text-sm font-medium text-[var(--text-primary)]">{viewItem.source || '-'}</div>
+                    <div className="text-sm font-medium text-gray-800">{viewItem.source || '-'}</div>
                   </div>
                   <div>
                     <div className="text-sm text-[var(--text-secondary)]">Sub Source</div>
-                    <div className="text-sm font-medium text-[var(--text-primary)]">{viewItem.subSource || '-'}</div>
+                    <div className="text-sm font-medium text-gray-800">{viewItem.subSource || '-'}</div>
                   </div>
                 </div>
                 <div className="space-y-4">
                   <div>
                     <div className="text-sm text-[var(--text-secondary)]">Date & Time</div>
-                    <div className="text-sm font-medium text-[var(--text-primary)]">{viewItem.dateTime || '-'}</div>
+                    <div className="text-sm font-medium text-gray-800">{viewItem.dateTime || '-'}</div>
                   </div>
                   <div>
                     <div className="text-sm text-[var(--text-secondary)]">ID</div>
-                    <div className="text-sm font-medium text-[var(--text-primary)]">{viewItem.id}</div>
+                    <div className="text-sm font-medium text-gray-800">{viewItem.id}</div>
                   </div>
                 </div>
               </div>

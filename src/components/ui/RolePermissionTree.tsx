@@ -183,7 +183,7 @@ const RolePermissionTree: React.FC<Props> = ({ modulePermissions, onToggle }) =>
   return (
     <div className="bg-white rounded-lg border border-[var(--border-color)] p-4" ref={dropdownRef}>
       <div className="flex items-center justify-between mb-4">
-        <h4 className="text-base font-semibold text-[var(--text-primary)]">Role Permission</h4>
+        <h4 className="text-base font-semibold text-gray-800">Role Permission</h4>
         <SearchBar
           delay={300}
           placeholder="Search Permissions"

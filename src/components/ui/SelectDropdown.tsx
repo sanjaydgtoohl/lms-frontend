@@ -58,8 +58,8 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
   // Determine if error border should be shown
   const errorBorderClass = inputClassName && inputClassName.includes('border-red-500') ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-[#DDE1E7]';
   // Input classes and styles differ for multi vs single select
-  const multiInputClass = `flex-none h-full px-2 text-sm font-medium bg-transparent text-[var(--text-primary)] border-none focus:outline-none`;
-  const singleInputClass = `flex-1 h-full px-2 text-sm font-medium bg-transparent text-[var(--text-primary)] border-none focus:outline-none`;
+  const multiInputClass = `flex-none h-full px-2 text-sm font-medium bg-transparent text-gray-800 border-none focus:outline-none`;
+  const singleInputClass = `flex-1 h-full px-2 text-sm font-medium bg-transparent text-gray-800 border-none focus:outline-none`;
   const multiInputStyle: React.CSSProperties = { boxShadow: 'none', minWidth: '30px', width: '30px', height: 'auto' };
   const singleInputStyle: React.CSSProperties = { boxShadow: 'none', minWidth: '120px', width: '100%', height: 'auto' };
   return (

@@ -435,7 +435,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                     placeholder="Enter full name"
                     value={c.fullName}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateContact(c.id, 'fullName', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                    className="w-full px-3 py-2 rounded-lg bg-white text-gray-800 border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                   />
                   {errors?.[c.id]?.fullName && (
                     <div className="text-xs text-red-500 mt-1">{errors[c.id].fullName}</div>
@@ -448,7 +448,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                     placeholder="Enter profile URL"
                     value={c.profileUrl}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateContact(c.id, 'profileUrl', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                    className="w-full px-3 py-2 rounded-lg bg-white text-gray-800 border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                   />
                 </div>
               </div>
@@ -462,7 +462,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                     placeholder="Enter email address"
                     value={c.email}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateContact(c.id, 'email', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                    className="w-full px-3 py-2 rounded-lg bg-white text-gray-800 border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                   />
                 </div>
                 <div>
@@ -476,7 +476,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                           value={c.mobileNo}
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateContact(c.id, 'mobileNo', e.target.value)}
                           maxLength={10}
-                          className="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                          className="w-full px-3 py-2 rounded-lg bg-white text-gray-800 border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                         />
                         {errors?.[c.id]?.mobileNo && (
                           <div className="text-xs text-red-500 mt-1">{errors[c.id].mobileNo}</div>
@@ -504,7 +504,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                             value={c.mobileNo2}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateContact(c.id, 'mobileNo2', e.target.value)}
                             maxLength={10}
-                            className="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                            className="w-full px-3 py-2 rounded-lg bg-white text-gray-800 border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                           />
                         </div>
                         <button
@@ -693,7 +693,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                     placeholder="Enter postal code"
                     value={c.postalCode}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateContact(c.id, 'postalCode', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                    className="w-full px-3 py-2 rounded-lg bg-white text-gray-800 border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                   />
                 </div>
               </div>

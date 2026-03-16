@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import './table.css'
 import App from './App.tsx'
+import './darkmode.css'
 
 import { Provider } from "react-redux";
 import { store } from "./redux/store";

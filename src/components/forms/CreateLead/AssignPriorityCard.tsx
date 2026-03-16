@@ -139,7 +139,7 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
               placeholder="Select Team Member"
               value={assignTo}
               onChange={(value) => onChange?.({ assignTo: typeof value === 'string' ? value : value[0] ?? '', priority, callFeedback })}
-              inputClassName="px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+              inputClassName="px-3 py-2 rounded-lg bg-white text-gray-800 border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               disabled={userLoading}
             />
             {userLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
@@ -155,7 +155,7 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
               placeholder="Select Priority"
               value={priority}
               onChange={(value) => onChange?.({ assignTo, priority: typeof value === 'string' ? value : value[0] ?? '', callFeedback })}
-              inputClassName="px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+              inputClassName="px-3 py-2 rounded-lg bg-white text-gray-800 border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               disabled={priorityLoading}
             />
             {priorityLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
@@ -171,7 +171,7 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
               placeholder="Please Select Feedback"
               value={callFeedback}
               onChange={(value: any) => onChange?.({ assignTo, priority, callFeedback: value })}
-              inputClassName="px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+              inputClassName="px-3 py-2 rounded-lg bg-white text-gray-800 border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               disabled={callStatusLoading}
             />
             {callStatusLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}

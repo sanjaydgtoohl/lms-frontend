@@ -71,19 +71,19 @@ const ViewUser: React.FC = () => {
           <div className="space-y-4">
             <div>
               <div className="text-sm text-gray-600">User Name</div>
-              <div className="text-base text-[var(--text-primary)]">{user.name}</div>
+              <div className="text-base text-gray-800">{user.name}</div>
             </div>
             <div>
               <div className="text-sm text-gray-600">Email</div>
-              <div className="text-base text-[var(--text-primary)]">{user.email}</div>
+              <div className="text-base text-gray-800">{user.email}</div>
             </div>
             <div>
               <div className="text-sm text-gray-600">Phone Number</div>
-              <div className="text-base text-[var(--text-primary)]">{user.phone || '-'}</div>
+              <div className="text-base text-gray-800">{user.phone || '-'}</div>
             </div>
             <div>
               <div className="text-sm text-gray-600">Created Date</div>
-              <div className="text-base text-[var(--text-primary)]">
+              <div className="text-base text-gray-800">
                 {user.created_at_formatted || (user.created_at ? new Date(user.created_at).toLocaleString() : '-') || '-'}
               </div>
             </div>
@@ -93,13 +93,13 @@ const ViewUser: React.FC = () => {
               {user.roles && user.roles.length > 0 ? (
                 <ol className="list-decimal list-inside mt-1 space-y-1">
                   {user.roles.map((r: any, i: number) => (
-                    <li key={r.id ?? i} className="text-base text-[var(--text-primary)]">
+                    <li key={r.id ?? i} className="text-base text-gray-800">
                       {r.description || '-'}
                     </li>
                   ))}
                 </ol>
               ) : (
-                <div className="text-base text-[var(--text-primary)] mt-1">-</div>
+                <div className="text-base text-gray-800 mt-1">-</div>
               )}
             </div>
           </div>
@@ -133,7 +133,7 @@ const ViewUser: React.FC = () => {
 
             <div>
               <div className="text-sm text-gray-600">Last Login</div>
-              <div className="text-base text-[var(--text-primary)]">{user.last_login_at || '-'}</div>
+              <div className="text-base text-gray-800">{user.last_login_at || '-'}</div>
             </div>
 
             <div>
@@ -142,13 +142,13 @@ const ViewUser: React.FC = () => {
                 <div className="mt-2 space-y-3">
                   {user.parents.map((p: any) => (
                     <div key={p.id} className="w-full bg-white border border-[var(--border-color)] rounded-md p-3">
-                      <div className="text-base text-[var(--text-primary)]">{p.name}</div>
+                      <div className="text-base text-gray-800">{p.name}</div>
                       <div className="text-sm text-gray-600">{p.email}</div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-base text-[var(--text-primary)] mt-1">-</div>
+                <div className="text-base text-gray-800 mt-1">-</div>
               )}
             </div>
           </div>

@@ -222,9 +222,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
     return (
       <div key={item.name}>
         <div
-          className={`
-           flex items-center justify-between px-4 py-3 text-sm font-medium cursor-pointer rounded-sm
-            transition-all duration-200 ease-in-out
+          className={`flex items-center justify-between px-4 py-3 text-sm font-medium cursor-pointer rounded-sm transition-all duration-200 ease-in-out
             ${level > 0 ? "ml-6" : ""}
             ${highlightClass}
             ${isCollapsed ? "px-2 justify-center" : ""}
@@ -250,7 +248,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
                 />
               )
             )}
-            {!isCollapsed && <span className="text-[var(--text-primary)]">{item.name}</span>}
+            {!isCollapsed && <span className="text-gray-800">{item.name}</span>}
           </div>
 
           {hasChildren && !isCollapsed && (
@@ -276,7 +274,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
               <Link
                 key={child.name}
                 to={child.path || ""}
-                className="flex items-center px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-orange-50"
+                className="flex items-center px-4 py-2 text-sm text-gray-800 hover:bg-orange-50"
                 onClick={() => {
                   setShowMobilePopup(false);
                 }}
@@ -291,10 +289,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
                   />
                 ) : (
                   child.icon && React.createElement(child.icon, {
-                    className: "w-4 h-4 mr-2 text-[var(--text-primary)]",
+                    className: "w-4 h-4 mr-2 text-gray-800",
                   })
                 )}
-                <span className="text-[var(--text-primary)]">{child.name}</span>
+                <span className="text-gray-800">{child.name}</span>
               </Link>
             ))}
           </div>
@@ -339,7 +337,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
 
         <div className="border-t border-gray-100 p-2">
           <div
-            className={`flex items-center px-4 py-3 text-sm font-medium text-[var(--text-primary)] rounded-lg hover:bg-orange-50 transition-all cursor-pointer`}
+            className={`flex items-center px-4 py-3 text-sm font-medium text-gray-800 rounded-lg hover:bg-orange-50 transition-all cursor-pointer`}
             onClick={() => onCloseMobile && onCloseMobile()}
           >
             <HelpIcon className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)] mr-2.5`} /> Help
@@ -350,8 +348,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
               if (onCloseMobile) onCloseMobile();
             }}
             className="flex items-center px-4 py-3 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-all cursor-pointer"
-          > 
-            <LogoutIcon className="shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-red-600 mr-2.5" /> Logout 
+          >
+            <LogoutIcon className="shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-red-600 mr-2.5" /> Logout
           </div>
         </div>
 
@@ -375,8 +373,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
           </div>
         ) : (
           <div className="flex items-center w-full">
-            <div className="rounded-lg flex items-center justify-start">
-              <img src={logoUrl} alt="LMS logo" style={{ width: 280, height: 'auto' }} />
+            <div className="rounded-lg flex items-center justify-start sidebar-logo-item relatives">
+              <img src={logoUrl} alt="LMS logo" style={{ width: 280, height: 'auto' }} className="default-logo" />
+              <img src='/logo-white.png' alt="LMS logo white" className="dark-theme-logo-white" style={{ width: 280, height: 'auto' }} />
             </div>
           </div>
         )}
@@ -392,13 +391,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
       {/* Footer Section */}
       <div className="border-t border-gray-100 p-3 space-y-2">
         <div
-          className={`flex items-center px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] rounded-lg hover:bg-orange-50 transition-all cursor-pointer ${isCollapsed ? "px-2 justify-center" : ""
+          className={`flex items-center px-4 py-2.5 text-sm font-medium text-gray-800 rounded-lg hover:bg-orange-50 transition-all cursor-pointer ${isCollapsed ? "px-2 justify-center" : ""
             }`}
         >
           <HelpIcon
             className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)] ${isCollapsed ? "" : "mr-2.5"}`}
           />
-          {!isCollapsed && <span className="text-[var(--text-primary)]">Help</span>}
+          {!isCollapsed && <span className="text-gray-800">Help</span>}
         </div>
 
         <div

@@ -12,7 +12,7 @@ interface SimpleListCardProps<T> {
 const SimpleListCard = <T,>({ title, items, renderItem, footer, headerRight, onItemClick }: SimpleListCardProps<T>) => {
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden h-full flex flex-col">
-      <div className="px-4 min-h-14 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white flex items-center justify-between gap-3 ">
+      <div className="px-4 min-h-14 border-b border-gray-100 bg-gray-50 to-white flex items-center justify-between gap-3 ">
         <h2 className="text-base font-semibold leading-normal text-gray-900 whitespace-nowrap">{title}</h2>
         <div className="ml-auto flex-shrink-0">
           {headerRight}
@@ -37,7 +37,7 @@ const SimpleListCard = <T,>({ title, items, renderItem, footer, headerRight, onI
         </div>
       </div>
       {footer && (
-        <div className="px-4 py-3 border-t border-gray-100 bg-gradient-to-r from-gray-50 to-white flex-shrink-0">
+        <div className="px-4 py-3 border-t border-gray-100 bg-gray-100 to-white flex-shrink-0">
           {footer}
         </div>
       )}

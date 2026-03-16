@@ -541,7 +541,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             name="brandName"
             value={form.brandName}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-black"
+            className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-black"
             placeholder="Please Enter Brand Name"
           />
           {errors.brandName && (
@@ -571,7 +571,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             name="website"
             value={form.website}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-black"
+            className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-black"
             placeholder="https://"
           />
             {errors.website && !form.website.trim() && (
@@ -649,7 +649,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
                 setPostalFieldError('Postal code is invalid');
               }
             }}
-            className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-black"
+            className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-black"
             placeholder="Please Enter Postal Code"
           />
           {(errors.postalCode || postalFieldError) && <div className="text-xs text-red-500 mt-1">{errors.postalCode || postalFieldError}</div>}

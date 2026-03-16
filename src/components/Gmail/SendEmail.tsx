@@ -133,7 +133,7 @@ export default function SendEmail() {
               placeholder="recipient@example.com"
               value={formData.to}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+              className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
             />
             {errors.to && <div className="text-xs text-red-500 mt-1">{errors.to}</div>}
           </div>
@@ -146,7 +146,7 @@ export default function SendEmail() {
               placeholder="Email subject"
               value={formData.subject}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+              className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
             />
             {errors.subject && <div className="text-xs text-red-500 mt-1">{errors.subject}</div>}
           </div>
@@ -160,7 +160,7 @@ export default function SendEmail() {
               placeholder="Enter email content (HTML supported)"
               value={formData.body}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] font-mono resize-vertical"
+              className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] font-mono resize-vertical"
             />
             {errors.body && <div className="text-xs text-red-500 mt-1">{errors.body}</div>}
           </div>
@@ -206,7 +206,7 @@ export default function SendEmail() {
                 id="file-input"
               />
               <label htmlFor="file-input" className="cursor-pointer block">
-                <div className="text-[var(--text-primary)] font-medium">Drag files here or click to select</div>
+                <div className="text-gray-800 font-medium">Drag files here or click to select</div>
                 <div className="text-xs text-[var(--text-secondary)] mt-1">Supported: All file types (Max 25MB per file)</div>
               </label>
             </div>
@@ -215,7 +215,7 @@ export default function SendEmail() {
           {/* Attachments List */}
           {attachments.length > 0 && (
             <div className="bg-[#F9FAFB] border border-[var(--border-color)] rounded-lg p-4 space-y-3">
-              <div className="text-sm font-semibold text-[var(--text-primary)]">
+              <div className="text-sm font-semibold text-gray-800">
                 📎 {attachments.length} file{attachments.length !== 1 ? 's' : ''} attached
               </div>
               <div className="space-y-2">
@@ -225,7 +225,7 @@ export default function SendEmail() {
                     className="flex justify-between items-center p-3 bg-white border border-[var(--border-color)] rounded-lg"
                   >
                     <div>
-                      <div className="text-sm font-medium text-[var(--text-primary)]">{att.name}</div>
+                      <div className="text-sm font-medium text-gray-800">{att.name}</div>
                       <div className="text-xs text-[var(--text-secondary)]">{formatFileSize(att.size)}</div>
                     </div>
                     <button

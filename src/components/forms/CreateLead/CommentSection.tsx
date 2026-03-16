@@ -14,7 +14,7 @@ const CommentSection: React.FC<Props> = ({ value = '', onChange = () => {} }) =>
           placeholder="Additional notes about the lead..."
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full h-28 px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none transition-colors"
+          className="w-full h-28 px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none transition-colors"
         />
       </div>
     </div>

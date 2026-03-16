@@ -100,60 +100,60 @@ const BriefView: React.FC<BriefViewProps> = ({ brief, onClose, onEdit }) => {
             </div>
             <div>
               <div className="text-sm text-gray-500">Product</div>
-              <div className="text-base font-medium text-[var(--text-primary)]">{brief.product_name ?? '-'}</div>
+              <div className="text-base font-medium text-gray-800">{brief.product_name ?? '-'}</div>
             </div>
           </div>
 
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="p-4 bg-gray-50 rounded-md">
               <div className="text-xs text-gray-500">Mode of Campaign</div>
-              <div className="mt-1 text-sm text-[var(--text-primary)]">{brief.mode_of_campaign ?? '-'}</div>
+              <div className="mt-1 text-sm text-gray-800">{brief.mode_of_campaign ?? '-'}</div>
             </div>
             <div className="p-4 bg-gray-50 rounded-md">
               <div className="text-xs text-gray-500">Media Type</div>
-              <div className="mt-1 text-sm text-[var(--text-primary)]">{brief.media_type ?? '-'}</div>
+              <div className="mt-1 text-sm text-gray-800">{brief.media_type ?? '-'}</div>
             </div>
             <div className="p-4 bg-gray-50 rounded-md">
               <div className="text-xs text-gray-500">Estimated Budget</div>
-              <div className="mt-1 text-sm text-[var(--text-primary)]">{formatCurrency(brief.budget)}</div>
+              <div className="mt-1 text-sm text-gray-800">{formatCurrency(brief.budget)}</div>
             </div>
             <div className="p-4 bg-gray-50 rounded-md">
               <div className="text-xs text-gray-500">Reference ID</div>
-              <div className="mt-1 text-sm text-[var(--text-primary)]">{brief.uuid ?? brief.id ?? '-'}</div>
+              <div className="mt-1 text-sm text-gray-800">{brief.uuid ?? brief.id ?? '-'}</div>
             </div>
           </div>
 
           <div className="mt-6">
             <div className="text-sm text-gray-500">Brief Notes</div>
-            <div className="mt-2 p-4 bg-white border border-gray-100 rounded-md text-sm text-[var(--text-primary)] whitespace-pre-wrap">{brief.comment ?? '-'}</div>
+            <div className="mt-2 p-4 bg-white border border-gray-100 rounded-md text-sm text-gray-800 whitespace-pre-wrap">{brief.comment ?? '-'}</div>
           </div>
         </div>
 
         <aside className="space-y-4">
           <div className="p-4 bg-white border border-gray-100 rounded-md">
             <div className="text-xs text-gray-500">Contact Person</div>
-            <div className="mt-1 text-sm font-medium text-[var(--text-primary)]">{brief.contact_person?.name ?? '-'}</div>
+            <div className="mt-1 text-sm font-medium text-gray-800">{brief.contact_person?.name ?? '-'}</div>
             <div className="text-xs text-gray-500">{brief.contact_person?.email ?? ''}</div>
           </div>
 
           <div className="p-4 bg-white border border-gray-100 rounded-md">
             <div className="text-xs text-gray-500">Brand</div>
-            <div className="mt-1 text-sm text-[var(--text-primary)]">{brief.brand?.name ?? '-'}</div>
+            <div className="mt-1 text-sm text-gray-800">{brief.brand?.name ?? '-'}</div>
           </div>
 
           <div className="p-4 bg-white border border-gray-100 rounded-md">
             <div className="text-xs text-gray-500">Agency</div>
-            <div className="mt-1 text-sm text-[var(--text-primary)]">{brief.agency?.name ?? '-'}</div>
+            <div className="mt-1 text-sm text-gray-800">{brief.agency?.name ?? '-'}</div>
           </div>
 
           <div className="p-4 bg-white border border-gray-100 rounded-md">
             <div className="text-xs text-gray-500">Assigned To</div>
-            <div className="mt-1 text-sm text-[var(--text-primary)]">{brief.assigned_user?.name ?? '-'}</div>
+            <div className="mt-1 text-sm text-gray-800">{brief.assigned_user?.name ?? '-'}</div>
           </div>
 
           <div className="p-4 bg-white border border-gray-100 rounded-md text-xs text-gray-500">
             <div>Created By</div>
-            <div className="mt-1 text-sm text-[var(--text-primary)]">{brief.created_by_user?.name ?? '-'}</div>
+            <div className="mt-1 text-sm text-gray-800">{brief.created_by_user?.name ?? '-'}</div>
             <div className="mt-1">{formatDate(brief.created_at)}</div>
           </div>
         </aside>

@@ -913,7 +913,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">Brief Name <span className="text-[#FF0000]">*</span></label>
                   <input name="briefName" value={form.briefName} onChange={(e) => { handleChange(e); setErrors(prev => ({ ...prev, briefName: '' })); }}
                     placeholder="Please enter product name"
-                    className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${errors.briefName ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-[var(--border-color)] focus:ring-blue-500'}`}
+                    className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors ${errors.briefName ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-[var(--border-color)] focus:ring-blue-500'}`}
                     aria-invalid={errors.briefName ? 'true' : 'false'}
                     aria-describedby={errors.briefName ? 'briefName-error' : undefined}
                   />

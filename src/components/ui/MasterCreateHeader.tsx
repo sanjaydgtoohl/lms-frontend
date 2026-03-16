@@ -26,7 +26,7 @@ export const MasterCreateHeader: React.FC<MasterCreateHeaderProps> = ({
         )}
       </div>
       {title && (
-        <h1 className="text-xl font-semibold text-[var(--text-primary)]">{title}</h1>
+        <h1 className="text-xl font-semibold text-gray-800">{title}</h1>
       )}
     </div>
   );
