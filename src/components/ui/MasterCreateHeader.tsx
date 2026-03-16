@@ -1,6 +1,6 @@
 import React from 'react';
-import { ChevronLeft } from 'lucide-react';
 import Breadcrumb from './Breadcrumb';
+import { IoIosArrowBack } from 'react-icons/io';
 
 interface MasterCreateHeaderProps {
   title?: string;
@@ -20,7 +20,7 @@ export const MasterCreateHeader: React.FC<MasterCreateHeaderProps> = ({
             onClick={onClose}
             className="flex items-center space-x-2 btn-primary text-white px-3 py-1 rounded-lg"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <IoIosArrowBack className="w-5 h-5" />
             <span className="text-sm font-medium">Back</span>
           </button>
         )}

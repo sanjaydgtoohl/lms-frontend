@@ -44,11 +44,11 @@ const Table = <T,>(props: TableProps<T>) => {
   // responsive padding classes used for cells/headers; compact mode reduces padding further
   // small screens get compact padding while larger screens keep desktop spacing
   const headerPadClass = compact
-    ? 'px-2 py-1.5 lg:px-3 lg:py-2'
-    : 'px-3 py-2 lg:px-6 lg:py-3.5';
+    ? 'px-3 py-1.5 lg:px-5 lg:py-2'
+    : 'px-3 py-2 lg:px-5 lg:py-3.5';
   const cellPadClass = compact
-    ? 'px-2 py-1.5 lg:px-3 lg:py-2'
-    : 'px-3 py-2 lg:px-6 lg:py-4';
+    ? 'px-3 py-2 lg:px-5 lg:py-3'
+    : 'px-3 py-2 lg:px-5 lg:py-3';
 
   // Always show table structure, even when loading or empty
   const hasData = data && data.length > 0;
@@ -60,19 +60,19 @@ const Table = <T,>(props: TableProps<T>) => {
       <div className={`${desktopOnMobile ? 'block' : 'hidden lg:block'} overflow-x-auto overflow-y-visible`}>
         <div className="relative">
           <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+          <thead className="bg-gray-100">
             <tr>
               {columns.map(col => (
                 <th
                   key={String(col.key)}
-                  className={`${headerPadClass} text-center text-xs font-semibold text-gray-700 tracking-wider border-b border-gray-200 whitespace-nowrap truncate ${col.className || ''}`}
+                  className={`${headerPadClass} text-left text-sm font-semibold text-black tracking-wider border-b border-gray-200 whitespace-nowrap truncate ${col.className || ''}`}
                   style={{ maxWidth: 220 }}
                 >
                   {typeof col.header === 'string' ? toTitleCase(col.header) : col.header}
                 </th>
               ))}
               {showActions && (
-                <th className={`${headerPadClass} text-center text-xs font-semibold text-gray-700 tracking-wider border-b border-gray-200 whitespace-nowrap truncate`} style={{ maxWidth: 220 }}>
+                <th className={`${headerPadClass}text-left text-sm font-semibold text-black tracking-wider border-b border-gray-200 whitespace-nowrap truncate`} style={{ maxWidth: 220 }}>
                   {toTitleCase('Actions')}
                 </th>
               )}
@@ -119,7 +119,7 @@ const Table = <T,>(props: TableProps<T>) => {
                     {columns.map(col => (
                     <td
                       key={col.key}
-                      className={`${cellPadClass} whitespace-nowrap text-sm text-gray-900 text-center ${col.className || ''}`}
+                      className={`${cellPadClass} whitespace-nowrap text-sm text-gray-700 ${col.className || ''}`}
                       style={{ maxWidth: 320 }}
                     >
                           {(() => {

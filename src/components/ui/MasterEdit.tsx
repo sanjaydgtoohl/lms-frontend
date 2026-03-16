@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft } from 'lucide-react';
 import Breadcrumb from './Breadcrumb';
 import SelectField from './SelectField';
 import { fetchLeadSources, type LeadSource } from '../../services/CreateSourceForm';
+import { IoIosArrowBack } from 'react-icons/io';
 
 type Props = {
   item: Record<string, any> | null;
@@ -27,7 +27,7 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
     setErrors(prev => ({ ...prev, [key]: '' }));
   };
 
-  
+
   useEffect(() => {
     // if (!item) return;
     let mounted = true;
@@ -84,7 +84,7 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
   }, [item, form.source, hideSource]);
 
   if (!item) return null; // ✅ Hooks ke baad safe
-  
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,34 +122,34 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
         onClose();
         return;
       } catch (err) {
-          // Try to pick field-specific errors from API response if present
-          const message = err instanceof Error ? err.message : 'Failed to update record';
-          try {
-            const resp = (err as any).original?.responseData || (err as any).responseData || err;
-            const errorsObj = resp && (resp.errors || resp.data?.errors || resp.errors);
-            if (errorsObj && typeof errorsObj === 'object') {
-              // Map known server field keys to our form keys: title -> name, etc.
-              const fieldMap: Record<string, string> = { title: 'name' };
-              let handled = false;
-              for (const [k, v] of Object.entries(errorsObj)) {
-                const msgs = Array.isArray(v) ? v : [v];
-                const text = String(msgs[0]);
-                const targetKey = fieldMap[k] ?? k;
-                // If our form has this key, set per-field error
-                if (Object.prototype.hasOwnProperty.call(form, targetKey)) {
-                  setErrors(prev => ({ ...prev, [targetKey]: text }));
-                  handled = true;
-                  break;
-                }
+        // Try to pick field-specific errors from API response if present
+        const message = err instanceof Error ? err.message : 'Failed to update record';
+        try {
+          const resp = (err as any).original?.responseData || (err as any).responseData || err;
+          const errorsObj = resp && (resp.errors || resp.data?.errors || resp.errors);
+          if (errorsObj && typeof errorsObj === 'object') {
+            // Map known server field keys to our form keys: title -> name, etc.
+            const fieldMap: Record<string, string> = { title: 'name' };
+            let handled = false;
+            for (const [k, v] of Object.entries(errorsObj)) {
+              const msgs = Array.isArray(v) ? v : [v];
+              const text = String(msgs[0]);
+              const targetKey = fieldMap[k] ?? k;
+              // If our form has this key, set per-field error
+              if (Object.prototype.hasOwnProperty.call(form, targetKey)) {
+                setErrors(prev => ({ ...prev, [targetKey]: text }));
+                handled = true;
+                break;
               }
-              if (handled) return;
             }
-          } catch {
-            // ignore parsing errors
+            if (handled) return;
           }
+        } catch {
+          // ignore parsing errors
+        }
 
-          setErrors(prev => ({ ...prev, form: message }));
-          return;
+        setErrors(prev => ({ ...prev, form: message }));
+        return;
       }
     }
     onClose();
@@ -165,7 +165,7 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
           onClick={onClose}
           className="flex items-center space-x-2 btn-primary text-white px-3 py-1 rounded-lg"
         >
-          <ChevronLeft className="w-4 h-4" />
+          <IoIosArrowBack className="w-5 h-5" />
           <span className="text-sm">Go Back</span>
         </button>
       </div>
@@ -178,71 +178,72 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
         transition={{ duration: 0.18 }}
         className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden"
       >
-        <div className="p-6 bg-[#F9FAFB] space-y-4">
-  {Object.entries(form).filter(([k]) => k !== 'id' && k !== 'dateTime' && k !== 'date_time' && !(hideSource && k === 'source')).map(([k]) => (
-          <div key={k}>
-            <label className="block text-sm text-[var(--text-secondary)] mb-1">
-              {(k === 'name' && nameLabel) 
-                ? nameLabel 
-                : k.replace(/([A-Z])/g, ' $1')
-                  .split(' ')
-                  .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                  .join(' ')}
-            </label>
-            {k === 'source' ? (
-              <>
-                <SelectField
-                  name={k}
-                  value={String(form[k] ?? '')}
-                  onChange={(value) => handleChange(k, typeof value === 'string' ? value : value[0] ?? '')}
-                  options={options.map(o => ({ value: String(o.id), label: o.name }))}
-                  placeholder={loadingOptions ? 'Loading...' : 'Search or select option'}
-                  disabled={loadingOptions}
-                  inputClassName={errors[k] ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}
-                />
-                {errors[k] && (
-                  <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
-                    <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                    {errors[k]}
-                  </div>
+        <div className="p-4 bg-gray-50 space-y-4 h-[50dvh] ">
+          <div>
+            {Object.entries(form).filter(([k]) => k !== 'id' && k !== 'dateTime' && k !== 'date_time' && !(hideSource && k === 'source')).map(([k]) => (
+              <div key={k}>
+                <label className="block text-sm text-[var(--text-secondary)] mb-1">
+                  {(k === 'name' && nameLabel)
+                    ? nameLabel
+                    : k.replace(/([A-Z])/g, ' $1')
+                      .split(' ')
+                      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                      .join(' ')}
+                </label>
+                {k === 'source' ? (
+                  <>
+                    <SelectField
+                      name={k}
+                      value={String(form[k] ?? '')}
+                      onChange={(value) => handleChange(k, typeof value === 'string' ? value : value[0] ?? '')}
+                      options={options.map(o => ({ value: String(o.id), label: o.name }))}
+                      placeholder={loadingOptions ? 'Loading...' : 'Search or select option'}
+                      disabled={loadingOptions}
+                      inputClassName={errors[k] ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-black'}
+                    />
+                    {errors[k] && (
+                      <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                        <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                        {errors[k]}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <input
+                      value={form[k] ?? ''}
+                      onChange={(e) => handleChange(k, e.target.value)}
+                      className={`w-full px-3 py-2 border rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-1 transition-colors ${errors[k] ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-[var(--border-color)] focus:ring-black'
+                        }`}
+                    />
+                    {errors[k] && (
+                      <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                        <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                        {errors[k]}
+                      </div>
+                    )}
+                  </>
                 )}
-              </>
-            ) : (
-              <>
-                <input
-                  value={form[k] ?? ''}
-                  onChange={(e) => handleChange(k, e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
-                    errors[k] ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-[var(--border-color)] focus:ring-[var(--primary)]'
-                  }`}
-                />
-                {errors[k] && (
-                  <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
-                    <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                    {errors[k]}
-                  </div>
-                )}
-              </>
+              </div>
+            ))}
+
+            {errors.form && (
+              <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+                {errors.form}
+              </div>
             )}
-          </div>
-        ))}
 
-        {errors.form && (
-          <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-            {errors.form}
           </div>
-        )}
-
-        <div className="flex items-center justify-end space-x-3 pt-2">
-          <button type="button" onClick={onClose} className="px-4 py-2 text-[var(--text-secondary)] hover:text-black">Cancel</button>
-          <button type="submit" className="px-4 py-2 rounded-lg btn-primary text-white shadow-sm">Update</button>
+          <div className="flex items-center justify-end space-x-3 pt-2">
+            <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
+            <button type="submit" className="px-4 py-2 rounded-lg btn-primary text-white shadow-sm">Update</button>
+          </div>
         </div>
-      </div>
-    </motion.form>
+      </motion.form>
     </>
   );
 };

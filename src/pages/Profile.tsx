@@ -152,7 +152,7 @@ const Profile: React.FC = () => {
               {Array.isArray(profile.roles) && profile.roles.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {profile.roles.map((role: any) => (
-                    <div key={role.id} className="bg-white border-l-4 border-l-orange-500 border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-all hover:border-l-orange-600">
+                    <div key={role.id} className="bg-white border-l-4 border-l-orange-500 border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-all hover:border-l-orange-500">
                       <div className="flex items-start gap-3">
                         <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
                         <div className="flex-1">

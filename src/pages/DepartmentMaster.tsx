@@ -19,6 +19,7 @@ import {
 } from '../services/DepartmentMaster';
 import SweetAlert from '../utils/SweetAlert';
 import { usePermissions } from '../hooks/SidebarMenuHooks';
+import TableHeader from '../components/ui/TableHeader';
 
 
 interface Department {
@@ -115,7 +116,7 @@ const CreateDepartmentForm: React.FC<{
 								name="departmentName"
 								value={name}
 								onChange={(e) => { setName(e.target.value); setError(''); }}
-								className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 transition-colors ${error ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+								className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-1 transition-colors ${error ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-black'
 									}`}
 								placeholder="Please Enter Department Name"
 								aria-invalid={error ? 'true' : 'false'}
@@ -332,22 +333,19 @@ const DepartmentMaster: React.FC = () => {
 						showBreadcrumb={true}
 						showCreateButton={hasPermission('department.create')}
 					/>
-					<div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+					<div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-4">
 						{/* Table Header */}
-						<div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-							<div className="flex items-center justify-between">
-								<h2 className="text-base font-semibold text-gray-900">Department Master</h2>
-								<SearchBar
-									placeholder="Search Department"
-									delay={300}
-									onSearch={(q: string) => {
-										setSearchQuery(q);
-										setCurrentPage(1);
-										refresh(1, q);
-									}}
-								/>
-							</div>
-						</div>
+						<TableHeader title="Department Master">
+							<SearchBar
+								placeholder="Search Department"
+								delay={300}
+								onSearch={(q: string) => {
+									setSearchQuery(q);
+									setCurrentPage(1);
+									refresh(1, q);
+								}}
+							/>
+						</TableHeader>
 
 						{error && (
 							<div className="px-6 py-3 text-sm text-red-600 bg-red-50 border-b border-red-100 flex items-center gap-2">
@@ -394,4 +392,3 @@ const DepartmentMaster: React.FC = () => {
 };
 
 export default DepartmentMaster;
-

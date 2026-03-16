@@ -14,6 +14,7 @@ import Pagination from '../components/ui/Pagination';
 import SweetAlert from '../utils/SweetAlert';
 import SearchBar from '../components/ui/SearchBar';
 import { usePermissions } from '../hooks/SidebarMenuHooks';
+import TableHeader from '../components/ui/TableHeader';
 
 
 // Robust parser: normalize various API date formats into an ISO timestamp (returns empty string on failure)
@@ -269,9 +270,9 @@ const AgencyMaster: React.FC = () => {
             showCreateButton={hasPermission('agency.create')}
           />
 
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-            <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-200">
-              <h2 className="text-base font-semibold text-gray-900">Agency Master</h2>
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-4">
+            {/* Table Header */}
+            <TableHeader title="Agency Master">
               <SearchBar
                 delay={300}
                 placeholder="Please Search Agency"
@@ -281,7 +282,7 @@ const AgencyMaster: React.FC = () => {
                   loadAgencies(1, q);
                 }}
               />
-            </div>
+            </TableHeader>
 
             <div className="pt-0 overflow-visible">
               <ConfirmDialog

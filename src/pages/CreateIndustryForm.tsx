@@ -96,8 +96,8 @@ const CreateIndustryForm: React.FC<Props> = ({ onClose, onSave }) => {
                 name="industryName"
                 value={name}
                 onChange={(e) => { setName(e.target.value); setErrors(prev => ({ ...prev, name: '' })); }}
-                className={`w-full px-3 py-2 border rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
-                  errors.name ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-[var(--border-color)] focus:ring-[var(--primary)]'
+                className={`w-full px-3 py-2 border rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-1 transition-colors ${
+                  errors.name ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-[var(--border-color)] focus:ring-black'
                 }`}
                 placeholder="Please Enter Industry Name"
                 aria-invalid={errors.name ? 'true' : 'false'}

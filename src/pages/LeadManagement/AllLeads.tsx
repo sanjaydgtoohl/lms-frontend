@@ -431,7 +431,7 @@ const AllLeads: React.FC = () => {
           onCreateClick={handleCreateLead}
           createButtonLabel="Create Lead"
           showSignInButton={true}
-          signInIcon={<FaRegCalendarAlt className="cursor-pointer text-orange-500 hover:text-orange-600 w-4 h-4 sm:w-6 sm:h-6" />}
+          signInIcon={<FaRegCalendarAlt className="cursor-pointer text-orange-500 hover:text-orange-500 w-4 h-4 sm:w-6 sm:h-6" />}
           onSignInClick={() => navigate(ROUTES.LEAD.MEETING_SCHEDULE)}
         />
       )}

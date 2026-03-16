@@ -15,6 +15,7 @@ import { listBrands, getBrand, type BrandItem as ServiceBrandItem } from '../ser
 import { usePermissions } from '../hooks/SidebarMenuHooks';
 
 import SweetAlert from '../utils/SweetAlert';
+import TableHeader from '../components/ui/TableHeader.tsx';
 
 type Brand = ServiceBrandItem;
 
@@ -76,7 +77,7 @@ const BrandMaster: React.FC = () => {
 
   const handleEdit = (id: string) => navigate(`${ROUTES.BRAND_MASTER}/${encodeURIComponent(id)}/edit`);
   const handleView = (id: string) => navigate(`${ROUTES.BRAND_MASTER}/${encodeURIComponent(id)}`);
-  
+
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmDeleteLabel, setConfirmDeleteLabel] = useState<string>('');
   const [confirmLoading, setConfirmLoading] = useState(false);
@@ -208,9 +209,9 @@ const BrandMaster: React.FC = () => {
       {showCreate ? (
         <CreateBrandForm inline onClose={() => navigate(ROUTES.BRAND_MASTER)} />
       ) : viewItem ? (
-        <MasterView 
-          item={viewItem} 
-          onClose={() => navigate(ROUTES.BRAND_MASTER)} 
+        <MasterView
+          item={viewItem}
+          onClose={() => navigate(ROUTES.BRAND_MASTER)}
           excludeFields={['agency', 'industry_id', 'slug', 'brand_type_id', 'city_id', 'state_id', 'status', 'country_id', 'zone_id']}
         />
       ) : editItem ? (
@@ -222,115 +223,113 @@ const BrandMaster: React.FC = () => {
         />
       ) : (
         <>
-          <MasterHeader 
-            onCreateClick={handleCreateBrand} 
+          <MasterHeader
+            onCreateClick={handleCreateBrand}
             createButtonLabel="Create Brand"
             showBreadcrumb={true}
             showCreateButton={hasPermission('brand.create')}
           />
 
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-            <div className="bg-gray-50 px-3 md:px-6 py-3 md:py-4 flex flex-row items-center justify-between gap-3 flex-wrap md:flex-nowrap border-b border-gray-200">
-              <h2 className="text-sm md:text-base font-semibold text-gray-900 flex-shrink-0">Brand Master</h2>
-              <div className="ml-auto">
-                <SearchBar 
-                  delay={300} 
-                  onSearch={(q: string) => { 
-                    setSearchQuery(q); 
-                    setCurrentPage(1); 
-                  }} 
-                />
-              </div>
-            </div>
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-4">
+            <TableHeader title="Brand Master">
+              <SearchBar
+                delay={300}
+                onSearch={(q: string) => {
+                  setSearchQuery(q);
+                  setCurrentPage(1);
+                }}
+              />
+            </TableHeader>
 
-            <div className="pt-0 overflow-x-auto overflow-y-hidden">
+            <div className="pt-0 overflow-x-auto overflow-y-hidden table-wrapper">
               <Table
-              data={currentData}
-              startIndex={startIndex}
-              loading={loading}
-              keyExtractor={(it: Brand, idx: number) => `${it.id}-${idx}`}
-              columns={([
-                { key: 'sr', header: 'Sr. No.', render: (it: Brand) => String(startIndex + currentData.indexOf(it) + 1) },
-                { key: 'name', header: 'Brand Name', render: (it: Brand) => it.name || '-' },
-                { key: 'agencyName', header: 'Agency Name', render: (it: Brand) => {
-                  const raw = (it as any)._raw as Record<string, unknown> | undefined;
-                  const agencies = raw?.['agencies'];
-                  if (Array.isArray(agencies) && agencies.length > 0) {
-                    const first = agencies[0] as any;
-                    const name = first?.name || 'Unknown';
-                    if (agencies.length === 1) {
-                      return name;
-                    } else {
-                      return (
-                        <span
-                          className="inline-flex items-center gap-2 cursor-pointer text-black"
-                          onClick={() => {
-                            setModalAgencies(agencies);
-                            setShowAgenciesModal(true);
-                          }}
-                        >
-                          {name}
-                          <span className="bg-blue-500 text-white px-1 py-0.5 rounded text-xs">
-                            +{agencies.length - 1}
+                data={currentData}
+                startIndex={startIndex}
+                loading={loading}
+                keyExtractor={(it: Brand, idx: number) => `${it.id}-${idx}`}
+                columns={([
+                  { key: 'sr', header: 'Sr. No.', render: (it: Brand) => String(startIndex + currentData.indexOf(it) + 1) },
+                  { key: 'name', header: 'Brand Name', render: (it: Brand) => it.name || '-' },
+                  {
+                    key: 'agencyName', header: 'Agency Name', render: (it: Brand) => {
+                      const raw = (it as any)._raw as Record<string, unknown> | undefined;
+                      const agencies = raw?.['agencies'];
+                      if (Array.isArray(agencies) && agencies.length > 0) {
+                        const first = agencies[0] as any;
+                        const name = first?.name || 'Unknown';
+                        if (agencies.length === 1) {
+                          return name;
+                        } else {
+                          return (
+                            <span
+                              className="inline-flex items-center gap-2 cursor-pointer text-black"
+                              onClick={() => {
+                                setModalAgencies(agencies);
+                                setShowAgenciesModal(true);
+                              }}
+                            >
+                              {name}
+                              <span className="bg-blue-500 text-white px-1 py-0.5 rounded text-xs">
+                                +{agencies.length - 1}
+                              </span>
+                            </span>
+                          );
+                        }
+                      }
+                      return it.agencyName || '-';
+                    }
+                  },
+                  { key: 'brandType', header: 'Brand Type', render: (it: Brand) => it.brandType || '-' },
+                  {
+                    key: 'contactPerson',
+                    header: 'Contact Person',
+                    render: (it: Brand) => {
+                      const raw = (it as any)._raw as Record<string, unknown> | undefined;
+                      const rawCount = raw?.['contact_person_count'] ?? raw?.['contactPersonCount'];
+                      let count: string | number | null = null;
+                      if (typeof rawCount === 'number') count = rawCount;
+                      else if (typeof rawCount === 'string' && rawCount.trim() !== '') count = rawCount;
+
+                      const normCount = (it as any).contact_person_count ?? (it as any).contactPersonCount;
+                      if (count === null && typeof normCount === 'number') count = normCount;
+
+                      const cp = (it as any).contactPerson ?? (it as any).contact_person;
+                      if (count === null) {
+                        if (cp) count = String(cp);
+                        else count = '-';
+                      }
+
+                      // If we have a numeric or non-hyphen count, render as clickable link to contacts page
+                      if (count !== '-' && String(count).trim() !== '') {
+                        const id = encodeURIComponent(String(it.id ?? ''));
+                        return (
+                          <span
+                            onClick={() => navigate(ROUTES.BRAND_CONTACTS(id))}
+                            className="zoom-btn text-black underline cursor-pointer text-md bg-orange-100 px-4 py-1 rounded-lg font-semibold hover:bg-black hover:text-white">
+                            {String(count)}
                           </span>
-                        </span>
-                      );
+                        );
+                      }
+
+                      return String(count ?? '-');
                     }
-                  }
-                  return it.agencyName || '-';
-                } },
-                { key: 'brandType', header: 'Brand Type', render: (it: Brand) => it.brandType || '-' },
-                {
-                  key: 'contactPerson',
-                  header: 'Contact Person',
-                  render: (it: Brand) => {
-                    const raw = (it as any)._raw as Record<string, unknown> | undefined;
-                    const rawCount = raw?.['contact_person_count'] ?? raw?.['contactPersonCount'];
-                    let count: string | number | null = null;
-                    if (typeof rawCount === 'number') count = rawCount;
-                    else if (typeof rawCount === 'string' && rawCount.trim() !== '') count = rawCount;
-
-                    const normCount = (it as any).contact_person_count ?? (it as any).contactPersonCount;
-                    if (count === null && typeof normCount === 'number') count = normCount;
-
-                    const cp = (it as any).contactPerson ?? (it as any).contact_person;
-                    if (count === null) {
-                      if (cp) count = String(cp);
-                      else count = '-';
-                    }
-
-                    // If we have a numeric or non-hyphen count, render as clickable link to contacts page
-                    if (count !== '-' && String(count).trim() !== '') {
-                      const id = encodeURIComponent(String(it.id ?? ''));
-                      return (
-                        <span
-                          onClick={() => navigate(ROUTES.BRAND_CONTACTS(id))}
-                          className="text-blue-600 underline cursor-pointer"
-                        >
-                          {String(count)}
-                        </span>
-                      );
-                    }
-
-                    return String(count ?? '-');
-                  }
-                },
-                { key: 'industry', header: 'Industry', render: (it: Brand) => it.industry || '-' },
-                { key: 'country', header: 'Country', render: (it: Brand) => it.country || '-' },
-                { key: 'state', header: 'State', render: (it: Brand) => it.state || '-' },
-                { key: 'city', header: 'City', render: (it: Brand) => it.city || '-' },
-                { key: 'zone', header: 'Zone', render: (it: Brand) => it.zone || '-' },
-                { key: 'pinCode', header: 'Pin Code', render: (it: Brand) => it.pinCode || '-' },
-                { key: 'dateTime', header: 'Date & Time', render: (it: Brand) => formatDisplayDate(it.dateTime) },
-              ] as Column<Brand>[])}
-              desktopOnMobile={true}
-              onEdit={(it: Brand) => handleEdit(it.id)}
-              onView={(it: Brand) => handleView(it.id)}
-              onDelete={(it: Brand) => handleDelete(it.id)}
-              editPermissionSlug="brand.edit"
-              viewPermissionSlug="brand.view"
-              deletePermissionSlug="brand.delete"
-            />
+                  },
+                  { key: 'industry', header: 'Industry', render: (it: Brand) => it.industry || '-' },
+                  { key: 'country', header: 'Country', render: (it: Brand) => it.country || '-' },
+                  { key: 'state', header: 'State', render: (it: Brand) => it.state || '-' },
+                  { key: 'city', header: 'City', render: (it: Brand) => it.city || '-' },
+                  { key: 'zone', header: 'Zone', render: (it: Brand) => it.zone || '-' },
+                  { key: 'pinCode', header: 'Pin Code', render: (it: Brand) => it.pinCode || '-' },
+                  { key: 'dateTime', header: 'Date & Time', render: (it: Brand) => formatDisplayDate(it.dateTime) },
+                ] as Column<Brand>[])}
+                desktopOnMobile={true}
+                onEdit={(it: Brand) => handleEdit(it.id)}
+                onView={(it: Brand) => handleView(it.id)}
+                onDelete={(it: Brand) => handleDelete(it.id)}
+                editPermissionSlug="brand.edit"
+                viewPermissionSlug="brand.view"
+                deletePermissionSlug="brand.delete"
+              />
             </div>
           </div>
 

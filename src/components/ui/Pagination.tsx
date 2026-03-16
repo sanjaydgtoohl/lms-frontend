@@ -1,5 +1,6 @@
 import React from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
+import { IoIosArrowBack } from 'react-icons/io';
 
 interface PaginationProps {
   currentPage: number;
@@ -47,7 +48,7 @@ const Pagination: React.FC<PaginationProps> = ({
             disabled={currentPage === 1}
             className="pagination-btn start"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <IoIosArrowBack className="w-5 h-5" />
           </button>
 
           {pages.map(i => (

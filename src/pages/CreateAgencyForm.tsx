@@ -191,7 +191,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
           el.focus();
         } catch (e) {
           // ignore
-            console.error(e);
+          console.error(e);
         }
         setLastAddedId(null);
         return true;
@@ -342,8 +342,8 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
       try {
         SweetAlert.showError((err as any)?.message || `Failed to ${mode === 'edit' ? 'update' : 'create'} agency`);
       } catch (e) {
-            console.error(e);
-       }
+        console.error(e);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -361,92 +361,94 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
       <div className="">
         <MasterFormHeader onBack={onClose} title={mode === 'edit' ? 'Edit Group Agency' : 'Create Group Agency'} />
 
-        <div className="w-full max-w-full mx-auto bg-white rounded-2xl shadow-lg border border-[#E3E8EF] overflow-hidden">
-          <div className="p-8 bg-[#F9FAFB] space-y-8">
+        <div className="w-full max-w-full mx-auto sm:bg-white sm:rounded-2xl sm:border sm:border-gray-200 overflow-hidden">
+          <div className="sm:p-5 sm:bg-gray-50 sm:space-y-8">
             <div className="space-y-3">
-              <div className="text-base font-semibold text-[#344054] mb-2">Group Agency Details</div>
-              <div className="flex flex-col gap-6">
-                <div>
-                  <label className="block text-sm text-[#667085] mb-1">Agency Name <span className="text-red-500">*</span></label>
-                  <input
-                    value={parent.name}
-                    onChange={e => {
-                      setParent(prev => ({ ...prev, name: e.target.value }));
-                      setParentErrors(prev => ({ ...prev, name: undefined }));
-                    }}
-                    placeholder="Please Enter Agency Name"
-                    className={`w-full px-3 py-2 h-11 text-sm border rounded-lg bg-white text-[#344054] focus:outline-none focus:ring-2 focus:ring-[#1570EF] ${parentErrors.name ? 'border-red-500' : 'border-[#D0D5DD]'}`}
-                  />
-                  {parentErrors.name && (
-                    <div className="text-xs text-red-500 mt-1">{parentErrors.name}</div>
-                  )}
-                </div>
+              <div className="text-base font-semibold text-gray-900 mb-2">Group Agency Details</div>
 
-                <div>
-                  <label className="block text-sm text-[#667085] mb-1">Agency Type <span className="text-red-500">*</span></label>
-                  <SelectField
-                    name="parentType"
-                    value={parent.type}
-                    options={agencyTypes}
-                    onChange={(v) => { setParent(prev => ({ ...prev, type: typeof v === 'string' ? v : v[0] ?? '' })); setParentErrors(prev => ({ ...prev, type: undefined })); }}
-                    placeholder="Please Select Agency Type"
-                    inputClassName={`${parentErrors.type ? 'border-red-500' : 'border-[#D0D5DD]'} px-3 py-2 h-11`}
-                  />
-                  {parentErrors.type && (
-                    <div className="text-xs text-red-500 mt-1">{parentErrors.type}</div>
-                  )}
-                </div>
+              <div className="p-4 md:p-6 border border-gray-200 rounded-xl bg-white">
 
-                <div className="mb-2">
-                  <label className="block text-sm text-[#667085] mb-1">Agency Client <span className="text-red-500">*</span></label>
-                  <div className="w-full">
-                    <MultiSelectDropdown
-                      name="parentClient"
-                      value={parent.client}
-                      options={agencyClients.map((c: any) => ({ value: String(c.id), label: c.name }))}
-                      onChange={(v) => { setParent(prev => ({ ...prev, client: Array.isArray(v) ? v : [v] })); setParentErrors(prev => ({ ...prev, client: undefined })); }}
-                      placeholder={isLoading.agencyClients ? 'Loading clients...' : 'Search or select options'}
-                      inputClassName={`border ${parentErrors.client ? 'border-red-500' : 'border-[#D0D5DD]'} px-3 py-2 h-11`}
-                      disabled={isLoading.agencyClients}
-                      multi={true}
-                      horizontalScroll={true}
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
+                  <div>
+                    <label className="block text-sm text-[#667085] mb-1">Agency Name <span className="text-red-500">*</span></label>
+                    <input
+                      value={parent.name}
+                      onChange={e => {
+                        setParent(prev => ({ ...prev, name: e.target.value }));
+                        setParentErrors(prev => ({ ...prev, name: undefined }));
+                      }}
+                      placeholder="Please Enter Agency Name"
+                      className={`w-full px-3 py-2 h-11 text-sm border rounded-lg bg-white text-[#344054] focus:outline-none focus:ring-1 focus:ring-black ${parentErrors.name ? 'border-red-500' : 'border-[#D0D5DD]'}`}
                     />
+                    {parentErrors.name && (
+                      <div className="text-xs text-red-500 mt-1">{parentErrors.name}</div>
+                    )}
                   </div>
-                  {parentErrors.client && (
-                    <div className="text-xs text-red-500 mt-1">{parentErrors.client}</div>
-                  )}
+
+                  <div>
+                    <label className="block text-sm text-[#667085] mb-1">Agency Type <span className="text-red-500">*</span></label>
+                    <SelectField
+                      name="parentType"
+                      value={parent.type}
+                      options={agencyTypes}
+                      onChange={(v) => { setParent(prev => ({ ...prev, type: typeof v === 'string' ? v : v[0] ?? '' })); setParentErrors(prev => ({ ...prev, type: undefined })); }}
+                      placeholder="Please Select Agency Type"
+                      inputClassName={`${parentErrors.type ? 'border-red-500' : 'border-[#D0D5DD]'} px-3 py-2 h-11`}
+                    />
+                    {parentErrors.type && (
+                      <div className="text-xs text-red-500 mt-1">{parentErrors.type}</div>
+                    )}
+                  </div>
+
+                  <div className="mb-2">
+                    <label className="block text-sm text-[#667085] mb-1">Agency Client <span className="text-red-500">*</span></label>
+                    <div className="w-full">
+                      <MultiSelectDropdown
+                        name="parentClient"
+                        value={parent.client}
+                        options={agencyClients.map((c: any) => ({ value: String(c.id), label: c.name }))}
+                        onChange={(v) => { setParent(prev => ({ ...prev, client: Array.isArray(v) ? v : [v] })); setParentErrors(prev => ({ ...prev, client: undefined })); }}
+                        placeholder={isLoading.agencyClients ? 'Loading clients...' : 'Search or select options'}
+                        inputClassName={`border ${parentErrors.client ? 'border-red-500' : 'border-[#D0D5DD]'} px-3 py-2 h-11`}
+                        disabled={isLoading.agencyClients}
+                        multi={true}
+                        horizontalScroll={true}
+                      />
+                    </div>
+                    {parentErrors.client && (
+                      <div className="text-xs text-red-500 mt-1">{parentErrors.client}</div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-8">
+            <div className="space-y-8 mt-5">
               <div className="flex items-center justify-between mb-2">
-                <div className="text-base font-semibold text-[#344054]">Add child agency</div>
+                <div className="text-base font-semibold text-gray-900">Add child agency</div>
                 <button
                   type="button"
                   onClick={handleAddChild}
-                  className="inline-flex items-center space-x-2 px-4 py-2 rounded-lg text-white font-medium shadow-sm transition-colors duration-200"
-                  data-btn-label="Add"
-                  style={{ backgroundColor: 'var(--color-orange-400)' }}
-                >
+                  className="btn-primary"
+                  data-btn-label="Add">
+
                   <Plus className="w-4 h-4" />
                   <span className="text-sm">Add Child Agency</span>
                 </button>
               </div>
               <div className="space-y-6">
                 {children.map((c, idx) => (
-                  <div key={c.id} className="p-4 md:p-6 border border-[#E3E8EF] rounded-xl bg-white">
+                  <div key={c.id} className="p-4 md:p-6 border border-gray-200 rounded-xl bg-white">
                     <div className="flex items-center justify-between mb-4">
                       <div className="text-sm font-medium text-[#344054]">Child Agency {idx + 1}</div>
                       <button
                         type="button"
                         onClick={() => safeRemoveChild(c.id)}
-                        className="text-sm px-4 py-2 rounded-lg bg-[#F5F0F0] text-[#D92D20] font-medium flex items-center justify-center hover:bg-[#FFD7D7] transition-colors duration-200"
-                        style={{ backgroundColor: '#F5F0F0' }}
+                        className="btn-delete"
                         aria-label={`Delete child agency ${idx + 1}`}
                         title="Delete"
                       >
-                        <Trash2 className="w-4 h-4 mr-1" /> Delete
+                        <Trash2 className="w-4 h-4" /> Delete
                       </button>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
@@ -460,7 +462,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                           }}
                           placeholder="Please Enter Agency Name"
                           ref={el => { childNameRefs.current[c.id] = el }}
-                          className={`w-full px-3 py-2 h-11 text-sm border rounded-lg bg-white text-[#344054] focus:outline-none focus:ring-2 focus:ring-[#1570EF] ${childErrors[c.id]?.name ? 'border-red-500' : 'border-[#D0D5DD]'}`}
+                          className={`w-full px-3 py-2 h-11 text-sm border rounded-lg bg-white text-[#344054] focus:outline-none focus:ring-1 focus:ring-black ${childErrors[c.id]?.name ? 'border-red-500' : 'border-[#D0D5DD]'}`}
                         />
                         {childErrors[c.id]?.name && (
                           <div className="text-xs text-red-500 mt-1">{childErrors[c.id].name}</div>
@@ -509,10 +511,9 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
               <button
                 type="button"
                 onClick={submitAll}
-                className="px-6 py-2 rounded-lg text-white font-semibold shadow-sm transition-colors duration-200"
+                className="btn-primary"
                 disabled={submitting}
                 data-btn-label="Save"
-                style={{ backgroundColor: 'var(--color-orange-400)' }}
               >
                 {submitting ? (mode === 'edit' ? 'Updating...' : 'Saving...') : (mode === 'edit' ? 'Update' : 'Save')}
               </button>

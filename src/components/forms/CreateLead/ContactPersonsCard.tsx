@@ -486,7 +486,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                         <button
                           type="button"
                           onClick={() => updateContact(c.id, 'showSecondMobile', true)}
-                          className="px-3 py-2 flex items-center justify-center rounded-lg text-white font-medium transition-colors mt-6 hover:bg-orange-600 text-sm gap-1"
+                          className="px-3 py-2 flex items-center justify-center rounded-lg text-white font-medium transition-colors mt-6 hover:bg-orange-500 text-sm gap-1"
                           style={{ backgroundColor: '#ff9500' }}
                           title="Add another mobile number"
                         >
