@@ -74,7 +74,7 @@ const Header: React.FC<HeaderProps> = ({
                 }
               }}
             >
-              <Menu className="w-5 h-5 text-[#344054]" />
+              <Menu className="w-5 h-5 text-gray-800" />
             </div>
           )}
         </div>
@@ -96,7 +96,7 @@ const Header: React.FC<HeaderProps> = ({
                 <User className="w-4 h-4" />
               </div>
               <div className="hidden sm:flex sm:flex-col sm:items-start sm:leading-tight">
-                <span className="text-sm font-medium text-[#344054]">{user?.name}</span>
+                <span className="text-sm font-medium text-gray-800">{user?.name}</span>
                 {user?.email && <span className="text-xs text-gray-500 truncate">{user.email}</span>}
               </div>
               <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} />

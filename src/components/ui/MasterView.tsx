@@ -53,7 +53,7 @@ const MasterView: React.FC<Props> = ({ title, item, onClose, excludeFields = [] 
     }
 
     return (
-      <div key={k} className='flex gap-2 flex-wrap sm:flex-nowrap border p-4 rounded-lg border-gray-200 pb-3 bg-gray-100'>
+      <div key={k} className='flex gap-2 flex-wrap sm:flex-nowrap border p-4 rounded-lg border-gray-200 pb-3 bg-gray-100 break-all'>
         <div className="text-sm  font-semibold text-black min-w-[100px]">{label} : </div>
         <div className="text-sm text-gray-600">
           {isImage ? (

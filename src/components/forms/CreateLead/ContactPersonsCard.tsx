@@ -412,7 +412,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
         <div key={c.id} className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)]">
           <div className="p-6 bg-[#F9FAFB]">
             <div className="flex items-center justify-between mb-6">
-              <div className="text-base font-semibold text-[#344054]">Contact Person</div>
+              <div className="text-base font-semibold text-gray-800">Contact Person</div>
               {contacts.length > 1 && (
                 <button
                   type="button"

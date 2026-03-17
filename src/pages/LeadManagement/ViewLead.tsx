@@ -72,7 +72,7 @@ const ViewLead: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
+    <div className="flex-1 w-full max-w-full overflow-x-hidden">
       {/* Breadcrumb */}
       <div className="flex items-center justify-between mb-6">
         <Breadcrumb

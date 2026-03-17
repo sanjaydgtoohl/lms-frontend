@@ -25,7 +25,7 @@ const LeadManagementSection: React.FC<Props> = ({
     <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)]">
       <div className="p-6 bg-[#F9FAFB]">
         <div className="flex items-center mb-6">
-          <h3 className="text-base font-semibold text-[#344054]">Lead Management</h3>
+          <h3 className="text-base font-semibold text-gray-800">Lead Management</h3>
         </div>
 
         <div className="flex items-center gap-6 mb-6">

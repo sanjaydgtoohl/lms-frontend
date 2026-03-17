@@ -130,7 +130,7 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
   return (
     <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)]">
       <div className="p-6 bg-[#F9FAFB]">
-        <h3 className="text-base font-semibold text-[#344054] mb-4">Assignment & Priority</h3>
+        <h3 className="text-base font-semibold text-gray-800 mb-4">Assignment & Priority</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm text-[var(--text-secondary)] mb-1">Assign To</label>
