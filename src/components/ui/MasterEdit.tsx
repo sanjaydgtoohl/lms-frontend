@@ -199,7 +199,7 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
                       options={options.map(o => ({ value: String(o.id), label: o.name }))}
                       placeholder={loadingOptions ? 'Loading...' : 'Search or select option'}
                       disabled={loadingOptions}
-                      inputClassName={errors[k] ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-black'}
+                      inputClassName={errors[k] ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-black'}
                     />
                     {errors[k] && (
                       <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">

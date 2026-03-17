@@ -353,7 +353,7 @@ const Dashboard: React.FC = () => {
               <div className="flex items-center justify-end gap-3">
                 <span className="text-xs text-gray-600 font-medium">{topic.percent}%</span>
               </div>
-              <div className="w-full bg-gray-100 rounded-full h-2 mt-2">
+              <div className="w-full process-item bg-gray-100 rounded-full h-2 mt-2">
                 <div className="bg-indigo-600 h-2 rounded-full" style={{ width: `${topic.percent}%` }} />
               </div>
             </div>

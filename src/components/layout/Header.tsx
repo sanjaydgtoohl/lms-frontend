@@ -84,11 +84,11 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-20 border-b border-gray-200 bg-gray-50 backdrop-blur supports-[backdrop-filter]:bg-white/70">
+    <header className="header-bg sticky top-0 z-20 border-b border-gray-200 bg-gray-50 backdrop-blur supports-[backdrop-filter]:bg-white/70">
       <div className="flex items-center justify-between px-3 md:px-4 sm:px-6 py-3" style={{ paddingTop: '4px', paddingBottom: '4px' }}>
         <button
           onClick={toggleTheme}
-          className={`relative w-14 h-7 flex items-center !rounded-full p-1 border !border-gray-300 transition-colors duration-300
+          className={`relative w-14 h-7 flex items-center !rounded-full p-1 border !border-gray-200 transition-colors duration-300
           ${dark ? "!bg-gray-100" : "!bg-gray-100"}`}
         >
           {/* Circle */}
@@ -158,7 +158,7 @@ const Header: React.FC<HeaderProps> = ({
                 <div
                   role="menu"
                   aria-label="User menu"
-                  className="absolute right-0 w-72 bg-white border border-gray-300 rounded-xl shadow-lg overflow-hidden z-50 ring-opacity-5 transition duration-300 ease-in-out"
+                  className="absolute right-0 w-72 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-50 ring-opacity-5 transition duration-300 ease-in-out"
                 >
                   <div className="px-4 py-4 border-b border-gray-100 bg-white">
                     <div className="flex items-center gap-4">

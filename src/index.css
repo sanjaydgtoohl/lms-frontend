@@ -464,7 +464,7 @@ button[data-btn-label="Update"]:hover {
 }
 
 .login-card-wrapper {
-  @apply px-8 py-14 rounded-2xl w-[400px] z-20 border-gray-300 mx-3;
+  @apply px-8 py-14 rounded-2xl w-[400px] z-20 border-gray-200 mx-3;
              border-radius: 50px;
 background: #1E1E1E;
 box-shadow:  5px 5px 10px #131313,
@@ -503,10 +503,6 @@ box-shadow:  5px 5px 10px #131313,
 
 .shadow-custom {
   box-shadow: rgba(149, 157, 165, 0.2) 0px 4px 12px;
-}
-
-.sidebar-wrapper {
-  border-radius: 0 30px 30px 0;
 }
 
 .pagination-btn.start {
@@ -550,7 +546,7 @@ box-shadow:  5px 5px 10px #131313,
 }
 
 .icon-button {
-  @apply flex items-center justify-center w-10 h-10 rounded-lg text-black bg-gray-200 cursor-pointer border-none focus:outline-none hover:bg-black hover:text-white flex-shrink-0 border border-gray-300;
+  @apply flex items-center justify-center w-10 h-10 rounded-lg text-black bg-gray-200 cursor-pointer border-none focus:outline-none hover:bg-black hover:text-white flex-shrink-0 border border-gray-200;
 }
 
 

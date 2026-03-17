@@ -318,7 +318,7 @@ const Create: React.FC<CreateProps> = ({
                   onChange={(v) => { setFormData(prev => ({ ...prev, brandName: typeof v === 'string' ? v : v[0] ?? '' })); setErrors(prev => ({ ...prev, brandName: '' })); }}
                   options={brandOptions.map(b => ({ value: String(b.id), label: b.name }))}
                   placeholder={brandLoading ? 'Loading brands...' : 'Search or select option'}
-                  inputClassName={errors.brandName ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}
+                  inputClassName={errors.brandName ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}
                   disabled={brandLoading}
                 />
               </div>
@@ -344,7 +344,7 @@ const Create: React.FC<CreateProps> = ({
                   onChange={(v) => { setFormData(prev => ({ ...prev, source: typeof v === 'string' ? v : v[0] ?? '' })); setErrors(prev => ({ ...prev, source: '' })); }}
                   options={sourceOptions.map(s => ({ value: String(s.id), label: s.source }))}
                   placeholder={sourceLoading ? 'Loading sources...' : 'Search or select option'}
-                  inputClassName={errors.source ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}
+                  inputClassName={errors.source ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}
                   disabled={sourceLoading}
                 />
               </div>
@@ -371,7 +371,7 @@ const Create: React.FC<CreateProps> = ({
                   onChange={(v) => { setFormData(prev => ({ ...prev, subSource: typeof v === 'string' ? v : v[0] ?? '' })); setErrors(prev => ({ ...prev, subSource: '' })); }}
                   options={subSourceOptions.map(s => ({ value: String(s.id), label: s.label }))}
                   placeholder={subSourceLoading ? 'Loading sub-sources...' : (formData.source ? 'Search or select option' : 'Select a source first')}
-                  inputClassName={errors.subSource ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}
+                  inputClassName={errors.subSource ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}
                   disabled={subSourceLoading || !formData.source}
                 />
               </div>
@@ -397,7 +397,7 @@ const Create: React.FC<CreateProps> = ({
                 onChange={(e) => { handleChange(e); setErrors(prev => ({ ...prev, productName: '' })); }}
                 placeholder="Please Enter Product Name"
                 className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 transition-colors ${
-                  errors.productName ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                  errors.productName ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'
                 }`}
                 aria-invalid={errors.productName ? 'true' : 'false'}
                 aria-describedby={errors.productName ? 'productName-error' : undefined}
@@ -493,7 +493,7 @@ const Create: React.FC<CreateProps> = ({
 
                 {/* Upload UI if no preview */}
                 {!imagePreview && (!formData.image_url || formData.remove_image) && (
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                  <div className="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center">
                     <input
                       type="file"
                       id="image-upload"

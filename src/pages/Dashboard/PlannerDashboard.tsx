@@ -165,7 +165,7 @@ const PlannerDashboard: React.FC = () => {
               return (
                 <div
                   key={brief.id}
-                  className="bg-white rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center md:items-stretch p-3 sm:p-4 gap-3 sm:gap-4 shadow-custom duration-300"
+                  className="bg-white rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center md:items-stretch p-3 sm:p-4 gap-3 sm:gap-4 border border-gray-200 duration-300"
                 >
                   {/* Left: Brief Info */}
                   <div className="flex-1 min-w-0 sm:w-auto md:w-auto">

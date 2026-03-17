@@ -39,7 +39,7 @@ const ViewUser: React.FC = () => {
       'S-BDM': 'border-yellow-300 text-yellow-700 bg-yellow-50',
       'Planner': 'border-pink-300 text-pink-700 bg-pink-50',
     };
-    return roleColorMap[role || ''] || 'border-gray-300 text-gray-700 bg-gray-50';
+    return roleColorMap[role || ''] || 'border-gray-200 text-gray-700 bg-gray-50';
   };
 
   if (isLoading) {

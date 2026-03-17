@@ -116,7 +116,7 @@ const CreateDepartmentForm: React.FC<{
 								name="departmentName"
 								value={name}
 								onChange={(e) => { setName(e.target.value); setError(''); }}
-								className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-1 transition-colors ${error ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-black'
+								className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-1 transition-colors ${error ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-black'
 									}`}
 								placeholder="Please Enter Department Name"
 								aria-invalid={error ? 'true' : 'false'}

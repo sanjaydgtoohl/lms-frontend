@@ -1144,7 +1144,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                       setForm(prev => ({ ...prev, priority: val }));
                       setTimeout(() => { if (lastChangedFieldRef.current === 'priority') lastChangedFieldRef.current = null; }, 500);
                     }}
-                    inputClassName={priorityLoading ? 'border border-gray-300 bg-gray-50' : 'border border-[var(--border-color)] focus:ring-blue-500'}
+                    inputClassName={priorityLoading ? 'border border-gray-200 bg-gray-50' : 'border border-[var(--border-color)] focus:ring-blue-500'}
                     disabled={priorityLoading}
                   />
                   {priorityError && <div className="text-xs text-red-600 mt-1">{priorityError}</div>}

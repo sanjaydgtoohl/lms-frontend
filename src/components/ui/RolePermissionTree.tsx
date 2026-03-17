@@ -212,7 +212,7 @@ const RolePermissionTree: React.FC<Props> = ({ modulePermissions, onToggle }) =>
                     handleModuleGroupCheckboxClick(module.name, e as any);
                   }}
                   onClick={(e) => e.stopPropagation()}
-                  className="w-5 h-5 rounded border-gray-300 cursor-pointer accent-blue-500 flex-shrink-0"
+                  className="w-5 h-5 rounded border-gray-200 cursor-pointer accent-blue-500 flex-shrink-0"
                 />
                 <span className="font-semibold text-base text-gray-800">{module.name}</span>
                 <span className="text-xs text-gray-500 ml-2">({module.submodules.length})</span>
@@ -248,7 +248,7 @@ const RolePermissionTree: React.FC<Props> = ({ modulePermissions, onToggle }) =>
                               handleSubmoduleGroupCheckboxClick(module.name, submodule.name, permissions, e as any);
                             }}
                             onClick={(e) => e.stopPropagation()}
-                            className="w-4 h-4 rounded border-gray-300 cursor-pointer accent-blue-500 flex-shrink-0"
+                            className="w-4 h-4 rounded border-gray-200 cursor-pointer accent-blue-500 flex-shrink-0"
                           />
                           <span className="text-sm font-medium text-gray-700 flex-1">{submodule.name}</span>
                           <span
@@ -280,7 +280,7 @@ const RolePermissionTree: React.FC<Props> = ({ modulePermissions, onToggle }) =>
                                       type="checkbox"
                                       checked={isActive}
                                       onChange={() => {}}
-                                      className="w-4 h-4 rounded border-gray-300 cursor-pointer accent-blue-500"
+                                      className="w-4 h-4 rounded border-gray-200 cursor-pointer accent-blue-500"
                                     />
                                     <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-blue-500' : 'text-gray-400'}`} />
                                     <span className={`text-sm ${isActive ? 'text-gray-800 font-medium' : 'text-gray-600'}`}>

@@ -1,14 +1,22 @@
 @import "tailwindcss";
 
-.dark .bg-white,  .dark .bg-gray-100, .dark .bg-gray-50,  .dark .bg-white {
+.dark .bg-white {
     @apply bg-gray-800 hover:!bg-none ;
 }
 
-.dark .border-gray-200, .dark .border-gray-100 {
-    @apply !border-gray-600;
+.dark .bg-gray-100, .dark .bg-gray-50 {
+    @apply bg-gray-800 hover:!bg-none ;
 }
 
- .dark .text-gray-700, .dark .text-gray-800, .dark .text-gray-900 , .dark .text-gray-600 , .dark .text-black, .dark h3 , .dark .text-gray-500 {
+.dark .header-bg.bg-gray-50, .dark .sidebar-wrapper.bg-white {
+    @apply bg-gray-900 hover:!bg-none ;
+}
+
+.dark .border-gray-200, .dark .border-gray-100 {
+    @apply !border-gray-700;
+}
+
+ .dark .text-gray-700, .dark .text-gray-800, .dark .text-gray-900 , .dark .text-gray-600 , .dark .text-black, .dark h3 , .dark .text-gray-500{
     @apply !text-white;
  }
 
@@ -29,3 +37,60 @@
 .dark .sidebar-logo-item img.default-logo {
   @apply opacity-0;
 }
+
+
+.dark .bg-indigo-600 {
+  @apply bg-white;
+}
+
+.dark .process-item.bg-gray-100 {
+  @apply bg-gray-700;
+}
+
+.dark .sidebar-menu-item {
+  @apply hover:!bg-gray-800;
+}
+
+.dark .active-menu {
+  @apply !bg-gray-800;
+}
+
+.dark .shadow-custom {
+box-shadow:  9px 9px 18px #1b2533,
+             -9px -9px 18px #212d3f;
+}
+
+
+.dark .tabs-wrapper span.bg-black {
+  @apply bg-orange-500;
+}
+
+
+.dark .pagination-btn  {
+  @apply bg-gray-700 text-white;
+}
+
+.dark .icon-button {
+  @apply bg-gray-700 text-white;
+}
+
+
+.dark .text-blue-700, .dark .text-blue-400  {
+  @apply text-orange-500;
+}
+
+
+.dark .breadcrumb-wrapper ol li a {
+  @apply !text-white;
+}
+
+
+.dark tr.transition-colors {
+  @apply hover:bg-gray-800;
+} 
+ 
+/* 
+.dark .divide-gray-200 tr {
+    @apply !border-gray-700;
+}
+  */

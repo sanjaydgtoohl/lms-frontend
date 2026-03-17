@@ -204,7 +204,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
       (isMissCampaignRoute && (isMissCampaign || isLiveCampaign)) ||
         ((isBriefRoute || isBriefCreateRoute) && isBrief) ||
         isItemActive
-        ? "border-l-4 border-orange-500 text-orange-500 bg-transparent"
+        ? "border-l-4 border-orange-500 text-orange-500 bg-transparent active-menu"
         : "border-l-4 border-transparent hover:bg-orange-50 hover:text-orange-500 transition-all duration-200";
 
     const handleCardClick = () => {
@@ -222,7 +222,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
     return (
       <div key={item.name}>
         <div
-          className={`flex items-center justify-between px-4 py-3 text-sm font-medium cursor-pointer rounded-sm transition-all duration-200 ease-in-out
+          className={`sidebar-menu-item flex items-center justify-between px-4 py-3 text-sm font-medium cursor-pointer rounded-sm transition-all duration-200 ease-in-out
             ${level > 0 ? "ml-6" : ""}
             ${highlightClass}
             ${isCollapsed ? "px-2 justify-center" : ""}
