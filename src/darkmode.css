@@ -4,7 +4,7 @@
     @apply bg-gray-800 hover:!bg-none ;
 }
 
-.dark .bg-gray-100, .dark .bg-gray-50 {
+.dark .bg-gray-100, .dark .bg-gray-50, .dark .agency-edit-wrapper, .dark .agency-edit-outer {
     @apply bg-gray-800 hover:!bg-none ;
 }
 
@@ -12,7 +12,7 @@
     @apply bg-gray-900 hover:!bg-none ;
 }
 
-.dark .border-gray-200, .dark .border-gray-100 {  
+.dark .border-gray-200, .dark .border-gray-100, .dark .agency-edit-outer {  
     @apply !border-gray-700 focus:!border-gray-100 focus:ring-0;
 }
 
@@ -112,8 +112,25 @@ box-shadow:  9px 9px 18px #1b2533,
 }
 
 
+.dark .btn-primary {
+  @apply hover:bg-orange-600;
+}
 
-/* 
-.dark .dashboard-tab-section .text-orange-800 {
-  @apply text-white;
-} */
+
+button.cancel-btn {
+  @apply bg-gray-200 hover:bg-gray-300
+}
+
+.dark button.cancel-btn {
+  @apply bg-gray-700;
+}
+
+.dark input {
+  @apply placeholder:text-gray-500;
+}
+
+
+
+.dark .select-dropdown .hover-input {
+  @apply hover:!bg-gray-700 text-sm;
+}

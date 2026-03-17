@@ -14,7 +14,7 @@ const AssignButton: React.FC<AssignButtonProps> = ({ value, onClick, isActive })
       onClick={onClick}
       onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
       className={`
-        group flex items-center justify-center w-full cursor-pointer
+        group w-full cursor-pointer
         font-medium text-blue-600 hover:text-blue-700 underline
         transition-colors duration-200
         ${isActive ? 'text-blue-700' : ''}

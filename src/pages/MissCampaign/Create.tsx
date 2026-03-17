@@ -308,7 +308,7 @@ const Create: React.FC<CreateProps> = ({
           <div className="grid grid-cols-2 gap-6">
             {/* Brand Name */}
             <div>
-              <label className="block text-sm font-medium mb-2">
+              <label className="block text-sm text-gray-800 font-medium mb-2">
                 Brand Name <span className="text-[#FF0000]">*</span>
               </label>
               <div>
@@ -334,7 +334,7 @@ const Create: React.FC<CreateProps> = ({
 
             {/* Source */}
             <div>
-              <label className="block text-sm font-medium mb-2">
+              <label className="block text-sm text-gray-800 font-medium mb-2">
                 Source <span className="text-[#FF0000]">*</span>
               </label>
               <div>
@@ -360,7 +360,7 @@ const Create: React.FC<CreateProps> = ({
 
             {/* Sub Source (dropdown) */}
             <div>
-              <label className="block text-sm font-medium mb-2 flex items-center gap-2">
+              <label className="block text-sm text-gray-800 font-medium mb-2 flex items-center gap-2">
                 Sub Source <span className="text-[#FF0000]">*</span>
                 {subSourceLoading && <Loader className="w-4 h-4 animate-spin text-blue-500" />}
               </label>
@@ -551,7 +551,7 @@ const Create: React.FC<CreateProps> = ({
               aria-label="Close"
               onClick={closeImageModal}
               onKeyDown={(e) => { if (e.key === 'Enter') closeImageModal(); }}
-              className="absolute top-3 right-3 bg-white/95 hover:bg-white rounded-full p-1 border z-50 cursor-pointer flex items-center justify-center"
+              className="absolute top-3 right-3 bg-white rounded-full p-1 border z-50 cursor-pointer flex items-center justify-center"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

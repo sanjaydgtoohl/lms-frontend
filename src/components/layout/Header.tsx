@@ -60,8 +60,6 @@ const Header: React.FC<HeaderProps> = ({
 
 
   // dark mode state 
-
-
   const [dark, setDark] = useState(false);
 
   // Load user preference from localStorage (optional)
@@ -86,29 +84,6 @@ const Header: React.FC<HeaderProps> = ({
   return (
     <header className="header-bg sticky top-0 z-20 border-b border-gray-200 bg-gray-50 backdrop-blur supports-[backdrop-filter]:bg-white/70">
       <div className="flex items-center justify-between px-3 md:px-4 sm:px-6 py-3" style={{ paddingTop: '4px', paddingBottom: '4px' }}>
-        
-        <button
-          onClick={toggleTheme}
-          className={`relative w-14 h-7 flex items-center !rounded-full p-1 border transition-colors duration-300
-          ${dark ? "!bg-gray-700 !border-gray-700" : "!bg-gray-100 !border-gray-200"}`}
-        >
-          {/* Circle */}
-          <span
-            className={`absolute left-1 w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300
-            ${dark ? "translate-x-7" : "translate-x-0"}`}
-          ></span>
-
-          {/* Icons */}
-          <FaSun
-            className={`absolute left-[7.1px] text-yellow-400 text-sm transition-opacity duration-300 ${dark ? "opacity-0" : "opacity-100"
-              }`}
-          />
-          <FaMoon
-            className={`absolute right-[5px] text-black text-sm transition-opacity duration-300 ${dark ? "opacity-100" : "opacity-0"
-              }`}
-          />
-        </button>
-
 
         {/* Left: show hamburger on mobile only */}
         <div className="flex items-center">
@@ -131,6 +106,28 @@ const Header: React.FC<HeaderProps> = ({
         </div>
 
         <div className="flex items-center gap-3 sm:gap-4">
+          <button
+            onClick={toggleTheme}
+            className={`relative w-14 h-7 flex items-center !rounded-full p-1 border transition-colors duration-300
+          ${dark ? "!bg-gray-700 !border-gray-700" : "!bg-gray-100 !border-gray-200"}`}
+          >
+            {/* Circle */}
+            <span
+              className={`absolute left-1 w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300
+            ${dark ? "translate-x-7" : "translate-x-0"}`}
+            ></span>
+
+            {/* Icons */}
+            <FaSun
+              className={`absolute left-[7.1px] text-yellow-400 text-sm transition-opacity duration-300 ${dark ? "opacity-0" : "opacity-100"
+                }`}
+            />
+            <FaMoon
+              className={`absolute right-[5px] text-black text-sm transition-opacity duration-300 ${dark ? "opacity-100" : "opacity-0"
+                }`}
+            />
+          </button>
+
           <ApiErrorNotification />
 
           {/* User Menu */}

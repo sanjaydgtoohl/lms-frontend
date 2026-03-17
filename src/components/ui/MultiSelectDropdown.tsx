@@ -136,7 +136,7 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
       <div
         role="listbox"
         aria-hidden={!open}
-        className={`absolute z-50 left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg transition-all duration-150 hide-scrollbar ${open ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
+        className={`absolute z-50 left-0 text-xs right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg transition-all duration-150 hide-scrollbar ${open ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
         style={{ maxHeight: `${maxHeight}px`, overflowY: 'auto' }}
       >
         <div className="msd-scroll msd-dropdown hide-scrollbar">

@@ -990,7 +990,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                         onChange={handleChange}
                         className="form-radio accent-blue-600"
                       />
-                      <span className="ml-2 text-sm">Programmatic</span>
+                      <span className="ml-2 text-sm text-gray-800">Programmatic</span>
                     </label>
                     <label className="flex items-center cursor-pointer">
                       <input
@@ -1001,7 +1001,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                         onChange={handleChange}
                         className="form-radio accent-blue-600"
                       />
-                      <span className="ml-2 text-sm">Non-Programmatic</span>
+                      <span className="ml-2 text-sm text-gray-800">Non-Programmatic</span>
                     </label>
                   </div>
                 </div>
@@ -1157,7 +1157,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     onChange={handleChange}
                     rows={4}
                     placeholder="Show all data regarding to Brief"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white resize-none"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white resize-none text-gray-800 outline-none focus:outline-none ring-0 shadow-none"
                   />
                 </div>
               </div>

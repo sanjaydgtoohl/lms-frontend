@@ -401,7 +401,7 @@ const View: React.FC = () => {
                   aria-label="Close"
                   onClick={closeImageModal}
                   onKeyDown={(e) => { if (e.key === 'Enter') closeImageModal(); }}
-                  className="absolute top-3 right-3 bg-white/95 hover:bg-white rounded-full p-1 border z-50 cursor-pointer flex items-center justify-center"
+                  className="absolute top-3 right-3 bg-white rounded-full p-1 border z-50 cursor-pointer flex items-center justify-center"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
