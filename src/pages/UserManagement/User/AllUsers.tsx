@@ -264,7 +264,7 @@ const AllUsers: React.FC = () => {
   ] as Column<User>[]);
 
   return (
-    <div className="flex-1 p-6 w-full max-w-full overflow-x-hidden">
+    <div className="flex-1 w-full max-w-full overflow-x-hidden">
       <MasterHeader
         onCreateClick={handleCreateUser}
         createButtonLabel="Add User"

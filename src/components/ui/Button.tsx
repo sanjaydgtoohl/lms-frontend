@@ -12,8 +12,9 @@ const Button: React.FC<ButtonProps & React.ButtonHTMLAttributes<HTMLButtonElemen
   className = '',
   ...props
 }) => {
-  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]';
-  
+  // const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed border-none focus:border-none';
+const baseClasses =  "inline-flex items-center justify-center font-medium rounded-lg border-0 transition-all duration-300 ease-in-out transform hover:scale-102 focus:outline-none focus:border-0 hover:border-0 disabled:opacity-50 disabled:cursor-not-allowed";
+
   const variantClasses = {
     primary: 'btn-primary text-black focus:ring-blue-500 shadow-sm hover:shadow-md',
     secondary: 'bg-gray-600 hover:bg-gray-700 text-white focus:ring-gray-500 shadow-sm hover:shadow-md',
@@ -55,7 +56,7 @@ const Button: React.FC<ButtonProps & React.ButtonHTMLAttributes<HTMLButtonElemen
   };
 
   const labelText = extractLabelText(children);
-  
+
   const orangeLabels = ['Add', 'Create', 'Go Back', 'Save', 'Update'];
   const btnLabel = orangeLabels.includes(labelText) ? labelText : undefined;
 

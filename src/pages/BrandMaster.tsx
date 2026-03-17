@@ -187,7 +187,7 @@ const BrandMaster: React.FC = () => {
   const handlePageChange = (page: number) => setCurrentPage(page);
 
   return (
-    <div className="flex-1 p-3 md:p-6 w-full max-w-full overflow-x-hidden">
+    <div className="flex-1 w-full max-w-full overflow-x-hidden">
       <ConfirmDialog
         isOpen={!!confirmDeleteId}
         title={`Delete brand "${confirmDeleteLabel}"?`}
@@ -243,7 +243,7 @@ const BrandMaster: React.FC = () => {
               </div>
             </div>
 
-            <div className="pt-0 overflow-x-auto">
+            <div className="pt-0 overflow-x-auto overflow-y-hidden">
               <Table
               data={currentData}
               startIndex={startIndex}

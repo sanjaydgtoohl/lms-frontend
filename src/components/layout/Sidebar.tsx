@@ -1,7 +1,7 @@
 import { useSidebarMenu } from "../../hooks/SidebarMenuHooks";
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import LogoutIcon from "../../assets/icons/LogoutIcon";
 import HelpIcon from "../../assets/icons/HelpIcon";
 import logoUrl from "../../assets/DGTOOHL 360.svg";
@@ -16,7 +16,6 @@ import type { AppDispatch, RootState } from "../../redux/store";
 import { toggleExpandedItem, setExpandedItems } from "../../redux/slices/sidebarSlice";
 import { logoutUser } from "../../redux/slices/authSlice";
 
-
 interface SidebarProps {
   isCollapsed: boolean
   onToggle: () => void
@@ -27,6 +26,18 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false, onCloseMobile }) => {
   const dispatch = useDispatch<AppDispatch>()
+
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await dispatch(logoutUser()).unwrap(); // unwrap throws if rejected
+      navigate("/login"); // redirect after logout
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
 
   const isCollapsed = useSelector(
@@ -40,19 +51,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
 
   // Use sidebar data from context instead of fetching separately
   const { sidebarMenu: navigationItems } = useSidebarMenu();
-
-
-  const location = useLocation();
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    try {
-      await dispatch(logoutUser());
-      navigate("/login");
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
 
   // const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [showMobilePopup, setShowMobilePopup] = useState(false);
@@ -204,11 +202,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
     // Highlight parent and child when on /miss-campaign/create or /brief/create
     const highlightClass =
       (isMissCampaignRoute && (isMissCampaign || isLiveCampaign)) ||
-        ((isBriefRoute || isBriefCreateRoute) && isBrief)
-        ? "bg-orange-100"
-        : isItemActive
-          ? "bg-orange-100"
-          : "hover:bg-orange-50";
+        ((isBriefRoute || isBriefCreateRoute) && isBrief) ||
+        isItemActive
+        ? "border-l-4 border-orange-500 text-orange-500 bg-transparent"
+        : "border-l-4 border-transparent hover:bg-orange-50 hover:text-orange-500 transition-all duration-200";
 
     const handleCardClick = () => {
       if (hasChildren) {
@@ -226,7 +223,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
       <div key={item.name}>
         <div
           className={`
-            flex items-center justify-between px-4 py-3 text-sm font-medium cursor-pointer rounded-lg
+           flex items-center justify-between px-4 py-3 text-sm font-medium cursor-pointer rounded-sm
             transition-all duration-200 ease-in-out
             ${level > 0 ? "ml-6" : ""}
             ${highlightClass}
@@ -236,8 +233,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
         >
           <div
             className={`flex items-center w-full ${isCollapsed ? "justify-center" : ""
-              }`}
-          >
+              }`} >
+
             {/* Show icon_file image if present, else fallback to icon component */}
             {item.icon_file ? (
               <img
@@ -255,13 +252,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
             )}
             {!isCollapsed && <span className="text-[var(--text-primary)]">{item.name}</span>}
           </div>
+
           {hasChildren && !isCollapsed && (
             <div className="ml-auto">
-              {isExpanded ? (
-                <ChevronDown className="shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)]" />
-              ) : (
-                <ChevronRight className="shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)]" />
-              )}
+              <ChevronRight
+                className={`
+                  shrink-0 w-4 h-4 text-[var(--text-secondary)]
+                  transition-transform duration-300
+                  ${isExpanded ? "rotate-90" : ""}
+                `}
+              />
             </div>
           )}
         </div>
@@ -300,9 +300,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
           </div>
         )}
 
-        {hasChildren && isExpanded && !isCollapsed && (
-          <div className="mt-2 space-y-1">
-            {item.children?.map((child) => renderNavigationItem(child, level + 1))}
+        {hasChildren && !isCollapsed && (
+          <div
+            className={`
+              overflow-hidden transition-all duration-300 ease-in-out
+              ${isExpanded ? "max-h-96 opacity-100 mt-2" : "max-h-0 opacity-0"}
+            `}
+          >
+            <div className="space-y-1">
+              {item.children?.map((child) => renderNavigationItem(child, level + 1))}
+            </div>
           </div>
         )}
       </div>
@@ -314,13 +321,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
     return (
       <div
         aria-hidden={!mobileOpen}
-        className={`fixed top-0 left-0 h-full bg-white border-r border-gray-200 shadow-sm transition-transform duration-300 ease-in-out z-40 transform ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} w-16`}
+        className={` flex flex-col fixed top-0 left-0 h-full bg-white border-r border-gray-200 shadow-sm transition-transform duration-300 ease-in-out z-40 transform ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} w-64`}
         ref={popupRef}
       >
         {/* Render collapsed (icons-only) content inside */}
         <div className="flex h-16 items-center px-2">
-          <div className="w-12 h-12 rounded-lg flex items-center justify-center">
-            <img src={logoUrl} alt="LMS logo" style={{ width: 72, height: 'auto' }} />
+          <div className="w-full h-auto object-contain rounded-lg flex items-center ">
+            <img src={logoUrl} alt="LMS logo" />
           </div>
         </div>
 
@@ -330,25 +337,24 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
           </div>
         </nav>
 
-        <div className="border-t border-gray-100 p-2 space-y-2">
+        <div className="border-t border-gray-100 p-2">
           <div
-            className={`flex items-center px-2 py-2 text-sm font-medium text-[var(--text-primary)] rounded-lg hover:bg-orange-50 transition-all cursor-pointer justify-center`}
+            className={`flex items-center px-4 py-3 text-sm font-medium text-[var(--text-primary)] rounded-lg hover:bg-orange-50 transition-all cursor-pointer`}
             onClick={() => onCloseMobile && onCloseMobile()}
           >
-            <HelpIcon className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)]`} />
+            <HelpIcon className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)] mr-2.5`} /> Help
           </div>
           <div
             onClick={() => {
               handleLogout();
-              if (onCloseMobile) {
-                onCloseMobile();
-              }
+              if (onCloseMobile) onCloseMobile();
             }}
-            className="flex items-center px-2 py-2 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-all cursor-pointer justify-center"
-          >
-            <LogoutIcon className="shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-red-600" />
+            className="flex items-center px-4 py-3 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-all cursor-pointer"
+          > 
+            <LogoutIcon className="shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-red-600 mr-2.5" /> Logout 
           </div>
         </div>
+
       </div>
     );
   }
@@ -356,9 +362,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
   return (
     <div
       className={`
-        flex flex-col fixed left-0 top-0 h-full bg-white border-r border-gray-200 shadow-sm
-        transition-all duration-300 ease-in-out z-30
-        ${isCollapsed ? "w-16" : "w-64"}
+        flex flex-col fixed left-0 top-0 h-full bg-white shadow-custom transition-all sidebar-wrapper duration-300 ease-in-out z-30 ${isCollapsed ? "w-16" : "w-64"}
       `}
     >
       {/* Logo Section */}

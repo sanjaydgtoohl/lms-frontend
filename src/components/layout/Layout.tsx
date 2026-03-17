@@ -18,7 +18,7 @@ const Layout: React.FC = () => {
   useEffect(() => {
     const handleResize = debounce(() => {
       // Mobile breakpoint (max-width: 768px)
-      const mobile = window.innerWidth <= 768;
+      const mobile = window.innerWidth <= 1023;
       setIsMobile(mobile);
 
       // Keep the existing desktop collapse behaviour for >= 1024px
@@ -59,12 +59,12 @@ const Layout: React.FC = () => {
         />
         
         {/* Main Content Area */}
-        <div className={`flex-1 flex flex-col min-h-0 transition-all duration-300 ${sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64'} w-full`}>
+        <div className={`flex-1 flex flex-col min-h-0 transition-all duration-300 ${sidebarCollapsed ? 'lg:pl-64' : 'lg:pl-64'} w-full`}>
           {/* Header */}
           <Header showHamburger={isMobile} onHamburgerClick={toggleMobileSidebar} />
 
           {/* Main Content */}
-          <main className="flex-1 overflow-auto w-full overflow-x-hidden px-3 md:px-6 lg:px-8 py-4">
+          <main className="flex-1 overflow-auto w-full overflow-x-hidden px-3 sm:px-4 md:px-5 lg:px-6 py-3 sm:py-4 md:py-5 lg:py-6">
             <ErrorBoundary>
               <Outlet />
             </ErrorBoundary>

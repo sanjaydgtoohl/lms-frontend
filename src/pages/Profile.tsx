@@ -76,11 +76,11 @@ const Profile: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       <div>
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="px-6 py-8 border-b border-gray-100">
+          <div className="p-4 border-b border-gray-100">
             <div className="flex items-center space-x-6">
-              <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-blue-50 rounded-full flex items-center justify-center overflow-hidden border-3 border-blue-200 shadow-lg">
+              <div className="sm:w-24 squire bg-gradient-to-br from-blue-100 to-blue-50 rounded-xl flex items-center justify-center overflow-hidden border-3 border-blue-200 custom-shadow">
                 {profile.avatar_url ? (
-                  <img src={profile.avatar_url} alt="avatar" className="w-24 h-24 object-cover rounded-full" />
+                  <img src={profile.avatar_url} alt="avatar" className="w-full h-full object-cover" />
                 ) : (
                   <span className="text-4xl font-bold text-blue-600">
                     {(profile.full_name || profile.name || '?')[0]}
@@ -88,10 +88,10 @@ const Profile: React.FC = () => {
                 )}
               </div>
               <div className="flex-1">
-                <h1 className="text-3xl font-bold text-gray-900 mb-1">
+                <h2 className="text-lg sm:text-3xl font-bold text-gray-900">
                   {profile.full_name || profile.name}
-                </h1>
-                <p className="text-gray-500 text-sm mb-3">{profile.email}</p>
+                </h2>
+                <p className="text-gray-500 text-sm mb-2">{profile.email}</p>
                 <div className="flex items-center gap-2">
                   <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${profile.status === '1' || profile.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
                     <span className={`w-2 h-2 rounded-full mr-2 ${profile.status === '1' || profile.is_active ? 'bg-green-500' : 'bg-gray-400'}`}></span>
@@ -107,9 +107,9 @@ const Profile: React.FC = () => {
             </div>
           </div>
 
-          <div className="border-t border-gray-200 px-6 py-8">
+          <div className="border-t border-gray-200 p-4">
             <h2 className="text-xl font-bold text-gray-900 mb-6">Account Information</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
               {/* Full Name */}
               <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Full Name</label>
@@ -152,9 +152,9 @@ const Profile: React.FC = () => {
               {Array.isArray(profile.roles) && profile.roles.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {profile.roles.map((role: any) => (
-                    <div key={role.id} className="bg-white border-l-4 border-l-blue-500 border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-all hover:border-l-blue-600">
+                    <div key={role.id} className="bg-white border-l-4 border-l-orange-500 border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-all hover:border-l-orange-600">
                       <div className="flex items-start gap-3">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                        <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
                         <div className="flex-1">
                           <h3 className="font-bold text-gray-900 text-base mb-2">{role.display_name || role.name}</h3>
                           {role.description && (
