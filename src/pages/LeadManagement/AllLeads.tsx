@@ -79,7 +79,7 @@ const AllLeads: React.FC = () => {
     useEffect(() => {
       const loadUsers = async () => {
         try {
-          const res = await apiClient.get('/users/list');
+          const res = await apiClient.get('/profile/child-users');
           const users = Array.isArray(res.data) ? res.data : [];
           setAssignToOptions(users.map((u: any) => ({ id: u.id, name: u.name })));
         } catch {

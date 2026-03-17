@@ -4,7 +4,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { listBrands } from '../../services/BrandMaster';
 import { listAgencies } from '../../services/AgencyMaster';
-import { listUsers } from '../../services/AllUsers';
+import { listAttendees } from '../../services/AllUsers';
 import { listLeads } from '../../services/AllLeads';
 import { fetchBriefStatuses } from '../../services/BriefStatus';
 import { getPriorities } from '../../services/Priority';
@@ -42,6 +42,9 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
     briefDetail: '',
     submissionDate: '', // will store date as string (DD-MM-YYYY)
     submissionTime: '', // will store time as string (HH:mm)
+    // Campaign window
+    campaignStartDate: '', // DD-MM-YYYY
+    campaignEndDate: '', // DD-MM-YYYY
     // store backend-friendly values: 'programmatic' | 'non_programmatic'
     programmatic: 'programmatic',
     type: '',
@@ -50,6 +53,9 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
   // State for calendar pickers
   const [calendarDate, setCalendarDate] = useState<Date | null>(null); // For date only
   const [calendarTime, setCalendarTime] = useState<Date | null>(null); // For time only
+  // Calendar pickers for campaign start/end
+  const [calendarStartDate, setCalendarStartDate] = useState<Date | null>(null);
+  const [calendarEndDate, setCalendarEndDate] = useState<Date | null>(null);
 
   // Contact person dropdown state (loaded from API - leads list)
   const [contactPersons, setContactPersons] = useState<Array<string | { value: string; label: string }>>([]);
@@ -144,6 +150,23 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
         }
       }
 
+      // Autofill Campaign Start/End if provided in initialData
+      const cs = initialData.campaign_start_date || initialData.campaignStartDate || initialData.campaign_start || initialData.campaignStart;
+      const ce = initialData.campaign_end_date || initialData.campaignEndDate || initialData.campaign_end || initialData.campaignEnd;
+      if (cs && typeof cs === 'string') {
+        // normalize to DD-MM-YYYY when possible
+        const s = cs.trim();
+        const isoMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (isoMatch) patched.campaignStartDate = `${isoMatch[3]}-${isoMatch[2]}-${isoMatch[1]}`;
+        else if (/^\d{2}-\d{2}-\d{4}$/.test(s)) patched.campaignStartDate = s;
+      }
+      if (ce && typeof ce === 'string') {
+        const s2 = ce.trim();
+        const isoMatch2 = s2.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (isoMatch2) patched.campaignEndDate = `${isoMatch2[3]}-${isoMatch2[2]}-${isoMatch2[1]}`;
+        else if (/^\d{2}-\d{2}-\d{4}$/.test(s2)) patched.campaignEndDate = s2;
+      }
+
       setForm(prev => ({ ...prev, ...patched }));
       // Always update calendarDate and calendarTime from patched data
       if (patched.submissionDate && patched.submissionTime) {
@@ -159,6 +182,23 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
             setCalendarTime(dateObj2);
             console.log('Set calendarDate/calendarTime:', dateObj2);
           }
+        }
+      }
+      // Also update campaign calendar pickers when provided
+      if (patched.campaignStartDate) {
+        const parts = String(patched.campaignStartDate).split('-');
+        if (parts.length === 3) {
+          const [dd, mm, yyyy] = parts;
+          const d = new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+          if (!isNaN(d.getTime())) setCalendarStartDate(d);
+        }
+      }
+      if (patched.campaignEndDate) {
+        const parts2 = String(patched.campaignEndDate).split('-');
+        if (parts2.length === 3) {
+          const [dd2, mm2, yyyy2] = parts2;
+          const d2 = new Date(Number(yyyy2), Number(mm2) - 1, Number(dd2));
+          if (!isNaN(d2.getTime())) setCalendarEndDate(d2);
         }
       }
     }
@@ -395,7 +435,8 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
     (async () => {
       try {
         setUsersLoading(true);
-        const res = await listUsers(1, 200);
+        // Use child-users endpoint (listAttendees) for Assign To dropdown
+        const res = await listAttendees(1, 200);
         if (!mounted) return;
         const opts = (res.data || []).map(u => ({ value: String(u.id), label: String(u.name) }));
         setUsers(opts);
@@ -856,6 +897,22 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
         payload.submission_date = dateStr;
       }
 
+      // Campaign start / end - convert DD-MM-YYYY to YYYY-MM-DD
+      const cs = (form as any).campaignStartDate;
+      const ce = (form as any).campaignEndDate;
+      if (cs) {
+        let s = String(cs).trim();
+        const dmyc = s.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+        if (dmyc) s = `${dmyc[3]}-${dmyc[2]}-${dmyc[1]}`;
+        payload.campaign_start_date = s;
+      }
+      if (ce) {
+        let s2 = String(ce).trim();
+        const dmyc2 = s2.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+        if (dmyc2) s2 = `${dmyc2[3]}-${dmyc2[2]}-${dmyc2[1]}`;
+        payload.campaign_end_date = s2;
+      }
+
       // Priority: value is already priority_id from API
       if (form.priority) {
         payload.priority_id = toInt(form.priority) ?? form.priority;
@@ -1013,9 +1070,33 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     options={form.programmatic === 'non_programmatic' ? ['DOOH', 'OOH'] : ['DOOH', 'CTV']}
                     value={form.type}
                     onChange={(v: any) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; setForm(prev => ({ ...prev, type: val })); }}
-                    inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
+                    inputClassName="border border-[var(--border-color)] focus:ring-blue-500 h-[40px]"
                   />
                 </div>
+
+                <div>
+  <label className="block text-sm text-[var(--text-secondary)] mb-1">Priority</label>
+  <SelectField
+    name="priority"
+    placeholder={priorityLoading ? 'Loading priorities...' : 'Select Priority'}
+    options={priorityOptions}
+    value={form.priority}
+    onChange={(v: any) => {
+      const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v;
+      lastChangedFieldRef.current = 'priority';
+      setForm(prev => ({ ...prev, priority: val }));
+      setTimeout(() => {
+        if (lastChangedFieldRef.current === 'priority')
+          lastChangedFieldRef.current = null;
+      }, 500);
+    }}
+    inputClassName={priorityLoading
+      ? 'border border-gray-300 bg-gray-50'
+      : 'border border-[var(--border-color)] focus:ring-blue-500'}
+    disabled={priorityLoading}
+  />
+  {priorityError && <div className="text-xs text-red-600 mt-1">{priorityError}</div>}
+</div>
               </div>
               {/* Right column */}
               <div className="space-y-4">
@@ -1131,23 +1212,53 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     )}
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm text-[var(--text-secondary)] mb-1">Priority</label>
-                  <SelectField
-                    name="priority"
-                    placeholder={priorityLoading ? 'Loading priorities...' : 'Select Priority'}
-                    options={priorityOptions}
-                    value={form.priority}
-                    onChange={(v: any) => {
-                      const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v;
-                      lastChangedFieldRef.current = 'priority';
-                      setForm(prev => ({ ...prev, priority: val }));
-                      setTimeout(() => { if (lastChangedFieldRef.current === 'priority') lastChangedFieldRef.current = null; }, 500);
-                    }}
-                    inputClassName={priorityLoading ? 'border border-gray-300 bg-gray-50' : 'border border-[var(--border-color)] focus:ring-blue-500'}
-                    disabled={priorityLoading}
-                  />
-                  {priorityError && <div className="text-xs text-red-600 mt-1">{priorityError}</div>}
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Campaign Start Date</label>
+                    <DatePicker
+                      selected={calendarStartDate}
+                      onChange={date => {
+                        setCalendarStartDate(date);
+                        if (date) {
+                          const d = date;
+                          const dd = String(d.getDate()).padStart(2, '0');
+                          const mm = String(d.getMonth() + 1).padStart(2, '0');
+                          const yyyy = d.getFullYear();
+                          setForm(prev => ({ ...prev, campaignStartDate: `${dd}-${mm}-${yyyy}` }));
+                        } else {
+                          setForm(prev => ({ ...prev, campaignStartDate: '' }));
+                        }
+                      }}
+                      minDate={new Date()}
+                      dateFormat="dd-MM-yyyy"
+                      placeholderText="DD-MM-YYYY"
+                      className="w-full px-3 py-2 rounded-lg bg-white border border-[var(--border-color)]"
+                      popperClassName="!duration-0 !transition-none"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Campaign End Date</label>
+                    <DatePicker
+                      selected={calendarEndDate}
+                      onChange={date => {
+                        setCalendarEndDate(date);
+                        if (date) {
+                          const d = date;
+                          const dd = String(d.getDate()).padStart(2, '0');
+                          const mm = String(d.getMonth() + 1).padStart(2, '0');
+                          const yyyy = d.getFullYear();
+                          setForm(prev => ({ ...prev, campaignEndDate: `${dd}-${mm}-${yyyy}` }));
+                        } else {
+                          setForm(prev => ({ ...prev, campaignEndDate: '' }));
+                        }
+                      }}
+                      minDate={calendarStartDate || new Date()}
+                      dateFormat="dd-MM-yyyy"
+                      placeholderText="DD-MM-YYYY"
+                      className="w-full px-3 py-2 rounded-lg bg-white border border-[var(--border-color)]"
+                      popperClassName="!duration-0 !transition-none"
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">Brief Detail</label>
@@ -1160,6 +1271,9 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white resize-none"
                   />
                 </div>
+
+                
+                {/* Brief Detail moved to pair with Select Type for aligned row */}
               </div>
             </div>
 
