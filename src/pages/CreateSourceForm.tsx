@@ -115,7 +115,7 @@ const CreateSourceForm: React.FC<Props> = ({ onClose, onSave}) => {
       className="space-y-6"
     >
       <MasterFormHeader onBack={onClose} title="Create Source" />
-      <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)]">
+      <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-200">
         <div className="p-4 bg-gray-50 rounded-2xl h-[70dvh]">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid sm:grid-cols-2 gap-3">

@@ -333,12 +333,12 @@ const EditUser: React.FC = () => {
         title="Edit User" 
       />
 
-      <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-        <div className="p-6 bg-[#F9FAFB]">
+      <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="p-6 bg-gray-50 rounded-2xl ">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Name */}
             <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+              <label className="block text-sm text-gray-800 mb-1">
                 Name <span className="text-[#FF0000]">*</span>
               </label>
               <input
@@ -352,7 +352,7 @@ const EditUser: React.FC = () => {
                 className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors ${
                   errors.name
                     ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                    : 'border border-[var(--border-color)] focus:ring-blue-500'
+                    : 'border border-gray-200 focus:ring-blue-500'
                 }`}
                 aria-invalid={errors.name ? 'true' : 'false'}
                 aria-describedby={errors.name ? 'name-error' : undefined}
@@ -373,7 +373,7 @@ const EditUser: React.FC = () => {
 
             {/* Password */}
             <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+              <label className="block text-sm text-gray-800 mb-1">
                 Password
               </label>
               <div className="relative">
@@ -389,7 +389,7 @@ const EditUser: React.FC = () => {
                   className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors ${
                     errors.password
                       ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                      : 'border border-[var(--border-color)] focus:ring-blue-500'
+                      : 'border border-gray-200 focus:ring-blue-500'
                   }`}
                   aria-invalid={errors.password ? 'true' : 'false'}
                   aria-describedby={errors.password ? 'password-error' : undefined}
@@ -429,7 +429,7 @@ const EditUser: React.FC = () => {
 
             {/* Password confirmation */}
             <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+              <label className="block text-sm text-gray-800 mb-1">
                 Confirm Password
               </label>
               <div className="relative">
@@ -445,7 +445,7 @@ const EditUser: React.FC = () => {
                   className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors ${
                     errors.password_confirmation
                       ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                      : 'border border-[var(--border-color)] focus:ring-blue-500'
+                      : 'border border-gray-200 focus:ring-blue-500'
                   }`}
                   aria-invalid={errors.password_confirmation ? 'true' : 'false'}
                   aria-describedby={errors.password_confirmation ? 'password_confirmation-error' : undefined}
@@ -485,7 +485,7 @@ const EditUser: React.FC = () => {
 
             {/* Manager */}
             <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+              <label className="block text-sm text-gray-800 mb-1">
                 Select Manager
               </label>
               <MultiSelectDropdown
@@ -498,7 +498,7 @@ const EditUser: React.FC = () => {
                   setErrors((prev) => ({ ...prev, managers: '' }));
                 }}
                 disabled={managersLoading}
-                inputClassName={`${errors.managers ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-[var(--border-color)] focus:ring-blue-500'}`}
+                inputClassName={`${errors.managers ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}`}
                 maxVisibleOptions={2}
               />
               {managersError && (
@@ -521,7 +521,7 @@ const EditUser: React.FC = () => {
 
             {/* Email */}
             <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+              <label className="block text-sm text-gray-800 mb-1">
                 Email <span className="text-[#FF0000]">*</span>
               </label>
               <input
@@ -536,7 +536,7 @@ const EditUser: React.FC = () => {
                 className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors ${
                   errors.email
                     ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                    : 'border border-[var(--border-color)] focus:ring-blue-500'
+                    : 'border border-gray-200 focus:ring-blue-500'
                 }`}
                 aria-invalid={errors.email ? 'true' : 'false'}
                 aria-describedby={errors.email ? 'email-error' : undefined}
@@ -557,7 +557,7 @@ const EditUser: React.FC = () => {
 
             {/* Phone */}
             <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+              <label className="block text-sm text-gray-800 mb-1">
                 Phone Number
               </label>
               <input
@@ -569,7 +569,7 @@ const EditUser: React.FC = () => {
                 className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors ${
                   errors.phone
                     ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                    : 'border border-[var(--border-color)] focus:ring-blue-500'
+                    : 'border border-gray-200 focus:ring-blue-500'
                 }`}
               />
               {errors.phone && (
@@ -588,7 +588,7 @@ const EditUser: React.FC = () => {
 
             {/* Role */}
             <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+              <label className="block text-sm text-gray-800 mb-1">
                 Role <span className="text-[#FF0000]">*</span>
               </label>
               <MultiSelectDropdown
@@ -601,7 +601,7 @@ const EditUser: React.FC = () => {
                   setErrors((prev) => ({ ...prev, roles: '' }));
                 }}
                 disabled={rolesLoading}
-                inputClassName={`${errors.roles ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-[var(--border-color)] focus:ring-blue-500'}`}
+                inputClassName={`${errors.roles ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}`}
                 maxVisibleOptions={2}
               />
               {rolesError && (

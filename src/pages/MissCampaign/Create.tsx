@@ -302,7 +302,7 @@ const Create: React.FC<CreateProps> = ({
         title=""
         onClose={onClose ? onClose : () => navigate(-1)}
       />
-      <div className="mt-6 bg-white rounded-2xl shadow-sm border border-[var(--border-color)] p-6">
+      <div className="mt-6 bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           {error ? <p className="text-sm text-red-600 mb-4">{error}</p> : null}
           <div className="grid grid-cols-2 gap-6">

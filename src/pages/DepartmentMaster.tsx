@@ -105,8 +105,8 @@ const CreateDepartmentForm: React.FC<{
 			className="space-y-6"
 		>
 			<MasterFormHeader onBack={onClose} title="Create Department" />
-			<div className="w-full bg-white rounded-xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-				<div className="p-6 bg-[#F9FAFB]">
+			<div className="w-full bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+				<div className="p-6 bg-gray-50 rounded-2xl ">
 					<form onSubmit={handleSubmit} className="space-y-6">
 						<div>
 							<label className="block text-sm font-medium text-gray-700 mb-1.5">

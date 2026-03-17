@@ -116,9 +116,9 @@ const MainContent = <T extends LeadSource | Agency>({
     <div className="flex-1 w-full">
       {/* Desktop Table View */}
       <div className="hidden lg:block">
-        <div className="bg-white rounded-xl shadow-sm border border-[var(--border-color)] overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           {/* Table Header */}
-          <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)]">
+          <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
               <div className="flex justify-between items-center">
                 <h2 className="text-lg font-semibold text-gray-800">{title}</h2>
                 <div className="flex items-center space-x-3">
@@ -143,43 +143,43 @@ const MainContent = <T extends LeadSource | Agency>({
                 <tr>
                   {dataType === 'agency' ? (
                     <>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-800uppercase tracking-wider">
                         Sr. No.
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-800uppercase tracking-wider">
                         Agency Group
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-800uppercase tracking-wider">
                         Agency Name
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-800uppercase tracking-wider">
                         Agency Type
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-800uppercase tracking-wider">
                         Contact Person
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-800uppercase tracking-wider">
                         Date & Time
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-800uppercase tracking-wider">
                         Action
                       </th>
                     </>
                   ) : (
                     <>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-800uppercase tracking-wider">
                         Sr. No.
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-800uppercase tracking-wider">
                         Source
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-800uppercase tracking-wider">
                         Sub-Source
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-800uppercase tracking-wider">
                         Date & Time
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-800uppercase tracking-wider">
                         Action
                       </th>
                     </>
@@ -254,7 +254,7 @@ const MainContent = <T extends LeadSource | Agency>({
 
       {/* Mobile Card View */}
       <div className="lg:hidden space-y-4">
-        <div className="bg-white rounded-xl shadow-sm border border-[var(--border-color)] p-4">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold text-gray-800">{title}</h2>
             {headerActions && (
@@ -268,7 +268,7 @@ const MainContent = <T extends LeadSource | Agency>({
         {currentData.map((item, index) => (
           <div 
             key={item.id}
-            className="bg-white rounded-xl shadow-sm border border-[var(--border-color)] p-4 hover:shadow-md transition-all duration-200"
+            className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-all duration-200"
           >
             <div className="flex justify-between items-start mb-3">
               <div className="flex gap-2">

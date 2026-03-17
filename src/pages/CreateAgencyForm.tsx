@@ -378,7 +378,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                         setParentErrors(prev => ({ ...prev, name: undefined }));
                       }}
                       placeholder="Please Enter Agency Name"
-                      className={`w-full px-3 py-2 h-11 text-sm border rounded-lg bg-white text-[#344054] focus:outline-none focus:ring-1 focus:ring-black ${parentErrors.name ? 'border-red-500' : 'border-[#D0D5DD]'}`}
+                      className={`w-full px-3 py-2 h-11 text-sm border rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-black ${parentErrors.name ? 'border-red-500' : 'border-[#D0D5DD]'}`}
                     />
                     {parentErrors.name && (
                       <div className="text-xs text-red-500 mt-1">{parentErrors.name}</div>
@@ -440,7 +440,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                 {children.map((c, idx) => (
                   <div key={c.id} className="p-4 md:p-6 border border-gray-200 rounded-xl bg-white">
                     <div className="flex items-center justify-between mb-4">
-                      <div className="text-sm font-medium text-[#344054]">Child Agency {idx + 1}</div>
+                      <div className="text-sm font-medium text-gray-800">Child Agency {idx + 1}</div>
                       <button
                         type="button"
                         onClick={() => safeRemoveChild(c.id)}
@@ -462,7 +462,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                           }}
                           placeholder="Please Enter Agency Name"
                           ref={el => { childNameRefs.current[c.id] = el }}
-                          className={`w-full px-3 py-2 h-11 text-sm border rounded-lg bg-white text-[#344054] focus:outline-none focus:ring-1 focus:ring-black ${childErrors[c.id]?.name ? 'border-red-500' : 'border-[#D0D5DD]'}`}
+                          className={`w-full px-3 py-2 h-11 text-sm border rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-black ${childErrors[c.id]?.name ? 'border-red-500' : 'border-[#D0D5DD]'}`}
                         />
                         {childErrors[c.id]?.name && (
                           <div className="text-xs text-red-500 mt-1">{childErrors[c.id].name}</div>

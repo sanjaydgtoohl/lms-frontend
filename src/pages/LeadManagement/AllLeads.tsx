@@ -436,7 +436,7 @@ const AllLeads: React.FC = () => {
         />
       )}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-        <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-200">
+        <div className="bg-gray-50 rounded-lg px-6 py-4 flex items-center justify-between border-b border-gray-200">
           <h2 className="text-base font-semibold text-gray-900 flex-shrink-0">All Leads</h2>
           <div className="w-40 md:w-auto ml-auto">
             <SearchBar
@@ -486,7 +486,7 @@ const AllLeads: React.FC = () => {
           style={{ left: tooltipLeft, top: tooltipTop }}
           className={`fixed z-50 transform -translate-x-1/2 ${tooltipPlacement === 'top' ? '-translate-y-full' : 'translate-y-0'}`}
         >
-          <div className="bg-white border border-[var(--border-color)] rounded-lg shadow-md p-3 max-w-[48ch] text-sm text-gray-800">
+          <div className="bg-white border border-gray-200 rounded-lg shadow-md p-3 max-w-[48ch] text-sm text-gray-800">
             {tooltipContent}
           </div>
         </div>

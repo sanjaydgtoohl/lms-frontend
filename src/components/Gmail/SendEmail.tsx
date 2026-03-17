@@ -120,11 +120,11 @@ export default function SendEmail() {
       <MasterFormHeader onBack={() => { }} title="Compose Email" />
 
       {/* Form Card */}
-      <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-        <form onSubmit={handleSubmit} className="p-6 bg-[#F9FAFB] space-y-6">
+      <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <form onSubmit={handleSubmit} className="p-6 bg-gray-50 rounded-2xl  space-y-6">
           {/* To Field */}
           <div>
-            <label className="block text-sm text-[var(--text-secondary)] mb-1">
+            <label className="block text-sm text-gray-800 mb-1">
               To <span className="text-[#FF0000]">*</span>
             </label>
             <input
@@ -133,43 +133,43 @@ export default function SendEmail() {
               placeholder="recipient@example.com"
               value={formData.to}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
             />
             {errors.to && <div className="text-xs text-red-500 mt-1">{errors.to}</div>}
           </div>
 
           {/* Subject Field */}
           <div>
-            <label className="block text-sm text-[var(--text-secondary)] mb-1">Subject</label>
+            <label className="block text-sm text-gray-800 mb-1">Subject</label>
             <input
               name="subject"
               placeholder="Email subject"
               value={formData.subject}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
             />
             {errors.subject && <div className="text-xs text-red-500 mt-1">{errors.subject}</div>}
           </div>
 
           {/* Body Field */}
           <div>
-            <label className="block text-sm text-[var(--text-secondary)] mb-1">Message</label>
+            <label className="block text-sm text-gray-800 mb-1">Message</label>
             <textarea
               name="body"
               rows={8}
               placeholder="Enter email content (HTML supported)"
               value={formData.body}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] font-mono resize-vertical"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] font-mono resize-vertical"
             />
             {errors.body && <div className="text-xs text-red-500 mt-1">{errors.body}</div>}
           </div>
 
           {/* Attachments Field */}
           <div>
-            <label className="block text-sm text-[var(--text-secondary)] mb-1">📎 Attachments</label>
+            <label className="block text-sm text-gray-800 mb-1">📎 Attachments</label>
             <div
-              className="w-full px-4 py-6 rounded-lg border-2 border-dashed border-[var(--border-color)] bg-[#F9FAFB] text-center cursor-pointer hover:border-[var(--primary)] hover:bg-opacity-70 transition"
+              className="w-full px-4 py-6 rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 text-center cursor-pointer hover:border-[var(--primary)] hover:bg-opacity-70 transition"
               onDragOver={(e) => {
                 e.preventDefault();
                 e.currentTarget.style.borderColor = 'var(--primary)';
@@ -207,14 +207,14 @@ export default function SendEmail() {
               />
               <label htmlFor="file-input" className="cursor-pointer block">
                 <div className="text-gray-800 font-medium">Drag files here or click to select</div>
-                <div className="text-xs text-[var(--text-secondary)] mt-1">Supported: All file types (Max 25MB per file)</div>
+                <div className="text-xs text-gray-800mt-1">Supported: All file types (Max 25MB per file)</div>
               </label>
             </div>
           </div>
 
           {/* Attachments List */}
           {attachments.length > 0 && (
-            <div className="bg-[#F9FAFB] border border-[var(--border-color)] rounded-lg p-4 space-y-3">
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
               <div className="text-sm font-semibold text-gray-800">
                 📎 {attachments.length} file{attachments.length !== 1 ? 's' : ''} attached
               </div>
@@ -222,7 +222,7 @@ export default function SendEmail() {
                 {attachments.map((att, idx) => (
                   <div
                     key={idx}
-                    className="flex justify-between items-center p-3 bg-white border border-[var(--border-color)] rounded-lg"
+                    className="flex justify-between items-center p-3 bg-white border border-gray-200 rounded-lg"
                   >
                     <div>
                       <div className="text-sm font-medium text-gray-800">{att.name}</div>
@@ -243,7 +243,7 @@ export default function SendEmail() {
           )}
 
           {/* Send Button */}
-          <div className="flex items-center justify-end pt-4 border-t border-[var(--border-color)]">
+          <div className="flex items-center justify-end pt-4 border-t border-gray-200">
             <button
               type="submit"
               disabled={sending}

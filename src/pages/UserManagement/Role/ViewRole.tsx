@@ -70,7 +70,7 @@ const ViewRole: React.FC = () => {
         title="View Role" 
       />
       
-      <div className="bg-white border border-[var(--border-color)] rounded-xl shadow-sm p-6 mt-6">
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 mt-6">
         <div className="grid grid-cols-2 gap-6">
           <div className="space-y-4">
             <div>

@@ -58,7 +58,7 @@ const MasterForm: React.FC<MasterFormProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] p-6">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
       <form onSubmit={handleSubmit} className="space-y-6">
         {fields.map((field) => (
           <div key={field.name} className="space-y-2">

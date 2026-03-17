@@ -257,9 +257,9 @@ const View: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
             transition={{ duration: 0.18 }}
-            className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden"
+            className="w-full bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden"
           >
-            <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)]">
+            <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-800">Miss Campaign Details</h3>
             </div>
 
@@ -274,7 +274,7 @@ const View: React.FC = () => {
               {viewItem.proof && (
                 <div className="mb-6">
                   <div className="bg-gray-50 rounded-lg p-4">
-                    <h4 className="text-sm font-medium text-[var(--text-secondary)] mb-3">Proof Image</h4>
+                    <h4 className="text-sm font-medium text-gray-800mb-3">Proof Image</h4>
                     <img
                       src={viewItem.proof}
                       alt="Campaign Proof"
@@ -325,7 +325,7 @@ const View: React.FC = () => {
           )}
 
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-            <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-200">
+            <div className="bg-gray-50 rounded-lg px-6 py-4 flex items-center justify-between border-b border-gray-200">
               <h2 className="text-base font-semibold text-gray-900">Miss Campaign</h2>
               <SearchBar delay={0} placeholder="Search Miss Campaign" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
             </div>

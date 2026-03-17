@@ -86,10 +86,11 @@ const Header: React.FC<HeaderProps> = ({
   return (
     <header className="header-bg sticky top-0 z-20 border-b border-gray-200 bg-gray-50 backdrop-blur supports-[backdrop-filter]:bg-white/70">
       <div className="flex items-center justify-between px-3 md:px-4 sm:px-6 py-3" style={{ paddingTop: '4px', paddingBottom: '4px' }}>
+        
         <button
           onClick={toggleTheme}
-          className={`relative w-14 h-7 flex items-center !rounded-full p-1 border !border-gray-200 transition-colors duration-300
-          ${dark ? "!bg-gray-100" : "!bg-gray-100"}`}
+          className={`relative w-14 h-7 flex items-center !rounded-full p-1 border transition-colors duration-300
+          ${dark ? "!bg-gray-700 !border-gray-700" : "!bg-gray-100 !border-gray-200"}`}
         >
           {/* Circle */}
           <span
@@ -124,7 +125,7 @@ const Header: React.FC<HeaderProps> = ({
                 }
               }}
             >
-              <Menu className="w-5 h-5 text-[#344054]" />
+              <Menu className="w-5 h-5 text-gray-800" />
             </div>
           )}
         </div>

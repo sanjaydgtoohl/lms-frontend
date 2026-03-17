@@ -189,14 +189,14 @@ const EditPermission: React.FC = () => {
         title="Edit Permission" 
       />
 
-      <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-        <div className="p-6 bg-[#F9FAFB]">
+      <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="p-6 bg-gray-50 rounded-2xl ">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Row 1: Display Name & Name */}
             <div className="grid grid-cols-2 gap-6">
               {/* Display Name */}
               <div>
-                <label className="block text-sm text-[var(--text-secondary)] mb-1">
+                <label className="block text-sm text-gray-800 mb-1">
                   Display Name <span className="text-[#FF0000]">*</span>
                 </label>
                 <input
@@ -210,7 +210,7 @@ const EditPermission: React.FC = () => {
                   className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors ${
                     errors.displayName
                       ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                      : 'border border-[var(--border-color)] focus:ring-blue-500'
+                      : 'border border-gray-200 focus:ring-blue-500'
                   }`}
                   aria-invalid={errors.displayName ? 'true' : 'false'}
                   aria-describedby={errors.displayName ? 'displayName-error' : undefined}
@@ -231,7 +231,7 @@ const EditPermission: React.FC = () => {
 
               {/* Name (Route Name) */}
               <div>
-                <label className="block text-sm text-[var(--text-secondary)] mb-1">
+                <label className="block text-sm text-gray-800 mb-1">
                   Name (Route Name) <span className="text-[#FF0000]">*</span>
                 </label>
                 <input
@@ -245,7 +245,7 @@ const EditPermission: React.FC = () => {
                   className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors ${
                     errors.name
                       ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                      : 'border border-[var(--border-color)] focus:ring-blue-500'
+                      : 'border border-gray-200 focus:ring-blue-500'
                   }`}
                   aria-invalid={errors.name ? 'true' : 'false'}
                   aria-describedby={errors.name ? 'name-error' : undefined}
@@ -269,7 +269,7 @@ const EditPermission: React.FC = () => {
             <div className="grid grid-cols-3 gap-6">
               {/* URL */}
               <div>
-                <label className="block text-sm text-[var(--text-secondary)] mb-1">
+                <label className="block text-sm text-gray-800 mb-1">
                   URL
                 </label>
                 <input
@@ -277,13 +277,13 @@ const EditPermission: React.FC = () => {
                   value={form.url}
                   onChange={handleChange}
                   placeholder="Please enter URL"
-                  className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors border border-[var(--border-color)] focus:ring-blue-500`}
+                  className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors border border-gray-200 focus:ring-blue-500`}
                 />
               </div>
 
               {/* Order */}
               <div>
-                <label className="block text-sm text-[var(--text-secondary)] mb-1">
+                <label className="block text-sm text-gray-800 mb-1">
                   Order <span className="text-[#FF0000]">*</span>
                 </label>
                 <input
@@ -295,7 +295,7 @@ const EditPermission: React.FC = () => {
                   className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors ${
                     errors.order
                       ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                      : 'border border-[var(--border-color)] focus:ring-blue-500'
+                      : 'border border-gray-200 focus:ring-blue-500'
                   }`}
                   aria-invalid={errors.order ? 'true' : 'false'}
                   aria-describedby={errors.order ? 'order-error' : undefined}
@@ -316,7 +316,7 @@ const EditPermission: React.FC = () => {
 
               {/* Icon */}
               <div>
-                <label className="block text-sm text-[var(--text-secondary)] mb-1">
+                <label className="block text-sm text-gray-800 mb-1">
                   Icon
                 </label>
                 <div className="flex items-center gap-2">
@@ -337,7 +337,7 @@ const EditPermission: React.FC = () => {
                   />
                   <label
                     htmlFor="icon-upload"
-                    className="flex-1 px-3 py-2 rounded-lg bg-white text-gray-800 border border-[var(--border-color)] focus:ring-blue-500 cursor-pointer hover:bg-gray-50 transition-colors flex items-center gap-2"
+                    className="flex-1 px-3 py-2 rounded-lg bg-white text-gray-800 border border-gray-200 focus:ring-blue-500 cursor-pointer hover:bg-gray-50 transition-colors flex items-center gap-2"
                   >
                     <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
@@ -365,7 +365,7 @@ const EditPermission: React.FC = () => {
             <div className="grid grid-cols-2 gap-6">
               {/* Icon Text */}
               <div>
-                <label className="block text-sm text-[var(--text-secondary)] mb-1">
+                <label className="block text-sm text-gray-800 mb-1">
                   Icon Text
                 </label>
                 <input
@@ -373,13 +373,13 @@ const EditPermission: React.FC = () => {
                   value={form.iconText}
                   onChange={handleChange}
                   placeholder="Please enter icon text"
-                  className="w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors border border-[var(--border-color)] focus:ring-blue-500"
+                  className="w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors border border-gray-200 focus:ring-blue-500"
                 />
               </div>
 
               {/* Select Parent Permission */}
               <div>
-                <label className="block text-sm text-[var(--text-secondary)] mb-1">
+                <label className="block text-sm text-gray-800 mb-1">
                   Select Parent Permission
                 </label>
                 <SelectField
@@ -392,7 +392,7 @@ const EditPermission: React.FC = () => {
                     setErrors((prev) => ({ ...prev, parentPermission: '' }));
                   }}
                   searchable
-                  inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
+                  inputClassName="border border-gray-200 focus:ring-blue-500"
                   disabled={parentLoading}
                 />
                 {parentLoading && <div className="text-xs text-gray-400 mt-1">Loading parent permissions...</div>}
@@ -405,7 +405,7 @@ const EditPermission: React.FC = () => {
 
             {/* Description - Full Width */}
             <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+              <label className="block text-sm text-gray-800 mb-1">
                 Description <span className="text-[#FF0000]">*</span>
               </label>
               <textarea
@@ -417,7 +417,7 @@ const EditPermission: React.FC = () => {
                 className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors resize-none ${
                   errors.description
                     ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                    : 'border border-[var(--border-color)] focus:ring-blue-500'
+                    : 'border border-gray-200 focus:ring-blue-500'
                 }`}
                 aria-invalid={errors.description ? 'true' : 'false'}
                 aria-describedby={errors.description ? 'description-error' : undefined}

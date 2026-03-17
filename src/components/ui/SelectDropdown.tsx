@@ -125,7 +125,7 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
       <div
         role="listbox"
         aria-hidden={!open}
-        className={`absolute z-50 left-0 right-0 mt-2 bg-white border border-[var(--border-color)] rounded-lg shadow-lg overflow-y-auto transition-all duration-150 ${open ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
+        className={`absolute z-50 left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg overflow-y-auto transition-all duration-150 ${open ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
         style={{ maxHeight: '80px' }} // Show only 2 options (each ~40px)
       >
         {filtered.length === 0 ? (

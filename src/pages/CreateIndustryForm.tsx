@@ -87,17 +87,17 @@ const CreateIndustryForm: React.FC<Props> = ({ onClose, onSave }) => {
       className="space-y-6"
     >
       <MasterFormHeader onBack={onClose} title="Create Industry" />
-      <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-        <div className="p-6 bg-[#F9FAFB]">
+      <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="p-6 bg-gray-50 rounded-2xl ">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">Industry Name <span className="text-red-500">*</span></label>
+              <label className="block text-sm text-gray-800 mb-1">Industry Name <span className="text-red-500">*</span></label>
               <input
                 name="industryName"
                 value={name}
                 onChange={(e) => { setName(e.target.value); setErrors(prev => ({ ...prev, name: '' })); }}
                 className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-1 transition-colors ${
-                  errors.name ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-[var(--border-color)] focus:ring-black'
+                  errors.name ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-black'
                 }`}
                 placeholder="Please Enter Industry Name"
                 aria-invalid={errors.name ? 'true' : 'false'}

@@ -86,7 +86,7 @@ const MasterView: React.FC<Props> = ({ title, item, onClose, excludeFields = [] 
         className="w-full bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden"
       >
         {title && (
-          <div className="bg-gray-50 px-5 py-4 border-b border-[var(--border-color)]">
+          <div className="bg-gray-50 px-5 py-4 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
           </div>
         )}

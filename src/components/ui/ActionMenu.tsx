@@ -36,7 +36,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, onUpl
   const { hasPermission } = usePermissions();
 
   // Check if row is near bottom (last 3 rows)
-  const isNearBottom = typeof rowIndex === 'number' && typeof totalRows === 'number' 
+  const isNearBottom = typeof rowIndex === 'number' && typeof totalRows === 'number'
     ? (totalRows - rowIndex) <= 3
     : false;
   // Check if this is the second-last row (force menu above)
@@ -54,7 +54,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, onUpl
       const viewportHeight = window.innerHeight;
       const spaceBelow = viewportHeight - rect.bottom;
       const spaceAbove = rect.top;
-      
+
       // Estimate menu height (approximately 140px for 3 items with padding)
       const estimatedMenuHeight = 140;
       const buffer = 30;
@@ -62,13 +62,13 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, onUpl
 
       // Detect small/mobile viewport
       const isMobileViewport = typeof window !== 'undefined' ? window.innerWidth <= 640 : false;
-      
-  // If this is the second-from-top row, force menu to open below
-  if (isSecondFromTop) return false;
 
-  // If this is the second-last row, always show above so the popup
-  // doesn't get obscured by the viewport/bottom edge.
-  if (isSecondLast) return true;
+      // If this is the second-from-top row, force menu to open below
+      if (isSecondFromTop) return false;
+
+      // If this is the second-last row, always show above so the popup
+      // doesn't get obscured by the viewport/bottom edge.
+      if (isSecondLast) return true;
 
       // For last 3 rows, use more aggressive positioning
       if (isLast || isNearBottom) {
@@ -82,8 +82,8 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, onUpl
 
         // Show above if space below is less than menu + aggressive buffer
         // OR if there's not enough space below but enough above
-        return spaceBelow < (estimatedMenuHeight + aggressiveBuffer) || 
-               (spaceBelow < requiredSpace && spaceAbove >= requiredSpace);
+        return spaceBelow < (estimatedMenuHeight + aggressiveBuffer) ||
+          (spaceBelow < requiredSpace && spaceAbove >= requiredSpace);
       }
 
       // For other rows, use standard logic
@@ -106,16 +106,16 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, onUpl
         const shouldShowAbove = checkPosition();
         setShowAbove(shouldShowAbove);
 
-          // Compute fixed positioning so the menu is rendered in a portal
-          const rect = containerRef.current.getBoundingClientRect();
-          const right = Math.round(window.innerWidth - rect.right);
-          if (shouldShowAbove) {
-            const bottom = Math.round(window.innerHeight - rect.top);
-            setPortalStyles({ right, bottom });
-          } else {
-            const top = Math.round(rect.bottom);
-            setPortalStyles({ right, top });
-          }
+        // Compute fixed positioning so the menu is rendered in a portal
+        const rect = containerRef.current.getBoundingClientRect();
+        const right = Math.round(window.innerWidth - rect.right);
+        if (shouldShowAbove) {
+          const bottom = Math.round(window.innerHeight - rect.top);
+          setPortalStyles({ right, bottom });
+        } else {
+          const top = Math.round(rect.bottom);
+          setPortalStyles({ right, top });
+        }
       }
     };
 
@@ -142,36 +142,36 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, onUpl
           const estimatedMenuHeight = 140;
           const buffer = 30;
           const requiredSpace = estimatedMenuHeight + buffer;
-          
+
           if (isLast || isNearBottom) {
             const aggressiveBuffer = 50;
             // Force above on mobile for second-last/last rows
             if (isMobileViewport && typeof rowIndex === 'number' && typeof totalRows === 'number' && (totalRows - rowIndex) <= 2) {
               setShowAbove(true);
             } else {
-              const shouldShowAbove = 
-                spaceBelow < (estimatedMenuHeight + aggressiveBuffer) || 
+              const shouldShowAbove =
+                spaceBelow < (estimatedMenuHeight + aggressiveBuffer) ||
                 (spaceBelow < requiredSpace && spaceAbove >= requiredSpace);
               setShowAbove(shouldShowAbove);
             }
           } else {
-            const shouldShowAbove = 
+            const shouldShowAbove =
               spaceBelow < requiredSpace && spaceAbove >= requiredSpace;
             setShowAbove(shouldShowAbove);
           }
         }
       };
-      
+
       // Small delay to ensure DOM is ready
       const timeoutId = setTimeout(initialCheck, 0);
-      
+
       // Update position on scroll/resize when menu is open
       updatePosition();
       window.addEventListener('scroll', updatePosition, true);
       window.addEventListener('resize', updatePosition);
-      
+
       document.addEventListener('mousedown', handleClickOutside);
-      
+
       return () => {
         clearTimeout(timeoutId);
         document.removeEventListener('mousedown', handleClickOutside);
@@ -284,7 +284,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, onUpl
         {showIconFallback ? (
           <span aria-hidden className="text-gray-600 text-base leading-none">⋯</span>
         ) : (
-          <MoreHorizontal size={16} color="#4B5563" strokeWidth={2} />
+          <MoreHorizontal size={20} className='text-gray-600' strokeWidth={2} />
         )}
       </button>
 
@@ -313,106 +313,102 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, onUpl
             `}
             onClick={(e) => e.stopPropagation()}
           >
-              {(onEdit && (!editPermissionSlug || hasPermission(editPermissionSlug))) && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit();
-                    setIsOpen(false);
-                  }}
-                  style={{ backgroundColor: 'white', boxShadow: 'none', outline: 'none' }}
-                  className="
-                      w-full px-4 py-2.5 text-sm font-medium
+            {(onEdit && (!editPermissionSlug || hasPermission(editPermissionSlug))) && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                  setIsOpen(false);
+                }}
+
+                className="
                       text-gray-700 hover:text-gray-700 hover:bg-white
                       flex items-center gap-3
                       transition-colors duration-150 ease-in-out
                       first:rounded-t-lg last:rounded-b-lg
                       focus:outline-none focus:bg-white focus:text-gray-700
                     "
-                  role="menuitem"
-                  tabIndex={0}
-                >
-                  <Edit className="w-4 h-4 flex-shrink-0" />
-                  <span>Edit</span>
-                </button>
-              )}
+                role="menuitem"
+                tabIndex={0}
+              >
+                <Edit className="w-4 h-4 flex-shrink-0" />
+                <span>Edit</span>
+              </button>
+            )}
 
-              {(onView && (!viewPermissionSlug || hasPermission(viewPermissionSlug))) && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onView();
-                    setIsOpen(false);
-                  }}
-                  style={{ backgroundColor: 'white', boxShadow: 'none', outline: 'none' }}
-                  className="
-                      w-full px-4 py-2.5 text-sm font-medium
+            {(onView && (!viewPermissionSlug || hasPermission(viewPermissionSlug))) && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onView();
+                  setIsOpen(false);
+                }}
+                className="
+                      w-full px-4 py-2.5 text-sm font-medium bg-white shadow-none outline-0
                       text-gray-700 hover:text-gray-700 hover:bg-white
                       flex items-center gap-3
                       transition-colors duration-150 ease-in-out
                       first:rounded-t-lg last:rounded-b-lg
                       focus:outline-none focus:bg-white focus:text-gray-700
                     "
-                  role="menuitem"
-                  tabIndex={0}
-                >
-                  <Eye className="w-4 h-4 flex-shrink-0" />
-                  <span>View</span>
-                </button>
-              )}
+                role="menuitem"
+                tabIndex={0}
+              >
+                <Eye className="w-4 h-4 flex-shrink-0" />
+                <span>View</span>
+              </button>
+            )}
 
-              {(onUpload && (!uploadPermissionSlug || hasPermission(uploadPermissionSlug))) && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onUpload();
-                    setIsOpen(false);
-                  }}
-                  style={{ backgroundColor: 'white', boxShadow: 'none', outline: 'none' }}
-                  className="
-                      w-full px-4 py-2.5 text-sm font-medium
+            {(onUpload && (!uploadPermissionSlug || hasPermission(uploadPermissionSlug))) && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onUpload();
+                  setIsOpen(false);
+                }}
+                className="
+                      w-full px-4 py-2.5 text-sm font-medium bg-white shadow-none outline-0
                       text-gray-700 hover:text-gray-700 hover:bg-white
                       flex items-center gap-3
                       transition-colors duration-150 ease-in-out
                       first:rounded-t-lg last:rounded-b-lg
                       focus:outline-none focus:bg-white focus:text-gray-700
                     "
-                  role="menuitem"
-                  tabIndex={0}
-                >
-                  <Upload className="w-4 h-4 flex-shrink-0" />
-                  <span>Upload</span>
-                </button>
-              )}
+                role="menuitem"
+                tabIndex={0}
+              >
+                <Upload className="w-4 h-4 flex-shrink-0" />
+                <span>Upload</span>
+              </button>
+            )}
 
-              {(onDelete && (!deletePermissionSlug || hasPermission(deletePermissionSlug))) && (
-                <>
-                  {((onEdit && (!editPermissionSlug || hasPermission(editPermissionSlug))) || (onView && (!viewPermissionSlug || hasPermission(viewPermissionSlug)))) && (
-                    <div className="my-1 border-t border-gray-200" />
-                  )}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete();
-                      setIsOpen(false);
-                    }}
-                    style={{ backgroundColor: 'white', boxShadow: 'none', outline: 'none' }}
-                    className="
-                        w-full px-4 py-2.5 text-sm font-medium
+            {(onDelete && (!deletePermissionSlug || hasPermission(deletePermissionSlug))) && (
+              <>
+                {((onEdit && (!editPermissionSlug || hasPermission(editPermissionSlug))) || (onView && (!viewPermissionSlug || hasPermission(viewPermissionSlug)))) && (
+                  <div className="my-1 border-t border-gray-200" />
+                )}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                    setIsOpen(false);
+                  }}
+                  className="
+                        w-full px-4 py-2.5 text-sm font-medium bg-wihte shadow-none outline-0
                         text-red-600 hover:text-red-700 hover:bg-white
                         flex items-center gap-3
                         transition-colors duration-150 ease-in-out
                         first:rounded-t-lg last:rounded-b-lg
                         focus:outline-none focus:bg-white focus:text-red-700
                       "
-                    role="menuitem"
-                    tabIndex={0}
-                  >
-                    <Trash className="w-4 h-4 flex-shrink-0" />
-                    <span>Delete</span>
-                  </button>
-                </>
-              )}
+                  role="menuitem"
+                  tabIndex={0}
+                >
+                  <Trash className="w-4 h-4 flex-shrink-0" />
+                  <span>Delete</span>
+                </button>
+              </>
+            )}
           </motion.div>
         </AnimatePresence>,
         document.body

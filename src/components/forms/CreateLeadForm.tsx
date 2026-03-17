@@ -170,7 +170,7 @@ const CreateLeadForm: React.FC<CreateLeadFormProps> = ({ onSubmit, loading = fal
         </div>
 
         {contacts.map((contact) => (
-          <div key={contact.id} className="bg-white rounded-2xl border border-[var(--border-color)] p-6 mb-4">
+          <div key={contact.id} className="bg-white rounded-2xl border border-gray-200 p-6 mb-4">
             <div className="flex justify-end mb-4">
               {contacts.length > 1 && (
                 <button
@@ -306,7 +306,7 @@ const CreateLeadForm: React.FC<CreateLeadFormProps> = ({ onSubmit, loading = fal
         <textarea
           placeholder="Add additional notes about the lead"
           rows={4}
-          className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
         />
       </div>
 

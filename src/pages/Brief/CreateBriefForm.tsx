@@ -903,17 +903,17 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
     >
       <MasterFormHeader onBack={onClose} title={mode === 'edit' ? 'Edit Brief' : 'Create Brief'} />
 
-      <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-        <div className="p-6 bg-[#F9FAFB]">
+      <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="p-6 bg-gray-50 rounded-2xl ">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Left column */}
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm text-[var(--text-secondary)] mb-1">Brief Name <span className="text-[#FF0000]">*</span></label>
+                  <label className="block text-sm text-gray-800 mb-1">Brief Name <span className="text-[#FF0000]">*</span></label>
                   <input name="briefName" value={form.briefName} onChange={(e) => { handleChange(e); setErrors(prev => ({ ...prev, briefName: '' })); }}
                     placeholder="Please enter product name"
-                    className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors ${errors.briefName ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-[var(--border-color)] focus:ring-blue-500'}`}
+                    className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors ${errors.briefName ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-gray-200 focus:ring-blue-500'}`}
                     aria-invalid={errors.briefName ? 'true' : 'false'}
                     aria-describedby={errors.briefName ? 'briefName-error' : undefined}
                   />
@@ -927,7 +927,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm text-[var(--text-secondary)] mb-1">Brand Name</label>
+                  <label className="block text-sm text-gray-800 mb-1">Brand Name</label>
                   <SelectField
                     name="brandName"
                     placeholder={brandsLoading ? 'Loading brands...' : 'Auto Select'}
@@ -935,19 +935,19 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     value={form.brandName}
                     onChange={(v: any) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; lastChangedFieldRef.current = 'brand'; setForm(prev => ({ ...prev, brandName: val })); }}
                     searchable
-                    inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
+                    inputClassName="border border-gray-200 focus:ring-blue-500"
                     disabled={brandsLoading}
                   />
                   {brandsError && <div className="text-xs text-red-600 mt-1">{brandsError}</div>}
                 </div>
                 <div>
-                  <label className="block text-sm text-[var(--text-secondary)] mb-1">Product Name</label>
+                  <label className="block text-sm text-gray-800 mb-1">Product Name</label>
                   <input name="productName" value={form.productName} onChange={handleChange}
                     placeholder="Please enter product name"
-                    className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white" />
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white" />
                 </div>
                 <div>
-                  <label className="block text-sm text-[var(--text-secondary)] mb-1">Assign To</label>
+                  <label className="block text-sm text-gray-800 mb-1">Assign To</label>
                   <SelectField
                     name="assignTo"
                     placeholder={usersLoading ? 'Loading users...' : 'Please Assign To Planner'}
@@ -959,13 +959,13 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                       setForm(prev => ({ ...prev, assignTo: val }));
                     }}
                     searchable
-                    inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
+                    inputClassName="border border-gray-200 focus:ring-blue-500"
                     disabled={usersLoading}
                   />
                   {usersError && <div className="text-xs text-red-600 mt-1">{usersError}</div>}
                 </div>
                 <div>
-                  <label className="block text-sm text-[var(--text-secondary)] mb-1">Brief Status</label>
+                  <label className="block text-sm text-gray-800 mb-1">Brief Status</label>
                   <SelectField
                     name="status"
                     placeholder={briefStatusesLoading ? 'Loading statuses...' : 'Select Brief Status'}
@@ -973,13 +973,13 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     value={form.status}
                     onChange={(v: any) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; lastChangedFieldRef.current = 'status'; setForm(prev => ({ ...prev, status: val })); setTimeout(() => { if (lastChangedFieldRef.current === 'status') lastChangedFieldRef.current = null; }, 500); }}
                     searchable
-                    inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
+                    inputClassName="border border-gray-200 focus:ring-blue-500"
                     disabled={briefStatusesLoading}
                   />
                   {briefStatusesError && <div className="text-xs text-red-600 mt-1">{briefStatusesError}</div>}
                 </div>
                 <div>
-                  <label className="block text-sm text-[var(--text-secondary)] mb-1">Mode Of Campaign</label>
+                  <label className="block text-sm text-gray-800 mb-1">Mode Of Campaign</label>
                   <div className="flex gap-4 mt-1">
                     <label className="flex items-center cursor-pointer">
                       <input
@@ -1006,21 +1006,21 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm text-[var(--text-secondary)] mb-1">Select Type</label>
+                  <label className="block text-sm text-gray-800 mb-1">Select Type</label>
                   <SelectField
                     name="type"
                     placeholder="Select Type"
                     options={form.programmatic === 'non_programmatic' ? ['DOOH', 'OOH'] : ['DOOH', 'CTV']}
                     value={form.type}
                     onChange={(v: any) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; setForm(prev => ({ ...prev, type: val })); }}
-                    inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
+                    inputClassName="border border-gray-200 focus:ring-blue-500"
                   />
                 </div>
               </div>
               {/* Right column */}
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm text-[var(--text-secondary)] mb-1">Contact Person Name <span className="text-[#FF0000]">*</span></label>
+                  <label className="block text-sm text-gray-800 mb-1">Contact Person Name <span className="text-[#FF0000]">*</span></label>
                   <SelectField
                     name="contactPerson"
                     placeholder={contactPersonsLoading ? 'Loading contacts...' : 'Search or select contact person'}
@@ -1029,7 +1029,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     onChange={(v: any) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; setForm(prev => ({ ...prev, contactPerson: val })); setErrors(prev => ({ ...prev, contactPerson: '' })); }}
                     searchable
                     disabled={contactPersonsLoading}
-                    inputClassName={errors.contactPerson ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-[var(--border-color)] focus:ring-blue-500'}
+                    inputClassName={errors.contactPerson ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-gray-200 focus:ring-blue-500'}
                     className=""
                   />
                   {errors.contactPerson && (
@@ -1043,7 +1043,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                   {contactPersonsError && <div className="text-xs text-red-600 mt-1">{contactPersonsError}</div>}
                 </div>
                 <div>
-                  <label className="block text-sm text-[var(--text-secondary)] mb-1">Agency Name</label>
+                  <label className="block text-sm text-gray-800 mb-1">Agency Name</label>
                   <SelectField
                     name="createdBy"
                     placeholder={agenciesLoading ? 'Loading agencies...' : 'Search or select agency'}
@@ -1056,14 +1056,14 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                   {agenciesError && <div className="text-xs text-red-600 mt-1">{agenciesError}</div>}
                 </div>
                 <div>
-                  <label className="block text-sm text-[var(--text-secondary)] mb-1">Brief Budget</label>
+                  <label className="block text-sm text-gray-800 mb-1">Brief Budget</label>
                   <input name="budget" value={form.budget} onChange={handleChange}
                     placeholder="Please Enter Est. Budget"
-                    className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white" />
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white" />
                 </div>
                 <div className="flex gap-4">
                   <div className="flex-1">
-                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Submission Date <span className="text-[#FF0000]">*</span></label>
+                    <label className="block text-sm text-gray-800 mb-1">Submission Date <span className="text-[#FF0000]">*</span></label>
                     <DatePicker
                       selected={calendarDate}
                       onChange={date => {
@@ -1082,7 +1082,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                       minDate={new Date()}
                       dateFormat="dd-MM-yyyy"
                       placeholderText="DD-MM-YYYY"
-                      className={`w-full px-3 py-2 rounded-lg bg-white transition-colors ${errors.submissionDate ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-[var(--border-color)]'}`}
+                      className={`w-full px-3 py-2 rounded-lg bg-white transition-colors ${errors.submissionDate ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-gray-200'}`}
                       popperClassName="!duration-0 !transition-none"
                       disabled={false}
                     />
@@ -1096,7 +1096,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     )}
                   </div>
                   <div className="flex-1">
-                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Submission Time <span className="text-[#FF0000]">*</span></label>
+                    <label className="block text-sm text-gray-800 mb-1">Submission Time <span className="text-[#FF0000]">*</span></label>
                     <DatePicker
                       selected={calendarTime}
                       onChange={date => {
@@ -1117,7 +1117,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                       timeCaption="Time"
                       dateFormat="HH:mm"
                       placeholderText="HH:mm"
-                      className={`w-full px-3 py-2 rounded-lg bg-white transition-colors ${errors.submissionTime ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-[var(--border-color)]'}`}
+                      className={`w-full px-3 py-2 rounded-lg bg-white transition-colors ${errors.submissionTime ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-gray-200'}`}
                       popperClassName="!duration-0 !transition-none"
                       disabled={false}
                     />
@@ -1132,7 +1132,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm text-[var(--text-secondary)] mb-1">Priority</label>
+                  <label className="block text-sm text-gray-800 mb-1">Priority</label>
                   <SelectField
                     name="priority"
                     placeholder={priorityLoading ? 'Loading priorities...' : 'Select Priority'}
@@ -1144,20 +1144,20 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                       setForm(prev => ({ ...prev, priority: val }));
                       setTimeout(() => { if (lastChangedFieldRef.current === 'priority') lastChangedFieldRef.current = null; }, 500);
                     }}
-                    inputClassName={priorityLoading ? 'border border-gray-200 bg-gray-50' : 'border border-[var(--border-color)] focus:ring-blue-500'}
+                    inputClassName={priorityLoading ? 'border border-gray-200 bg-gray-50' : 'border border-gray-200 focus:ring-blue-500'}
                     disabled={priorityLoading}
                   />
                   {priorityError && <div className="text-xs text-red-600 mt-1">{priorityError}</div>}
                 </div>
                 <div>
-                  <label className="block text-sm text-[var(--text-secondary)] mb-1">Brief Detail</label>
+                  <label className="block text-sm text-gray-800 mb-1">Brief Detail</label>
                   <textarea
                     name="briefDetail"
                     value={form.briefDetail}
                     onChange={handleChange}
                     rows={4}
                     placeholder="Show all data regarding to Brief"
-                    className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white resize-none"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white resize-none"
                   />
                 </div>
               </div>
@@ -1173,7 +1173,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
       </div>
       {/* When editing a brief, show call history / pipeline table similar to design */}
       {mode === 'edit' && (
-        <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden mt-6">
+        <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mt-6">
           <div className="p-4">
             <h3 className="text-base font-semibold text-gray-900 mb-3">History</h3>
             <div className="overflow-x-auto">

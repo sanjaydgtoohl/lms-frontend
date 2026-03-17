@@ -244,7 +244,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
             ) : (
               IconComponent && (
                 <IconComponent
-                  className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)] ${isCollapsed ? "" : "mr-2.5"}`}
+                  className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-gray-800${isCollapsed ? "" : "mr-2.5"}`}
                 />
               )
             )}
@@ -340,7 +340,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
             className={`flex items-center px-4 py-3 text-sm font-medium text-gray-800 rounded-lg hover:bg-orange-50 transition-all cursor-pointer`}
             onClick={() => onCloseMobile && onCloseMobile()}
           >
-            <HelpIcon className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)] mr-2.5`} /> Help
+            <HelpIcon className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-gray-800mr-2.5`} /> Help
           </div>
           <div
             onClick={() => {
@@ -395,7 +395,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
             }`}
         >
           <HelpIcon
-            className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-[var(--text-secondary)] ${isCollapsed ? "" : "mr-2.5"}`}
+            className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-gray-800${isCollapsed ? "" : "mr-2.5"}`}
           />
           {!isCollapsed && <span className="text-gray-800">Help</span>}
         </div>

@@ -66,7 +66,7 @@ const ViewUser: React.FC = () => {
         onBack={() => navigate(ROUTES.USER.ROOT)} 
         title="View User" 
       />
-      <div className="bg-white border border-[var(--border-color)] rounded-xl shadow-sm p-6 mt-6">
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 mt-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <div>
@@ -141,7 +141,7 @@ const ViewUser: React.FC = () => {
               {user.parents && user.parents.length > 0 ? (
                 <div className="mt-2 space-y-3">
                   {user.parents.map((p: any) => (
-                    <div key={p.id} className="w-full bg-white border border-[var(--border-color)] rounded-md p-3">
+                    <div key={p.id} className="w-full bg-white border border-gray-200 rounded-md p-3">
                       <div className="text-base text-gray-800">{p.name}</div>
                       <div className="text-sm text-gray-600">{p.email}</div>
                     </div>

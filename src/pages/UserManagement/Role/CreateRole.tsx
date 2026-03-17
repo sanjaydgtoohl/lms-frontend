@@ -147,11 +147,11 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
         title={mode === 'edit' ? 'Edit Role' : 'Create Role'} 
       />
 
-      <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-        <div className="p-6 bg-[#F9FAFB]">
+      <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="p-6 bg-gray-50 rounded-2xl ">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+              <label className="block text-sm text-gray-800 mb-1">
                 Role Name <span className="text-[#FF0000]">*</span>
               </label>
               <input
@@ -165,7 +165,7 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
                 className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors ${
                   errors.name
                     ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                    : 'border border-[var(--border-color)] focus:ring-blue-500'
+                    : 'border border-gray-200 focus:ring-blue-500'
                 }`}
                 aria-invalid={errors.name ? 'true' : 'false'}
                 aria-describedby={errors.name ? 'name-error' : undefined}
@@ -186,7 +186,7 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
 
             {/* Description - Textarea */}
             <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+              <label className="block text-sm text-gray-800 mb-1">
                 Description <span className="text-[#FF0000]">*</span>
               </label>
               <textarea
@@ -198,7 +198,7 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
                 className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors resize-none ${
                   errors.description
                     ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                    : 'border border-[var(--border-color)] focus:ring-blue-500'
+                    : 'border border-gray-200 focus:ring-blue-500'
                 }`}
                 aria-invalid={errors.description ? 'true' : 'false'}
                 aria-describedby={errors.description ? 'description-error' : undefined}
@@ -219,7 +219,7 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
 
             {/* Role Permission Section - Tree Style */}
             <div className="mt-8">
-              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+              <label className="block text-sm font-medium text-gray-800mb-2">
                 Role Permission <span className="text-[#FF0000]">*</span>
               </label>
               <p className="text-xs text-gray-500 mb-3">Select permissions for this role</p>
@@ -231,7 +231,7 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
                   <span>{permissionError}</span>
                 </div>
               )}
-              <div className="border border-[var(--border-color)] rounded-lg overflow-hidden bg-white shadow-sm">
+              <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
                 {permissionLoading ? (
                   <div className="p-6 flex items-center justify-center min-h-[250px]">
                     <div className="flex flex-col items-center gap-3">
@@ -266,11 +266,11 @@ const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
             </div>
 
             {/* Form Actions */}
-            <div className="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-[var(--border-color)]">
+            <div className="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
               <button
                 type="button"
                 onClick={handleBack}
-                className="px-4 py-2 rounded-lg border border-[var(--border-color)] text-gray-800 hover:bg-[#F9FAFB] transition-colors"
+                className="px-4 py-2 rounded-lg border border-gray-200 text-gray-800 hover:bg-gray-50 transition-colors"
               >
                 Cancel
               </button>

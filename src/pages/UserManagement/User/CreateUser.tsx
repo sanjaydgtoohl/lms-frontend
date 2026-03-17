@@ -296,12 +296,12 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
         title={mode === 'edit' ? 'Edit User' : 'Add User'} 
       />
 
-      <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-        <div className="p-6 bg-[#F9FAFB]">
+      <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="p-6 bg-gray-50 rounded-2xl ">
           <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
             {/* Name */}
             <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+              <label className="block text-sm text-gray-800 mb-1">
                 Name <span className="text-[#FF0000]">*</span>
               </label>
               <input
@@ -315,7 +315,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
                 className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors ${
                   errors.name
                     ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                    : 'border border-[var(--border-color)] focus:ring-blue-500'
+                    : 'border border-gray-200 focus:ring-blue-500'
                 }`}
                 aria-invalid={errors.name ? 'true' : 'false'}
                 aria-describedby={errors.name ? 'name-error' : undefined}
@@ -336,7 +336,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
 
             {/* Password */}
             <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+              <label className="block text-sm text-gray-800 mb-1">
                 Password {mode !== 'edit' && <span className="text-[#FF0000]">*</span>}
               </label>
               <div className="relative">
@@ -353,7 +353,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
                   className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors ${
                     errors.password
                       ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                      : 'border border-[var(--border-color)] focus:ring-blue-500'
+                      : 'border border-gray-200 focus:ring-blue-500'
                   }`}
                   aria-invalid={errors.password ? 'true' : 'false'}
                   aria-describedby={errors.password ? 'password-error' : undefined}
@@ -393,7 +393,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
 
             {/* Password confirmation */}
             <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+              <label className="block text-sm text-gray-800 mb-1">
                 Confirm Password {mode !== 'edit' && <span className="text-[#FF0000]">*</span>}
               </label>
               <div className="relative">
@@ -410,7 +410,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
                   className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors ${
                     errors.password_confirmation
                       ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                      : 'border border-[var(--border-color)] focus:ring-blue-500'
+                      : 'border border-gray-200 focus:ring-blue-500'
                   }`}
                   aria-invalid={errors.password_confirmation ? 'true' : 'false'}
                   aria-describedby={errors.password_confirmation ? 'password_confirmation-error' : undefined}
@@ -450,7 +450,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
 
             {/* Manager */}
             <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+              <label className="block text-sm text-gray-800 mb-1">
                 Managers
               </label>
               <MultiSelectDropdown
@@ -463,7 +463,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
                   setErrors((prev) => ({ ...prev, managers: '' }));
                 }}
                 disabled={managersLoading}
-                inputClassName={`${errors.managers ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-[var(--border-color)] focus:ring-blue-500'}`}
+                inputClassName={`${errors.managers ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}`}
                 maxVisibleOptions={2}
               />
               {managersError && (
@@ -486,7 +486,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
 
             {/* Email */}
             <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+              <label className="block text-sm text-gray-800 mb-1">
                 Email <span className="text-[#FF0000]">*</span>
               </label>
               <input
@@ -502,7 +502,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
                 className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors ${
                   errors.email
                     ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                    : 'border border-[var(--border-color)] focus:ring-blue-500'
+                    : 'border border-gray-200 focus:ring-blue-500'
                 }`}
                 aria-invalid={errors.email ? 'true' : 'false'}
                 aria-describedby={errors.email ? 'email-error' : undefined}
@@ -523,7 +523,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
 
             {/* Phone */}
             <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+              <label className="block text-sm text-gray-800 mb-1">
                 Phone Number
               </label>
               <input
@@ -535,7 +535,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
                 className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors ${
                   errors.phone
                     ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                    : 'border border-[var(--border-color)] focus:ring-blue-500'
+                    : 'border border-gray-200 focus:ring-blue-500'
                 }`}
               />
               {errors.phone && (
@@ -554,7 +554,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
 
             {/* Role */}
             <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+              <label className="block text-sm text-gray-800 mb-1">
                 Role <span className="text-[#FF0000]">*</span>
               </label>
                 <MultiSelectDropdown
@@ -564,7 +564,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
                   value={form.roles}
                   onChange={(v) => { setForm((prev) => ({ ...prev, roles: v })); setErrors((prev) => ({ ...prev, roles: '' })); }}
                   disabled={rolesLoading}
-                  inputClassName={`border ${errors.roles ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-[var(--border-color)] focus:ring-blue-500'}`}
+                  inputClassName={`border ${errors.roles ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}`}
                   maxVisibleOptions={2}
                 />
               {rolesError && (
