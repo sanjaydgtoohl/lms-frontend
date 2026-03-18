@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MasterCreateHeader } from '../../components/ui/MasterCreateHeader';
 import Table, { type Column } from '../../components/ui/Table';
-import { Mail, Eye, Bold, Italic, List, ListOrdered } from 'lucide-react';
+import { Mail, Eye, Bold, Italic, List, ListOrdered, X } from 'lucide-react';
 import LeadManagementSection from '../../components/forms/CreateLead/LeadManagementSection';
 import ContactPersonsCard from '../../components/forms/CreateLead/ContactPersonsCard';
 import AssignPriorityCard from '../../components/forms/CreateLead/AssignPriorityCard';
@@ -470,18 +470,18 @@ const EditLead: React.FC = () => {
         {/* Email Activity Section */}
         <div className="bg-[#F9F9F9] rounded-2xl shadow-sm border border-[var(--border-color)] p-4">
           <div className="flex justify-between items-center mb-3">
-            <h3 className="text-sm text-[var(--text-secondary)] font-medium">Email Activity</h3>
+            <h3 className="text-sm text-gray-800 font-medium">Email Activity</h3>
             <Button onClick={() => { setShowEmailComposer(true); setEmailTo(lead.contacts[0]?.email || ''); }}>Send Email</Button>
           </div>
           {showEmailComposer && (
             <div className="fixed inset-0 flex items-center justify-center z-50">
               <div className={`bg-white rounded-lg shadow-lg ${isFullscreen ? 'w-full h-full' : 'max-w-4xl w-full mx-4'} max-h-[90vh] overflow-y-auto`}>
-                <div className="flex justify-between items-center p-4 border-b">
+                <div className="flex justify-between items-center p-3 border-b border-gray-200">
                   <h2 className="text-lg font-semibold">Send Email</h2>
-                  <button onClick={() => setShowEmailComposer(false)} className="text-gray-500 hover:text-gray-700">&times;</button>
+                  <button onClick={() => setShowEmailComposer(false)} className="text-gray-500 text-xl hover:text-gray-700"><X /></button>
                 </div>
                 {successMessage && (
-                  <div className="p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+                  <div className="p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
                     {successMessage}
                   </div>
                 )}
@@ -495,7 +495,7 @@ const EditLead: React.FC = () => {
                         setEmailTo(e.target.value);
                         setEmailToError('');
                       }}
-                      className="w-full p-2 border rounded"
+                      className="w-full p-2 border border-gray-200 rounded-lg"
                       required
                     />
                     {emailToError && <p className="text-red-500 text-sm mt-1">{emailToError}</p>}
@@ -510,7 +510,7 @@ const EditLead: React.FC = () => {
                           setTemplateName(e.target.value);
                           setTemplateNameError('');
                         }}
-                        className="w-full p-2 border rounded"
+                        className="w-full p-2 border border-gray-200 rounded-lg"
                         required
                       />
                       {templateNameError && <p className="text-red-500 text-sm mt-1">{templateNameError}</p>}
@@ -524,7 +524,7 @@ const EditLead: React.FC = () => {
                           setEmailSubject(e.target.value);
                           setSubjectError('');
                         }}
-                        className="w-full p-2 border rounded"
+                        className="w-full p-2 border border-gray-200 rounded-lg"
                         required
                       />
                       {subjectError && <p className="text-red-500 text-sm mt-1">{subjectError}</p>}
@@ -532,8 +532,8 @@ const EditLead: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Email Body <span className="text-red-500">*</span></label>
-                    <div className="border rounded">
-                      <div className="flex flex-wrap items-center p-2 border-b bg-gray-50">
+                    <div className="border border-gray-200 rounded-lg">
+                      <div className="flex flex-wrap items-center p-2 border-b border-gray-200 bg-gray-50">
                         <button type="button" onClick={handleCodeViewToggle} className="p-1 hover:bg-gray-200" title="Code View">&lt;/&gt;</button>
                         <button type="button" onClick={() => handleFormat('undo')} className="p-1 hover:bg-gray-200" title="Undo">↶</button>
                         <button type="button" onClick={() => handleFormat('redo')} className="p-1 hover:bg-gray-200" title="Redo">↷</button>
@@ -586,7 +586,7 @@ const EditLead: React.FC = () => {
                     {emailBodyError && <p className="text-red-500 text-sm mt-1">{emailBodyError}</p>}
                   </div>
                 </div>
-                <div className="flex justify-end space-x-2 p-4 border-t bg-gray-50">
+                <div className="flex justify-end space-x-2 p-4 border-t border-gray-200 bg-gray-50">
                   <Button onClick={handleClear} className="bg-red-500 text-white hover:bg-red-600">Clear</Button>
                   <Button onClick={handleSave} disabled={sendingEmail}>
                     {sendingEmail ? 'Sending...' : 'Send'}
@@ -600,11 +600,11 @@ const EditLead: React.FC = () => {
               <div key={idx} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 shadow-sm border border-[var(--border-color)]">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-md bg-white flex items-center justify-center">
-                    <Mail className="w-4 h-4 text-[var(--text-secondary)]" />
+                    <Mail className="w-4 h-4 text-gray-800" />
                   </div>
                   <div className="text-sm text-[var(--text-primary)]">{sub}</div>
                 </div>
-                <div className="text-[var(--text-secondary)]">
+                <div className="text-gray-800">
                   <Eye className="w-5 h-5" />
                 </div>
               </div>
