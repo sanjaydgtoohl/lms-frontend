@@ -29,7 +29,7 @@ const PlanHistory: React.FC = () => {
     setLoading(true);
     getBriefById(Number(id))
       .then((data) => setBrief(data))
-      .catch(() => {/* ignore error for now */});
+      .catch(() => {/* ignore error for now */ });
     fetchPlannerHistories(Number(id))
       .then((data) => {
         console.log('Fetched planner histories:', data);
@@ -50,7 +50,7 @@ const PlanHistory: React.FC = () => {
           { label: 'Plan History', isActive: true }
         ]}
         showCreateButton={false}
-        onCreateClick={() => {}}
+        onCreateClick={() => { }}
       />
 
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
@@ -66,66 +66,65 @@ const PlanHistory: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
               <div className="space-y-3">
                 <div>
-                  <span className="text-gray-500">Brief ID:</span>
-                  <span className="font-medium text-gray-900 ml-2">{brief ? `#${brief.id}` : '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Brief ID: </span>
+                  <span className="text-gray-600 ">{brief ? `#${brief.id}` : '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Brief Name:</span>
-                  <span className="font-medium text-gray-900 ml-2">{brief?.name || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Brief Name:</span>
+                  <span className="text-gray-600">{brief?.name || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Sales Person:</span>
-                  <span className="font-medium text-gray-900 ml-2">{brief?.assigned_user?.name || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Sales Person:</span>
+                  <span className="text-gray-600">{brief?.assigned_user?.name || '-'}</span>
                 </div>
                 {/* Source field removed: not present in BriefDetail */}
                 <div>
-                  <span className="text-gray-500">Brief Status:</span>
-                  <span className="font-medium text-gray-900 ml-2">{brief?.brief_status?.name || brief?.status || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Brief Status:</span>
+                  <span className="text-gray-600">{brief?.brief_status?.name || brief?.status || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Budget:</span>
-                  <span className="font-medium text-gray-900 ml-2">{brief?.budget || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Budget:</span>
+                  <span className="text-gray-600">{brief?.budget || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Brief Submission Date & Time:</span>
-                  <span className="font-medium text-gray-900 ml-2">{brief?.submission_date || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Brief Submission Date & Time:</span>
+                  <span className="text-gray-600">{brief?.submission_date || '-'}</span>
                 </div>
               </div>
               <div className="space-y-3">
                 <div>
-                  <span className="text-gray-500">Brand Name:</span>
-                  <span className="font-medium text-gray-900 ml-2">{brief?.brand?.name || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Brand Name:</span>
+                  <span className="text-gray-600">{brief?.brand?.name || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Product Name:</span>
-                  <span className="font-medium text-gray-900 ml-2">{brief?.product_name || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Product Name:</span>
+                  <span className="text-gray-600">{brief?.product_name || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Media:</span>
-                  <span className="font-medium text-gray-900 ml-2">{brief?.mode_of_campaign || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Media:</span>
+                  <span className="text-gray-600">{brief?.mode_of_campaign || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Media Type:</span>
-                  <span className="font-medium text-gray-900 ml-2">{brief?.media_type || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Media Type:</span>
+                  <span className="text-gray-600">{brief?.media_type || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Priority:</span>
-                  <span className="font-medium text-gray-900 ml-2">{brief?.priority?.name || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Priority:</span>
+                  <span className="text-gray-600">{brief?.priority?.name || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Brief Detail:</span>
-                  <span className="font-medium text-gray-900 ml-2">{brief?.comment || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Brief Detail:</span>
+                  <span className="text-gray-600">{brief?.comment || '-'}</span>
                 </div>
               </div>
             </div>
           </div>
 
           <h3 className="text-sm font-medium text-gray-700 mb-4">Submitted Plans</h3>
-
           <SubmittedPlansList plans={submittedPlans} loading={loading} />
-          </div>
         </div>
-      </>
+      </div>
+    </>
   );
 };
 
@@ -177,7 +176,13 @@ const SubmittedPlansList: React.FC<SubmittedPlansListProps> = ({ plans = [], loa
   }
 
   if (!plans.length) {
-    return <div className="no-transitions text-center py-8 text-gray-500">No submitted plans found.</div>;
+    return <div className="no-transitions text-center py-8 text-gray-500 flex flex-col items-center justify-center">
+
+      <div className="w-full max-w-lg mx-auto border border-gray-200 rounded-xl px-5 py-10 flex flex-col items-center justify-center text-center">
+        <img src="/not-found.webp" alt="My Image" width="100" height="100" />
+        No submitted plans found.
+      </div>
+    </div>;
   }
 
   return (
@@ -236,28 +241,28 @@ const SubmittedPlansList: React.FC<SubmittedPlansListProps> = ({ plans = [], loa
                     </div>
 
                     <div className="flex items-center justify-end space-x-6">
-                                <div className="flex items-center space-x-6">
-                                  {attachments.map((att, aidx) => (
-                                    <div key={aidx} className="flex flex-col items-center">
-                                      <div
-                                        role="button"
-                                        tabIndex={0}
-                                        title={att.name}
-                                        aria-label={`Open attachment ${att.name}`}
-                                        onClick={() => handleAttachmentAction({ name: att.name, url: att.url, label: att.label })}
-                                        onKeyDown={(e) => {
-                                          if (e.key === 'Enter' || e.key === ' ') {
-                                            e.preventDefault();
-                                            handleAttachmentAction({ name: att.name, url: att.url, label: att.label });
-                                          }
-                                        }}
-                                        className={`w-12 h-14 rounded border flex items-center justify-center cursor-pointer transition transform hover:shadow-md hover:scale-105 focus:outline-none focus:ring-2 ${att.type === 'xls' ? 'bg-green-50 border-green-200 focus:ring-green-300' : att.type === 'ppt' ? 'bg-red-50 border-red-200 focus:ring-red-300' : 'bg-gray-100 border-gray-200 focus:ring-gray-300'}`}>
-                                        <div className="text-xs font-semibold" style={{ color: att.type === 'xls' ? '#15803d' : att.type === 'ppt' ? '#b91c1c' : '#333' }}>{att.type.toUpperCase()}</div>
-                                      </div>
-                                      <div className="text-xs text-gray-500 mt-1">{att.label}</div>
-                                    </div>
-                                  ))}
-                                </div>
+                      <div className="flex items-center space-x-6">
+                        {attachments.map((att, aidx) => (
+                          <div key={aidx} className="flex flex-col items-center">
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              title={att.name}
+                              aria-label={`Open attachment ${att.name}`}
+                              onClick={() => handleAttachmentAction({ name: att.name, url: att.url, label: att.label })}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  handleAttachmentAction({ name: att.name, url: att.url, label: att.label });
+                                }
+                              }}
+                              className={`w-12 h-14 rounded border flex items-center justify-center cursor-pointer transition transform hover:shadow-md hover:scale-105 focus:outline-none focus:ring-2 ${att.type === 'xls' ? 'bg-green-50 border-green-200 focus:ring-green-300' : att.type === 'ppt' ? 'bg-red-50 border-red-200 focus:ring-red-300' : 'bg-gray-100 border-gray-200 focus:ring-gray-300'}`}>
+                              <div className="text-xs font-semibold" style={{ color: att.type === 'xls' ? '#15803d' : att.type === 'ppt' ? '#b91c1c' : '#333' }}>{att.type.toUpperCase()}</div>
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">{att.label}</div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -296,7 +301,7 @@ const SubmittedPlansList: React.FC<SubmittedPlansListProps> = ({ plans = [], loa
           setPreviewSource(null);
         }}
       />
-      
+
     </div>
   );
 };
