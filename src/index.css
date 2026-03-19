@@ -25,8 +25,8 @@ button,
 }
 /* Use :is() for modern browsers to match text content */
 button:is([data-btn-label="Add"], [data-btn-label="Create"], [data-btn-label="Go Back"], [data-btn-label="Save"], [data-btn-label="Update"]) {
-  background-color: var(--color-orange-400) !important;
-  color: #fff !important;
+  background-color: var(--color-orange-400);
+  color: #fff;
 }
 /* Fallback for static text buttons (case-insensitive) */
 button,
@@ -369,9 +369,9 @@ button[data-btn-label="Create"],
 button[data-btn-label="Go Back"],
 button[data-btn-label="Save"],
 button[data-btn-label="Update"] {
-  background-color: var(--color-orange-400) !important;
-  color: #000000 !important;
-  border-color: transparent !important;
+  background-color: var(--color-orange-500);
+  color:#ffffff;
+  border-color: transparent ;
 }
 
 button[data-btn-label="Add"]:hover,
@@ -379,8 +379,7 @@ button[data-btn-label="Create"]:hover,
 button[data-btn-label="Go Back"]:hover,
 button[data-btn-label="Save"]:hover,
 button[data-btn-label="Update"]:hover {
-  background-color: #ff9500 !important;
-  color: #FFFFFF !important;
+  @apply bg-black text-white;
 }
 
 @media (prefers-color-scheme: light) {
@@ -399,7 +398,7 @@ button[data-btn-label="Update"]:hover {
 
 /* Primary button helper class used by React Button component and utility buttons */
 .btn-primary {
-  @apply bg-orange-600 hover:bg-orange-700 text-white border-0 flex items-center justify-center space-x-2 py-2 px-4 text-sm; 
+  @apply bg-orange-500 hover:bg-black text-white border-0 flex items-center justify-center space-x-2 py-2 px-4 text-sm; 
 }
 
 
@@ -426,7 +425,7 @@ button[data-btn-label="Update"]:hover {
 @layer utilities {
   button.text-white,
   .btn.text-white {
-    color: var(--text-primary) !important;
+    @apply text-white;
   }
 }
 
@@ -523,7 +522,7 @@ box-shadow:  5px 5px 10px #131313,
 }
   
 .a-tag-button {
-  @apply text-white hover:text-white text-xs md:text-sm font-semibold hover:text-white hover:bg-gray-950 bg-orange-600 cursor-pointer whitespace-nowrap  px-4 py-2 rounded-lg;
+  @apply text-white hover:text-white text-xs md:text-sm font-semibold hover:text-white hover:bg-gray-950 bg-orange-500 cursor-pointer whitespace-nowrap  px-4 py-2 rounded-lg;
 }
 
 
@@ -557,10 +556,20 @@ box-shadow:  5px 5px 10px #131313,
 
 /* breadcrumb-wrapper css start  */
 .breadcrumb-wrapper ol li a {
-  @apply text-black hover:text-orange-600;
+  @apply text-black hover:text-orange-500;
 }
 
 .breadcrumb-wrapper ol li {
   @apply text-black
 }
 
+
+.btn-secondary {
+  @apply bg-gray-200 px-4 py-2 rounded-lg text-sm hover:bg-gray-300;
+}
+
+
+
+.btn-delete {
+  @apply text-sm px-4 py-2 rounded-lg bg-red-100 text-red-500 gap-2 font-medium flex items-center justify-center hover:bg-red-500 transition-colors transition-all duration-300 hover:text-white;
+}

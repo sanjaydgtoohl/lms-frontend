@@ -76,7 +76,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           if (!loading && e.target === e.currentTarget) onCancel();
         }}
       >
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-gray-150 overflow-hidden transform transition-all">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden transform transition-all">
           <div className="p-8">
             <div className="flex flex-col items-center text-center gap-4">
                 <div className="flex-shrink-0">
@@ -93,7 +93,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
                   <button
                     disabled={loading}
                     onClick={onCancel}
-                    className="flex-1 inline-flex items-center justify-center px-5 py-3 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                    className="flex-1 inline-flex items-center justify-center px-5 py-3 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 !bg-gray-200 hover:!bg-gray-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                   >
                     {cancelLabel}
                   </button>
@@ -101,7 +101,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
                   <button
                     disabled={loading}
                     onClick={onConfirm}
-                    className={`flex-1 inline-flex items-center justify-center px-5 py-3 rounded-lg text-sm font-semibold text-white ${config.buttonColor} transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg`}
+                    className={`flex-1 inline-flex items-center justify-center px-5 py-3 rounded-lg text-sm font-semibold !bg-red-600 hover:!bg-red-700 text-white ${config.buttonColor} transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg`}
                   >
                     {loading ? config.loadingText : confirmLabel}
                   </button>

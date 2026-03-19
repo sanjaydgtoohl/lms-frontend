@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft } from 'lucide-react';
 import Breadcrumb from './Breadcrumb';
+import { IoIosArrowBack } from 'react-icons/io';
 
 type Props = {
   title?: string;
@@ -53,9 +53,9 @@ const MasterView: React.FC<Props> = ({ title, item, onClose, excludeFields = [] 
     }
 
     return (
-      <div key={k}>
-        <div className="text-sm text-[var(--text-secondary)]">{label}</div>
-        <div className="text-sm font-medium text-[var(--text-primary)]">
+      <div key={k} className='flex gap-2 flex-wrap sm:flex-nowrap border p-4 rounded-lg border-gray-200 pb-3 bg-gray-100'>
+        <div className="text-sm  font-semibold text-black min-w-[100px]">{label} : </div>
+        <div className="text-sm text-gray-600">
           {isImage ? (
             <img src={displayValue} alt={label} className="max-w-full h-auto rounded border border-gray-200" />
           ) : (
@@ -73,7 +73,7 @@ const MasterView: React.FC<Props> = ({ title, item, onClose, excludeFields = [] 
           <Breadcrumb />
         </div>
         <button onClick={onClose} className="flex items-center space-x-2 btn-primary text-white px-3 py-1 rounded-lg">
-          <ChevronLeft className="w-4 h-4" />
+          <IoIosArrowBack className="w-5 h-5" />
           <span className="text-sm">Go Back</span>
         </button>
       </div>
@@ -83,16 +83,16 @@ const MasterView: React.FC<Props> = ({ title, item, onClose, excludeFields = [] 
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 8 }}
         transition={{ duration: 0.18 }}
-        className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden"
+        className="w-full bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden"
       >
         {title && (
-          <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)]">
+          <div className="bg-gray-50 px-5 py-4 border-b border-[var(--border-color)]">
             <h3 className="text-lg font-semibold text-[var(--text-primary)]">{title}</h3>
           </div>
         )}
 
-        <div className="p-6 bg-[#F9FAFB]">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="p-4 sm:p-5 bg-gray-50">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-4">
               {leftEntries.map(renderField)}
             </div>

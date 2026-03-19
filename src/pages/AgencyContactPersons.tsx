@@ -177,7 +177,7 @@ const AgencyContactPersons: React.FC = () => {
                       Email
                     </div>
                     {contact.email ? (
-                      <a href={`mailto:${contact.email}`} className="text-base font-medium text-orange-500 hover:text-orange-600 underline">
+                      <a href={`mailto:${contact.email}`} className="text-base font-medium text-orange-500 hover:text-orange-500 underline">
                         {contact.email}
                       </a>
                     ) : (
@@ -192,7 +192,7 @@ const AgencyContactPersons: React.FC = () => {
                       Phone Number
                     </div>
                     {contact.phone ? (
-                      <a href={`tel:${contact.phone}`} className="text-base font-medium text-orange-500 hover:text-orange-600 underline">
+                      <a href={`tel:${contact.phone}`} className="text-base font-medium text-orange-500 hover:text-orange-500 underline">
                         {contact.phone}
                       </a>
                     ) : (

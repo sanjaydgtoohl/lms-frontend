@@ -29,8 +29,7 @@ const SearchBar: React.FC<Props> = ({ onSearch, placeholder = 'Search Brand', cl
   };
 
   return (
-    <div className={`flex items-center ${className}`}>
-      <div className="relative">
+    <div className={`flex items-center relative ${className}`}>
         <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[var(--text-secondary)]">
           <Search className="w-4 h-4" />
         </span>
@@ -38,9 +37,8 @@ const SearchBar: React.FC<Props> = ({ onSearch, placeholder = 'Search Brand', cl
           value={value}
           onChange={(e) => handleChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full sm:w-56 md:w-64 px-3 pl-9 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+          className="w-full sm:w-70 md:w-90 px-3 pl-9 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-black"
         />
-      </div>
     </div>
   );
 };

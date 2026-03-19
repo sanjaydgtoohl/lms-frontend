@@ -7,6 +7,7 @@ import { getContactPersonsByBrand, type ContactPerson } from '../services/BrandC
 import { Button } from '../components/ui';
 import Breadcrumb from '../components/ui/Breadcrumb';
 import { NotificationPopup } from '../components/ui';
+import { IoIosArrowBack } from "react-icons/io";
 
 const BrandContactPersons: React.FC = () => {
   const params = useParams();
@@ -80,17 +81,26 @@ const BrandContactPersons: React.FC = () => {
 
   if (contacts.length === 0) {
     return (
-      <div className="flex-1 p-6 w-full">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <p className="text-red-700 font-medium text-lg">No contact persons found</p>
-          <p className="text-red-600 text-sm mt-2">This brand has no contact persons associated with it.</p>
-          <Button
-            onClick={handleBack}
-            variant="primary"
-            className="mt-4"
-          >
-            Back to Brands
-          </Button>
+      <div className="outer h-[calc(100dvh-150px)]">
+        <div className="w-full h-full">
+          <div className="w-full h-full flex items-center justify-center bg-white border border-dashed border-2 border-gray-200 rounded-xl  p-4 sm:p-6 pb-6 sm:pb-8 text-center flex-col">
+            <img
+              src="/not-found.webp"
+              alt="No Data Found"
+              className="mb-2 w-[100px] sm:w-[150px]"
+            />
+
+            <h2 className="text-gray-700 font-medium text-xl sm:text-2xl">No contact persons found</h2>
+            <p className="text-gray-600 text-sm mt-1">This brand has no contact persons associated with it.</p>
+            <Button
+              onClick={handleBack}
+              variant="primary"
+              className="mt-6 flex gap-1"
+            >
+              <IoIosArrowBack className='text-lg' />
+              Back to Brands
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -176,7 +186,7 @@ const BrandContactPersons: React.FC = () => {
                       Email
                     </div>
                     {contact.email ? (
-                      <a href={`mailto:${contact.email}`} className="text-base font-medium text-orange-500 hover:text-orange-600 underline">
+                      <a href={`mailto:${contact.email}`} className="text-base font-medium text-orange-500 hover:text-orange-500 underline">
                         {contact.email}
                       </a>
                     ) : (
@@ -191,7 +201,7 @@ const BrandContactPersons: React.FC = () => {
                       Phone Number
                     </div>
                     {contact.phone ? (
-                      <a href={`tel:${contact.phone}`} className="text-base font-medium text-orange-500 hover:text-orange-600 underline">
+                      <a href={`tel:${contact.phone}`} className="text-base font-medium text-orange-500 hover:text-orange-500 underline">
                         {contact.phone}
                       </a>
                     ) : (

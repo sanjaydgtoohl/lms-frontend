@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronLeft } from 'lucide-react';
 import Pagination from '../../components/ui/Pagination';
 import Table, { type Column } from '../../components/ui/Table';
 import MasterHeader from '../../components/ui/MasterHeader';
@@ -19,6 +18,7 @@ import {
   type MissCampaign
 } from '../../services/View';
 import { usePermissions } from '../../hooks/SidebarMenuHooks';
+import { IoIosArrowBack } from 'react-icons/io';
 
 const View: React.FC = () => {
   const { hasPermission } = usePermissions();
@@ -247,7 +247,7 @@ const View: React.FC = () => {
               <Breadcrumb />
             </div>
             <button onClick={() => navigate('/miss-campaign/view')} className="flex items-center space-x-2 btn-primary text-white px-3 py-1 rounded-lg">
-              <ChevronLeft className="w-4 h-4" />
+              <IoIosArrowBack className="w-5 h-5" />
               <span className="text-sm">Go Back</span>
             </button>
           </div>

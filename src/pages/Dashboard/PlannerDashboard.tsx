@@ -149,7 +149,7 @@ const PlannerDashboard: React.FC = () => {
           ) : (
             (paginatedBriefs || []).map(brief => {
               // Status badge color
-              let statusColor = 'bg-gray-400';
+              let statusColor = 'bg-gray-100';
               const statusText = brief.status || '';
               if (statusText.toLowerCase() === 'approve') statusColor = 'bg-green-200 text-green-800';
               else if (statusText.toLowerCase() === 'closed') statusColor = 'bg-gray-300 text-gray-800';

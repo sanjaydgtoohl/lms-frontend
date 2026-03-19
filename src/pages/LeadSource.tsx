@@ -14,6 +14,7 @@ import { ROUTES } from '../constants';
 import { usePermissions } from '../hooks/SidebarMenuHooks';
 
 import SweetAlert from '../utils/SweetAlert';
+import TableHeader from '../components/ui/TableHeader';
 
 const LeadSource: React.FC = () => {
   const [showCreate, setShowCreate] = useState(false);
@@ -254,20 +255,18 @@ const LeadSource: React.FC = () => {
             showBreadcrumb={true}
             showCreateButton={hasPermission('source.create')}
           />
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-            <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-base font-semibold text-gray-900">Lead Sources</h2>
-                <SearchBar
-                  placeholder="Search Lead Source"
-                  delay={300}
-                  onSearch={(q: string) => {
-                    setSearchQuery(q);
-                    setCurrentPage(1);
-                  }}
-                />
-              </div>
-            </div>
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-4">
+            {/* Table Header */}
+            <TableHeader title="Lead Sources">
+              <SearchBar
+                placeholder="Search Lead Source"
+                delay={300}
+                onSearch={(q: string) => {
+                  setSearchQuery(q);
+                  setCurrentPage(1);
+                }}
+              />
+            </TableHeader>
 
             {error && (
               <div className="px-6 py-3 text-sm text-red-600 bg-red-50 border-b border-red-100 flex items-center gap-2">

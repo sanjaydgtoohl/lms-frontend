@@ -115,9 +115,10 @@ const CreateSourceForm: React.FC<Props> = ({ onClose, onSave}) => {
       className="space-y-6"
     >
       <MasterFormHeader onBack={onClose} title="Create Source" />
-      <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-        <div className="p-6 bg-[#F9FAFB]">
+      <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)]">
+        <div className="p-4 bg-gray-50 rounded-2xl h-[70dvh]">
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 Source Name <span className="text-red-500">*</span>
@@ -156,8 +157,8 @@ const CreateSourceForm: React.FC<Props> = ({ onClose, onSave}) => {
                 value={subSource}
                 onChange={(e) => { setSubSource(e.target.value); setErrors(prev => ({ ...prev, subSource: '' })); }}
                 placeholder="Please Enter Sub Source"
-                className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 transition-colors ${
-                  errors.subSource ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-1 transition-colors ${
+                  errors.subSource ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-black'
                 }`}
                 aria-invalid={errors.subSource ? 'true' : 'false'}
                 aria-describedby={errors.subSource ? 'subSource-error' : undefined}
@@ -170,6 +171,7 @@ const CreateSourceForm: React.FC<Props> = ({ onClose, onSave}) => {
                   {errors.subSource}
                 </div>
               )}
+            </div>
             </div>
 
             <div className="flex items-center justify-end">

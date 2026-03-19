@@ -9,9 +9,10 @@ import { getBriefById } from '../../services/PlanSubmission';
 import type { BriefDetail } from '../../services/PlanSubmission';
 import { fetchPlannerHistories } from '../../services/PlanHistory';
 import type { PlannerHistoryItem } from '../../services/PlanHistory';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import Swal from 'sweetalert2';
 import FilePreviewModal from '../../components/ui/FilePreviewModal';
+import { IoIosArrowBack } from 'react-icons/io';
 
 // No mock data, will fetch from API
 
@@ -268,7 +269,7 @@ const SubmittedPlansList: React.FC<SubmittedPlansListProps> = ({ plans = [], loa
 
       <div className="mt-6 flex justify-end items-center space-x-3">
         <button onClick={() => gotoPage(currentPage - 1)} disabled={currentPage === 1} className="p-2 text-gray-400 hover:text-gray-600">
-          <ChevronLeft className="w-4 h-4" />
+          <IoIosArrowBack className="w-5 h-5" />
         </button>
 
         <div className="flex items-center space-x-2">

@@ -46,7 +46,7 @@ const ViewLead: React.FC = () => {
       <div className="flex-1 p-6 w-full">
         <button
           onClick={handleBack}
-          className="inline-flex items-center text-orange-500 hover:text-orange-600 font-medium mb-4"
+          className="inline-flex items-center text-orange-500 hover:text-orange-500 font-medium mb-4"
         >
           <ChevronLeft size={20} className="mr-1" />
           Back to Leads
@@ -155,7 +155,7 @@ const ViewLead: React.FC = () => {
                   Email
                 </div>
                 {lead.email ? (
-                  <a href={`mailto:${lead.email}`} className="text-base font-medium text-orange-500 hover:text-orange-600 underline">
+                  <a href={`mailto:${lead.email}`} className="text-base font-medium text-orange-500 hover:text-orange-500 underline">
                     {lead.email}
                   </a>
                 ) : (
@@ -169,7 +169,7 @@ const ViewLead: React.FC = () => {
                   Phone Number
                 </div>
                 {lead.mobile_number && lead.mobile_number.length > 0 ? (
-                  <a href={`tel:${typeof lead.mobile_number[0] === 'string' ? lead.mobile_number[0] : lead.mobile_number[0].number}`} className="text-base font-medium text-orange-500 hover:text-orange-600 underline">
+                  <a href={`tel:${typeof lead.mobile_number[0] === 'string' ? lead.mobile_number[0] : lead.mobile_number[0].number}`} className="text-base font-medium text-orange-500 hover:text-orange-500 underline">
                     {typeof lead.mobile_number[0] === 'string' ? lead.mobile_number[0] : lead.mobile_number[0].number}
                   </a>
                 ) : (
@@ -183,7 +183,7 @@ const ViewLead: React.FC = () => {
                     <Phone size={16} className="mr-2" />
                     Secondary Phone
                   </div>
-                  <a href={`tel:${typeof lead.mobile_number[1] === 'string' ? lead.mobile_number[1] : lead.mobile_number[1].number}`} className="text-base font-medium text-orange-500 hover:text-orange-600 underline">
+                  <a href={`tel:${typeof lead.mobile_number[1] === 'string' ? lead.mobile_number[1] : lead.mobile_number[1].number}`} className="text-base font-medium text-orange-500 hover:text-orange-500 underline">
                     {typeof lead.mobile_number[1] === 'string' ? lead.mobile_number[1] : lead.mobile_number[1].number}
                   </a>
                 </div>

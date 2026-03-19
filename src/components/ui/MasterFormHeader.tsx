@@ -1,7 +1,7 @@
 import React from 'react';
 import Breadcrumb from './Breadcrumb';
 import Button from './Button';
-import { ChevronLeft } from 'lucide-react';
+import { FaAngleLeft } from 'react-icons/fa';
 
 interface MasterFormHeaderProps {
   onBack: () => void;
@@ -21,10 +21,10 @@ const MasterFormHeader: React.FC<MasterFormHeaderProps> = ({
       </div>
       <Button
         onClick={onBack}
-        className="flex items-center space-x-2 px-3 py-1"
+        className="flex items-center space-x-2 px-4 py-2"
       >
-        <ChevronLeft className="w-4 h-4" />
-        <span className="text-sm">Go Back</span>
+        <FaAngleLeft className="w-4 h-4" />
+        <span className="text-sm text-white">Go Back</span>
       </Button>
     </div>
   );

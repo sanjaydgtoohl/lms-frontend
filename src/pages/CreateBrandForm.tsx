@@ -534,14 +534,14 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
 
   const formContent = (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm text-[var(--text-secondary)] mb-1">Brand Name <span className="text-[#FF0000]">*</span></label>
           <input
             name="brandName"
             value={form.brandName}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+            className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-black"
             placeholder="Please Enter Brand Name"
           />
           {errors.brandName && (
@@ -571,7 +571,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             name="website"
             value={form.website}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+            className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-black"
             placeholder="https://"
           />
             {errors.website && !form.website.trim() && (
@@ -649,7 +649,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
                 setPostalFieldError('Postal code is invalid');
               }
             }}
-            className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+            className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-black"
             placeholder="Please Enter Postal Code"
           />
           {(errors.postalCode || postalFieldError) && <div className="text-xs text-red-500 mt-1">{errors.postalCode || postalFieldError}</div>}
@@ -724,7 +724,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
     >
       <MasterFormHeader onBack={onClose} title={mode === 'edit' ? 'Edit Brand' : 'Create Brand'} />
       <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-        <div className="p-6 bg-[#F9FAFB]">
+        <div className="p-4 bg-gray-50">
           {formContent}
         </div>
       </div>

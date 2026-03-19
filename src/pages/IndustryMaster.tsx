@@ -13,6 +13,7 @@ import { listIndustries, deleteIndustry, updateIndustry, type Industry as ApiInd
 import { usePermissions } from '../hooks/SidebarMenuHooks';
 
 import SweetAlert from '../utils/SweetAlert';
+import TableHeader from '../components/ui/TableHeader';
 
 interface Industry {
   id: string;
@@ -241,21 +242,19 @@ const IndustryMaster: React.FC = () => {
             showBreadcrumb={true}
             showCreateButton={hasPermission('industry.create')}
           />
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-            <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-base font-semibold text-gray-900">Industry Master</h2>
-                <SearchBar
-                  placeholder="Search Industry"
-                  delay={300}
-                  onSearch={(q: string) => {
-                    setSearchQuery(q);
-                    setCurrentPage(1);
-                    refresh(1, q);
-                  }}
-                />
-              </div>
-            </div>
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-4">
+            {/* Table Header */}
+            <TableHeader title="Industry Master">
+              <SearchBar
+                placeholder="Search Industry"
+                delay={300}
+                onSearch={(q: string) => {
+                  setSearchQuery(q);
+                  setCurrentPage(1);
+                  refresh(1, q);
+                }}
+              />
+            </TableHeader>
 
             {error && (
               <div className="px-6 py-3 text-sm text-red-600 bg-red-50 border-b border-red-100 flex items-center gap-2">

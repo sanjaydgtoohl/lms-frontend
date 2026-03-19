@@ -382,7 +382,7 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({
           <li>
             <Link
               to="/dashboard"
-              className="text-orange-600 font-semibold" // active style
+              className="text-orange-500 font-semibold" // active style
               aria-current="page"
             >
               Dashboard
@@ -427,7 +427,7 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({
                   {crumb.label}
                 </Link>
               ) : (
-                <span className={isActive ? "text-orange-600 font-semibold" : "text-orange-400 font-medium"}>
+                <span className={isActive ? "text-orange-500 font-semibold" : "text-orange-400 font-medium"}>
                   {crumb.label}
                 </span>
               )}
