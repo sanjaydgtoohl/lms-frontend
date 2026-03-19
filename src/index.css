@@ -391,9 +391,9 @@ button[data-btn-label="Update"]:hover {
     color: #747bff;
   }
   /* Don't set a global button background for light mode; limit to primary buttons only. */
-  .btn-primary {
+  /* .btn-primary {
     background-color: var(--btn-bg) !important;
-  }
+  } */
 }
 
 /* Primary button helper class used by React Button component and utility buttons */
@@ -498,7 +498,7 @@ box-shadow:  5px 5px 10px #131313,
 }
 
 .login-btn {
-    @apply  bg-[#fe6000] text-white w-full rounded-full hover:bg-[#bd4900] border-0 transition-all;
+    @apply  bg-[#fe6000] text-white w-full rounded-full hover:bg-[#bd4900] border-0 transition-all !py-4;
 }
 
 .shadow-custom {
