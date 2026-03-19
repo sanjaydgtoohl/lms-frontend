@@ -15,6 +15,7 @@ import { assignUserToLead } from '../../services/leadAssignTo';
 import { apiClient } from '../../utils/apiClient';
 import { getCallStatuses, updateCallStatus } from '../../services/CallStatus';
 import { usePermissions } from '../../hooks/SidebarMenuHooks';
+import TableHeader from '../../components/ui/TableHeader';
 
 interface Lead {
   id: string;
@@ -58,36 +59,36 @@ const AllLeads: React.FC = () => {
   const [callStatusOptions, setCallStatusOptions] = useState<CallStatusOption[]>([]);
   const [assignToOptions, setAssignToOptions] = useState<UserOption[]>([]);
   const { hasPermission } = usePermissions();
-    // Fetch call status options from API
-    useEffect(() => {
-      const loadCallStatuses = async () => {
-        try {
-          const resp = await getCallStatuses();
-          // Store as array of {id, name}
-          const options = Array.isArray(resp)
-            ? resp.map((item: any) => ({ id: item.id, name: item.name })).filter((item: any) => item.id && item.name)
-            : [];
-          setCallStatusOptions(options);
-        } catch {
-          setCallStatusOptions([]);
-        }
-      };
-      loadCallStatuses();
-    }, []);
+  // Fetch call status options from API
+  useEffect(() => {
+    const loadCallStatuses = async () => {
+      try {
+        const resp = await getCallStatuses();
+        // Store as array of {id, name}
+        const options = Array.isArray(resp)
+          ? resp.map((item: any) => ({ id: item.id, name: item.name })).filter((item: any) => item.id && item.name)
+          : [];
+        setCallStatusOptions(options);
+      } catch {
+        setCallStatusOptions([]);
+      }
+    };
+    loadCallStatuses();
+  }, []);
 
-    // Fetch assign to (user) options from API
-    useEffect(() => {
-      const loadUsers = async () => {
-        try {
-          const res = await apiClient.get('/users/list');
-          const users = Array.isArray(res.data) ? res.data : [];
-          setAssignToOptions(users.map((u: any) => ({ id: u.id, name: u.name })));
-        } catch {
-          setAssignToOptions([]);
-        }
-      };
-      loadUsers();
-    }, []);
+  // Fetch assign to (user) options from API
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const res = await apiClient.get('/users/list');
+        const users = Array.isArray(res.data) ? res.data : [];
+        setAssignToOptions(users.map((u: any) => ({ id: u.id, name: u.name })));
+      } catch {
+        setAssignToOptions([]);
+      }
+    };
+    loadUsers();
+  }, []);
   const [loading, setLoading] = useState(false);
   const [totalItems, setTotalItems] = useState(0);
 
@@ -152,7 +153,7 @@ const AllLeads: React.FC = () => {
     const cleanId = id.replace('#', '');
     navigate(ROUTES.LEAD.EDIT(cleanId));
   };
-  
+
   const handleView = (id: string) => {
     // Remove the '#' from the ID before using it in the URL
     const cleanId = id.replace('#', '');
@@ -190,7 +191,7 @@ const AllLeads: React.FC = () => {
   };
 
   const handleAssignConfirm = async (_newSalesMan: string) => {
-      void _newSalesMan; // mark as intentionally unused
+    void _newSalesMan; // mark as intentionally unused
     // This is called when user confirms the assignment in the dialog
     // The actual API call happens after confirmation in handleAssignToChange
   };
@@ -264,7 +265,7 @@ const AllLeads: React.FC = () => {
   };
 
   const handleCallStatusConfirm = async (_newStatus: string) => {
-      void _newStatus; // mark as intentionally unused
+    void _newStatus; // mark as intentionally unused
     // This is called when user confirms the call status change in the dialog
     // The actual API call happens after confirmation in handleCallStatusChange
   };
@@ -277,25 +278,25 @@ const AllLeads: React.FC = () => {
       if (searchQuery) filters.search = searchQuery;
       const resp = await listLeads(currentPage, itemsPerPage, filters);
       const items = (resp.data || []).map((it: any) => ({
-          id: it.id ? `#${String(it.id)}` : '#0',
-          agencyName: it.agency?.name || it.agency_name || '',
-          brandName: it.brand_name || it.brand?.name || String(it.brand_id || ''),
-          contactPerson: it.contact_person || it.name || '',
-          phoneNumber: Array.isArray(it.mobile_number) ? (it.mobile_number[0]?.number || '') : (it.number || it.mobile_number || it.phone || ''),
-          source: it.lead_source || it.source || '',
-          subSource: it.sub_source?.name || it.lead_sub_source?.name || it.lead_sub_source_name || it.lead_sub_source || '',
-          assignBy: it.created_by_user?.name || it.assign_by_name || it.created_by || '',
-          assignTo: it.current_assign_user_name || it.assigned_user?.name || (it.current_assign_user && typeof it.current_assign_user === 'object' ? it.current_assign_user.name : '') || it.assign_to_name || '',
-          dateTime: it.created_at || it.dateTime || it.created_at_formatted || '',
-          status: it.status || '',
-          leadStatus: it.lead_status_relation?.name || it.lead_status || '',
-          callStatus: (() => {
-            const raw = it.call_status_relation?.name ?? it.call_status ?? it.callStatus ?? '';
-            return raw === null || raw === undefined || raw === '' ? 'N/A' : raw;
-          })(),
-          callAttempt: Number(it.call_attempt ?? it.callAttempt ?? 0),
-          comment: it.comment || it.notes || '',
-        } as Lead));
+        id: it.id ? `#${String(it.id)}` : '#0',
+        agencyName: it.agency?.name || it.agency_name || '',
+        brandName: it.brand_name || it.brand?.name || String(it.brand_id || ''),
+        contactPerson: it.contact_person || it.name || '',
+        phoneNumber: Array.isArray(it.mobile_number) ? (it.mobile_number[0]?.number || '') : (it.number || it.mobile_number || it.phone || ''),
+        source: it.lead_source || it.source || '',
+        subSource: it.sub_source?.name || it.lead_sub_source?.name || it.lead_sub_source_name || it.lead_sub_source || '',
+        assignBy: it.created_by_user?.name || it.assign_by_name || it.created_by || '',
+        assignTo: it.current_assign_user_name || it.assigned_user?.name || (it.current_assign_user && typeof it.current_assign_user === 'object' ? it.current_assign_user.name : '') || it.assign_to_name || '',
+        dateTime: it.created_at || it.dateTime || it.created_at_formatted || '',
+        status: it.status || '',
+        leadStatus: it.lead_status_relation?.name || it.lead_status || '',
+        callStatus: (() => {
+          const raw = it.call_status_relation?.name ?? it.call_status ?? it.callStatus ?? '';
+          return raw === null || raw === undefined || raw === '' ? 'N/A' : raw;
+        })(),
+        callAttempt: Number(it.call_attempt ?? it.callAttempt ?? 0),
+        comment: it.comment || it.notes || '',
+      } as Lead));
 
       setLeads(items);
       // Use total from API pagination
@@ -338,9 +339,9 @@ const AllLeads: React.FC = () => {
       className: 'min-w-[140px]',
     } as Column<Lead>] : []),
     { key: 'dateTime', header: 'Date & Time', render: (it: Lead) => it.dateTime || '-', className: 'whitespace-nowrap' },
-    { 
-      key: 'status', 
-      header: 'Status', 
+    {
+      key: 'status',
+      header: 'Status',
       render: (it: Lead) => {
         const statusColors = {
           'Active': '#22c55e',
@@ -358,9 +359,9 @@ const AllLeads: React.FC = () => {
         };
         // Display lead_status from API (currently null for all, will show when populated)
         const displayStatus = it.leadStatus || 'N/A';
-        return <StatusPill 
-          label={displayStatus} 
-          color={statusColors[displayStatus as keyof typeof statusColors] || '#6b7280'} 
+        return <StatusPill
+          label={displayStatus}
+          color={statusColors[displayStatus as keyof typeof statusColors] || '#6b7280'}
         />;
       },
       className: 'whitespace-nowrap'
@@ -385,9 +386,9 @@ const AllLeads: React.FC = () => {
       className: 'min-w-[160px]',
     },
     { key: 'callAttempt', header: 'Call Attempt', render: (it: Lead) => it.callAttempt ? String(it.callAttempt) : '-', className: 'whitespace-nowrap' },
-    { 
-      key: 'comment', 
-      header: 'Comment', 
+    {
+      key: 'comment',
+      header: 'Comment',
       render: (it: Lead) => (
         <div
           className="cursor-help max-w-[220px]"
@@ -436,19 +437,17 @@ const AllLeads: React.FC = () => {
         />
       )}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-        <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-200">
-          <h2 className="text-base font-semibold text-gray-900 flex-shrink-0">All Leads</h2>
-          <div className="w-40 md:w-auto ml-auto">
-            <SearchBar
-              placeholder="Search leads..."
-              delay={250}
-              onSearch={(q: string) => {
-                setSearchQuery(q);
-                setCurrentPage(1);
-              }}
-            />
-          </div>
-        </div>
+        {/* Table Header */}
+        <TableHeader title="All Leads">
+          <SearchBar
+            placeholder="Search leads..."
+            delay={250}
+            onSearch={(q: string) => {
+              setSearchQuery(q);
+              setCurrentPage(1);
+            }}
+          />
+        </TableHeader>
 
         <div className="pt-0 overflow-visible">
           <Table

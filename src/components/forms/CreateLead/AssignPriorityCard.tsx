@@ -128,18 +128,18 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
   }, [callFeedback, priority, assignTo, onChange]); // ✅ Added all missing dependencies
 
   return (
-    <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)]">
-      <div className="p-6 bg-[#F9FAFB]">
+    <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-200">
+      <div className="px-4 py-5 p-6 bg-[#F9FAFB]">
         <h3 className="text-base font-semibold text-gray-800 mb-4">Assignment & Priority</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm text-[var(--text-secondary)] mb-1">Assign To</label>
+            <label className="block text-sm text-gray-600 mb-1">Assign To</label>
             <SelectField
               options={userOptions}
               placeholder="Select Team Member"
               value={assignTo}
               onChange={(value) => onChange?.({ assignTo: typeof value === 'string' ? value : value[0] ?? '', priority, callFeedback })}
-              inputClassName="px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+              inputClassName="px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               disabled={userLoading}
             />
             {userLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
@@ -149,13 +149,13 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
             )}
           </div>
           <div>
-            <label className="block text-sm text-[var(--text-secondary)] mb-1">Priority</label>
+            <label className="block text-sm text-gray-600 mb-1">Priority</label>
             <SelectField
               options={priorityOptions}
               placeholder="Select Priority"
               value={priority}
               onChange={(value) => onChange?.({ assignTo, priority: typeof value === 'string' ? value : value[0] ?? '', callFeedback })}
-              inputClassName="px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+              inputClassName="px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               disabled={priorityLoading}
             />
             {priorityLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
@@ -165,13 +165,13 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
             )}
           </div>
           <div>
-            <label className="block text-sm text-[var(--text-secondary)] mb-1">Call Feedback</label>
+            <label className="block text-sm text-gray-600 mb-1">Call Feedback</label>
             <SelectField
               options={callStatusOptions}
               placeholder="Please Select Feedback"
               value={callFeedback}
               onChange={(value: any) => onChange?.({ assignTo, priority, callFeedback: value })}
-              inputClassName="px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+              inputClassName="px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               disabled={callStatusLoading}
             />
             {callStatusLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}

@@ -100,7 +100,7 @@ const ViewLead: React.FC = () => {
           {/* Lead Overview Card */}
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-5">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">Lead Overview</h2>
-            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
+            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
               {/* Brand */}
               <div className='flex flex-wrap items-center gap-3'>
                 <label className="flex items-center text-sm font-semibold text-gray-800 gap-3">
