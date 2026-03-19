@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface ParentUser {
   id?: string | number;
@@ -9,12 +9,13 @@ interface ParentUser {
 
 interface ParentUserModalProps {
   isOpen: boolean;
-  // support multiple parents
   parentUser: ParentUser[] | null;
   onClose: () => void;
   userName?: string;
   title?: string;
 }
+
+const ANIMATION_DURATION = 200; // match CSS
 
 const ParentUserModal: React.FC<ParentUserModalProps> = ({
   isOpen,
@@ -23,167 +24,80 @@ const ParentUserModal: React.FC<ParentUserModalProps> = ({
   userName = 'User',
   title = 'Parent User',
 }) => {
+  const [shouldRender, setShouldRender] = useState(isOpen);
+
   useEffect(() => {
     if (isOpen) {
+      setShouldRender(true);
       document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = 'auto';
+      const timer = setTimeout(() => setShouldRender(false), ANIMATION_DURATION);
+      return () => clearTimeout(timer);
     }
 
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = 'auto';
     };
   }, [isOpen]);
 
-  if (!isOpen || !parentUser || parentUser.length === 0) return null;
+  if (!shouldRender || !parentUser || parentUser.length === 0) return null;
 
   return (
     <>
+      {/* Overlay */}
       <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          background: 'rgba(0,0,0,0.5)',
-          zIndex: 40,
-          animation: 'fadeIn 0.2s ease-out',
-        }}
+        className={`fixed inset-0 bg-black/50 z-40 ${
+          isOpen ? 'animate-fadeIn' : 'animate-fadeOut pointer-events-none'
+        }`}
         onClick={onClose}
       />
+
+      {/* Modal */}
       <div
-        style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          background: 'white',
-          borderRadius: '16px 16px 0 0',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-          width: '90%',
-          maxWidth: 520,
-          maxHeight: '85vh',
-          zIndex: 50,
-          display: 'flex',
-          flexDirection: 'column',
-          animation: 'slideUp 0.3s ease-out',
-        }}
+        className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+                    rounded-xl bg-white shadow-[0_20px_60px_rgba(0,0,0,0.3)] 
+                    w-[90%] max-w-[520px] max-h-[85vh] z-50 flex flex-col overflow-hidden
+                    ${isOpen ? 'animate-fadeIn' : 'animate-fadeOut pointer-events-none'}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '24px 28px',
-            borderBottom: '1px solid #e5e7eb',
-            background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-          }}
-        >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 bg-gray-50">
           <div>
-            <h3 style={{ margin: 0, fontWeight: 700, fontSize: 22, color: '#1f2937' }}>
-              {title}
-            </h3>
-            <p style={{ margin: '4px 0 0 0', fontSize: 13, color: '#9ca3af' }}>
-              Associated with {userName}
+            <h3 className="font-bold text-base md:text-lg xl:text-xl text-gray-800">{title}</h3>
+            <p className="text-xs sm:text-sm text-gray-400">
+              Associated with {userName} ({parentUser.length}{' '}
+              {parentUser.length === 1 ? 'parent' : 'parents'})
             </p>
           </div>
+
           <button
             onClick={onClose}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 32,
-              height: 32,
-              borderRadius: '8px',
-              border: '1px solid #e5e7eb',
-              background: 'white',
-              cursor: 'pointer',
-              fontSize: 20,
-              color: '#6b7280',
-              transition: 'all 0.2s',
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as any).style.background = 'white';
-              (e.currentTarget as any).style.color = '#6b7280';
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as any).style.background = '#f3f4f6';
-              (e.currentTarget as any).style.color = '#1f2937';
-            }}
+            className="bg-gray-100 text-gray-500 text-xl w-10 h-10 flex items-center justify-center rounded-lg transition-all duration-300 hover:bg-gray-200 hover:text-gray-700"
           >
             ✕
           </button>
         </div>
 
         {/* Content */}
-        <div
-          style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: '24px 28px',
-          }}
-        >
-          <div
-            style={{
-              padding: '16px',
-              borderRadius: '12px',
-              background: '#f9fafb',
-              border: '1px solid #e5e7eb',
-            }}
-          >
-            <p style={{ margin: 0, fontSize: 12, color: '#9ca3af', fontWeight: 500 }}>
-              PARENT USERS
-            </p>
-            <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <div className="flex-1 overflow-y-auto px-5 py-5 max-h-[400px]">
+          <div className="p-4 rounded-xl bg-gray-50 border border-gray-200">
+            <p className="m-0 text-xs text-gray-400 font-medium">PARENT USERS</p>
+
+            <div className="mt-2 flex gap-2 flex-wrap">
               {parentUser.map((p) => (
                 <div
                   key={String(p.id)}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    padding: '8px 12px',
-                    borderRadius: 12,
-                    background: '#fff',
-                    border: '1px solid #e5e7eb',
-                    minWidth: 160,
-                  }}
+                  className="flex flex-col px-3 py-2 rounded-xl bg-white border border-gray-200 min-w-[160px]"
                 >
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#1f2937' }}>{p.name}</div>
-                  {p.email && (
-                    <div style={{ marginTop: 6, fontSize: 12, color: '#6b7280', wordBreak: 'break-all' }}>{p.email}</div>
-                  )}
+                  <div className="text-sm font-bold text-gray-800">{p.name}</div>
+                  {p.email && <div className="mt-1 text-xs text-gray-500 break-all">{p.email}</div>}
                 </div>
               ))}
             </div>
           </div>
         </div>
-      </div>
-
-      <style>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-
-        @keyframes slideUp {
-          from {
-            transform: translate(-50%, -45%);
-            opacity: 0;
-          }
-          to {
-            transform: translate(-50%, -50%);
-            opacity: 1;
-          }
-        }
-      `}</style>
+      </div> 
     </>
   );
 };

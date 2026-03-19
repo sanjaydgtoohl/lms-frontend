@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface Agency {
   id?: string | number;
@@ -13,189 +13,105 @@ interface AgenciesModalProps {
   title?: string;
 }
 
+const ANIMATION_DURATION = 200;
+
 const AgenciesModal: React.FC<AgenciesModalProps> = ({
   isOpen,
   agencies,
   onClose,
   title = 'Agencies',
 }) => {
+  const [shouldRender, setShouldRender] = useState(isOpen);
+  const [displayAgencies, setDisplayAgencies] = useState(agencies);
+
   useEffect(() => {
     if (isOpen) {
+      setShouldRender(true);
+      setDisplayAgencies(agencies);
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
+
+      const timer = setTimeout(() => {
+        setShouldRender(false);
+      }, ANIMATION_DURATION);
+
+      return () => clearTimeout(timer);
     }
 
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen]);
+  }, [isOpen, agencies]);
 
-  if (!isOpen) return null;
+  if (!shouldRender) return null;
 
   return (
     <>
+      {/* Overlay */}
       <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          background: 'rgba(0,0,0,0.5)',
-          zIndex: 40,
-          animation: 'fadeIn 0.2s ease-out',
-        }}
+        className={`fixed inset-0 bg-black/50 z-40
+          ${isOpen ? 'animate-fadeIn' : 'animate-fadeOut pointer-events-none'}`}
         onClick={onClose}
       />
+
+      {/* Modal */}
       <div
-        style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          background: 'white',
-          borderRadius: '16px 16px 0 0',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-          width: '90%',
-          maxWidth: 520,
-          maxHeight: '85vh',
-          zIndex: 50,
-          display: 'flex',
-          flexDirection: 'column',
-          animation: 'slideUp 0.3s ease-out',
-        }}
+        className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+          bg-white rounded-xl shadow-[0_20px_60px_rgba(0,0,0,0.3)]
+          w-[90%] max-w-[520px] max-h-[85vh] z-50
+          flex flex-col overflow-hidden
+          ${isOpen ? 'animate-fadeIn' : 'animate-fadeOut pointer-events-none'}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '24px 28px',
-            borderBottom: '1px solid #e5e7eb',
-            background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-          }}
-        >
+        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200 bg-gray-50">
           <div>
-            <h3 style={{ margin: 0, fontWeight: 700, fontSize: 22, color: '#1f2937' }}>
+            <h3 className="font-bold text-base md:text-lg xl:text-xl text-gray-800">
               {title}
             </h3>
-            <p style={{ margin: '4px 0 0 0', fontSize: 13, color: '#9ca3af' }}>
-              {agencies.length} {agencies.length === 1 ? 'agency' : 'agencies'}
+            <p className="mt-1 text-sm text-gray-400">
+              {displayAgencies.length}{' '}
+              {displayAgencies.length === 1 ? 'agency' : 'agencies'}
             </p>
           </div>
+
           <button
             onClick={onClose}
-            style={{
-              background: '#f3f4f6',
-              border: 'none',
-              fontSize: 20,
-              cursor: 'pointer',
-              color: '#6b7280',
-              padding: '8px 12px',
-              width: 40,
-              height: 40,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: 8,
-              transition: 'all 0.2s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#e5e7eb';
-              e.currentTarget.style.color = '#374151';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = '#f3f4f6';
-              e.currentTarget.style.color = '#6b7280';
-            }}
+            className="bg-gray-100 text-gray-500 text-xl w-10 h-10 flex items-center justify-center rounded-lg transition-all duration-200 hover:bg-gray-200 hover:text-gray-700"
           >
             ✕
           </button>
         </div>
 
         {/* Content */}
-        <div
-          style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: '24px 28px',
-            maxHeight: '240px',
-          }}
-        >
-          {agencies.length === 0 ? (
-            <div
-              style={{
-                textAlign: 'center',
-                padding: '40px 20px',
-                color: '#9ca3af',
-              }}
-            >
-              <div style={{ fontSize: 48, marginBottom: 12 }}>🏢</div>
-              <p style={{ fontSize: 14, margin: 0 }}>No agencies found.</p>
+        <div className="flex-1 overflow-y-auto px-5 py-5 max-h-[400px]">
+          {displayAgencies.length === 0 ? (
+            <div className="text-center py-10 px-5 text-gray-400">
+              <div className="text-5xl mb-3">🏢</div>
+              <p className="text-sm">No agencies found.</p>
             </div>
           ) : (
-            <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
-              {agencies.map((agency, idx) => (
+            <ul className="space-y-2">
+              {displayAgencies.map((agency, idx) => (
                 <li
                   key={agency.id || idx}
-                  style={{
-                    padding: '16px',
-                    marginBottom: idx < agencies.length - 1 ? '8px' : '0',
-                    background: '#f9fafb',
-                    borderRadius: 10,
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: 12,
-                    transition: 'all 0.2s ease',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#f3f4f6';
-                    e.currentTarget.style.transform = 'translateX(4px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = '#f9fafb';
-                    e.currentTarget.style.transform = 'translateX(0)';
-                  }}
+                  className="p-3 rounded-lg flex items-start gap-3 
+                    bg-gray-100 border border-gray-200
+                    transition-all duration-200 
+                    hover:bg-gray-200 hover:translate-x-1"
                 >
-                  <div
-                    style={{
-                      width: 40,
-                      height: 40,
-                      background: '#fef3c7',
-                      borderRadius: 8,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#d97706',
-                      fontWeight: 700,
-                      fontSize: 16,
-                      flexShrink: 0,
-                    }}
-                  >
+                  <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center text-amber-600 font-bold text-base shrink-0">
                     {(agency.name || 'A').charAt(0).toUpperCase()}
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div
-                      style={{
-                        fontWeight: 600,
-                        color: '#1f2937',
-                        fontSize: 15,
-                        marginBottom: 4,
-                      }}
-                    >
+
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-gray-800 text-sm mb-1">
                       {agency.name || 'Unknown'}
                     </div>
+
                     {agency.email && (
-                      <div
-                        style={{
-                          color: '#6b7280',
-                          fontSize: 13,
-                          wordBreak: 'break-word',
-                        }}
-                      >
+                      <div className="text-gray-500 text-xs break-words">
                         {agency.email}
                       </div>
                     )}
@@ -206,26 +122,6 @@ const AgenciesModal: React.FC<AgenciesModalProps> = ({
           )}
         </div>
       </div>
-
-      {/* CSS Animations */}
-      <style>
-        {`
-          @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-          }
-          @keyframes slideUp {
-            from {
-              opacity: 0;
-              transform: translate(-50%, -40%);
-            }
-            to {
-              opacity: 1;
-              transform: translate(-50%, -50%);
-            }
-          }
-        `}
-      </style>
     </>
   );
 };
