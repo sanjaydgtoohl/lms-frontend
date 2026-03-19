@@ -123,179 +123,182 @@ const PlanSubmission: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <div>
-                  <span className="text-gray-500">Brief ID:</span>
-                  <span className="font-medium text-gray-900 ml-2">{brief ? `#${brief.id}` : '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Brief ID:</span>
+                  <span className="text-gray-600">{brief ? `#${brief.id}` : '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Brief Name:</span>
-                  <span className="font-medium text-gray-900 ml-2">{brief?.name || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Brief Name:</span>
+                  <span className="text-gray-600">{brief?.name || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Sales Person:</span>
-                  <span className="font-medium text-gray-900 ml-2">{brief?.assigned_user?.name || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Sales Person:</span>
+                  <span className="text-gray-600">{brief?.assigned_user?.name || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Brief Status:</span>
-                  <span className="font-medium text-gray-900 ml-2">{brief?.brief_status?.name || brief?.status || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Brief Status:</span>
+                  <span className="text-gray-600">{brief?.brief_status?.name || brief?.status || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Budget:</span>
-                  <span className="font-medium text-gray-900 ml-2">{brief?.budget || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Budget:</span>
+                  <span className="text-gray-600">{brief?.budget || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Brief Submission Date & Time:</span>
-                  <span className="font-medium text-gray-900 ml-2">{brief?.submission_date || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Brief Submission Date & Time:</span>
+                  <span className="text-gray-600">{brief?.submission_date || '-'}</span>
                 </div>
               </div>
               <div className="space-y-3">
                 <div>
-                  <span className="text-gray-500">Brand Name:</span>
-                  <span className="font-medium text-gray-900 ml-2">{brief?.brand?.name || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Brand Name:</span>
+                  <span className="text-gray-600">{brief?.brand?.name || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Product Name:</span>
-                  <span className="font-medium text-gray-900 ml-2">{brief?.product_name || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Product Name:</span>
+                  <span className="text-gray-600">{brief?.product_name || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Media:</span>
-                  <span className="font-medium text-gray-900 ml-2">{brief?.mode_of_campaign || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Media:</span>
+                  <span className="text-gray-600">{brief?.mode_of_campaign || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Media Type:</span>
-                  <span className="font-medium text-gray-900 ml-2">{brief?.media_type || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Media Type:</span>
+                  <span className="text-gray-600">{brief?.media_type || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Priority:</span>
-                  <span className="font-medium text-gray-900 ml-2">{brief?.priority?.name || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Priority:</span>
+                  <span className="text-gray-600">{brief?.priority?.name || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Brief Detail:</span>
-                  <span className="font-medium text-gray-900 ml-2">{brief?.comment || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Brief Detail:</span>
+                  <span className="text-gray-600">{brief?.comment || '-'}</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Upload Plan Section */}
-          <div className="mb-8">
-            <h3 className="text-base font-medium text-gray-900 mb-4">Upload Plan</h3>
-            {planFiles.length > 0 ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {planFiles.map((file, idx) => (
-                    <FileCard
-                      key={idx}
-                      file={file}
-                      onRemove={() => setPlanFiles(planFiles.filter((_, i) => i !== idx))}
-                    />
-                  ))}
-                  <div className="flex items-center justify-center">
-                    <label className="w-full h-40 flex items-center justify-center border-2 border-dashed border-blue-300 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors bg-blue-50">
-                      <input
-                        type="file"
-                        multiple
-                        className="hidden"
-                        accept=".xls,.xlsx,.xlsm,.csv,.doc,.docx,.ppt,.pptx"
-                        onChange={(e) => {
-                          if (e.target.files) {
-                            const files = Array.from(e.target.files);
-                            setPlanFiles((prev) => {
-                              const combined = [...prev, ...files];
-                              return combined.slice(0, 2);
-                            });
-                          }
-                        }}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Upload Plan Section */}
+            <div className="mb-6">
+              <h3 className="text-base font-medium text-gray-900 mb-2">Upload Plan</h3>
+              {planFiles.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {planFiles.map((file, idx) => (
+                      <FileCard
+                        key={idx}
+                        file={file}
+                        onRemove={() => setPlanFiles(planFiles.filter((_, i) => i !== idx))}
                       />
-                      <div className="text-center">
-                        <svg
-                          className="mx-auto h-8 w-8 text-blue-400"
-                          stroke="currentColor"
-                          fill="none"
-                          viewBox="0 0 48 48"
-                        >
-                          <path
-                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
-                            strokeWidth={2}
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                        <p className="text-sm text-blue-600 font-medium">Add Plan</p>
-                        <p className="text-xs text-blue-500">Supported formats: Word, PPT</p>
-                      </div>
-                    </label>
+                    ))}
+                    <div className="flex items-center justify-center">
+                      <label className="w-full h-40 flex items-center justify-center border-2 border-dashed border-blue-300 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors bg-blue-50">
+                        <input
+                          type="file"
+                          multiple
+                          className="hidden"
+                          accept=".xls,.xlsx,.xlsm,.csv,.doc,.docx,.ppt,.pptx"
+                          onChange={(e) => {
+                            if (e.target.files) {
+                              const files = Array.from(e.target.files);
+                              setPlanFiles((prev) => {
+                                const combined = [...prev, ...files];
+                                return combined.slice(0, 2);
+                              });
+                            }
+                          }}
+                        />
+                        <div className="text-center">
+                          <svg
+                            className="mx-auto h-8 w-8 text-blue-400"
+                            stroke="currentColor"
+                            fill="none"
+                            viewBox="0 0 48 48"
+                          >
+                            <path
+                              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
+                              strokeWidth={2}
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                          <p className="text-sm text-blue-600 font-medium">Add Plan</p>
+                          <p className="text-xs text-blue-500">Supported formats: Word, PPT</p>
+                        </div>
+                      </label>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ) : (
-              <UploadCard
-                files={planFiles}
-                onChange={(files: File[]) => setPlanFiles(files.slice(0, 2))}
-                accept=".xls,.xlsx,.xlsm,.csv,.doc,.docx,.ppt,.pptx"
-                supported="Excel, Word, PPT"
-              />
-            )}
+              ) : (
+                <UploadCard
+                  files={planFiles}
+                  onChange={(files: File[]) => setPlanFiles(files.slice(0, 2))}
+                  accept=".xls,.xlsx,.xlsm,.csv,.doc,.docx,.ppt,.pptx"
+                  supported="Excel, Word, PPT"
+                />
+              )}
+            </div>
+
+            {/* Upload Back-Up Plan Section */}
+            <div className="mb-6">
+              <h3 className="text-base font-medium text-gray-900 mb-2">Upload Back-Up Plan</h3>
+              {backupFiles.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {backupFiles.map((file, idx) => (
+                      <FileCard
+                        key={idx}
+                        file={file}
+                        onRemove={() => setBackupFiles(backupFiles.filter((_, i) => i !== idx))}
+                      />
+                    ))}
+                    <div className="flex items-center justify-center">
+                      <label className="w-full h-40 flex items-center justify-center border-2 border-dashed border-blue-300 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors bg-blue-50">
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept=".xls,.xlsx,.xlsm,.csv,.doc,.docx,.ppt,.pptx"
+                          onChange={(e) => {
+                            if (e.target.files) {
+                              const files = Array.from(e.target.files);
+                              setBackupFiles((prev) => {
+                                const combined = [...prev, ...files];
+                                return combined.slice(0, 1);
+                              });
+                            }
+                          }}
+                        />
+                        <div className="text-center">
+                          <svg
+                            className="mx-auto h-8 w-8 text-blue-400"
+                            stroke="currentColor"
+                            fill="none"
+                            viewBox="0 0 48 48"
+                          >
+                            <path
+                              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
+                              strokeWidth={2}
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                          <p className="text-sm text-blue-600 font-medium">Add Plan</p>
+                          <p className="text-xs text-blue-500">Supported formats: Word, PPT</p>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <UploadCard
+                  files={backupFiles}
+                  onChange={(files: File[]) => setBackupFiles(files.slice(0, 1))}
+                  accept=".xls,.xlsx,.xlsm,.csv,.doc,.docx,.ppt,.pptx"
+                  supported="Excel, Word, PPT"
+                />
+              )}
+            </div>
           </div>
 
-          {/* Upload Back-Up Plan Section */}
-          <div className="mb-8">
-            <h3 className="text-base font-medium text-gray-900 mb-4">Upload Back-Up Plan</h3>
-            {backupFiles.length > 0 ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {backupFiles.map((file, idx) => (
-                    <FileCard
-                      key={idx}
-                      file={file}
-                      onRemove={() => setBackupFiles(backupFiles.filter((_, i) => i !== idx))}
-                    />
-                  ))}
-                  <div className="flex items-center justify-center">
-                    <label className="w-full h-40 flex items-center justify-center border-2 border-dashed border-blue-300 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors bg-blue-50">
-                      <input
-                        type="file"
-                        className="hidden"
-                        accept=".xls,.xlsx,.xlsm,.csv,.doc,.docx,.ppt,.pptx"
-                        onChange={(e) => {
-                          if (e.target.files) {
-                            const files = Array.from(e.target.files);
-                            setBackupFiles((prev) => {
-                              const combined = [...prev, ...files];
-                              return combined.slice(0, 1);
-                            });
-                          }
-                        }}
-                      />
-                      <div className="text-center">
-                        <svg
-                          className="mx-auto h-8 w-8 text-blue-400"
-                          stroke="currentColor"
-                          fill="none"
-                          viewBox="0 0 48 48"
-                        >
-                          <path
-                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
-                            strokeWidth={2}
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                        <p className="text-sm text-blue-600 font-medium">Add Plan</p>
-                        <p className="text-xs text-blue-500">Supported formats: Word, PPT</p>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <UploadCard
-                files={backupFiles}
-                onChange={(files: File[]) => setBackupFiles(files.slice(0, 1))}
-                accept=".xls,.xlsx,.xlsm,.csv,.doc,.docx,.ppt,.pptx"
-                supported="Excel, Word, PPT"
-              />
-            )}
-          </div>
 
           {/* Action Buttons */}
           <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
@@ -352,9 +355,9 @@ const PlanSubmission: React.FC = () => {
             >
               {submitLoading ? 'Submitting...' : 'SUBMIT PROPOSAL'}
             </Button>
-                    {/* Submission Success/Error Messages */}
-                    {submitError && <div className="mb-4 text-red-600">{submitError}</div>}
-                    {submitSuccess && <div className="mb-4 text-green-600">{submitSuccess}</div>}
+            {/* Submission Success/Error Messages */}
+            {submitError && <div className="mb-4 text-red-600">{submitError}</div>}
+            {submitSuccess && <div className="mb-4 text-green-600">{submitSuccess}</div>}
           </div>
         </div>
       </div>

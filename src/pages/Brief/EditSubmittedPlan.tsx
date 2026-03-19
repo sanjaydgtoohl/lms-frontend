@@ -204,54 +204,54 @@ const EditSubmittedPlan: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <div>
-                  <span className="text-gray-800 min-w-[120px] inline-block font-semibold">Brief ID:</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Brief ID:</span>
                   <span className="text-gray-600">{`#${briefDetails.id}`}</span>
                 </div>
                 <div>
-                  <span className="text-gray-800 min-w-[120px] inline-block font-semibold">Brief Name:</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Brief Name:</span>
                   <span className="text-gray-600">{briefDetails.name || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-800 min-w-[120px] inline-block font-semibold">Sales Person:</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Sales Person:</span>
                   <span className="text-gray-600">{briefDetails.assigned_user?.name || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-800 min-w-[120px] inline-block font-semibold">Brief Status:</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Brief Status:</span>
                   <span className="text-gray-600">{briefDetails.brief_status?.name || briefDetails.status || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-800 min-w-[120px] inline-block font-semibold">Budget:</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Budget:</span>
                   <span className="text-gray-600">{briefDetails.budget || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-800 min-w-[120px] inline-block font-semibold">Brief Submission Date & Time: </span>
-                  <span className="text-gray-600"> {briefDetails.submission_date || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Brief Submission Date & Time: </span>
+                  <span className="text-gray-600"> {  briefDetails.submission_date || '-'}</span>
                 </div>
               </div>
               
               <div className="space-y-3">
                 <div>
-                  <span className="text-gray-800 min-w-[120px] inline-block font-semibold">Brand Name:</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Brand Name:</span>
                   <span className="text-gray-600">{briefDetails?.brand?.name || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-800 min-w-[120px] inline-block font-semibold">Product Name: </span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Product Name: </span>
                   <span className="text-gray-600">{briefDetails?.product_name || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-800 min-w-[120px] inline-block font-semibold">Media:</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Media:</span>
                   <span className="text-gray-600">{briefDetails?.mode_of_campaign || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-800 min-w-[120px] inline-block font-semibold">Media Type:</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Media Type:</span>
                   <span className="text-gray-600">{briefDetails?.media_type || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-800 min-w-[120px] inline-block font-semibold">Priority:</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Priority:</span>
                   <span className="text-gray-600">{briefDetails?.priority?.name || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-800 min-w-[120px] inline-block font-semibold">Brief Detail: </span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Brief Detail: </span>
                   <span className="text-gray-600">{briefDetails?.comment || '-'}</span>
                 </div>
               </div>
