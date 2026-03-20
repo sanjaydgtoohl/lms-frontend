@@ -53,9 +53,8 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({
             <>
               <li>
                 <Link
-                  to="/dashboard"
-                  style={{ color: 'var(--color-orange-400)', fontWeight: 600 }}
-                >
+                className='!text-gray-800 font-semibold'
+                  to="/dashboard">
                   <Home className="w-4 h-4" />
                 </Link>
               </li>
@@ -68,12 +67,12 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({
               {item.path && !item.isActive ? (
                 <Link
                   to={item.path}
-                  style={{ color: 'var(--color-orange-400)', fontWeight: 500 }}
+                  className='!text-gray-800 font-semibold'
                 >
                   {item.label}
                 </Link>
               ) : (
-                <span style={{ color: 'var(--color-orange-400)', fontWeight: item.isActive ? 600 : 500 }}>
+                <span className='text-orange-600' style={{ fontWeight: item.isActive ? 600 : 500 }}>
                   {item.label}
                 </span>
               )}

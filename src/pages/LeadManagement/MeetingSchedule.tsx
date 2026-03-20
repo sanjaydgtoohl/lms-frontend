@@ -9,6 +9,7 @@ import { createMeeting } from '../../services/MeetingSchedule';
 import { listAttendees } from '../../services/AllUsers';
 import { listLeads } from '../../services/AllLeads';
 import MultiSelectDropdown from '../../components/ui/MultiSelectDropdown';
+import { IoIosArrowBack } from 'react-icons/io';
 
 const MeetingSchedule: React.FC = () => {
   const navigate = useNavigate();
@@ -31,7 +32,7 @@ const MeetingSchedule: React.FC = () => {
       }
     `;
     document.head.appendChild(style);
-    
+
     return () => {
       document.head.removeChild(style);
     };
@@ -183,25 +184,27 @@ const MeetingSchedule: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <Breadcrumb
           items={[
             { label: 'Lead Management', path: '/lead-management' },
             { label: 'Meeting Schedule', isActive: true },
           ]}
         />
+
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="font-semibold px-3 py-1 rounded-md flex items-center text-sm btn-primary text-white"
-        >
-          <svg className="mr-1" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          className="font-semibold px-3 py-1 rounded-md flex items-center text-sm btn-primary text-white">
+          
+          <IoIosArrowBack size={16} className="mr-1" />
           Go Back
         </button>
       </div>
 
+
       <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-        <div className="p-6 bg-[#F9FAFB]">
+        <div className="px-4 py-5 sm:p-5 bg-[#F9FAFB]">
           <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Lead, Meeting Type, Attendees */}

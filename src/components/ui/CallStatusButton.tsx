@@ -15,9 +15,9 @@ const CallStatusButton: React.FC<CallStatusButtonProps> = ({ value, onClick, isA
       onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
       className={`
        group w-full cursor-pointer
-        font-medium text-blue-500 underline
+        font-medium text-gray-900 underline
         transition-colors duration-200
-        ${isActive ? 'text-blue-700' : ''}
+        ${isActive ? 'text-gray-950' : ''}
       `}
     >
       <span className="truncate">{value || '-'}</span>
