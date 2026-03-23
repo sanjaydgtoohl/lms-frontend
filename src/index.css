@@ -573,3 +573,24 @@ box-shadow:  5px 5px 10px #131313,
 .btn-delete {
   @apply text-sm px-4 py-2 rounded-lg bg-red-100 text-red-500 gap-2 font-medium flex items-center justify-center hover:bg-red-500 transition-colors transition-all duration-300 hover:text-white;
 }
+
+
+.swal2-popup.swal2-modal {
+  @apply !py-10;
+}
+
+.swal2-popup.swal2-modal .swal2-icon {
+  @apply !mt-0 mb-5;
+}
+
+.swal2-popup.swal2-modal .swal2-icon {
+  @apply !text-xs;
+}
+
+.swal2-popup.swal2-modal .swal2-title {
+  @apply !py-1 text-xl md:text-2xl lg:text-3xl;
+}
+
+.swal2-popup.swal2-modal .swal2-html-container {
+  @apply !pt-0 text-sm sm:text-base;
+}

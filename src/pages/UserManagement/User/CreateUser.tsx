@@ -19,13 +19,13 @@ type Props = {
 const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
   const navigate = useNavigate();
   const [form, setForm] = useState({
-  name: '',
-  email: '',
-  phone: '',
-  password: '',
-  password_confirmation: '',
-  roles: [] as string[],
-  managers: [] as string[],
+    name: '',
+    email: '',
+    phone: '',
+    password: '',
+    password_confirmation: '',
+    roles: [] as string[],
+    managers: [] as string[],
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [roleOptions, setRoleOptions] = useState<Array<{ label: string; value: string }>>([]);
@@ -185,13 +185,13 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-  const next: Record<string, string> = {};
-  if (!form.name || form.name.trim() === '') next.name = 'Please enter name';
+    const next: Record<string, string> = {};
+    if (!form.name || form.name.trim() === '') next.name = 'Please enter name';
     if (!form.email || form.email.trim() === '') next.email = 'Please enter email';
     else if (!validateEmail(form.email)) next.email = 'Please enter a valid email address';
-    
-  if (form.phone && !validatePhone(form.phone)) next.phone = 'Please enter a valid phone number';
-  if (!form.roles || form.roles.length === 0) next.roles = 'Please select at least one role';
+
+    if (form.phone && !validatePhone(form.phone)) next.phone = 'Please enter a valid phone number';
+    if (!form.roles || form.roles.length === 0) next.roles = 'Please select at least one role';
 
     // Password required on create
     if (mode !== 'edit') {
@@ -270,7 +270,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
         setErrors((prev) => ({ ...prev, ...nextErrs }));
       } else {
         const msg = respData?.message || err?.message || 'Failed to save user';
-        try { SweetAlert.showError(String(msg)); } catch{
+        try { SweetAlert.showError(String(msg)); } catch {
           // no need to action
         }
       }
@@ -291,17 +291,17 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
       transition={{ duration: 0.22 }}
       className="space-y-6"
     >
-      <MasterFormHeader 
-        onBack={handleBack} 
-        title={mode === 'edit' ? 'Edit User' : 'Add User'} 
+      <MasterFormHeader
+        onBack={handleBack}
+        title={mode === 'edit' ? 'Edit User' : 'Add User'}
       />
 
-      <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-        <div className="p-6 bg-[#F9FAFB]">
-          <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
+      <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="px-4 py-5 sm:p-6 bg-gray-50">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-wrap" autoComplete="off">
             {/* Name */}
-            <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+            <div className='col-span-2 sm:col-span-1'>
+              <label className="block text-sm text-gray-40 mb-1">
                 Name <span className="text-[#FF0000]">*</span>
               </label>
               <input
@@ -312,11 +312,10 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
                   setErrors((prev) => ({ ...prev, name: '' }));
                 }}
                 placeholder="Please enter name"
-                className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
-                  errors.name
-                    ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                    : 'border border-[var(--border-color)] focus:ring-blue-500'
-                }`}
+                className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-1 transition-colors ${errors.name
+                  ? 'border border-red-500 bg-red-50 focus:ring-red-500'
+                  : 'border border-gray-200 focus:ring-black'
+                  }`}
                 aria-invalid={errors.name ? 'true' : 'false'}
                 aria-describedby={errors.name ? 'name-error' : undefined}
               />
@@ -335,8 +334,8 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
             </div>
 
             {/* Password */}
-            <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+            <div className='col-span-2 sm:col-span-1'>
+              <label className="block text-sm text-gray-40 mb-1">
                 Password {mode !== 'edit' && <span className="text-[#FF0000]">*</span>}
               </label>
               <div className="relative">
@@ -350,11 +349,10 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
                     setErrors((prev) => ({ ...prev, password: '' }));
                   }}
                   placeholder={mode === 'edit' ? 'Leave blank to keep current password' : 'Please enter password'}
-                  className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
-                    errors.password
-                      ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                      : 'border border-[var(--border-color)] focus:ring-blue-500'
-                  }`}
+                  className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-1 transition-colors ${errors.password
+                    ? 'border border-red-500 bg-red-50 focus:ring-red-500'
+                    : 'border border-gray-200 focus:ring-black'
+                    }`}
                   aria-invalid={errors.password ? 'true' : 'false'}
                   aria-describedby={errors.password ? 'password-error' : undefined}
                 />
@@ -392,8 +390,8 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
             </div>
 
             {/* Password confirmation */}
-            <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+            <div className='col-span-2 sm:col-span-1'>
+              <label className="block text-sm text-gray-40 mb-1">
                 Confirm Password {mode !== 'edit' && <span className="text-[#FF0000]">*</span>}
               </label>
               <div className="relative">
@@ -407,11 +405,10 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
                     setErrors((prev) => ({ ...prev, password_confirmation: '' }));
                   }}
                   placeholder={mode === 'edit' ? 'Leave blank to keep current password' : 'Please confirm password'}
-                  className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
-                    errors.password_confirmation
-                      ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                      : 'border border-[var(--border-color)] focus:ring-blue-500'
-                  }`}
+                  className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-1 transition-colors ${errors.password_confirmation
+                    ? 'border border-red-500 bg-red-50 focus:ring-red-500'
+                    : 'border border-gray-200 focus:ring-black'
+                    }`}
                   aria-invalid={errors.password_confirmation ? 'true' : 'false'}
                   aria-describedby={errors.password_confirmation ? 'password_confirmation-error' : undefined}
                 />
@@ -449,8 +446,8 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
             </div>
 
             {/* Manager */}
-            <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+            <div className='col-span-2 sm:col-span-1'>
+              <label className="block text-sm text-gray-40 mb-1">
                 Managers
               </label>
               <MultiSelectDropdown
@@ -463,7 +460,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
                   setErrors((prev) => ({ ...prev, managers: '' }));
                 }}
                 disabled={managersLoading}
-                inputClassName={`${errors.managers ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-[var(--border-color)] focus:ring-blue-500'}`}
+                inputClassName={`${errors.managers ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-black'}`}
                 maxVisibleOptions={2}
               />
               {managersError && (
@@ -485,8 +482,8 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
             </div>
 
             {/* Email */}
-            <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+            <div className='col-span-2 sm:col-span-1'>
+              <label className="block text-sm text-gray-40 mb-1">
                 Email <span className="text-[#FF0000]">*</span>
               </label>
               <input
@@ -499,11 +496,10 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
                   setErrors((prev) => ({ ...prev, email: '' }));
                 }}
                 placeholder="Please enter email address"
-                className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
-                  errors.email
-                    ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                    : 'border border-[var(--border-color)] focus:ring-blue-500'
-                }`}
+                className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-1 transition-colors ${errors.email
+                  ? 'border border-red-500 bg-red-50 focus:ring-red-500'
+                  : 'border border-gray-200 focus:ring-black'
+                  }`}
                 aria-invalid={errors.email ? 'true' : 'false'}
                 aria-describedby={errors.email ? 'email-error' : undefined}
               />
@@ -522,8 +518,8 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
             </div>
 
             {/* Phone */}
-            <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+            <div className='col-span-2 sm:col-span-1'>
+              <label className="block text-sm text-gray-40 mb-1">
                 Phone Number
               </label>
               <input
@@ -532,11 +528,10 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
                 onChange={handleChange}
                 placeholder="Please enter phone number"
                 maxLength={10}
-                className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
-                  errors.phone
-                    ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                    : 'border border-[var(--border-color)] focus:ring-blue-500'
-                }`}
+                className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-1 transition-colors ${errors.phone
+                  ? 'border border-red-500 bg-red-50 focus:ring-red-500'
+                  : 'border border-gray-200 focus:ring-black'
+                  }`}
               />
               {errors.phone && (
                 <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
@@ -553,20 +548,20 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
             </div>
 
             {/* Role */}
-            <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+            <div className='col-span-2 sm:col-span-1'>
+              <label className="block text-sm text-gray-40 mb-1">
                 Role <span className="text-[#FF0000]">*</span>
               </label>
-                <MultiSelectDropdown
-                  name="roles"
-                  placeholder={rolesLoading ? 'Loading roles...' : 'Search or select roles'}
-                  options={roleOptions}
-                  value={form.roles}
-                  onChange={(v) => { setForm((prev) => ({ ...prev, roles: v })); setErrors((prev) => ({ ...prev, roles: '' })); }}
-                  disabled={rolesLoading}
-                  inputClassName={`border ${errors.roles ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-[var(--border-color)] focus:ring-blue-500'}`}
-                  maxVisibleOptions={2}
-                />
+              <MultiSelectDropdown
+                name="roles"
+                placeholder={rolesLoading ? 'Loading roles...' : 'Search or select roles'}
+                options={roleOptions}
+                value={form.roles}
+                onChange={(v) => { setForm((prev) => ({ ...prev, roles: v })); setErrors((prev) => ({ ...prev, roles: '' })); }}
+                disabled={rolesLoading}
+                inputClassName={`border ${errors.roles ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-black'}`}
+                maxVisibleOptions={2}
+              />
               {rolesError && (
                 <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
                   <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -592,7 +587,7 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
             {/* status removed */}
 
             {/* Form Actions */}
-            <div className="flex items-center justify-end">
+            <div className="col-span-2 flex items-center justify-end">
               <button
                 type="submit"
                 className="px-4 py-2 rounded-lg btn-primary text-white shadow-sm disabled:opacity-60"

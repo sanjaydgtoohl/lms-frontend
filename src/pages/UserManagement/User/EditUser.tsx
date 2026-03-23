@@ -11,7 +11,7 @@ import type { EditUserPayload } from '../../../services/EditUser';
 const EditUser: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  
+
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -220,9 +220,9 @@ const EditUser: React.FC = () => {
     if (!form.name || form.name.trim() === '') next.name = 'Please enter name';
     if (!form.email || form.email.trim() === '') next.email = 'Please enter email';
     else if (!validateEmail(form.email)) next.email = 'Please enter a valid email address';
-    
+
     if (form.phone && !validatePhone(form.phone)) next.phone = 'Please enter a valid phone number';
-    
+
     if (!form.roles || form.roles.length === 0) next.roles = 'Please select at least one role';
 
     // If editing and password fields provided, ensure confirmation matches
@@ -328,17 +328,17 @@ const EditUser: React.FC = () => {
       transition={{ duration: 0.22 }}
       className="space-y-6"
     >
-      <MasterFormHeader 
-        onBack={handleBack} 
-        title="Edit User" 
+      <MasterFormHeader
+        onBack={handleBack}
+        title="Edit User"
       />
 
-      <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-        <div className="p-6 bg-[#F9FAFB]">
-          <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="px-4 py-5 sm:p-6 bg-gray-50">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-wrap">
             {/* Name */}
-            <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+            <div className='col-span-2 sm:col-span-1'>
+              <label className="block text-sm text-gray-600 mb-1">
                 Name <span className="text-[#FF0000]">*</span>
               </label>
               <input
@@ -349,11 +349,10 @@ const EditUser: React.FC = () => {
                   setErrors((prev) => ({ ...prev, name: '' }));
                 }}
                 placeholder="Please enter name"
-                className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
-                  errors.name
-                    ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                    : 'border border-[var(--border-color)] focus:ring-blue-500'
-                }`}
+                className={`w-full px-3 py-2 rounded-lg bg-white text-800 placeholder:text-gray-600 focus:outline-none focus:ring-1 transition-colors ${errors.name
+                  ? 'border border-red-500 bg-red-50 focus:ring-red-500'
+                  : 'border border-gray-200 focus:ring-black'
+                  }`}
                 aria-invalid={errors.name ? 'true' : 'false'}
                 aria-describedby={errors.name ? 'name-error' : undefined}
               />
@@ -372,8 +371,8 @@ const EditUser: React.FC = () => {
             </div>
 
             {/* Password */}
-            <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+            <div className='col-span-2 sm:col-span-1'>
+              <label className="block text-sm text-gray-600 mb-1">
                 Password
               </label>
               <div className="relative">
@@ -386,11 +385,10 @@ const EditUser: React.FC = () => {
                     setErrors((prev) => ({ ...prev, password: '' }));
                   }}
                   placeholder="Leave blank to keep current password"
-                  className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
-                    errors.password
-                      ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                      : 'border border-[var(--border-color)] focus:ring-blue-500'
-                  }`}
+                  className={`w-full px-3 py-2 rounded-lg bg-white text-800 placeholder:text-gray-600 focus:outline-none focus:ring-1 transition-colors ${errors.password
+                    ? 'border border-red-500 bg-red-50 focus:ring-red-500'
+                    : 'border border-gray-200 focus:ring-black'
+                    }`}
                   aria-invalid={errors.password ? 'true' : 'false'}
                   aria-describedby={errors.password ? 'password-error' : undefined}
                 />
@@ -428,8 +426,8 @@ const EditUser: React.FC = () => {
             </div>
 
             {/* Password confirmation */}
-            <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+            <div className='col-span-2 sm:col-span-1'>
+              <label className="block text-sm text-gray-600 mb-1">
                 Confirm Password
               </label>
               <div className="relative">
@@ -442,11 +440,10 @@ const EditUser: React.FC = () => {
                     setErrors((prev) => ({ ...prev, password_confirmation: '' }));
                   }}
                   placeholder="Leave blank to keep current password"
-                  className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
-                    errors.password_confirmation
-                      ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                      : 'border border-[var(--border-color)] focus:ring-blue-500'
-                  }`}
+                  className={`w-full px-3 py-2 rounded-lg bg-white text-800 placeholder:text-gray-600 focus:outline-none focus:ring-1 transition-colors ${errors.password_confirmation
+                    ? 'border border-red-500 bg-red-50 focus:ring-red-500'
+                    : 'border border-gray-200 focus:ring-black'
+                    }`}
                   aria-invalid={errors.password_confirmation ? 'true' : 'false'}
                   aria-describedby={errors.password_confirmation ? 'password_confirmation-error' : undefined}
                 />
@@ -484,8 +481,8 @@ const EditUser: React.FC = () => {
             </div>
 
             {/* Manager */}
-            <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+            <div className='col-span-2 sm:col-span-1'>
+              <label className="block text-sm text-gray-600 mb-1">
                 Select Manager
               </label>
               <MultiSelectDropdown
@@ -498,7 +495,7 @@ const EditUser: React.FC = () => {
                   setErrors((prev) => ({ ...prev, managers: '' }));
                 }}
                 disabled={managersLoading}
-                inputClassName={`${errors.managers ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-[var(--border-color)] focus:ring-blue-500'}`}
+                inputClassName={`${errors.managers ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-black'}`}
                 maxVisibleOptions={2}
               />
               {managersError && (
@@ -520,8 +517,8 @@ const EditUser: React.FC = () => {
             </div>
 
             {/* Email */}
-            <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+            <div className='col-span-2 sm:col-span-1'>
+              <label className="block text-sm text-gray-600 mb-1">
                 Email <span className="text-[#FF0000]">*</span>
               </label>
               <input
@@ -533,11 +530,10 @@ const EditUser: React.FC = () => {
                   setErrors((prev) => ({ ...prev, email: '' }));
                 }}
                 placeholder="Please enter email address"
-                className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
-                  errors.email
-                    ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                    : 'border border-[var(--border-color)] focus:ring-blue-500'
-                }`}
+                className={`w-full px-3 py-2 rounded-lg bg-white text-800 placeholder:text-gray-600 focus:outline-none focus:ring-1 transition-colors ${errors.email
+                  ? 'border border-red-500 bg-red-50 focus:ring-red-500'
+                  : 'border border-gray-200 focus:ring-black'
+                  }`}
                 aria-invalid={errors.email ? 'true' : 'false'}
                 aria-describedby={errors.email ? 'email-error' : undefined}
               />
@@ -556,8 +552,8 @@ const EditUser: React.FC = () => {
             </div>
 
             {/* Phone */}
-            <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+            <div className='col-span-2 sm:col-span-1'>
+              <label className="block text-sm text-gray-600 mb-1">
                 Phone Number
               </label>
               <input
@@ -566,11 +562,10 @@ const EditUser: React.FC = () => {
                 onChange={handleChange}
                 placeholder="Please enter phone number"
                 maxLength={10}
-                className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-2 transition-colors ${
-                  errors.phone
-                    ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                    : 'border border-[var(--border-color)] focus:ring-blue-500'
-                }`}
+                className={`w-full px-3 py-2 rounded-lg bg-white text-800 placeholder:text-gray-600 focus:outline-none focus:ring-1 transition-colors ${errors.phone
+                  ? 'border border-red-500 bg-red-50 focus:ring-red-500'
+                  : 'border border-gray-200 focus:ring-black'
+                  }`}
               />
               {errors.phone && (
                 <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
@@ -587,8 +582,8 @@ const EditUser: React.FC = () => {
             </div>
 
             {/* Role */}
-            <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1">
+            <div className='col-span-2 sm:col-span-1'>
+              <label className="block text-sm text-gray-600 mb-1">
                 Role <span className="text-[#FF0000]">*</span>
               </label>
               <MultiSelectDropdown
@@ -601,7 +596,7 @@ const EditUser: React.FC = () => {
                   setErrors((prev) => ({ ...prev, roles: '' }));
                 }}
                 disabled={rolesLoading}
-                inputClassName={`${errors.roles ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-[var(--border-color)] focus:ring-blue-500'}`}
+                inputClassName={`${errors.roles ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-black'}`}
                 maxVisibleOptions={2}
               />
               {rolesError && (
@@ -627,7 +622,7 @@ const EditUser: React.FC = () => {
             </div>
 
             {/* Form Actions */}
-            <div className="flex items-center justify-end">
+            <div className="col-span-2 flex items-center justify-end">
               <button
                 type="submit"
                 className="px-4 py-2 rounded-lg btn-primary text-white shadow-sm disabled:opacity-60"
