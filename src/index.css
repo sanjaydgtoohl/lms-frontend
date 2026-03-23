@@ -381,7 +381,7 @@ button[data-btn-label="Save"]:hover,
 button[data-btn-label="Update"]:hover {
   @apply bg-black text-white;
 }
-
+/* 
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
@@ -390,11 +390,10 @@ button[data-btn-label="Update"]:hover {
   a:hover {
     color: #747bff;
   }
-  /* Don't set a global button background for light mode; limit to primary buttons only. */
   .btn-primary {
     background-color: var(--btn-bg) !important;
   }
-}
+} */
 
 /* Primary button helper class used by React Button component and utility buttons */
 .btn-primary {
