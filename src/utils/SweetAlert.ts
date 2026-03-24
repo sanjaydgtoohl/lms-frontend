@@ -79,7 +79,7 @@ const SweetAlert = {
   showCreateSuccess(override?: AlertOverride) {
     return baseAlert({
       icon: 'success',
-      title: override?.title ?? 'Created Successfully! ✨',
+      title: override?.title ?? 'Created Successfully!',
       text: override?.text ?? 'Your new record has been created',
       timer: typeof override?.timer === 'number' ? override!.timer : DEFAULT_TIMER,
       showConfirmButton: false,
@@ -110,7 +110,7 @@ const SweetAlert = {
   showUpdateSuccess(override?: AlertOverride) {
     return baseAlert({
       icon: 'success',
-      title: override?.title ?? 'Updated Successfully! 📝',
+      title: override?.title ?? 'Updated Successfully!',
       text: override?.text ?? 'Your changes have been saved',
       timer: typeof override?.timer === 'number' ? override!.timer : DEFAULT_TIMER,
       showConfirmButton: false,
@@ -138,7 +138,7 @@ const SweetAlert = {
   showDeleteSuccess(override?: AlertOverride) {
     return baseAlert({
       icon: 'success',
-      title: override?.title ?? 'Deleted Successfully! 🗑️',
+      title: override?.title ?? 'Deleted Successfully!',
       text: override?.text ?? 'The record has been permanently deleted',
       timer: typeof override?.timer === 'number' ? override!.timer : DEFAULT_TIMER,
       showConfirmButton: false,
@@ -170,7 +170,7 @@ const SweetAlert = {
   showSaveSuccess(override?: AlertOverride) {
     return baseAlert({
       icon: 'success',
-      title: override?.title ?? 'Saved Successfully! 💾',
+      title: override?.title ?? 'Saved Successfully!',
       text: override?.text ?? 'Your data has been saved',
       timer: typeof override?.timer === 'number' ? override!.timer : DEFAULT_TIMER,
       showConfirmButton: false,
@@ -198,7 +198,7 @@ const SweetAlert = {
   showSubmitSuccess(override?: AlertOverride) {
     return baseAlert({
       icon: 'success',
-      title: override?.title ?? 'Submitted Successfully! ✅',
+      title: override?.title ?? 'Submitted Successfully!',
       text: override?.text ?? 'Your submission has been received',
       timer: typeof override?.timer === 'number' ? override!.timer : DEFAULT_TIMER,
       showConfirmButton: false,
@@ -281,7 +281,7 @@ const SweetAlert = {
   showRejectSuccess(override?: AlertOverride) {
     return baseAlert({
       icon: 'success',
-      title: override?.title ?? 'Rejected Successfully! ✖️',
+      title: override?.title ?? 'Rejected Successfully!',
       text: override?.text ?? 'The request has been rejected',
       timer: typeof override?.timer === 'number' ? override!.timer : DEFAULT_TIMER,
       showConfirmButton: false,
@@ -309,7 +309,7 @@ const SweetAlert = {
   showExportSuccess(override?: AlertOverride) {
     return baseAlert({
       icon: 'success',
-      title: override?.title ?? 'Exported Successfully! 📥',
+      title: override?.title ?? 'Exported Successfully!',
       text: override?.text ?? 'Your file is ready to download',
       timer: typeof override?.timer === 'number' ? override!.timer : DEFAULT_TIMER,
       showConfirmButton: false,
