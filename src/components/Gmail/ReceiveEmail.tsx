@@ -85,7 +85,7 @@ export default function ReceiveEmail() {
   // Extract attachments from email parts
   function extractAttachments(payload: any): EmailAttachment[] {
     const attachments: EmailAttachment[] = [];
-    
+
     if (!payload) return attachments;
 
     const parts = payload.parts || [];
@@ -93,7 +93,7 @@ export default function ReceiveEmail() {
       if (part.filename && part.filename.length > 0) {
         const headers = part.headers || [];
         const dispositionHeader = headers.find((h: any) => h.name === 'Content-Disposition');
-        
+
         if (dispositionHeader && dispositionHeader.value.includes('attachment')) {
           attachments.push({
             id: part.body?.attachmentId || '',
@@ -155,70 +155,7 @@ export default function ReceiveEmail() {
   // Add email-specific styling to HTML content
   function enhanceEmailHtml(html: string) {
     const sanitized = sanitizeHtml(html);
-    return `<div class="email-body" style="
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-      line-height: 1.6;
-      color: #1a1a1a;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
-    ">
-      <style>
-        .email-body { max-width: 100%; }
-        .email-body a { 
-          color: #0066cc !important; 
-          text-decoration: underline !important;
-          cursor: pointer;
-          word-break: break-word;
-        }
-        .email-body a:hover { 
-          color: #0052a3 !important;
-        }
-        .email-body img { 
-          max-width: 100%; 
-          height: auto; 
-          display: block; 
-          margin: 12px 0; 
-        }
-        .email-body p { 
-          margin: 12px 0;
-          word-wrap: break-word;
-        }
-        .email-body blockquote { 
-          border-left: 4px solid #ddd; 
-          margin: 12px 0; 
-          padding: 0 12px; 
-          color: #666; 
-        }
-        .email-body table { 
-          border-collapse: collapse; 
-          width: 100%; 
-          margin: 12px 0; 
-        }
-        .email-body th, .email-body td { 
-          border: 1px solid #ddd; 
-          padding: 8px; 
-          text-align: left; 
-        }
-        .email-body code { 
-          background: #f5f5f5; 
-          padding: 2px 6px; 
-          border-radius: 3px; 
-          font-family: 'Courier New', monospace;
-          word-break: break-word;
-        }
-        .email-body pre { 
-          background: #f5f5f5; 
-          padding: 12px; 
-          border-radius: 6px; 
-          overflow-x: auto;
-          word-break: break-word;
-          white-space: pre-wrap;
-        }
-        .email-body div, .email-body span {
-          word-wrap: break-word;
-          overflow-wrap: break-word;
-        }
-      </style>
+    return `<div class="email-body"> 
       ${sanitized}
     </div>`;
   }
@@ -255,7 +192,7 @@ export default function ReceiveEmail() {
 
     // Look for common forwarded separators or "Forwarded message" markers
     const forwardedIndex = (() => {
-      const markers = [ /-{4,}.*forwarded message.*-{0,}/im, /forwarded message/i, /^[-]{6,}$/m ];
+      const markers = [/-{4,}.*forwarded message.*-{0,}/im, /forwarded message/i, /^[-]{6,}$/m];
       for (const r of markers) {
         const m = text.match(r);
         if (m && m.index !== undefined) return m.index;
@@ -275,10 +212,10 @@ export default function ReceiveEmail() {
     // Escape and preserve line breaks for forwarded block
     const escape = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const forwardedEscaped = escape(after)
-.replace(
-  /(https?:\/\/[^\s<>"{}|\\^`[\]]*)/g, 
-  '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:#0066cc;text-decoration:underline;">$1</a>'
-)
+      .replace(
+        /(https?:\/\/[^\s<>"{}|\\^`[\]]*)/g,
+        '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:#0066cc;text-decoration:underline;">$1</a>'
+      )
       .replace(/\n\n+/g, '</p><p>')
       .replace(/\n/g, '<br/>');
 
@@ -311,7 +248,7 @@ export default function ReceiveEmail() {
         const headersArr = m?.payload?.headers || [];
         const h: Record<string, string> = {};
         headersArr.forEach((hh: any) => (h[hh.name] = hh.value));
-        
+
         // Extract sender name and email from "From" header
         const fromHeader = h.From || h.from || '';
         const parsed = parseFromHeader(fromHeader);
@@ -331,7 +268,7 @@ export default function ReceiveEmail() {
           const snippetEmailMatch = (m?.snippet || '').match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
           if (snippetEmailMatch) senderEmail = snippetEmailMatch[1];
         }
-        
+
         const subject = h.Subject || '';
         const snippet = m?.snippet || '';
         const isForwarded = isForwardedEmail(subject, snippet);
@@ -340,13 +277,13 @@ export default function ReceiveEmail() {
         const attachments = extractAttachments(m?.payload);
 
         // debug: show parsed values in console to help troubleshoot missing email
-         
+
         console.debug('[gmail] mapped sender', { id: m?.id || ids[idx], fromHeader, senderName, senderEmail, isForwarded, attachments });
-        
-        return { 
-          id: m?.id || ids[idx], 
-          snippet: snippet, 
-          subject: subject, 
+
+        return {
+          id: m?.id || ids[idx],
+          snippet: snippet,
+          subject: subject,
           from: fromHeader || '',
           replyTo: replyToHeader || undefined,
           to: h.To || '',
@@ -361,9 +298,9 @@ export default function ReceiveEmail() {
       setMessages(mapped);
     } catch (err) {
       const errorMsg = String(err || '');
-       
+
       console.error('[gmail] loadList error', err);
-      
+
       if (errorMsg.includes('authentication required') || errorMsg.includes('Failed to refresh') || errorMsg.includes('No access token')) {
         SweetAlert.showWarning('Your session has expired. Please sign in again to load emails.');
         setToken(null);
@@ -403,7 +340,7 @@ export default function ReceiveEmail() {
       const dateStr = res.headers?.Date || '';
 
       // debug: log parsed selection
-       
+
       console.debug('[gmail] viewMessage parsed', { id, fromHeader, parsed, attachments, isForwarded });
       // Revoke any previous object URLs
       if (objectUrlsRef.current.length > 0) {
@@ -429,22 +366,22 @@ export default function ReceiveEmail() {
               }
             } catch (e) {
               // ignore individual attachment preview failures
-               
+
               console.warn('[gmail] inline preview failed', att, e);
             }
           }));
         }
       }
 
-      setSelected({ 
-        id, 
+      setSelected({
+        id,
         subject,
         date: dateStr,
         dateTime: parseDate(dateStr),
         from: fromHeader,
         replyTo: replyToHeader || undefined,
         to: res.headers?.To || '',
-        senderName: parsed.name || 'Unknown', 
+        senderName: parsed.name || 'Unknown',
         senderEmail: parsed.email || '',
         snippet: snippet,
         isForwarded,
@@ -457,14 +394,14 @@ export default function ReceiveEmail() {
           contentId: a.contentId,
           isInline: !!a.isInline,
         })),
-        bodyHtml: finalBodyHtml, 
+        bodyHtml: finalBodyHtml,
         bodyText: res.bodyText,
       });
     } catch (err) {
       const errorMsg = String(err || '');
-       
+
       console.error('[gmail] viewMessage error', err);
-      
+
       // Check if error is auth-related
       if (errorMsg.includes('authentication required') || errorMsg.includes('Failed to refresh') || errorMsg.includes('No access token')) {
         SweetAlert.showWarning('Your session has expired. Please sign in again to view this email.');
@@ -500,8 +437,8 @@ export default function ReceiveEmail() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100%' }}>
-      <div style={{ flex: '0 0 auto' }}>
+    <div className="flex flex-col sm:h-[calc(100dvh-100px)] w-full">
+      <div className="flex-none">
         <MasterHeader
           onCreateClick={() => navigate('/gmail/send')}
           createButtonLabel="Compose"
@@ -512,71 +449,69 @@ export default function ReceiveEmail() {
           showSignInButton={true}
         />
       </div>
-
-      <div style={{ display: 'flex', gap: 0, flex: 1, overflow: 'hidden' }}>
-        <aside style={{ width: 320, borderRight: '1px solid #e6e6e6', display: 'flex', flexDirection: 'column', backgroundColor: '#f8f9fa' }}>
-          <div style={{ padding: '12px 12px', backgroundColor: 'white', borderBottom: '1px solid #e6e6e6' }}>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      
+      <div className="sm:grid grid-cols-10 flex flex-col flex-1 min-h-0 bg-gray-50 h-full">
+        <aside className="h-[calc(100dvh-100px)] sm:h-full col-span-10 sm:col-span-3 rounded-lg sm:rounded-r-none border border-gray-200 flex flex-col overflow-y-auto min-h-0">
+          <div className="px-3 py-3 bg-white border-b border-gray-200">
+            <div className="flex gap-2 items-center">
               <input
                 placeholder="Search..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && loadList()}
-                style={{ flex: 1, padding: '8px 10px', borderRadius: 4, border: '1px solid #e6e6e6', fontSize: 13, boxSizing: 'border-box' }}
+                className="flex-1 px-2.5 py-2 rounded border border-gray-200 text-sm box-border focus:outline-0 focus:border-black"
               />
               <div
                 role="button"
                 tabIndex={0}
                 aria-label="Refresh"
                 onClick={refreshList}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') { refreshList(); } }}
-                title="Refresh"
-                style={{
-                  padding: '8px 10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: 6,
-                  backgroundColor: '#2563eb',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+                    refreshList();
+                  }
                 }}
-                className="hover:bg-blue-700"
-              >
+                title="Refresh"
+                className="px-2.5 py-2 flex items-center justify-center rounded-md bg-gray-800 text-white cursor-pointer shadow-md hover:bg-gray-900">
                 <RefreshCw className="w-4 h-4" />
               </div>
             </div>
           </div>
 
-          <div style={{ flex: 1, overflowY: 'auto', backgroundColor: 'white' }}>
+          <div className="flex-1 overflow-y-auto bg-white">
             {loading ? (
-              <div style={{ padding: 12, fontSize: 13 }}>Loading…</div>
+              <div className="p-3 text-sm">Loading…</div>
             ) : messages.length === 0 ? (
-              <div style={{ padding: 12, fontSize: 13, color: '#666' }}>No messages</div>
+              <div className="p-3 min-h-[100px] text-sm text-gray-500 text-center"> No messages</div>
             ) : (
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+              <ul className="list-none p-0 m-0">
                 {messages.map((m) => (
-                  <li 
-                    key={m.id} 
-                    style={{ 
-                      padding: 10, 
-                      borderBottom: '1px solid #f5f5f5', 
-                      cursor: 'pointer',
-                      backgroundColor: selected?.id === m.id ? '#fff3e0' : 'white'
-                    }} 
+                  <li
+                    key={m.id}
+                    className={`p-2.5 border-b border-gray-100 cursor-pointer ${selected?.id === m.id ? 'bg-orange-100' : 'bg-white'
+                      }`}
                     onClick={() => viewMessage(m.id)}
                   >
-                    <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 4 }}>
+                    <div className="font-semibold text-sm mb-1">
                       {m.subject || '(no subject)'}
-                      {m.isForwarded && <span style={{ marginLeft: 8, color: '#ff9800', fontSize: 10 }}>⬆ Fwd</span>}
-                      {m.attachments.length > 0 && <span style={{ marginLeft: 8, color: '#1976d2', fontSize: 10 }}>📎 {m.attachments.length}</span>}
+                      {m.isForwarded && (
+                        <span className="ml-2 text-orange-500 text-[10px]">⬆ Fwd</span>
+                      )}
+                      {m.attachments.length > 0 && (
+                        <span className="ml-2 text-blue-600 text-[10px]">
+                          📎 {m.attachments.length}
+                        </span>
+                      )}
                     </div>
-                    <div style={{ fontSize: 11, color: '#333', marginBottom: 2 }}>
+                    <div className="text-[11px] text-gray-800 mb-0.5">
                       <strong>{m.senderName}</strong>
                     </div>
-                    <div style={{ fontSize: 10, color: '#666', marginBottom: 4 }}>{m.senderEmail}</div>
-                    <div style={{ fontSize: 10, color: '#999' }}>{m.date}</div>
+                    <div className="text-[10px] text-gray-500 mb-1">
+                      {m.senderEmail}
+                    </div>
+                    <div className="text-[10px] text-gray-400">
+                      {m.date}
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -584,87 +519,138 @@ export default function ReceiveEmail() {
           </div>
         </aside>
 
-        <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <main className="col-span-10 sm:col-span-7 mt-5 sm:mt-0 flex flex-col border-gray-200 rounded-lg bg-gray-50 border sm:rounded-l-none overflow-y-auto min-h-0">
           {selected ? (
-            <div style={{ background: 'white', padding: '20px', overflowY: 'auto', height: '100%' }}>
+            <div className="bg-white p-5 overflow-y-auto h-full">
               {loadingMessage ? (
-                <div style={{ fontSize: 13 }}>Loading message…</div>
+                <div className='text-sm'>Loading message…</div>
               ) : (
                 <>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-                    <div style={{ flex: 1 }}>
-                      <h3 style={{ marginTop: 0, marginBottom: 8, fontSize: 22, color: '#1a1a1a' }}>{selected.subject || '(no subject)'}</h3>
-                      <div style={{ color: '#666', fontSize: 13 }}>{selected.snippet}</div>
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                    <div className="flex-1">
+                      <h3 className="mt-0 mb-2 text-[18px] sm:text-[22px] text-gray-900">
+                        {selected.subject || '(no subject)'}
+                      </h3>
+
+                      <div className="text-gray-500 text-[12px] sm:text-[13px]">
+                        {selected.snippet}
+                      </div>
                     </div>
-                    <div style={{ textAlign: 'right', minWidth: 180 }}>
-                      <div style={{ color: '#666', fontSize: 12 }}>{formatDate(selected.dateTime, selected.date)}</div>
-                      {selected.isForwarded && <div style={{ marginTop: 8, display: 'inline-block', fontSize: 12, color: '#ff9800', backgroundColor: '#fff3e0', padding: '4px 8px', borderRadius: 4 }}>⬆ Forwarded</div>}
+
+                    <div className="text-left sm:text-right min-w-0 sm:min-w-[180px]">
+                      <div className="text-gray-500 text-[11px] sm:text-[12px]">
+                        {formatDate(selected.dateTime, selected.date)}
+                      </div>
+
+                      {selected.isForwarded && (
+                        <div className="mt-2 inline-block text-[11px] sm:text-[12px] text-orange-500 bg-orange-100 px-2 py-1 rounded">
+                          ⬆ Forwarded
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', gap: 16, marginTop: 16, marginBottom: 20, alignItems: 'flex-start' }}>
-                    <div style={{ width: 64, height: 64, borderRadius: 8, backgroundColor: '#eef2ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#2b2b8a', fontSize: 20 }}>
+                  <div className="flex flex-col sm:flex-row gap-4 mt-4 mb-5 items-start">
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-md bg-indigo-50 flex items-center justify-center font-bold text-indigo-900 text-[18px] sm:text-[20px] shrink-0">
                       {getInitials(selected.senderName)}
                     </div>
 
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>{selected.senderName || 'Unknown'}</div>
-                      <div style={{ marginTop: 4 }}><span style={{ color: '#666' }}>📧</span> <a style={{ color: '#3498db' }} href={`mailto:${selected.senderEmail}`}>{selected.senderEmail || '(no email)'}</a></div>
-                      {selected.replyTo && <div style={{ marginTop: 6, color: '#666' }}><strong>↩️ Reply-To:</strong> <span style={{ color: '#3498db' }}>{selected.replyTo}</span></div>}
-                      {selected.to && <div style={{ marginTop: 6, color: '#666' }}><strong>📮 To:</strong> <span style={{ color: '#666' }}>{selected.to}</span></div>}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[14px] sm:text-[15px] font-bold text-gray-900">
+                        {selected.senderName || 'Unknown'}
+                      </div>
+
+                      <div className="mt-1 text-[12px] sm:text-[13px]">
+                        <span className="text-gray-500">📧</span>{" "}
+                        <a
+                          className="text-blue-500 break-all"
+                          href={`mailto:${selected.senderEmail}`}
+                        >
+                          {selected.senderEmail || '(no email)'}
+                        </a>
+                      </div>
+
+                      {selected.replyTo && (
+                        <div className="mt-1.5 text-gray-500 text-[12px] sm:text-[13px] break-all">
+                          <strong>↩️ Reply-To:</strong>{" "}
+                          <span className="text-blue-500">{selected.replyTo}</span>
+                        </div>
+                      )}
+
+                      {selected.to && (
+                        <div className="mt-1.5 text-gray-500 text-[12px] sm:text-[13px] break-all">
+                          <strong>📮 To:</strong>{" "}
+                          <span>{selected.to}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
                   {selected.attachments.length > 0 && (
-                    <div style={{ marginBottom: 20, padding: 16, backgroundColor: '#f7fbff', borderRadius: 8, border: '1px solid #e1f0ff' }}>
-                      <div style={{ fontWeight: 700, marginBottom: 12, fontSize: 14, color: '#1a1a1a' }}>📎 Attachments ({selected.attachments.length})</div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <div className="mb-5 p-4 bg-blue-50 rounded-md border border-blue-100">
+                      <div className="font-bold mb-3 text-[13px] sm:text-[14px] text-gray-900">
+                        📎 Attachments ({selected.attachments.length})
+                      </div>
+
+                      <div className="flex flex-col gap-2.5">
                         {selected.attachments.map((att) => (
-                          <div key={att.id} style={{ padding: 12, backgroundColor: 'white', borderRadius: 6, border: '1px solid #eef6fb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                              <div style={{ width: 46, height: 46, borderRadius: 6, backgroundColor: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#444' }}>{att.filename.split('.').pop()?.toUpperCase()}</div>
-                              <div>
-                                <div style={{ fontWeight: 600, fontSize: 13, color: '#1a1a1a' }}>{att.filename}</div>
-                                <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>{att.mimeType} • {formatFileSize(att.size)}</div>
+                          <div
+                            key={att.id}
+                            className="p-3 bg-white rounded-md border border-blue-50 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3"
+                          >
+                            <div className="flex gap-3 items-center min-w-0">
+                              <div className="w-12 h-12 sm:w-[46px] sm:h-[46px] rounded-md bg-gray-50 flex items-center justify-center font-bold text-gray-600 shrink-0">
+                                {att.filename.split('.').pop()?.toUpperCase()}
+                              </div>
+
+                              <div className="min-w-0">
+                                <div className="font-semibold text-[12px] sm:text-[13px] text-gray-900 truncate">
+                                  {att.filename}
+                                </div>
+                                <div className="text-[11px] sm:text-[12px] text-gray-500 mt-1 break-all">
+                                  {att.mimeType} • {formatFileSize(att.size)}
+                                </div>
                               </div>
                             </div>
-                            <div>
-                              <div style={{ display: 'flex', gap: 8 }}>
-                                {/(image|video)\//i.test(att.mimeType) || /(csv|excel|spreadsheet|sheet)/i.test(att.mimeType) ? (
-                                  <button
-                                    onClick={async () => {
-                                      try {
-                                        const blob = await gmailService.fetchAttachmentBlob(selected.id, att.id, att.mimeType);
-                                        const url = URL.createObjectURL(blob);
-                                        objectUrlsRef.current.push(url);
-                                        // open preview in new tab/window
-                                        window.open(url, '_blank');
-                                      } catch (err) {
-                                         
-                                        console.error('Preview failed', err);
-                                        SweetAlert.showError(`Preview failed for ${att.filename}`);
-                                      }
-                                    }}
-                                    style={{ padding: '8px 14px', fontSize: 12, fontWeight: 600, border: 'none', borderRadius: 6, cursor: 'pointer', color: '#fff', backgroundColor: '#22c55e' }}
-                                  >
-                                    Preview
-                                  </button>
-                                ) : null}
 
-                                <button 
-                                  onClick={() => {
-                                    gmailService.downloadAttachment(selected.id, att.id, att.filename)
-                                      .catch((err) => {
-                                         
-                                        console.error('Download failed:', err);
-                                        SweetAlert.showError(`Failed to download ${att.filename}`);
-                                      });
+                            <div className="flex gap-2 flex-wrap sm:flex-nowrap">
+                              {/(image|video)\//i.test(att.mimeType) ||
+                                /(csv|excel|spreadsheet|sheet)/i.test(att.mimeType) ? (
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      const blob = await gmailService.fetchAttachmentBlob(
+                                        selected.id,
+                                        att.id,
+                                        att.mimeType
+                                      );
+                                      const url = URL.createObjectURL(blob);
+                                      objectUrlsRef.current.push(url);
+                                      window.open(url, '_blank');
+                                    } catch (err) {
+                                      console.error('Preview failed', err);
+                                      SweetAlert.showError(`Preview failed for ${att.filename}`);
+                                    }
                                   }}
-                                  style={{ padding: '8px 16px', fontSize: 12, fontWeight: 600, border: 'none', borderRadius: 6, cursor: 'pointer', color: '#fff', backgroundColor: '#3498db' }}
+                                  className="px-3 py-2 text-[11px] sm:text-[12px] font-semibold rounded-md cursor-pointer text-white bg-green-500 w-full sm:w-auto"
                                 >
-                                  Download
+                                  Preview
                                 </button>
-                              </div>
+                              ) : null}
+
+                              <button
+                                onClick={() => {
+                                  gmailService
+                                    .downloadAttachment(selected.id, att.id, att.filename)
+                                    .catch((err) => {
+                                      console.error('Download failed:', err);
+                                      SweetAlert.showError(`Failed to download ${att.filename}`);
+                                    });
+                                }}
+                                className="px-3 py-2 text-[11px] sm:text-[12px] font-semibold rounded-md cursor-pointer text-white bg-blue-500 w-full sm:w-auto"
+                              >
+                                Download
+                              </button>
                             </div>
                           </div>
                         ))}
@@ -672,42 +658,41 @@ export default function ReceiveEmail() {
                     </div>
                   )}
 
-                  <div style={{ fontSize: 14, lineHeight: 1.8, color: '#1a1a1a', padding: '16px 0', borderTop: '1px solid #e9ecef', wordWrap: 'break-word', overflowWrap: 'break-word', whiteSpace: 'normal' }}>
+                  <div className="text-[13px] sm:text-[14px] leading-[1.7] sm:leading-[1.8] text-gray-900 py-3 sm:py-4 border-t border-gray-200 break-words whitespace-normal overflow-x-auto">
                     {selected.bodyHtml ? (
-                      <div dangerouslySetInnerHTML={{ __html: enhanceEmailHtml(selected.bodyHtml) }} />
+                      <div
+                        className="max-w-full break-words [&_img]:max-w-full [&_table]:w-full [&_pre]:overflow-x-auto"
+                        dangerouslySetInnerHTML={{
+                          __html: enhanceEmailHtml(selected.bodyHtml),
+                        }}
+                      />
                     ) : (
-                      <div dangerouslySetInnerHTML={{ __html: formatTextWithForwarded(selected.bodyText || selected.snippet) }} />
+                      <div
+                        className="max-w-full break-words"
+                        dangerouslySetInnerHTML={{
+                          __html: formatTextWithForwarded(
+                            selected.bodyText || selected.snippet
+                          ),
+                        }}
+                      />
                     )}
                   </div>
                 </>
               )}
             </div>
           ) : (
-            <div style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              height: '100%',
-              width: '100%',
-              backgroundColor: '#f9f9f9',
-              padding: '40px 20px',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: 48, marginBottom: 16 }}>📬</div>
-              <h2 style={{ fontSize: 20, fontWeight: 600, color: '#333', marginBottom: 8 }}>No Message Selected</h2>
-              <p style={{ fontSize: 14, color: '#666', marginBottom: 24, maxWidth: 350 }}>
+            <div className="flex flex-col items-center justify-center h-full w-full bg-white px-5 py-10 text-center">
+              <div className="text-[48px] mb-4">📬</div>
+
+              <h2 className="text-[20px] font-semibold text-gray-700 mb-2">
+                No Message Selected saii
+              </h2>
+
+              <p className="text-[14px] text-gray-500 mb-6 max-w-[350px]">
                 Select a message from the list on the left to view its details, attachments, and content.
               </p>
-              <div style={{ 
-                padding: 12, 
-                backgroundColor: '#fff3e0', 
-                borderRadius: 4, 
-                border: '1px solid #ffe0b2',
-                color: '#e65100',
-                fontSize: 12,
-                maxWidth: 350
-              }}>
+
+              <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-gray-700 text-sm max-w-[350px]">
                 💡 Tip: Click on any email to view its full content and download attachments
               </div>
             </div>

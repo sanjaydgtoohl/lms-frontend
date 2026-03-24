@@ -19,6 +19,7 @@ import {
 } from '../../services/View';
 import { usePermissions } from '../../hooks/SidebarMenuHooks';
 import { IoIosArrowBack } from 'react-icons/io';
+import TableHeader from '../../components/ui/TableHeader';
 
 const View: React.FC = () => {
   const { hasPermission } = usePermissions();
@@ -266,47 +267,52 @@ const View: React.FC = () => {
             <div className="p-6">
               {/* Header Section */}
               <div className="mb-6">
-                <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-2">{viewItem.brandName}</h1>
-                <p className="text-lg text-[var(--text-secondary)]">{viewItem.productName}</p>
+                <h2 className="text-4xl font-bold text-gray-800 mb-2">{viewItem.brandName}</h2>
+                <p className="text-lg text-gray-600">{viewItem.productName}</p>
               </div>
 
-              {/* Image Section */}
-              {viewItem.proof && (
-                <div className="mb-6">
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h4 className="text-sm font-medium text-[var(--text-secondary)] mb-3">Proof Image</h4>
-                    <img
-                      src={viewItem.proof}
-                      alt="Campaign Proof"
-                      className="w-full max-h-96 object-contain rounded-lg border border-gray-200"
-                    />
-                  </div>
-                </div>
-              )}
 
-              {/* Details Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <div className="text-sm text-[var(--text-secondary)]">Source</div>
-                    <div className="text-sm font-medium text-[var(--text-primary)]">{viewItem.source || '-'}</div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Image Section */}
+                {viewItem.proof && (
+                  <div className="mb-6">
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <h4 className="text-sm font-medium text-gray-600 mb-3">Proof Image</h4>
+                      <img
+                        src={viewItem.proof}
+                        alt="Campaign Proof"
+                        className="w-full max-h-96 object-contain rounded-lg border border-gray-200"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-sm text-[var(--text-secondary)]">Sub Source</div>
-                    <div className="text-sm font-medium text-[var(--text-primary)]">{viewItem.subSource || '-'}</div>
+                )}
+
+
+                {/* Details Grid */}
+                <div className="">
+                  <div className='flex bg-gray-100 p-4 rounded-lg mb-3'>
+                    <div className="text-sm text-gray-800 font-semibold min-w-[100px]">ID : </div>
+                    <div className="text-sm text-gray-600">{viewItem.id}</div>
+                  </div>
+
+                  <div className='flex bg-gray-100 p-3 rounded-lg mb-3'>
+                    <div className="text-sm text-gray-800 font-semibold min-w-[100px]">Source : </div>
+                    <div className="text-sm text-gray-600">{viewItem.source || '-'}</div>
+                  </div>
+                  <div className='flex bg-gray-100 p-3 rounded-lg mb-3'>
+                    <div className="text-sm text-gray-800 font-semibold min-w-[100px]">Sub Source : </div>
+                    <div className="text-sm text-gray-600">{viewItem.subSource || '-'}</div>
+                  </div>
+
+                  <div className='flex bg-gray-100 p-3 rounded-lg mb-3'>
+                    <div className="text-sm text-gray-800 font-semibold min-w-[100px]">Date & Time : </div>
+                    <div className="text-sm text-gray-600">{viewItem.dateTime || '-'}</div>
                   </div>
                 </div>
-                <div className="space-y-4">
-                  <div>
-                    <div className="text-sm text-[var(--text-secondary)]">Date & Time</div>
-                    <div className="text-sm font-medium text-[var(--text-primary)]">{viewItem.dateTime || '-'}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-[var(--text-secondary)]">ID</div>
-                    <div className="text-sm font-medium text-[var(--text-primary)]">{viewItem.id}</div>
-                  </div>
-                </div>
+
               </div>
+
             </div>
           </motion.div>
         </>
@@ -325,10 +331,10 @@ const View: React.FC = () => {
           )}
 
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-            <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-200">
-              <h2 className="text-base font-semibold text-gray-900">Miss Campaign</h2>
+           {/* Table Header */}
+            <TableHeader title="Miss Campaign">
               <SearchBar delay={0} placeholder="Search Miss Campaign" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
-            </div>
+            </TableHeader>
 
             <div className="pt-0 overflow-visible">
               <Table

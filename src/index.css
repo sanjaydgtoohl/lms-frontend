@@ -381,7 +381,7 @@ button[data-btn-label="Save"]:hover,
 button[data-btn-label="Update"]:hover {
   @apply bg-black text-white;
 }
-
+/* 
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
@@ -390,11 +390,10 @@ button[data-btn-label="Update"]:hover {
   a:hover {
     color: #747bff;
   }
-  /* Don't set a global button background for light mode; limit to primary buttons only. */
-  /* .btn-primary {
+  .btn-primary {
     background-color: var(--btn-bg) !important;
-  } */
-}
+  }
+} */
 
 /* Primary button helper class used by React Button component and utility buttons */
 .btn-primary {
@@ -572,4 +571,9 @@ box-shadow:  5px 5px 10px #131313,
 
 .btn-delete {
   @apply text-sm px-4 py-2 rounded-lg bg-red-100 text-red-500 gap-2 font-medium flex items-center justify-center hover:bg-red-500 transition-colors transition-all duration-300 hover:text-white;
+}
+
+
+.react-datepicker-wrapper {
+  @apply w-full;
 }
