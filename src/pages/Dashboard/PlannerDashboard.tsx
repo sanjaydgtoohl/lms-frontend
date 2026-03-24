@@ -60,71 +60,109 @@ const PlannerDashboard: React.FC = () => {
     <div className="space-y-6 font-['Inter','Poppins',system-ui,sans-serif]">
       {/* Top metric cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 lg:gap-4">
-        {/* Loading/Error State */}
         {loading ? (
-          <div className="col-span-4 flex justify-center items-center h-24">
-            <span className="text-gray-500">Loading dashboard...</span>
-          </div>
+          <>
+            {[1, 2, 3, 4].map((_, i) => (
+              <div
+                key={i}
+                className="bg-white p-3 md:p-4 xl:p-5 2xl:p-6 rounded-2xl border border-gray-200 flex items-center gap-3 shadow animate-pulse"
+              >
+                <div className="w-16 h-16 bg-gray-200 rounded-xl"></div>
+
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                  <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+                </div>
+              </div>
+            ))}
+          </>
         ) : error ? (
-          <div className="col-span-4 flex justify-center items-center h-24">
+          <div className="col-span-4 flex justify-center items-center min-h-[120px]">
             <span className="text-red-500">{error}</span>
           </div>
-        ) : <>
-          <div className="bg-white p-3 md:p-4 xl:p-5 xxl:p-6 rounded-2xl border border-gray-200 flex items-center gap-3 shadow-custom">
-            <div className="bg-item w-16 h-16 rounded-xl bg-gray-100 flex justify-center items-center border border-gray-200">
-              <div className="text-3xl text-black">   <RiFileList3Line /></div>
-            </div>
+        ) : (
+          <>
+            {/* Card 1 */}
+            <div className="bg-white p-3 md:p-4 xl:p-5 2xl:p-6 rounded-2xl border border-gray-200 flex items-center gap-3 shadow transition-all duration-200">
+              <div className="w-16 h-16 rounded-xl bg-gray-100 flex justify-center items-center border border-gray-200">
+                <div className="text-3xl text-black">
+                  <RiFileList3Line />
+                </div>
+              </div>
 
-            <div>
-              <p className="text-base lg:text-sm font-medium text-gray-700 leading-tight">Active Briefs</p>
-              <div className="flex items-center justify-between mt-2 static">
-                <h3 className="text-xl lg:text-2xl font-semibold">{activeBriefsCount}</h3>
+              <div>
+                <p className="text-base lg:text-sm font-medium text-gray-700 leading-tight">
+                  Active Briefs
+                </p>
+                <div className="mt-2">
+                  <h3 className="text-xl lg:text-2xl font-semibold">
+                    {activeBriefsCount}
+                  </h3>
+                </div>
               </div>
             </div>
 
-          </div>
+            {/* Card 2 */}
+            <div className="bg-white p-3 md:p-4 xl:p-5 2xl:p-6 rounded-2xl border border-gray-200 flex items-center gap-3 shadow transition-all duration-200">
+              <div className="w-16 h-16 rounded-xl bg-gray-100 flex justify-center items-center border border-gray-200">
+                <div className="text-3xl text-black">
+                  <RiCheckboxCircleLine />
+                </div>
+              </div>
 
-          <div className="bg-white p-3 md:p-4 xl:p-5 xxl:p-6 rounded-2xl border border-gray-200 flex items-center gap-3 shadow-custom">
-            <div className="bg-item w-16 h-16 rounded-xl bg-gray-100 flex justify-center items-center border border-gray-200">
-              <div className="text-3xl text-black">   <RiCheckboxCircleLine /></div>
-            </div>
-
-            <div>
-              <p className="text-base lg:text-sm font-medium text-gray-700 leading-tight">Completed Brief</p>
-              <div className="flex items-center justify-between mt-2">
-                <h3 className="text-xl lg:text-2xl font-semibold">{completedThisMonthCount}</h3>
+              <div>
+                <p className="text-base lg:text-sm font-medium text-gray-700 leading-tight">
+                  Completed Brief
+                </p>
+                <div className="mt-2">
+                  <h3 className="text-xl lg:text-2xl font-semibold">
+                    {completedThisMonthCount}
+                  </h3>
+                </div>
               </div>
             </div>
 
-          </div>
+            {/* Card 3 */}
+            <div className="bg-white p-3 md:p-4 xl:p-5 2xl:p-6 rounded-2xl border border-gray-200 flex items-center gap-3 shadow transition-all duration-200">
+              <div className="w-16 h-16 rounded-xl bg-gray-100 flex justify-center items-center border border-gray-200">
+                <div className="text-3xl text-black">
+                  <RiTimerLine />
+                </div>
+              </div>
 
-          <div className="bg-white p-3 md:p-4 xl:p-5 xxl:p-6 rounded-2xl border border-gray-200 flex items-center gap-3 shadow-custom">
-            <div className="bg-item w-16 h-16 rounded-xl bg-gray-100 flex justify-center items-center border border-gray-200">
-              <div className="text-3xl text-black">   <RiTimerLine /></div>
-            </div>
-
-            <div>
-              <p className="text-base lg:text-sm font-medium text-gray-700 leading-tight">Avg Planning Time</p>
-              <div className="flex items-center justify-between mt-2">
-                <h3 className="text-xl lg:text-2xl font-semibold">{avgPlanningTime} days</h3>
+              <div>
+                <p className="text-base lg:text-sm font-medium text-gray-700 leading-tight">
+                  Avg Planning Time
+                </p>
+                <div className="mt-2">
+                  <h3 className="text-xl lg:text-2xl font-semibold">
+                    {avgPlanningTime} days
+                  </h3>
+                </div>
               </div>
             </div>
 
-          </div>
+            {/* Card 4 */}
+            <div className="bg-white p-3 md:p-4 xl:p-5 2xl:p-6 rounded-2xl border border-gray-200 flex items-center gap-3 shadow transition-all duration-200">
+              <div className="w-16 h-16 rounded-xl bg-gray-100 flex justify-center items-center border border-gray-200">
+                <div className="text-3xl text-black">
+                  <RiErrorWarningLine />
+                </div>
+              </div>
 
-          <div className="bg-white p-3 md:p-4 xl:p-5 xxl:p-6 rounded-2xl border border-gray-200 flex items-center gap-3 shadow-custom">
-            <div className="bg-item w-16 h-16 rounded-xl bg-gray-100 flex justify-center items-center border border-gray-200">
-              <div className="text-3xl text-black"> <RiErrorWarningLine /></div>
-            </div>
-
-            <div>
-              <p className="text-base lg:text-sm font-medium text-gray-700 leading-tight">Overdue Items</p>
-              <div className="flex items-center justify-between mt-2">
-                <h3 className="text-xl lg:text-2xl font-semibold">{overdueCount}</h3>
+              <div>
+                <p className="text-base lg:text-sm font-medium text-gray-700 leading-tight">
+                  Overdue Items
+                </p>
+                <div className="mt-2">
+                  <h3 className="text-xl lg:text-2xl font-semibold">
+                    {overdueCount}
+                  </h3>
+                </div>
               </div>
             </div>
-          </div>
-        </>}
+          </>
+        )}
       </div>
 
       {/* My Assigned Briefs */}
@@ -165,7 +203,7 @@ const PlannerDashboard: React.FC = () => {
               return (
                 <div
                   key={brief.id}
-                  className="bg-white rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center md:items-stretch p-3 sm:p-4 gap-3 sm:gap-4 shadow-custom duration-300"
+                  className="bg-white rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center md:items-stretch p-3 sm:p-4 gap-3 sm:gap-4 border border-gray-200 duration-300"
                 >
                   {/* Left: Brief Info */}
                   <div className="flex-1 min-w-0 sm:w-auto md:w-auto">

@@ -212,7 +212,7 @@ const Dashboard: React.FC = () => {
                 <select
                   value={assignmentFilter}
                   onChange={(e) => setAssignmentFilter(e.target.value as any)}
-                  className="text-xs sm:text-sm border border-gray-200 rounded-lg px-2 py-2 bg-white">
+                  className="text-xs sm:text-sm border border-gray-200 text-gray-800 rounded-lg px-2 py-2 bg-white">
                   <option value="all">All</option>
                   <option value="High">High</option>
                   <option value="Medium">Medium</option>
@@ -332,7 +332,7 @@ const Dashboard: React.FC = () => {
         headerRight={(
           <div className="flex items-center gap-3">
             <p className="text-xs sm:text-sm text-gray-500">Overview</p>
-            <select className="text-xs sm:text-sm border border-gray-200 rounded-lg px-2 py-2 bg-white">
+            <select className="text-xs sm:text-sm border border-gray-200 text-gray-800 rounded-lg px-2 py-2 bg-white">
               <option>Last 30 days</option>
               <option>Last 7 days</option>
               <option>All time</option>
@@ -353,7 +353,7 @@ const Dashboard: React.FC = () => {
               <div className="flex items-center justify-end gap-3">
                 <span className="text-xs text-gray-600 font-medium">{topic.percent}%</span>
               </div>
-              <div className="w-full bg-gray-100 rounded-full h-2 mt-2">
+              <div className="w-full process-item bg-gray-100 rounded-full h-2 mt-2">
                 <div className="bg-indigo-600 h-2 rounded-full" style={{ width: `${topic.percent}%` }} />
               </div>
             </div>

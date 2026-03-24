@@ -48,7 +48,7 @@ const UploadCard: React.FC<UploadCardProps> = ({ supported, files, accept, onCha
         onDragOver={(e) => e.preventDefault()}
         onDragEnter={(e) => e.preventDefault()}
         onClick={() => inputRef.current?.click()}
-        className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors bg-white cursor-pointer"
+        className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center hover:border-gray-400 transition-colors bg-white cursor-pointer"
       >
         <input
           ref={inputRef}

@@ -48,7 +48,7 @@ const Layout: React.FC = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-[var(--background)] flex">
+      <div className="min-h-screen bg-gray-50 flex">
         {/* Sidebar (desktop) and mobile variant */}
         <Sidebar
           isCollapsed={sidebarCollapsed}

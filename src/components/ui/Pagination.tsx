@@ -38,7 +38,7 @@ const Pagination: React.FC<PaginationProps> = ({
     <>
     
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-y-2 py-2">
-        <div className="text-sm text-[var(--text-secondary)] sm:mb-0 text-center w-full sm:w-auto order-2 sm:order-1">
+        <div className="text-sm text-gray-800sm:mb-0 text-center w-full sm:w-auto order-2 sm:order-1">
           Showing {startIndex + 1} to {Math.min(endIndex, totalItems)} of {totalItems} entries
         </div>
 
@@ -56,7 +56,7 @@ const Pagination: React.FC<PaginationProps> = ({
               key={i}
               onClick={() => onPageChange(i)}
               className={`pagination-btn no ${
-                i === currentPage ? 'text-black font-semibold' : 'text-[var(--text-secondary)] hover:text-black'
+                i === currentPage ? 'text-black font-semibold' : 'text-gray-800hover:text-black'
               }`}
             >
               {i}

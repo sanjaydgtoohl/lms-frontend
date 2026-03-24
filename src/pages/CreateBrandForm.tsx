@@ -536,12 +536,12 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm text-[var(--text-secondary)] mb-1">Brand Name <span className="text-[#FF0000]">*</span></label>
+          <label className="block text-sm text-gray-800 mb-1">Brand Name <span className="text-[#FF0000]">*</span></label>
           <input
             name="brandName"
             value={form.brandName}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-black"
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-black"
             placeholder="Please Enter Brand Name"
           />
           {errors.brandName && (
@@ -550,7 +550,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
         </div>
 
         <div>
-          <label className="block text-sm text-[var(--text-secondary)] mb-1">Brand Type <span className="text-red-500">*</span></label>
+          <label className="block text-sm text-gray-800 mb-1">Brand Type <span className="text-red-500">*</span></label>
           <div>
             <SelectField
               name="brandType"
@@ -566,12 +566,12 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
         </div>
 
         <div>
-          <label className="block text-sm text-[var(--text-secondary)] mb-1">Website</label>
+          <label className="block text-sm text-gray-800 mb-1">Website</label>
           <input
             name="website"
             value={form.website}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-black"
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-black"
             placeholder="https://"
           />
             {errors.website && !form.website.trim() && (
@@ -580,7 +580,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
         </div>
 
         <div>
-          <label className="block text-sm text-[var(--text-secondary)] mb-1">Select Existing Agency</label>
+          <label className="block text-sm text-gray-800 mb-1">Select Existing Agency</label>
           <MultiSelectDropdown
             name="agency"
             value={form.agency}
@@ -593,7 +593,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
         </div>
 
         <div>
-          <label className="block text-sm text-[var(--text-secondary)] mb-1">Industry <span className="text-[#FF0000]">*</span></label>
+          <label className="block text-sm text-gray-800 mb-1">Industry <span className="text-[#FF0000]">*</span></label>
           <div>
             <SelectField
               name="industry"
@@ -609,7 +609,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
         </div>
 
         <div>
-          <label className="block text-sm text-[var(--text-secondary)] mb-1">Country <span className="text-[#FF0000]">*</span></label>
+          <label className="block text-sm text-gray-800 mb-1">Country <span className="text-[#FF0000]">*</span></label>
           <div>
             <SelectField
               name="country"
@@ -628,7 +628,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
         </div>
 
         <div>
-          <label className="block text-sm text-[var(--text-secondary)] mb-1">Postal Code <span className="text-[#FF0000]">*</span></label>
+          <label className="block text-sm text-gray-800 mb-1">Postal Code <span className="text-[#FF0000]">*</span></label>
           <input
             name="postalCode"
             value={form.postalCode}
@@ -649,7 +649,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
                 setPostalFieldError('Postal code is invalid');
               }
             }}
-            className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-black"
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-black"
             placeholder="Please Enter Postal Code"
           />
           {(errors.postalCode || postalFieldError) && <div className="text-xs text-red-500 mt-1">{errors.postalCode || postalFieldError}</div>}
@@ -658,7 +658,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
         </div>
 
         <div>
-          <label className="block text-sm text-[var(--text-secondary)] mb-1">State <span className="text-[#FF0000]">*</span></label>
+          <label className="block text-sm text-gray-800 mb-1">State <span className="text-[#FF0000]">*</span></label>
           <div>
             <SelectField
               name="state"
@@ -674,7 +674,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
         </div>
 
         <div>
-          <label className="block text-sm text-[var(--text-secondary)] mb-1">City <span className="text-[#FF0000]">*</span></label>
+          <label className="block text-sm text-gray-800 mb-1">City <span className="text-[#FF0000]">*</span></label>
           <CitySelect
             state={form.state}
             value={form.city}
@@ -687,7 +687,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
         </div>
 
         <div>
-          <label className="block text-sm text-[var(--text-secondary)] mb-1">Zone <span className="text-[#FF0000]">*</span></label>
+          <label className="block text-sm text-gray-800 mb-1">Zone <span className="text-[#FF0000]">*</span></label>
           <div>
             <SelectField
               name="zone"
@@ -723,7 +723,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
       className="space-y-6"
     >
       <MasterFormHeader onBack={onClose} title={mode === 'edit' ? 'Edit Brand' : 'Create Brand'} />
-      <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
+      <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="p-4 bg-gray-50">
           {formContent}
         </div>

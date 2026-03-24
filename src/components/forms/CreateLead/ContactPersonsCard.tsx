@@ -410,7 +410,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
     <div className="space-y-6 mb-6">
       {contacts.map((c) => (
         <div key={c.id} className="w-full bg-white rounded-2xl shadow-sm border border-gray-200">
-          <div className="px-4 py-5 p-5 bg-[#F9FAFB]">
+          <div className="px-4 py-5 p-5 bg-gray-50">
             <div className="flex items-center justify-between mb-6">
               <div className="text-base font-semibold text-gray-800">Contact Person</div>
               {contacts.length > 1 && (
@@ -429,26 +429,26 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
               {/* Row 1: Full Name, Profile URL */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-[var(--text-secondary)] mb-1">Full Name <span className="text-[#FF0000]">*</span></label>
+                  <label className="block text-sm text-gray-800 mb-1">Full Name <span className="text-[#FF0000]">*</span></label>
                   <input
                     type="text"
                     placeholder="Enter full name"
                     value={c.fullName}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateContact(c.id, 'fullName', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                    className="w-full px-3 py-2 rounded-lg bg-white text-gray-800 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                   />
                   {errors?.[c.id]?.fullName && (
                     <div className="text-xs text-red-500 mt-1">{errors[c.id].fullName}</div>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm text-[var(--text-secondary)] mb-1">Profile URL</label>
+                  <label className="block text-sm text-gray-800 mb-1">Profile URL</label>
                   <input
                     type="text"
                     placeholder="Enter profile URL"
                     value={c.profileUrl}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateContact(c.id, 'profileUrl', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                    className="w-full px-3 py-2 rounded-lg bg-white text-gray-800 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                   />
                 </div>
               </div>
@@ -456,27 +456,27 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
               {/* Row 2: Email, Mobile No. */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-[var(--text-secondary)] mb-1">Email</label>
+                  <label className="block text-sm text-gray-800 mb-1">Email</label>
                   <input
                     type="email"
                     placeholder="Enter email address"
                     value={c.email}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateContact(c.id, 'email', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                    className="w-full px-3 py-2 rounded-lg bg-white text-gray-800 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                   />
                 </div>
                 <div>
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <div className="flex-1">
-                        <label className="block text-sm text-[var(--text-secondary)] mb-1">Mobile No. <span className="text-[#FF0000]">*</span></label>
+                        <label className="block text-sm text-gray-800 mb-1">Mobile No. <span className="text-[#FF0000]">*</span></label>
                         <input
                           type="tel"
                           placeholder="Enter mobile number"
                           value={c.mobileNo}
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateContact(c.id, 'mobileNo', e.target.value)}
                           maxLength={10}
-                          className="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                          className="w-full px-3 py-2 rounded-lg bg-white text-gray-800 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                         />
                         {errors?.[c.id]?.mobileNo && (
                           <div className="text-xs text-red-500 mt-1">{errors[c.id].mobileNo}</div>
@@ -486,8 +486,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                         <button
                           type="button"
                           onClick={() => updateContact(c.id, 'showSecondMobile', true)}
-                          className="px-3 py-2 flex items-center justify-center rounded-lg text-white font-medium transition-colors mt-6 hover:bg-orange-500 text-sm gap-1"
-                          style={{ backgroundColor: '#ff9500' }}
+                          className="px-3 py-2 flex items-center justify-center rounded-lg text-white font-medium transition-colors mt-6 bg-orange-500 hover:bg-orange-700 text-sm gap-1" 
                           title="Add another mobile number"
                         >
                           <Plus strokeWidth={2.5} className="w-4 h-4" />
@@ -504,7 +503,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                             value={c.mobileNo2}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateContact(c.id, 'mobileNo2', e.target.value)}
                             maxLength={10}
-                            className="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                            className="w-full px-3 py-2 rounded-lg bg-white text-gray-800 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                           />
                         </div>
                         <button
@@ -534,7 +533,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
               {/* Row 3: Type, Designation, Department */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm text-[var(--text-secondary)] mb-1">Type <span className="text-[#FF0000]">*</span></label>
+                  <label className="block text-sm text-gray-800 mb-1">Type <span className="text-[#FF0000]">*</span></label>
                   <SelectField
                     name="type"
                     placeholder="Select type"
@@ -546,7 +545,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                   {errors?.[c.id]?.type && <div className="text-xs text-red-500 mt-1">{errors[c.id].type}</div>}
                 </div>
                 <div>
-                  <label className="block text-sm text-[var(--text-secondary)] mb-1">Designation <span className="text-[#FF0000]">*</span></label>
+                  <label className="block text-sm text-gray-800 mb-1">Designation <span className="text-[#FF0000]">*</span></label>
                   <SelectField
                     name="designation"
                     placeholder="Select designation"
@@ -564,7 +563,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm text-[var(--text-secondary)] mb-1">Department <span className="text-[#FF0000]">*</span></label>
+                  <label className="block text-sm text-gray-800 mb-1">Department <span className="text-[#FF0000]">*</span></label>
                   <SelectField
                     name="department"
                     placeholder="Select department"
@@ -586,7 +585,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
               {/* Row 4: Country, State, City */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm text-[var(--text-secondary)] mb-1">Country <span className="text-[#FF0000]">*</span></label>
+                  <label className="block text-sm text-gray-800 mb-1">Country <span className="text-[#FF0000]">*</span></label>
                   <SelectField
                     name="country"
                     placeholder="Select country"
@@ -604,7 +603,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm text-[var(--text-secondary)] mb-1">State</label>
+                  <label className="block text-sm text-gray-800 mb-1">State</label>
                   <SelectField
                     name="state"
                     placeholder="Select state"
@@ -621,7 +620,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm text-[var(--text-secondary)] mb-1">City</label>
+                  <label className="block text-sm text-gray-800 mb-1">City</label>
                   <SelectField
                     name="city"
                     placeholder="Select city"
@@ -642,7 +641,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
               {/* Row 5: Zone, Sub-Source, Postal Code */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm text-[var(--text-secondary)] mb-1">Zone</label>
+                  <label className="block text-sm text-gray-800 mb-1">Zone</label>
                   <SelectField
                     name="zone"
                     placeholder="Select zone"
@@ -659,7 +658,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm text-[var(--text-secondary)] mb-1">Sub-Source <span className="text-[#FF0000]">*</span></label>
+                  <label className="block text-sm text-gray-800 mb-1">Sub-Source <span className="text-[#FF0000]">*</span></label>
                   <SelectField
                     name="subSource"
                     placeholder={subSourceLoading ? "Loading..." : "Select sub-source"}
@@ -687,13 +686,13 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm text-[var(--text-secondary)] mb-1">Postal Code</label>
+                  <label className="block text-sm text-gray-800 mb-1">Postal Code</label>
                   <input
                     type="text"
                     placeholder="Enter postal code"
                     value={c.postalCode}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateContact(c.id, 'postalCode', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                    className="w-full px-3 py-2 rounded-lg bg-white text-gray-800 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                   />
                 </div>
               </div>

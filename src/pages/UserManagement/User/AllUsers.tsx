@@ -153,7 +153,7 @@ const AllUsers: React.FC = () => {
       'S-BDM': 'border-yellow-300 text-yellow-700 bg-yellow-50',
       'Planner': 'border-pink-300 text-pink-700 bg-pink-50',
     };
-    return (roleName && roleColorMap[roleName]) || 'border-gray-300 text-gray-700 bg-gray-50';
+    return (roleName && roleColorMap[roleName]) || 'border-gray-200 text-gray-700 bg-gray-50';
   };
 
   const columns = ([
@@ -187,7 +187,7 @@ const AllUsers: React.FC = () => {
                   {parents[0].name || parents[0]}
                 </span>
                 {parents.length > 1 && (
-                  <span className="inline-flex items-center justify-center h-7 px-2 border border-gray-300 rounded-full text-xs font-medium leading-tight whitespace-nowrap bg-gray-50 text-gray-700">
+                  <span className="inline-flex items-center justify-center h-7 px-2 border border-gray-200 rounded-full text-xs font-medium leading-tight whitespace-nowrap bg-gray-50 text-gray-700">
                     +{parents.length - 1}
                   </span>
                 )}
@@ -244,7 +244,7 @@ const AllUsers: React.FC = () => {
                 {it.roles[0].display_name || it.roles[0].name}
               </span>
               {it.roles.length > 1 && (
-                <span className="inline-flex items-center justify-center h-7 px-2 border border-gray-300 rounded-full text-xs font-medium leading-tight whitespace-nowrap bg-gray-50 text-gray-700">
+                <span className="inline-flex items-center justify-center h-7 px-2 border border-gray-200 rounded-full text-xs font-medium leading-tight whitespace-nowrap bg-gray-50 text-gray-700">
                   +{it.roles.length - 1}
                 </span>
               )}

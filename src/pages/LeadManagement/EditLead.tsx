@@ -468,7 +468,7 @@ const EditLead: React.FC = () => {
         </div>
 
         {/* Email Activity Section */}
-        <div className="bg-[#F9F9F9] rounded-2xl shadow-sm border border-[var(--border-color)] p-4">
+        <div className="bg-gray-50 rounded-2xl shadow-sm border border-gray-200 p-4">
           <div className="flex justify-between items-center mb-3">
             <h3 className="text-sm text-gray-800 font-medium">Email Activity</h3>
             <Button onClick={() => { setShowEmailComposer(true); setEmailTo(lead.contacts[0]?.email || ''); }}>Send Email</Button>
@@ -597,12 +597,12 @@ const EditLead: React.FC = () => {
           )}
           <div className="space-y-3">
             {['Subject Line 1', 'Subject Line 2', 'Subject Line 3'].map((sub, idx) => (
-              <div key={idx} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 shadow-sm border border-[var(--border-color)]">
+              <div key={idx} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 shadow-sm border border-gray-200">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-md bg-white flex items-center justify-center">
                     <Mail className="w-4 h-4 text-gray-800" />
                   </div>
-                  <div className="text-sm text-[var(--text-primary)]">{sub}</div>
+                  <div className="text-sm text-gray-800">{sub}</div>
                 </div>
                 <div className="text-gray-800">
                   <Eye className="w-5 h-5" />
@@ -613,7 +613,7 @@ const EditLead: React.FC = () => {
         </div>
 
         {/* Call Details Table Section */}
-        <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="px-4 py-3">
             <div className="overflow-y-auto max-h-[280px]">
               {/* Render call history rows from API (fallback to sample rows) */}

@@ -58,8 +58,8 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
   // Determine if error border should be shown
   const errorBorderClass = inputClassName && inputClassName.includes('border-red-500') ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-[#DDE1E7]';
   // Input classes and styles differ for multi vs single select
-  const multiInputClass = `flex-none h-full px-2 text-sm font-medium bg-transparent text-[var(--text-primary)] border-none focus:outline-none`;
-  const singleInputClass = `flex-1 h-full px-2 text-sm font-medium bg-transparent text-[var(--text-primary)] border-none focus:outline-none`;
+  const multiInputClass = `flex-none h-full px-2 text-sm font-medium bg-transparent text-gray-800 border-none focus:outline-none`;
+  const singleInputClass = `flex-1 h-full px-2 text-sm font-medium bg-transparent text-gray-800 border-none focus:outline-none`;
   const multiInputStyle: React.CSSProperties = { boxShadow: 'none', minWidth: '30px', width: '30px', height: 'auto' };
   const singleInputStyle: React.CSSProperties = { boxShadow: 'none', minWidth: '120px', width: '100%', height: 'auto' };
   return (
@@ -125,7 +125,7 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
       <div
         role="listbox"
         aria-hidden={!open}
-        className={`absolute z-50 left-0 right-0 mt-2 bg-white border border-[var(--border-color)] rounded-lg shadow-lg overflow-y-auto transition-all duration-150 ${open ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
+        className={`select-dropdown absolute z-50 left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg overflow-y-auto transition-all duration-150 ${open ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
         style={{ maxHeight: '80px' }} // Show only 2 options (each ~40px)
       >
         {filtered.length === 0 ? (
@@ -140,7 +140,7 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
                 role="option"
                 aria-selected={active}
                 tabIndex={0}
-                className={`px-4 py-2 cursor-pointer ${active ? 'bg-blue-100 text-blue-700 font-semibold' : 'text-gray-700'} hover:bg-blue-50`}
+                className={`px-4 py-2 cursor-pointer hover-input ${active ? 'bg-blue-100 text-blue-700 font-semibold' : 'text-gray-700'} hover:bg-blue-50`}
                 onMouseDown={(e) => {
                   e.preventDefault();
                   if (isMulti) {

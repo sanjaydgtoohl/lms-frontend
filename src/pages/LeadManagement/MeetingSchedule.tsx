@@ -204,12 +204,12 @@ const MeetingSchedule: React.FC = () => {
 
 
       <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-        <div className="px-4 py-5 sm:p-5 bg-[#F9FAFB]">
+        <div className="px-4 py-5 sm:p-5 bg-gray-50">
           <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Lead, Meeting Type, Attendees */}
               <div className="col-span-2 lg:col-span-1">
-                <label className="block text-sm text-[var(--text-secondary)] mb-1">Lead <span className="text-[#FF0000]">*</span></label>
+                <label className="block text-sm text-gray-800 mb-1">Lead <span className="text-[#FF0000]">*</span></label>
                 <SelectField
                   placeholder="Select Lead"
                   options={leadOptions}
@@ -218,12 +218,12 @@ const MeetingSchedule: React.FC = () => {
                     setLead(String(v));
                     if (errors.lead && v) setErrors({ ...errors, lead: undefined });
                   }}
-                  inputClassName="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)]"
+                  inputClassName="border border-gray-200 focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-gray-800"
                 />
                 {errors.lead && <div className="text-red-500 text-xs mt-1">{errors.lead}</div>}
               </div>
               <div className="col-span-2 lg:col-span-1">
-                <label className="block text-sm text-[var(--text-secondary)] mb-1">Meeting Type <span className="text-[#FF0000]">*</span></label>
+                <label className="block text-sm text-gray-800 mb-1">Meeting Type <span className="text-[#FF0000]">*</span></label>
                 <SelectField
                   placeholder="Select Type"
                   options={meetingTypeOptions}
@@ -232,14 +232,14 @@ const MeetingSchedule: React.FC = () => {
                     setMeetingType(String(v));
                     if (errors.meetingType && v) setErrors({ ...errors, meetingType: undefined });
                   }}
-                  inputClassName="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)]"
+                  inputClassName="border border-gray-200 focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-gray-800"
                 />
                 {errors.meetingType && <div className="text-red-500 text-xs mt-1">{errors.meetingType}</div>}
               </div>
               <div className="col-span-2">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Attendees <span className="text-[#FF0000]">*</span></label>
+                    <label className="block text-sm text-gray-800 mb-1">Attendees <span className="text-[#FF0000]">*</span></label>
                     <MultiSelectDropdown
                       name="attendees"
                       value={attendees}
@@ -255,13 +255,13 @@ const MeetingSchedule: React.FC = () => {
                     {errors.attendees && <div className="text-red-500 text-xs mt-1">{errors.attendees}</div>}
                   </div>
                   <div>
-                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Agenda</label>
+                    <label className="block text-sm text-gray-800 mb-1">Agenda</label>
                     <input
                       type="text"
                       placeholder="Please Fill Meeting Agenda "
                       value={agenda}
                       onChange={(e) => setAgenda(e.target.value)}
-                      className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)]"
+                      className="border border-gray-200 focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-gray-800"
                     />
                   </div>
                 </div>
@@ -270,7 +270,7 @@ const MeetingSchedule: React.FC = () => {
               <div className="col-span-2">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Start Date & Time <span className="text-[#FF0000]">*</span></label>
+                    <label className="block text-sm text-gray-800 mb-1">Start Date & Time <span className="text-[#FF0000]">*</span></label>
                     <DatePicker
                       selected={startDateTime}
                       onChange={(dt: Date | null) => {
@@ -282,7 +282,7 @@ const MeetingSchedule: React.FC = () => {
                       dateFormat="yyyy-MM-dd HH:mm"
                       timeFormat="HH:mm"
                       placeholderText="yyyy-mm-dd HH:mm"
-                      className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] w-full"
+                      className="border border-gray-200 focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-gray-800 w-full"
                       wrapperClassName="w-full"
                       popperPlacement="bottom-start"
                       showMonthDropdown
@@ -293,7 +293,7 @@ const MeetingSchedule: React.FC = () => {
                     {errors.startDateTime && <div className="text-red-500 text-xs mt-1">{errors.startDateTime}</div>}
                   </div>
                   <div>
-                    <label className="block text-sm text-[var(--text-secondary)] mb-1">End Date & Time <span className="text-[#FF0000]">*</span></label>
+                    <label className="block text-sm text-gray-800 mb-1">End Date & Time <span className="text-[#FF0000]">*</span></label>
                     <DatePicker
                       selected={endDateTime}
                       onChange={(dt: Date | null) => {
@@ -305,7 +305,7 @@ const MeetingSchedule: React.FC = () => {
                       dateFormat="yyyy-MM-dd HH:mm"
                       timeFormat="HH:mm"
                       placeholderText="yyyy-mm-dd HH:mm"
-                      className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] w-full"
+                      className="border border-gray-200 focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-gray-800 w-full"
                       wrapperClassName="w-full"
                       popperPlacement="bottom-start"
                       showMonthDropdown
@@ -318,7 +318,7 @@ const MeetingSchedule: React.FC = () => {
                 </div>
               </div>
               <div className="col-span-2 lg:col-span-1">
-                <label className="block text-sm text-[var(--text-secondary)] mb-1">Add Title <span className="text-[#FF0000]">*</span></label>
+                <label className="block text-sm text-gray-800 mb-1">Add Title <span className="text-[#FF0000]">*</span></label>
                 <input
                   type="text"
                   placeholder="Please Fill Meeting Title"
@@ -327,19 +327,19 @@ const MeetingSchedule: React.FC = () => {
                     setTitle(e.target.value);
                     if (errors.title && e.target.value) setErrors({ ...errors, title: undefined });
                   }}
-                  className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)]"
+                  className="border border-gray-200 focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-gray-800"
                 />
                 {errors.title && <div className="text-red-500 text-xs mt-1">{errors.title}</div>}
               </div>
               {/* Meeting Location and Agenda side by side */}
               <div className="col-span-2 lg:col-span-1">
-                <label className="block text-sm text-[var(--text-secondary)] mb-1">Meeting Location</label>
+                <label className="block text-sm text-gray-800 mb-1">Meeting Location</label>
                 <input
                   type="text"
                   placeholder="Please Fill Meeting Location"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)]"
+                  className="border border-gray-200 focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-gray-800"
                 />
               </div>
 

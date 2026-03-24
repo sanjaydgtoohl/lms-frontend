@@ -116,11 +116,11 @@ const MainContent = <T extends LeadSource | Agency>({
     <div className="flex-1 w-full">
       {/* Desktop Table View */}
       <div className="hidden lg:block">
-        <div className="bg-white rounded-xl shadow-sm border border-[var(--border-color)] overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           {/* Table Header */}
-          <div className="bg-gray-50 px-6 py-4 border-b border-[var(--border-color)]">
+          <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
               <div className="flex justify-between items-center">
-                <h2 className="text-lg font-semibold text-[var(--text-primary)]">{title}</h2>
+                <h2 className="text-lg font-semibold text-gray-800">{title}</h2>
                 <div className="flex items-center space-x-3">
                   <SearchBar
                     delay={0}
@@ -143,43 +143,43 @@ const MainContent = <T extends LeadSource | Agency>({
                 <tr>
                   {dataType === 'agency' ? (
                     <>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-800uppercase tracking-wider">
                         Sr. No.
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-800uppercase tracking-wider">
                         Agency Group
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-800uppercase tracking-wider">
                         Agency Name
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-800uppercase tracking-wider">
                         Agency Type
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-800uppercase tracking-wider">
                         Contact Person
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-800uppercase tracking-wider">
                         Date & Time
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-800uppercase tracking-wider">
                         Action
                       </th>
                     </>
                   ) : (
                     <>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-800uppercase tracking-wider">
                         Sr. No.
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-800uppercase tracking-wider">
                         Source
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-800uppercase tracking-wider">
                         Sub-Source
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-800uppercase tracking-wider">
                         Date & Time
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-800uppercase tracking-wider">
                         Action
                       </th>
                     </>
@@ -194,19 +194,19 @@ const MainContent = <T extends LeadSource | Agency>({
                   >
                     {dataType === 'agency' ? (
                       <>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[var(--text-primary)]">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">
                           {startIndex + index + 1}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-primary)]">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
                           {(item as Agency).agencyGroup}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-primary)]">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
                           {(item as Agency).agencyName}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-primary)]">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
                           {(item as Agency).agencyType}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-primary)]">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
                           {(item as Agency).contactPerson}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-secondary)]">
@@ -223,13 +223,13 @@ const MainContent = <T extends LeadSource | Agency>({
                       </>
                     ) : (
                       <>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[var(--text-primary)]">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">
                           {startIndex + index + 1}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-primary)]">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
                           {(item as LeadSource).source}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-primary)]">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
                           {(item as LeadSource).subSource}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-secondary)]">
@@ -254,9 +254,9 @@ const MainContent = <T extends LeadSource | Agency>({
 
       {/* Mobile Card View */}
       <div className="lg:hidden space-y-4">
-        <div className="bg-white rounded-xl shadow-sm border border-[var(--border-color)] p-4">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-[var(--text-primary)]">{title}</h2>
+            <h2 className="text-lg font-semibold text-gray-800">{title}</h2>
             {headerActions && (
               <div className="flex items-center space-x-2">
                 {headerActions}
@@ -268,12 +268,12 @@ const MainContent = <T extends LeadSource | Agency>({
         {currentData.map((item, index) => (
           <div 
             key={item.id}
-            className="bg-white rounded-xl shadow-sm border border-[var(--border-color)] p-4 hover:shadow-md transition-all duration-200"
+            className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-all duration-200"
           >
             <div className="flex justify-between items-start mb-3">
               <div className="flex gap-2">
                 <span className="text-sm text-[var(--text-secondary)]">Sr. No.:</span>
-                <span className="text-sm font-medium text-[var(--text-primary)]">{startIndex + index + 1}</span>
+                <span className="text-sm font-medium text-gray-800">{startIndex + index + 1}</span>
               </div>
               <ActionMenu
                 isLast={index >= currentData.length - 2}
@@ -288,19 +288,19 @@ const MainContent = <T extends LeadSource | Agency>({
                 <>
                   <div className="flex justify-between">
                     <span className="text-sm text-[var(--text-secondary)]">Agency Group:</span>
-                    <span className="text-sm font-medium text-[var(--text-primary)]">{(item as Agency).agencyGroup}</span>
+                    <span className="text-sm font-medium text-gray-800">{(item as Agency).agencyGroup}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-[var(--text-secondary)]">Agency Name:</span>
-                    <span className="text-sm font-medium text-[var(--text-primary)]">{(item as Agency).agencyName}</span>
+                    <span className="text-sm font-medium text-gray-800">{(item as Agency).agencyName}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-[var(--text-secondary)]">Agency Type:</span>
-                    <span className="text-sm font-medium text-[var(--text-primary)]">{(item as Agency).agencyType}</span>
+                    <span className="text-sm font-medium text-gray-800">{(item as Agency).agencyType}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-[var(--text-secondary)]">Contact Person:</span>
-                    <span className="text-sm font-medium text-[var(--text-primary)]">{(item as Agency).contactPerson}</span>
+                    <span className="text-sm font-medium text-gray-800">{(item as Agency).contactPerson}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-[var(--text-secondary)]">Date & Time:</span>
@@ -311,11 +311,11 @@ const MainContent = <T extends LeadSource | Agency>({
                 <>
                   <div className="flex justify-between">
                     <span className="text-sm text-[var(--text-secondary)]">Source:</span>
-                    <span className="text-sm font-medium text-[var(--text-primary)]">{(item as LeadSource).source}</span>
+                    <span className="text-sm font-medium text-gray-800">{(item as LeadSource).source}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-[var(--text-secondary)]">Sub-Source:</span>
-                    <span className="text-sm font-medium text-[var(--text-primary)]">{(item as LeadSource).subSource}</span>
+                    <span className="text-sm font-medium text-gray-800">{(item as LeadSource).subSource}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-[var(--text-secondary)]">Date & Time:</span>

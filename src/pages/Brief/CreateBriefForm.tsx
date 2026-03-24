@@ -913,7 +913,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                   <label className="block text-sm text-gray-800 mb-1">Brief Name <span className="text-[#FF0000]">*</span></label>
                   <input name="briefName" value={form.briefName} onChange={(e) => { handleChange(e); setErrors(prev => ({ ...prev, briefName: '' })); }}
                     placeholder="Please enter product name"
-                    className={`w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-1 transition-colors ${errors.briefName ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-gray-200 focus:ring-black'}`}
+                    className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors ${errors.briefName ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-gray-200 focus:ring-blue-500'}`}
                     aria-invalid={errors.briefName ? 'true' : 'false'}
                     aria-describedby={errors.briefName ? 'briefName-error' : undefined}
                   />
@@ -990,7 +990,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                         onChange={handleChange}
                         className="form-radio accent-blue-600"
                       />
-                      <span className="ml-2 text-sm">Programmatic</span>
+                      <span className="ml-2 text-sm text-gray-800">Programmatic</span>
                     </label>
                     <label className="flex items-center cursor-pointer">
                       <input
@@ -1001,7 +1001,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                         onChange={handleChange}
                         className="form-radio accent-blue-600"
                       />
-                      <span className="ml-2 text-sm">Non-Programmatic</span>
+                      <span className="ml-2 text-sm text-gray-800">Non-Programmatic</span>
                     </label>
                   </div>
                 </div>

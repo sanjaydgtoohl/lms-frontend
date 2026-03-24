@@ -74,7 +74,6 @@ const ViewLead: React.FC = () => {
 
   return (
     <div className="flex-1 w-full max-w-full overflow-x-hidden">
-
       {/* Breadcrumb */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <Breadcrumb
@@ -348,7 +347,7 @@ const ViewLead: React.FC = () => {
               {lead.comment && (
                 <div>
                   <label className="text-sm font-medium text-gray-600 block mb-2">Comment</label>
-                  <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                  <div className="bg-gray-100 rounded-lg p-3 border border-gray-200">
                     <p className="text-gray-700 leading-relaxed">{lead.comment}</p>
                   </div>
                 </div>
@@ -360,12 +359,12 @@ const ViewLead: React.FC = () => {
         {/* Right Column - Sidebar */}
         <div className="xl:col-span-1">
           {/* Assignment Info Card */}
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-5 mb-4">
-            <h3 className="text-lg font-semibold text-gray-800 mb-6">Assignment</h3>
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-5 mb-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Assignment</h3>
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-gray-600 block mb-2">Assigned User</label>
-                <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg p-3 border border-orange-200">
+                <div className="bg-orange-100 rounded-lg p-3 border border-orange-200">
                   <p className="text-base font-medium text-gray-800">{lead.assigned_user?.name || '-'}</p>
                   <p className="text-xs text-gray-600 mt-1">{lead.assigned_user?.email || ''}</p>
                 </div>
@@ -373,15 +372,15 @@ const ViewLead: React.FC = () => {
               
               <div>
                 <label className="text-sm font-medium text-gray-600 block mb-2">Current Assign User ID</label>
-                <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg p-3 border border-orange-200">
+                <div className="bg-orange-100 rounded-lg p-3 border border-orange-200">
                   <p className="text-base font-medium text-gray-800">{lead.current_assign_user}</p>
                 </div>
               </div>
             </div>
           </div>
           {/* Call Info Card */}
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-5 mb-4">
-            <h3 className="text-lg font-semibold text-gray-800 mb-6">Call Information</h3>
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-5 mb-5">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Call Information</h3>
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-gray-600 block mb-2">Call Status</label>

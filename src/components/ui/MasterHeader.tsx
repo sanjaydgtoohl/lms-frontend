@@ -62,7 +62,7 @@ const MasterHeader: React.FC<MasterHeaderProps> = ({
       </div>
 
       {/* Right Side - Sign In and Create Buttons */}
-      <div className="w-full sm:w-auto flex gap-3">
+      <div className="flex-1 w-full sm:w-auto flex justify-end gap-3">
         {showSignInButton && onSignInClick && (
           signInIcon ? (
             <span
@@ -71,14 +71,14 @@ const MasterHeader: React.FC<MasterHeaderProps> = ({
               aria-label="Meeting Schedule"
               tabIndex={0}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSignInClick(); }}
-              className="flex-1 hidden sm:inline-flex items-center justify-center cursor-pointer"
+              className="flex-1 whitespace-nowrap sm:flex-0 hidden sm:inline-flex items-center justify-center cursor-pointer"
             >
               {signInIcon}
             </span>
           ) : (
             <button
               onClick={onSignInClick}
-              className="flex-1 flex items-center justify-center w-full sm:w-auto px-4 py-2.5 btn-primary text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
+              className="flex-1 sm:flex-0 whitespace-nowrap flex items-center justify-center w-full sm:w-auto px-4 py-2.5 btn-primary text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
             >
               {signInButtonLabel}
             </button>
@@ -87,8 +87,7 @@ const MasterHeader: React.FC<MasterHeaderProps> = ({
         {showCreateButton && canCreate && (
           <button
             onClick={onCreateClick}
-            className="btn-primary flex-1"
-          >
+            className="btn-primary flex-1 sm:flex-0 whitespace-nowrap">
             <Plus className="w-5 h-5 text-white" />
             <span>{createButtonLabel}</span>
           </button>
