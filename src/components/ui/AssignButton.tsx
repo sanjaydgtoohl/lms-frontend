@@ -17,7 +17,7 @@ const AssignButton: React.FC<AssignButtonProps> = ({ value, onClick, isActive })
         group w-full cursor-pointer
         font-medium text-blue-600 hover:text-blue-700 underline
         transition-colors duration-200
-        ${isActive ? 'text-blue-700' : ''}
+        ${isActive ? 'text-gray-950' : ''}
       `}
     >
       <span className="truncate">{value || '-'}</span>

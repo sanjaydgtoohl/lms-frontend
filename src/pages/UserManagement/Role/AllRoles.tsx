@@ -8,6 +8,7 @@ import { ROUTES } from '../../../constants';
 import { listRoles, deleteRole } from '../../../services/AllRoles';
 import SweetAlert from '../../../utils/SweetAlert';
 import ConfirmDialog from '../../../components/ui/ConfirmDialog';
+import TableHeader from '../../../components/ui/TableHeader';
 
 interface Role {
   id: string;
@@ -40,7 +41,7 @@ const AllRoles: React.FC = () => {
       const total = res.meta?.pagination?.total ?? res.meta?.total ?? data.length;
       setTotalItems(Number(total || 0));
     } catch (err) {
-       
+
       console.error('Failed to fetch roles', err);
       setRoles([]);
       setTotalItems(0);
@@ -57,7 +58,7 @@ const AllRoles: React.FC = () => {
   const navigate = useNavigate();
 
   const handleCreateRole = () => navigate(ROUTES.ROLE.CREATE);
-  
+
   const handleEdit = (id: string) => {
     const cleanId = id.replace('#', '');
     navigate(ROUTES.ROLE.EDIT(cleanId));
@@ -87,7 +88,7 @@ const AllRoles: React.FC = () => {
         // no need to action
       }
     } catch (err: any) {
-       
+
       console.error('Failed to delete role', err);
       try { SweetAlert.showError(err?.message || 'Failed to delete role'); } catch {
         // no need to action
@@ -100,11 +101,11 @@ const AllRoles: React.FC = () => {
   };
 
   const columns = ([
-    { 
-      key: 'srNo', 
-      header: 'S. No.', 
+    {
+      key: 'srNo',
+      header: 'S. No.',
       render: (it: Role & { srNo: number }) => it.srNo,
-      className: 'text-left whitespace-nowrap' 
+      className: 'text-left whitespace-nowrap'
     },
     { key: 'name', header: 'Name', render: (it: Role) => it.name, className: 'max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap' },
     { key: 'description', header: 'Description', render: (it: Role) => it.description, className: 'max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap' },
@@ -128,19 +129,17 @@ const AllRoles: React.FC = () => {
         createPermissionSlug="roles.create"
       />
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-        <div className="bg-gray-50 rounded-lg px-6 py-4 flex items-center justify-between border-b border-gray-200">
-          <h2 className="text-base font-semibold text-gray-900">All Roles</h2>
-          <div className="ml-4">
-            <SearchBar
-              placeholder="Search roles..."
-              delay={0}
-              onSearch={(q: string) => {
-                setSearchQuery(q);
-                setCurrentPage(1);
-              }}
-            />
-          </div>
-        </div>
+        {/* Table Header */}
+        <TableHeader title="All Roles">
+          <SearchBar
+            placeholder="Search roles..."
+            delay={0}
+            onSearch={(q: string) => {
+              setSearchQuery(q);
+              setCurrentPage(1);
+            }}
+          />
+        </TableHeader>
 
         <div className="pt-0 overflow-visible">
           <Table

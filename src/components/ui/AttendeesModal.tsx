@@ -20,7 +20,7 @@ const AttendeesModal: React.FC<AttendeesModalProps> = ({
     } else {
       document.body.style.overflow = 'unset';
     }
-    
+
     return () => {
       document.body.style.overflow = 'unset';
     };
@@ -30,121 +30,46 @@ const AttendeesModal: React.FC<AttendeesModalProps> = ({
 
   return (
     <>
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          background: 'rgba(0,0,0,0.5)',
-          zIndex: 40,
-          animation: 'fadeIn 0.2s ease-out',
-        }}
+      <div className="fixed top-0 left-0 w-screen h-screen bg-black/50 z-40 animate-[fadeIn_0.2s_ease-out]"
         onClick={onClose}
       />
+
       <div
-        style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          background: 'white',
-          borderRadius: '16px 16px 0 0',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-          width: '90%',
-          maxWidth: 520,
-          maxHeight: '85vh',
-          zIndex: 50,
-          display: 'flex',
-          flexDirection: 'column',
-          animation: 'slideUp 0.3s ease-out',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
+        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 !rounded-xl bg-white shadow-[0_20px_60px_rgba(0,0,0,0.3)] w-[90%] max-w-[520px] max-h-[85vh] z-50 flex flex-col animate-slideUp overflow-hidden" onClick={(e) => e.stopPropagation()} >
+
         {/* Header */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '24px 28px',
-            borderBottom: '1px solid #e5e7eb',
-            background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-          }}
-        >
+        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-[linear-gradient(135deg,#f8fafc_0%,#f1f5f9_100%)]">
+
           <div>
-            <h3 style={{ margin: 0, fontWeight: 700, fontSize: 22, color: '#1f2937' }}>
-              {title}
-            </h3>
-            <p style={{ margin: '4px 0 0 0', fontSize: 13, color: '#9ca3af' }}>
+            <h3 className="font-bold text-base md:text-lg xl:text-xl text-gray-800"> {title} </h3>
+            <p className="text-xs sm:text-sm text-gray-400">
               {attendees.length} {attendees.length === 1 ? 'attendee' : 'attendees'}
             </p>
           </div>
+
           <button
             onClick={onClose}
-            style={{
-              background: '#f3f4f6',
-              border: 'none',
-              fontSize: 20,
-              cursor: 'pointer',
-              color: '#6b7280',
-              padding: '8px 12px',
-              width: 40,
-              height: 40,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: 8,
-              transition: 'all 0.2s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#e5e7eb';
-              e.currentTarget.style.color = '#374151';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = '#f3f4f6';
-              e.currentTarget.style.color = '#6b7280';
-            }}
+            className="bg-gray-100 text-gray-500 text-xl w-10 h-10 flex items-center justify-center rounded-lg transition-all duration-300 hover:bg-gray-200 hover:text-gray-700"
           >
             ✕
           </button>
         </div>
 
         {/* Content */}
-        <div
-          style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: '24px 28px',
-            maxHeight: '240px',
-          }}
-        >
+        <div className="flex-1 overflow-y-auto px-5 py-5 max-h-sm">
           {attendees.length === 0 ? (
-            <div
-              style={{
-                textAlign: 'center',
-                padding: '40px 20px',
-                color: '#9ca3af',
-              }}
-            >
-              <div style={{ fontSize: 48, marginBottom: 12 }}>👥</div>
-              <p style={{ fontSize: 14, margin: 0 }}>No attendees found.</p>
+            <div className="text-center py-10 px-5 text-gray-400">
+              <div className="text-5xl mb-3">👥</div>
+              <p className="text-sm m-0">No attendees found.</p>
             </div>
           ) : (
-            <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+            <ul className="m-0 p-0 list-none">
               {attendees.map((attendee, idx) => (
                 <li
                   key={attendee.id}
+                  className="p-2 rounded-lg bg-gray-100 flex items-center gap-3 transition-all duration-300 border border-gray-200"
                   style={{
-                    padding: '16px',
                     marginBottom: idx < attendees.length - 1 ? '8px' : '0',
-                    background: '#f9fafb',
-                    borderRadius: 10,
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: 12,
-                    transition: 'all 0.2s ease',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = '#f3f4f6';
@@ -155,41 +80,15 @@ const AttendeesModal: React.FC<AttendeesModalProps> = ({
                     e.currentTarget.style.transform = 'translateX(0)';
                   }}
                 >
-                  <div
-                    style={{
-                      width: 40,
-                      height: 40,
-                      background: '#dbeafe',
-                      borderRadius: 8,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#2563eb',
-                      fontWeight: 700,
-                      fontSize: 16,
-                      flexShrink: 0,
-                    }}
-                  >
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 font-bold text-base shrink-0">
                     {attendee.name.charAt(0).toUpperCase()}
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div
-                      style={{
-                        fontWeight: 600,
-                        color: '#1f2937',
-                        fontSize: 15,
-                        marginBottom: 4,
-                      }}
-                    >
+
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-gray-800 text-sm mb-0.5">
                       {attendee.name}
                     </div>
-                    <div
-                      style={{
-                        color: '#6b7280',
-                        fontSize: 13,
-                        wordBreak: 'break-word',
-                      }}
-                    >
+                    <div className="text-gray-500 text-xs break-words">
                       {attendee.email}
                     </div>
                   </div>

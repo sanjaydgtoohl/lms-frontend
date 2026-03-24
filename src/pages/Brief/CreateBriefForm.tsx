@@ -904,7 +904,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
       <MasterFormHeader onBack={onClose} title={mode === 'edit' ? 'Edit Brief' : 'Create Brief'} />
 
       <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="p-6 bg-gray-50 rounded-2xl ">
+        <div className="px-4 py-5 sm:p-6 bg-gray-50">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Left column */}
@@ -935,7 +935,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     value={form.brandName}
                     onChange={(v: any) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; lastChangedFieldRef.current = 'brand'; setForm(prev => ({ ...prev, brandName: val })); }}
                     searchable
-                    inputClassName="border border-gray-200 focus:ring-blue-500"
+                    inputClassName="border border-gray-200 focus:ring-black"
                     disabled={brandsLoading}
                   />
                   {brandsError && <div className="text-xs text-red-600 mt-1">{brandsError}</div>}
@@ -959,7 +959,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                       setForm(prev => ({ ...prev, assignTo: val }));
                     }}
                     searchable
-                    inputClassName="border border-gray-200 focus:ring-blue-500"
+                    inputClassName="border border-gray-200 focus:ring-black"
                     disabled={usersLoading}
                   />
                   {usersError && <div className="text-xs text-red-600 mt-1">{usersError}</div>}
@@ -973,7 +973,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     value={form.status}
                     onChange={(v: any) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; lastChangedFieldRef.current = 'status'; setForm(prev => ({ ...prev, status: val })); setTimeout(() => { if (lastChangedFieldRef.current === 'status') lastChangedFieldRef.current = null; }, 500); }}
                     searchable
-                    inputClassName="border border-gray-200 focus:ring-blue-500"
+                    inputClassName="border border-gray-200 focus:ring-black"
                     disabled={briefStatusesLoading}
                   />
                   {briefStatusesError && <div className="text-xs text-red-600 mt-1">{briefStatusesError}</div>}
@@ -1013,7 +1013,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     options={form.programmatic === 'non_programmatic' ? ['DOOH', 'OOH'] : ['DOOH', 'CTV']}
                     value={form.type}
                     onChange={(v: any) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; setForm(prev => ({ ...prev, type: val })); }}
-                    inputClassName="border border-gray-200 focus:ring-blue-500"
+                    inputClassName="border border-gray-200 focus:ring-black"
                   />
                 </div>
               </div>
@@ -1029,7 +1029,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     onChange={(v: any) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; setForm(prev => ({ ...prev, contactPerson: val })); setErrors(prev => ({ ...prev, contactPerson: '' })); }}
                     searchable
                     disabled={contactPersonsLoading}
-                    inputClassName={errors.contactPerson ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-gray-200 focus:ring-blue-500'}
+                    inputClassName={errors.contactPerson ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-gray-200 focus:ring-black'}
                     className=""
                   />
                   {errors.contactPerson && (
@@ -1061,8 +1061,8 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     placeholder="Please Enter Est. Budget"
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white" />
                 </div>
-                <div className="flex gap-4">
-                  <div className="flex-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="w-full">
                     <label className="block text-sm text-gray-800 mb-1">Submission Date <span className="text-[#FF0000]">*</span></label>
                     <DatePicker
                       selected={calendarDate}
@@ -1095,7 +1095,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                       </div>
                     )}
                   </div>
-                  <div className="flex-1">
+                  <div className="w-full">
                     <label className="block text-sm text-gray-800 mb-1">Submission Time <span className="text-[#FF0000]">*</span></label>
                     <DatePicker
                       selected={calendarTime}
@@ -1144,7 +1144,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                       setForm(prev => ({ ...prev, priority: val }));
                       setTimeout(() => { if (lastChangedFieldRef.current === 'priority') lastChangedFieldRef.current = null; }, 500);
                     }}
-                    inputClassName={priorityLoading ? 'border border-gray-200 bg-gray-50' : 'border border-gray-200 focus:ring-blue-500'}
+                    inputClassName={priorityLoading ? 'border border-gray-300 bg-gray-50' : 'border border-gray-200 focus:ring-black'}
                     disabled={priorityLoading}
                   />
                   {priorityError && <div className="text-xs text-red-600 mt-1">{priorityError}</div>}
@@ -1157,7 +1157,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     onChange={handleChange}
                     rows={4}
                     placeholder="Show all data regarding to Brief"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white resize-none text-gray-800 outline-none focus:outline-none ring-0 shadow-none"
+                    className="w-full px-3 py-2 border border-gray-200 text-gray-800 rounded-lg bg-white resize-none"
                   />
                 </div>
               </div>

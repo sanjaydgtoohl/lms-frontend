@@ -410,7 +410,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
     <div className="space-y-6 mb-6">
       {contacts.map((c) => (
         <div key={c.id} className="w-full bg-white rounded-2xl shadow-sm border border-gray-200">
-          <div className="p-6 bg-gray-50 rounded-2xl ">
+          <div className="px-4 py-5 p-5 bg-gray-50">
             <div className="flex items-center justify-between mb-6">
               <div className="text-base font-semibold text-gray-800">Contact Person</div>
               {contacts.length > 1 && (

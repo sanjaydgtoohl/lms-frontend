@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import './table.css'
 import './darkmode.css'
+import './email.css'
 import App from './App.tsx'
 
 import { Provider } from "react-redux";

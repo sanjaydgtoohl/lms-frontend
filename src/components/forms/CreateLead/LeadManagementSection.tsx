@@ -28,7 +28,7 @@ const LeadManagementSection: React.FC<Props> = ({
           <h3 className="text-base font-semibold text-gray-800">Lead Management</h3>
         </div>
 
-        <div className="flex items-center gap-6 mb-6">
+        <div className="flex items-center flex-wrap gap-6 mb-6">
           <label className="relative flex items-center cursor-pointer group">
             <div className="group-hover:bg-[rgba(66,133,244,0.05)] absolute -inset-2 rounded-md transition-colors duration-200"/>
             <input

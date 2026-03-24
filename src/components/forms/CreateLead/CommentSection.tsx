@@ -8,8 +8,8 @@ interface Props {
 const CommentSection: React.FC<Props> = ({ value = '', onChange = () => {} }) => {
   return (
     <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-200">
-      <div className="p-6 bg-gray-50 rounded-2xl ">
-        <label className="block text-sm text-gray-800 mb-1">Comment</label>
+      <div className="px-4 py-5 p-5 bg-gray-50">
+        <label className="block text-sm text-gray-600 mb-1">Comment</label>
         <textarea
           placeholder="Additional notes about the lead..."
           value={value}

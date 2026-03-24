@@ -270,7 +270,7 @@ const BriefLog: React.FC = () => {
   const handleEdit = (item: BriefLogItem) => {
     navigate(`/brief/edit-submitted-plan/${item.brief_id || item.id}`);
   };
-  
+
   const startIndex = (currentPage - 1) * itemsPerPage;
 
   return (
@@ -282,19 +282,22 @@ const BriefLog: React.FC = () => {
           { label: 'Brief Log', isActive: true }
         ]}
         showCreateButton={false}
-        onCreateClick={() => {}}
+        onCreateClick={() => { }}
       />
 
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-        <div className="bg-gray-50 rounded-lg px-6 py-4 flex items-center justify-between border-b border-gray-200">
-          <h2 className="text-base font-semibold text-gray-900">
+        <div className="bg-gray-50 px-3 md:px-5 py-3 md:py-4 flex flex-row items-center justify-between gap-3 flex-wrap md:flex-nowrap border-b border-gray-200">
+          <h2 className="text-sm md:text-base font-semibold text-gray-900 flex-shrink-0">
             {id ? `Brief Log - Brief #${id}` : 'Brief Log'}
           </h2>
-          <SearchBar
-            delay={0}
-            placeholder="Search logs..."
-            onSearch={handleSearch}
-          />
+
+          <div className="w-full sm:w-auto sm:ml-auto">
+            <SearchBar
+              delay={0}
+              placeholder="Search logs..."
+              onSearch={handleSearch}
+            />
+          </div>
         </div>
 
         <div className="pt-0 overflow-visible">

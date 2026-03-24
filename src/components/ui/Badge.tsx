@@ -27,7 +27,7 @@ const Badge: React.FC<Props> = ({ status, children, className, onClick, tabIndex
 
   return (
     <span
-      className={`inline-flex items-center justify-center h-7 w-28 border border-transparent rounded-full text-xs font-medium leading-tight whitespace-nowrap ${classes} ${className ?? ''}`}
+      className={`inline-flex items-center justify-center h-7 w-28 border border-transparent rounded-full text-xs font-medium leading-tight whitespace-nowrap badge-item ${classes} ${className ?? ''}`}
       aria-label={String(children ?? status)}
       onClick={onClick}
       tabIndex={computedTabIndex}

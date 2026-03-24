@@ -44,7 +44,7 @@ const ViewUser: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex-1 p-6">
+      <div className="flex-1">
         <div className="flex items-center justify-center h-full">
           <div className="text-lg text-gray-500">Loading...</div>
         </div>
@@ -54,59 +54,62 @@ const ViewUser: React.FC = () => {
 
   if (!user) {
     return (
-      <div className="flex-1 p-6">
+      <div className="flex-1">
         <div className="text-lg text-gray-500">User not found</div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 p-6">
-      <MasterFormHeader 
-        onBack={() => navigate(ROUTES.USER.ROOT)} 
-        title="View User" 
+    <div className="flex-1">
+      <MasterFormHeader
+        onBack={() => navigate(ROUTES.USER.ROOT)}
+        title="View User"
       />
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 mt-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
-            <div>
-              <div className="text-sm text-gray-600">User Name</div>
-              <div className="text-base text-gray-800">{user.name}</div>
+            <div className='flex gap-x-3 gap-y-1 items-center flex-wrap bg-gray-50 border border-gray-200 rounded-lg py-3 px-3'>
+              <div className="text-base text-gray-800 font-semibold"> User Name : </div>
+              <div className="text-sm text-black">{user.name}</div>
             </div>
-            <div>
-              <div className="text-sm text-gray-600">Email</div>
-              <div className="text-base text-gray-800">{user.email}</div>
+
+            <div className='flex gap-x-3 gap-y-1 items-center flex-wrap bg-gray-50 border border-gray-200 rounded-lg py-3 px-3'>
+              <div className="text-base text-gray-800 font-semibold">Email :</div>
+              <div className="text-sm text-black">{user.email}</div>
             </div>
-            <div>
-              <div className="text-sm text-gray-600">Phone Number</div>
-              <div className="text-base text-gray-800">{user.phone || '-'}</div>
+
+            <div className='flex gap-x-3 gap-y-1 items-center flex-wrap bg-gray-50 border border-gray-200 rounded-lg py-3 px-3'>
+              <div className="text-base text-gray-800 font-semibold">Phone Number :</div>
+              <div className="text-sm text-black">{user.phone || '-'}</div>
             </div>
-            <div>
-              <div className="text-sm text-gray-600">Created Date</div>
-              <div className="text-base text-gray-800">
+
+            <div className='flex gap-x-3 gap-y-1 items-center flex-wrap bg-gray-50 border border-gray-200 rounded-lg py-3 px-3'>
+              <div className="text-base text-gray-800 font-semibold">Created Date :</div>
+              <div className="text-sm text-black]">
                 {user.created_at_formatted || (user.created_at ? new Date(user.created_at).toLocaleString() : '-') || '-'}
               </div>
             </div>
 
-            <div>
-              <div className="text-sm text-gray-600">Role Description</div>
+            <div className='flex gap-x-3 gap-y-1 flex-wrap flex-col bg-gray-50 border border-gray-200 rounded-lg py-3 px-3 flex-col'>
+              <div className="text-base text-gray-800 font-semibold">Role Description :</div>
               {user.roles && user.roles.length > 0 ? (
                 <ol className="list-decimal list-inside mt-1 space-y-1">
                   {user.roles.map((r: any, i: number) => (
-                    <li key={r.id ?? i} className="text-base text-gray-800">
+                    <li key={r.id ?? i} className="text-sm text-black]">
                       {r.description || '-'}
                     </li>
                   ))}
                 </ol>
               ) : (
-                <div className="text-base text-gray-800 mt-1">-</div>
+                <div className="text-sm texblacky)] mt-1">-</div>
               )}
             </div>
           </div>
 
           <div className="space-y-4">
-            <div>
-              <div className="text-sm text-gray-600">Role</div>
+            <div className='flex gap-x-3 gap-y-1 items-center flex-wrap bg-gray-50 border border-gray-200 rounded-lg py-3 px-3'>
+              <div className="text-base text-gray-800 font-semibold">Role :</div>
               <div className="mt-1 flex flex-wrap gap-2">
                 {user.roles && user.roles.length > 0 ? (
                   user.roles.map((r: any, idx: number) => (
@@ -131,24 +134,24 @@ const ViewUser: React.FC = () => {
               </div>
             </div>
 
-            <div>
-              <div className="text-sm text-gray-600">Last Login</div>
-              <div className="text-base text-gray-800">{user.last_login_at || '-'}</div>
+            <div className='flex gap-x-3 gap-y-1 items-center flex-wrap bg-gray-50 border border-gray-200 rounded-lg py-3 px-3'>
+              <div className="text-base text-gray-800 font-semibold">Last Login :</div>
+              <div className="text-sm text-black">{user.last_login_at || '-'}</div>
             </div>
 
-            <div>
-              <div className="text-sm text-gray-600">Parent Users</div>
+            <div className='flex gap-x-3 gap-y-1 flex-wrap bg-gray-50 border border-gray-200 rounded-lg py-3 px-3 flex-col'>
+              <div className="text-base text-gray-800 font-semibold">Parent Users :</div>
               {user.parents && user.parents.length > 0 ? (
                 <div className="mt-2 space-y-3">
                   {user.parents.map((p: any) => (
                     <div key={p.id} className="w-full bg-white border border-gray-200 rounded-md p-3">
-                      <div className="text-base text-gray-800">{p.name}</div>
-                      <div className="text-sm text-gray-600">{p.email}</div>
+                      <div className="text-sm text-black">{p.name}</div>
+                      <div className="text-base text-gray-800 font-semibold">{p.email}</div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-base text-gray-800 mt-1">-</div>
+                <div className="text-sm texblacky)] mt-1">-</div>
               )}
             </div>
           </div>

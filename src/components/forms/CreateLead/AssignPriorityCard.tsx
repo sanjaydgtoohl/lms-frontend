@@ -149,13 +149,13 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
             )}
           </div>
           <div>
-            <label className="block text-sm text-gray-800 mb-1">Priority</label>
+            <label className="block text-sm text-gray-600 mb-1">Priority</label>
             <SelectField
               options={priorityOptions}
               placeholder="Select Priority"
               value={priority}
               onChange={(value) => onChange?.({ assignTo, priority: typeof value === 'string' ? value : value[0] ?? '', callFeedback })}
-              inputClassName="px-3 py-2 rounded-lg bg-white text-gray-800 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+              inputClassName="px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               disabled={priorityLoading}
             />
             {priorityLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
@@ -165,13 +165,13 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
             )}
           </div>
           <div>
-            <label className="block text-sm text-gray-800 mb-1">Call Feedback</label>
+            <label className="block text-sm text-gray-600 mb-1">Call Feedback</label>
             <SelectField
               options={callStatusOptions}
               placeholder="Please Select Feedback"
               value={callFeedback}
               onChange={(value: any) => onChange?.({ assignTo, priority, callFeedback: value })}
-              inputClassName="px-3 py-2 rounded-lg bg-white text-gray-800 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+              inputClassName="px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               disabled={callStatusLoading}
             />
             {callStatusLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}

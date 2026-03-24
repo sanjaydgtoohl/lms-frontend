@@ -11,15 +11,16 @@ import SearchBar from '../../components/ui/SearchBar';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import AttendeesModal from '../../components/ui/AttendeesModal';
 import { usePermissions } from '../../hooks/SidebarMenuHooks';
+import TableHeader from '../../components/ui/TableHeader';
 
 // Dummy data and functions for Meeting pipeline (replace with real API calls)
 
 const MeetingPipeline: React.FC = () => {
-    const [attendeesModal, setAttendeesModal] = useState<{ open: boolean; attendees: ApiMeeting['attendees'] }>({ open: false, attendees: [] });
-    const handleAttendeesClick = (attendees: ApiMeeting['attendees']) => {
-      setAttendeesModal({ open: true, attendees });
-    };
-    const closeAttendeesModal = () => setAttendeesModal({ open: false, attendees: [] });
+  const [attendeesModal, setAttendeesModal] = useState<{ open: boolean; attendees: ApiMeeting['attendees'] }>({ open: false, attendees: [] });
+  const handleAttendeesClick = (attendees: ApiMeeting['attendees']) => {
+    setAttendeesModal({ open: true, attendees });
+  };
+  const closeAttendeesModal = () => setAttendeesModal({ open: false, attendees: [] });
   const { hasPermission } = usePermissions();
   const navigate = useNavigate();
   const [meetings, setMeetings] = useState<ApiMeeting[]>([]);
@@ -93,13 +94,14 @@ const MeetingPipeline: React.FC = () => {
                 createButtonLabel="Create Meeting"
               />
             )}
+          
             <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-              <div className="bg-gray-50 rounded-lg px-6 py-4 flex items-center justify-between border-b border-gray-200">
-                <h2 className="text-base font-semibold text-gray-900 flex-shrink-0">Meeting Pipeline</h2>
-                <div className="w-40 md:w-auto ml-auto">
-                  <SearchBar delay={0} placeholder="Search Meeting" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
-                </div>
-              </div>
+              {/* Table Header */}
+              <TableHeader title='Meeting Pipeline'>
+                <SearchBar delay={0} placeholder="Search Meeting" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
+              </TableHeader>
+
+
               <div className="pt-0 overflow-visible">
                 <Table
                   data={meetings}
@@ -111,14 +113,16 @@ const MeetingPipeline: React.FC = () => {
                     { key: 'id', header: 'Id', render: (it: ApiMeeting) => `#${it.id}` },
                     { key: 'title', header: 'Title', render: (it: ApiMeeting) => it.title },
                     { key: 'lead_name', header: 'Lead Name', render: (it: ApiMeeting) => it.lead ? `${it.lead.name} #${it.lead.id}` : '-' },
-                    { key: 'attendees', header: 'Attendees', render: (it: ApiMeeting) => (
-                      <span
-                        style={{ cursor: 'pointer', color: '#2563eb', textDecoration: 'underline' }}
-                        onClick={() => handleAttendeesClick(it.attendees)}
-                      >
-                        {it.attendees?.length ?? 0}
-                      </span>
-                    ) },
+                    {
+                      key: 'attendees', header: 'Attendees', render: (it: ApiMeeting) => (
+                        <span
+                          style={{ cursor: 'pointer', color: '#2563eb', textDecoration: 'underline' }}
+                          onClick={() => handleAttendeesClick(it.attendees)}
+                        >
+                          {it.attendees?.length ?? 0}
+                        </span>
+                      )
+                    },
                     { key: 'type', header: 'Type', render: (it: ApiMeeting) => it.type },
                     { key: 'location', header: 'Location', render: (it: ApiMeeting) => it.location || '-' },
                     { key: 'agenda', header: 'Agenda', render: (it: ApiMeeting) => it.agenda },

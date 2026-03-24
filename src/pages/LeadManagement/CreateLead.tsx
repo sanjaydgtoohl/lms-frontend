@@ -229,7 +229,7 @@ const CreateLead: React.FC = () => {
 
   // Custom render for LeadManagementSection to pass dropdown data
   return (
-    <div className="flex-1 p-6 w-full max-w-full">
+    <div className="flex-1 w-full max-w-full">
       <MasterFormHeader onBack={() => navigate(-1)} title="Create Lead" />
 
       <div className="space-y-6">

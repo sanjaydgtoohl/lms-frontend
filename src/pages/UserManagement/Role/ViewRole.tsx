@@ -64,32 +64,32 @@ const ViewRole: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 p-6">
-      <MasterFormHeader 
-        onBack={() => navigate(ROUTES.ROLE.ROOT)} 
-        title="View Role" 
+    <div className="flex-1">
+      <MasterFormHeader
+        onBack={() => navigate(ROUTES.ROLE.ROOT)}
+        title="View Role"
       />
-      
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 mt-6">
-        <div className="grid grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <div>
-              <div className="text-sm text-gray-600">ID</div>
-              <div className="text-base text-gray-800">{role.id}</div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-600">Role Name</div>
-              <div className="text-base text-gray-800">{role.name}</div>
-            </div>
+
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm px-4 py-5 sm:p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className='flex gap-x-3 gap-y-1 items-center flex-wrap bg-gray-50 border border-gray-200 rounded-lg py-3 px-3'>
+            <div className="text-sm text-gray-800 font-semibold">ID</div>
+            <div className="text-sm text-gray-600">{role.id}</div>
           </div>
 
-          <div className="col-span-2">
-            <div>
-              <div className="text-sm text-gray-600">Description</div>
-              <div className="text-base text-gray-800 whitespace-pre-wrap">{role.description}</div>
-            </div>
+          <div className='flex gap-x-3 gap-y-1 items-center flex-wrap bg-gray-50 border border-gray-200 rounded-lg py-3 px-3'>
+            <div className="text-sm text-gray-800 font-semibold">Role Name</div>
+            <div className="text-sm text-gray-600">{role.name}</div>
           </div>
+
+          <div className='flex gap-x-3 gap-y-1 items-center flex-wrap bg-gray-50 border border-gray-200 rounded-lg py-3 px-3'>
+            <div className="text-sm text-gray-800 font-semibold">Description</div>
+            <div className="text-sm text-gray-600 whitespace-pre-wrap">{role.description}</div>
+          </div>
+          
         </div>
+
+
       </div>
     </div>
   );

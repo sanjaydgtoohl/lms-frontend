@@ -16,6 +16,7 @@ import StatusDropdown from '../../components/ui/StatusDropdown';
 import AssignDropdown from '../../components/ui/AssignDropdown';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import SweetAlert from '../../utils/SweetAlert';
+import TableHeader from '../../components/ui/TableHeader';
 
 type Brief = ServiceBriefItem;
 
@@ -404,10 +405,10 @@ const BriefPipeline: React.FC = () => {
           )}
 
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-            <div className="bg-gray-50 rounded-lg px-6 py-4 flex items-center justify-between border-b border-gray-200">
-              <h2 className="text-base font-semibold text-gray-900">Brief Pipeline</h2>
+            {/* Table Header */}
+            <TableHeader title="Brief Pipeline">
               <SearchBar delay={0} placeholder="Please Search Brief" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
-            </div>
+            </TableHeader>
 
             <div className="pt-0 overflow-visible">
               <Table

@@ -297,21 +297,21 @@ const Create: React.FC<CreateProps> = ({
   };
 
   return (
-    <div className={inline ? 'w-full' : 'p-6'}>
+    <div className={inline ? 'w-full' : 'p-0'}>
       <MasterCreateHeader
         title=""
         onClose={onClose ? onClose : () => navigate(-1)}
       />
-      <div className="mt-6 bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+      <div className="mt-6 bg-white rounded-2xl shadow-sm border border-gray-200 px-4 py-5 sm:p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           {error ? <p className="text-sm text-red-600 mb-4">{error}</p> : null}
-          <div className="grid grid-cols-2 gap-6">
+          <div className="flex flex-wrap gap-3">
             {/* Brand Name */}
-            <div>
-              <label className="block text-sm text-gray-800 font-medium mb-2">
+            <div className='w-full sm:w-[calc(50%-12px)]'>
+              <label className="block text-sm font-medium mb-2">
                 Brand Name <span className="text-[#FF0000]">*</span>
               </label>
-              <div>
+              <div className='w-full'>
                 <SelectField
                   name="brandName"
                   value={formData.brandName}
@@ -333,8 +333,8 @@ const Create: React.FC<CreateProps> = ({
             </div>
 
             {/* Source */}
-            <div>
-              <label className="block text-sm text-gray-800 font-medium mb-2">
+            <div className='w-full sm:w-[calc(50%-12px)]'>
+              <label className="block text-sm font-medium mb-2">
                 Source <span className="text-[#FF0000]">*</span>
               </label>
               <div>
@@ -359,8 +359,8 @@ const Create: React.FC<CreateProps> = ({
             </div>
 
             {/* Sub Source (dropdown) */}
-            <div>
-              <label className="block text-sm text-gray-800 font-medium mb-2 flex items-center gap-2">
+            <div className='w-full sm:w-[calc(50%-12px)]'>
+              <label className="block text-sm font-medium mb-2 flex items-center gap-2">
                 Sub Source <span className="text-[#FF0000]">*</span>
                 {subSourceLoading && <Loader className="w-4 h-4 animate-spin text-blue-500" />}
               </label>
@@ -386,7 +386,7 @@ const Create: React.FC<CreateProps> = ({
             </div>
 
             {/* Product Name */}
-            <div>
+            <div className='w-full sm:w-[calc(50%-12px)]'>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 Product Name <span className="text-red-500">*</span>
               </label>
@@ -413,8 +413,8 @@ const Create: React.FC<CreateProps> = ({
             </div>
 
             {/* Image Upload & Preview */}
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <div className="w-full">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 {(formData.image_url && !formData.remove_image) || imagePreview ? 'Uploaded Image' : 'Upload Image'}
               </label>
               <div>

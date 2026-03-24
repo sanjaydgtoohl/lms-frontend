@@ -8,6 +8,7 @@ import { ROUTES } from '../../../constants';
 import { listPermissions, deletePermission } from '../../../services/AllPermissions';
 import SweetAlert from '../../../utils/SweetAlert';
 import ConfirmDialog from '../../../components/ui/ConfirmDialog';
+import TableHeader from '../../../components/ui/TableHeader';
 
 interface Permission {
   id: string;
@@ -43,7 +44,7 @@ const AllPermissions: React.FC = () => {
       setTotalItems(Number(total || 0));
     } catch (err) {
       // keep console error for now; UI-level notifications can be added
-       
+
       console.error('Failed to fetch permissions', err);
       setPermissions([]);
       setTotalItems(0);
@@ -60,7 +61,7 @@ const AllPermissions: React.FC = () => {
   const navigate = useNavigate();
 
   const handleCreatePermission = () => navigate(ROUTES.PERMISSION.CREATE);
-  
+
   const extractNumericId = (id: string) => {
     if (!id) return id;
     const digits = String(id).replace(/\D/g, '');
@@ -95,7 +96,7 @@ const AllPermissions: React.FC = () => {
         // no need to action
       }
     } catch (err: any) {
-       
+
       console.error('Failed to delete permission', err);
       try { SweetAlert.showError(err?.message || 'Failed to delete permission'); } catch {
         // no need to action
@@ -108,11 +109,11 @@ const AllPermissions: React.FC = () => {
   };
 
   const columns = ([
-    { 
-      key: 'srNo', 
-      header: 'S. No.', 
+    {
+      key: 'srNo',
+      header: 'S. No.',
       render: (it: Permission & { srNo: number }) => it.srNo,
-      className: 'text-left whitespace-nowrap' 
+      className: 'text-left whitespace-nowrap'
     },
     { key: 'display_name', header: 'Name', render: (it: Permission) => it.display_name || it.name, className: 'max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap' },
     { key: 'description', header: 'Description', render: (it: Permission) => it.description, className: 'max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap' },
@@ -135,11 +136,10 @@ const AllPermissions: React.FC = () => {
         createButtonLabel="Create Permission"
         createPermissionSlug="permission.create"
       />
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-        <div className="bg-gray-50 rounded-lg px-6 py-4 flex items-center justify-between border-b border-gray-200">
-          <h2 className="text-base font-semibold text-gray-900">All Permissions</h2>
-          <div className="ml-4">
-            <SearchBar
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-3">
+        {/* Table Header */}
+        <TableHeader title="All Permissions">
+          <SearchBar
               placeholder="Search permissions..."
               delay={0}
               onSearch={(q: string) => {
@@ -147,10 +147,9 @@ const AllPermissions: React.FC = () => {
                 setCurrentPage(1);
               }}
             />
-          </div>
-        </div>
+        </TableHeader>
 
-        <div className="pt-0 overflow-visible">
+        <div className="pt-0 overflow-visible ">
           <Table
             data={permissions}
             startIndex={(currentPage - 1) * itemsPerPage}

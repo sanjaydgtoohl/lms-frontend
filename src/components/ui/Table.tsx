@@ -114,7 +114,7 @@ const Table = <T,>(props: TableProps<T>) => {
               data.map((item, index) => (
                 <tr
                   key={keyExtractor ? keyExtractor(item, index) : (String((item as Record<string, unknown>).id) || String(index))}
-                  className="hover:bg-gray-50 transition-colors duration-150"
+                  className="hover:bg-gray-50 transition-colors duration-150 border-gray-200"
                 >
                     {columns.map(col => (
                     <td

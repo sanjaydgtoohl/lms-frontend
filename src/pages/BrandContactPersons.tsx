@@ -177,7 +177,7 @@ const BrandContactPersons: React.FC = () => {
 
               {/* Contact Information Card */}
               <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-6">Contact Information</h2>
+                <h2 className="text-xl font-semibold text-gray-900 mb-6">Contact Information </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Email */}
                   <div>

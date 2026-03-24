@@ -49,6 +49,7 @@ import { getCallStatuses } from '../../services/CallStatus';
 import { apiClient } from '../../utils/apiClient';
 import http from '../../services/http';
 import SweetAlert from '../../utils/SweetAlert';
+import TableHeader from '../../components/ui/TableHeader';
 
 const statusColors: Record<string, string> = {
   'Interested': '#22c55e',
@@ -514,11 +515,11 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
           onSignInClick={() => navigate(ROUTES.LEAD.MEETING_SCHEDULE)}
         />
       )}
+      
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-        <div className="bg-gray-50 px-3 md:px-6 py-3 md:py-4 flex items-center justify-between gap-3 border-b border-gray-200">
-          <h2 className="text-sm md:text-base font-semibold text-gray-900">{title}</h2>
-          <div className="w-40 md:w-auto ml-auto">
-            <SearchBar
+        {/* Table Header */}
+        <TableHeader title={title}>
+         <SearchBar
               placeholder="Search leads..."
               delay={250}
               onSearch={(q: string) => {
@@ -526,8 +527,8 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
                 setCurrentPage(1);
               }}
             />
-          </div>
-        </div>
+        </TableHeader>
+
 
         <div className="pt-0 overflow-x-auto">
           <Table

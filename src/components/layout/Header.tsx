@@ -144,7 +144,7 @@ const Header: React.FC<HeaderProps> = ({
                 <User className="w-4 h-4" />
               </div>
               <div className="hidden sm:flex sm:flex-col sm:items-start sm:leading-tight">
-                <span className="text-sm font-medium text-gray-600">{user?.name}</span>
+                <span className="text-sm font-medium text-gray-800">{user?.name}</span>
                 {user?.email && <span className="text-xs text-gray-500 truncate">{user.email}</span>}
               </div>
               <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} />
@@ -160,7 +160,7 @@ const Header: React.FC<HeaderProps> = ({
                 >
                   <div className="px-4 py-4 border-b border-gray-100 bg-white">
                     <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 text-blue-700 flex items-center justify-center font-semibold text-lg">
+                      <div className="min-w-14 min-h-14 max-w-14 max-h-14 rounded-full bg-gray-200 border-gray-300 text-gray-800 flex items-center justify-center font-semibold text-lg">
                         {user?.name ? user.name[0].toUpperCase() : ''}
                       </div>
                       <div className="min-w-0">

@@ -142,12 +142,13 @@ const EditRole: React.FC = () => {
       />
 
       <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="p-6 bg-gray-50 rounded-2xl ">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="px-4 py-5 sm:p-6 bg-gray-50">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm text-gray-800 mb-1">
+              <label className="block text-sm text-gray-600 mb-1">
                 Role Name <span className="text-[#FF0000]">*</span>
               </label>
+
               <input
                 name="name"
                 value={form.name}
@@ -156,10 +157,10 @@ const EditRole: React.FC = () => {
                   setErrors((prev) => ({ ...prev, name: '' }));
                 }}
                 placeholder="Please enter role name"
-                className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors ${
+                className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-1 transition-colors ${
                   errors.name
                     ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                    : 'border border-gray-200 focus:ring-blue-500'
+                    : 'border border-gray-200 focus:ring-black'
                 }`}
                 aria-invalid={errors.name ? 'true' : 'false'}
                 aria-describedby={errors.name ? 'name-error' : undefined}
@@ -180,7 +181,7 @@ const EditRole: React.FC = () => {
 
             {/* Description - Textarea */}
             <div>
-              <label className="block text-sm text-gray-800 mb-1">
+              <label className="block text-sm text-gray-600 mb-1">
                 Description <span className="text-[#FF0000]">*</span>
               </label>
               <textarea
@@ -189,10 +190,10 @@ const EditRole: React.FC = () => {
                 onChange={handleChange}
                 placeholder="Please enter role description"
                 rows={4}
-                className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors resize-none ${
+                className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-1 transition-colors resize-none ${
                   errors.description
                     ? 'border border-red-500 bg-red-50 focus:ring-red-500'
-                    : 'border border-gray-200 focus:ring-blue-500'
+                    : 'border border-gray-200 focus:ring-black'
                 }`}
                 aria-invalid={errors.description ? 'true' : 'false'}
                 aria-describedby={errors.description ? 'description-error' : undefined}
@@ -213,7 +214,7 @@ const EditRole: React.FC = () => {
 
             {/* Role Permission Section - Tree Style */}
             <div className="mt-8">
-              <label className="block text-sm font-medium text-gray-800mb-2">
+              <label className="block text-sm font-medium text-gray-600 mb-2">
                 Role Permission <span className="text-[#FF0000]">*</span>
               </label>
               <p className="text-xs text-gray-500 mb-3">Update permissions for this role</p>
@@ -264,7 +265,7 @@ const EditRole: React.FC = () => {
               <button
                 type="button"
                 onClick={handleBack}
-                className="px-4 py-2 rounded-lg border border-gray-200 text-gray-800 hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 rounded-lg border border-gray-200 text-gray-800 placeholder:text-gray-400 hover:bg-gray-50 transition-colors"
               >
                 Cancel
               </button>

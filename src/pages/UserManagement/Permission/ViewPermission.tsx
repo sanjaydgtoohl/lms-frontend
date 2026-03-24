@@ -54,31 +54,29 @@ const ViewPermission: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 p-6">
-      <MasterFormHeader 
-        onBack={() => navigate(ROUTES.PERMISSION.ROOT)} 
-        title="View Permission" 
+    <div className="flex-1">
+      <MasterFormHeader
+        onBack={() => navigate(ROUTES.PERMISSION.ROOT)}
+        title="View Permission"
       />
-      
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 mt-6">
-        <div className="grid grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <div>
-              <div className="text-sm text-gray-600">ID</div>
-              <div className="text-base text-gray-800">{permission.id}</div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-600">Permission Name</div>
-              <div className="text-base text-gray-800">{permission.display_name}</div>
-            </div>
+
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm px-4 py-5 sm:p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className='flex gap-x-3 gap-y-1 items-center flex-wrap bg-gray-50 border border-gray-200 rounded-lg py-3 px-3'>
+            <div className="text-sm text-gray-800 font-semibold">ID : </div>
+            <div className="text-sm text-gray-600">{permission.id}</div>
           </div>
 
-          <div className="col-span-2">
-            <div>
-              <div className="text-sm text-gray-600">Description</div>
-              <div className="text-base text-gray-800 whitespace-pre-wrap">{permission.description}</div>
-            </div>
+         <div className='flex gap-x-3 gap-y-1 items-center flex-wrap bg-gray-50 border border-gray-200 rounded-lg py-3 px-3'>
+            <div className="text-sm text-gray-800 font-semibold">Permission Name : </div>
+            <div className="text-sm text-gray-600">{permission.display_name}</div>
           </div>
+
+          <div className='flex gap-x-3 gap-y-1 items-center flex-wrap bg-gray-50 border border-gray-200 rounded-lg py-3 px-3'>
+            <div className="text-sm text-gray-800 font-semibold">Description : </div>
+            <div className="text-sm text-gray-600 whitespace-pre-wrap">{permission.description}</div>
+          </div>
+
         </div>
       </div>
     </div>

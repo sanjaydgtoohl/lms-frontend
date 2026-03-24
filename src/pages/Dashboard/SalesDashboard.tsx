@@ -303,7 +303,7 @@ const SalesDashboard: React.FC = () => {
             </div>
           ))}
           {activeTab === 'brief' && briefs.map(b => (
-            <div key={b.id} className="flex flex-row flex-wrap items-center justify-between bg-white rounded-lg p-3 gap-2 md:gap-0 overflow-x-auto dashboard-tab-section">
+            <div key={b.id} className="flex flex-row flex-wrap items-center justify-between bg-white rounded-lg p-3 gap-2 md:gap-0 overflow-x-auto dashboard-tab-section border border-gray-200">
 
               <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-x-3 sm:gap-8 overflow-x-auto overflow-y-hidden tabs-wrapper">
 
@@ -370,7 +370,7 @@ const SalesDashboard: React.FC = () => {
             </div>
           ))}
           {activeTab === 'follow' && followUpLeads.map(f => (
-            <div key={f.id} className="flex flex-row flex-wrap items-center justify-between bg-white rounded-lg p-3 gap-2 md:gap-0 overflow-x-auto dashboard-tab-section">
+            <div key={f.id} className="flex flex-row flex-wrap items-center justify-between bg-white rounded-lg p-3 gap-2 md:gap-0 overflow-x-auto dashboard-tab-section border border-gray-200">
 
               <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-x-3 sm:gap-8 overflow-x-auto overflow-y-hidden tabs-wrapper">
 
@@ -457,7 +457,7 @@ const SalesDashboard: React.FC = () => {
             </div>
           ))}
           {activeTab === 'meeting' && meetingLeads.map(m => (
-            <div key={m.id} className="flex flex-row flex-wrap items-center justify-between bg-white rounded-lg p-3 gap-2 md:gap-0 overflow-x-auto dashboard-tab-section">
+            <div key={m.id} className="flex flex-row flex-wrap items-center justify-between bg-white rounded-lg p-3 gap-2 md:gap-0 overflow-x-auto dashboard-tab-section border border-gray-200">
 
               <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-x-3 sm:gap-8 overflow-x-auto overflow-y-hidden tabs-wrapper">
 
