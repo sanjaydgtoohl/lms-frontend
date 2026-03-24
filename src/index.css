@@ -381,7 +381,7 @@ button[data-btn-label="Save"]:hover,
 button[data-btn-label="Update"]:hover {
   @apply bg-black text-white;
 }
-
+/* 
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
@@ -390,11 +390,10 @@ button[data-btn-label="Update"]:hover {
   a:hover {
     color: #747bff;
   }
-  /* Don't set a global button background for light mode; limit to primary buttons only. */
   .btn-primary {
     background-color: var(--btn-bg) !important;
   }
-}
+} */
 
 /* Primary button helper class used by React Button component and utility buttons */
 .btn-primary {
@@ -575,22 +574,6 @@ box-shadow:  5px 5px 10px #131313,
 }
 
 
-.swal2-popup.swal2-modal {
-  @apply !py-10;
-}
-
-.swal2-popup.swal2-modal .swal2-icon {
-  @apply !mt-0 mb-5;
-}
-
-.swal2-popup.swal2-modal .swal2-icon {
-  @apply !text-xs;
-}
-
-.swal2-popup.swal2-modal .swal2-title {
-  @apply !py-1 text-xl md:text-2xl lg:text-3xl;
-}
-
-.swal2-popup.swal2-modal .swal2-html-container {
-  @apply !pt-0 text-sm sm:text-base;
+.react-datepicker-wrapper {
+  @apply w-full;
 }
