@@ -14,10 +14,10 @@ const AssignButton: React.FC<AssignButtonProps> = ({ value, onClick, isActive })
       onClick={onClick}
       onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
       className={`
-        group flex items-center justify-center w-full cursor-pointer
-        font-medium text-blue-600 hover:text-blue-700 underline
+        group w-full cursor-pointer
+        font-medium text-gray-900 underline
         transition-colors duration-200
-        ${isActive ? 'text-blue-700' : ''}
+        ${isActive ? 'text-gray-950' : ''}
       `}
     >
       <span className="truncate">{value || '-'}</span>

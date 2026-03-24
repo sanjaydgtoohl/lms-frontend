@@ -4,12 +4,13 @@ import Breadcrumb from '../../components/ui/Breadcrumb';
 import { showSuccess } from '../../utils/notifications';
 import SelectField from '../../components/ui/SelectField';
 import MultiSelectDropdown from '../../components/ui/MultiSelectDropdown';
-import { 
-  fetchMeetingById, 
-  fetchLeadsDropdownOptions, 
+import {
+  fetchMeetingById,
+  fetchLeadsDropdownOptions,
   fetchAttendeesDropdownOptions,
-  updateMeeting 
+  updateMeeting
 } from '../../services/EditMeeting';
+import { IoIosArrowBack } from 'react-icons/io';
 
 
 const EditMeeting: React.FC = () => {
@@ -25,7 +26,7 @@ const EditMeeting: React.FC = () => {
   const [title, setTitle] = useState<string>('');
   const [agenda, setAgenda] = useState<string>('');
   const [location, setLocation] = useState<string>('');
-  const [leadOptions, setLeadOptions] = useState<Array<{ value: string; label: string }>>([]); 
+  const [leadOptions, setLeadOptions] = useState<Array<{ value: string; label: string }>>([]);
   const [attendeesOptions, setAttendeesOptions] = useState<Array<{ value: string; label: string }>>([]);
   const [attendeeNameMap, setAttendeeNameMap] = useState<Record<string, string>>({}); // Map ID to Name
   const [loading, setLoading] = useState<boolean>(true);
@@ -66,7 +67,7 @@ const EditMeeting: React.FC = () => {
       try {
         setLoading(true);
         if (!id) return;
-        
+
         const meetingFormData = await fetchMeetingById(String(id));
         const { lead: leadData, attendees: attendeesData, meetingData } = meetingFormData;
 
@@ -99,7 +100,7 @@ const EditMeeting: React.FC = () => {
           value: att.id,
           label: att.name,
         }));
-        
+
         // Update options with both existing and meeting attendees
         setAttendeesOptions(prev => {
           const existingMap = new Map(prev.map(opt => [opt.value, opt]));
@@ -131,7 +132,7 @@ const EditMeeting: React.FC = () => {
         setLoading(false);
       }
     };
-    
+
     if (id) {
       fetchMeeting();
     }
@@ -175,7 +176,7 @@ const EditMeeting: React.FC = () => {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-center py-12">
-          <p className="text-[var(--text-secondary)]">Loading meeting details...</p>
+          <p className="text-gray-800">Loading meeting details...</p>
         </div>
       </div>
     );
@@ -183,29 +184,32 @@ const EditMeeting: React.FC = () => {
 
   return (
     <div className="space-y-6 !animate-none !transition-none">
-      <div className="flex items-center justify-between mb-3 !animate-none !transition-none">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <Breadcrumb
           items={[
             { label: 'Lead Management', path: '/lead-management' },
             { label: 'Edit Meeting', isActive: true },
           ]}
         />
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="font-semibold px-3 py-1 rounded-md flex items-center text-sm btn-primary text-white"
-        >
-          <svg className="mr-1" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
-          Go Back
-        </button>
+
+        <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-3">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="font-semibold px-3 py-1 rounded-md flex items-center text-sm btn-primary text-white"
+          >
+            <IoIosArrowBack size={16} className="mr-1" />
+            Go Back
+          </button>
+        </div>
       </div>
 
-      <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden !animate-none !transition-none">
-        <div className="p-6 bg-[#F9FAFB] !animate-none !transition-none">
-          <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-6 !animate-none !transition-none">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-[var(--text-secondary)] mb-1">Lead <span className="text-[#FF0000]">*</span></label>
+      <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="p-5 bg-gray-50">
+          <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-6">
+            <div className="flex flex-wrap gap-4">
+              <div className='w-full sm:w-[calc(50%-15px)]'>
+                <label className="block text-sm text-gray-800 mb-1">Lead <span className="text-red-600">*</span></label>
                 <SelectField
                   placeholder="Select Lead"
                   options={leadOptions}
@@ -214,12 +218,13 @@ const EditMeeting: React.FC = () => {
                     setLead(String(v));
                     if (errors.lead && v) setErrors({ ...errors, lead: undefined });
                   }}
-                  inputClassName="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)]"
+                  inputClassName="border border-gray-200 focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-gray-600"
                 />
                 {errors.lead && <div className="text-red-500 text-xs mt-1">{errors.lead}</div>}
               </div>
-              <div>
-                <label className="block text-sm text-[var(--text-secondary)] mb-1">Meeting Type <span className="text-[#FF0000]">*</span></label>
+
+              <div className='w-full sm:w-[calc(50%-15px)]'>
+                <label className="block text-sm text-gray-800 mb-1">Meeting Type <span className="text-[#FF0000]">*</span></label>
                 <SelectField
                   placeholder="Select Type"
                   options={meetingTypeOptions}
@@ -228,78 +233,78 @@ const EditMeeting: React.FC = () => {
                     setMeetingType(String(v));
                     if (errors.meetingType && v) setErrors({ ...errors, meetingType: undefined });
                   }}
-                  inputClassName="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)]"
+                  inputClassName="border border-gray-200 focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-gray-600"
                 />
                 {errors.meetingType && <div className="text-red-500 text-xs mt-1">{errors.meetingType}</div>}
               </div>
-              <div className="col-span-2">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Attendees <span className="text-[#FF0000]">*</span></label>
-                    <MultiSelectDropdown
-                      name="attendees"
-                      value={attendeeIds}
-                      onChange={(v) => {
-                        const selectedAttendees = v.map((id) => {
-                          const existing = attendees.find(att => att.id === id);
-                          if (existing) return existing;
-                          return {
-                            id: String(id),
-                            name: attendeeNameMap[id] || `User ${id}`,
-                          };
-                        });
-                        setAttendees(selectedAttendees);
-                        setAttendeeIds(v);
-                        if (errors.attendees && v.length) setErrors({ ...errors, attendees: undefined });
-                      }}
-                      options={attendeesOptions}
-                      labelMap={attendeeNameMap}
-                      placeholder={attendeesOptions.length ? 'Please Search And Select Attendees' : 'Loading attendees...'}
-                      multi={true}
-                      horizontalScroll={true}
-                    />
-                    {errors.attendees && <div className="text-red-500 text-xs mt-1">{errors.attendees}</div>}
-                  </div>
-                  <div>
-                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Agenda</label>
-                    <input
-                      type="text"
-                      placeholder="Please Fill Meeting Agenda "
-                      value={agenda}
-                      onChange={(e) => setAgenda(e.target.value)}
-                      className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)]"
-                    />
-                  </div>
-                </div>
+
+              <div className='w-full sm:w-[calc(50%-15px)]'>
+                <label className="block text-sm text-gray-800 mb-1">Attendees <span className="text-[#FF0000]">*</span></label>
+                <MultiSelectDropdown
+                  name="attendees"
+                  value={attendeeIds}
+                  onChange={(v) => {
+                    const selectedAttendees = v.map((id) => {
+                      const existing = attendees.find(att => att.id === id);
+                      if (existing) return existing;
+                      return {
+                        id: String(id),
+                        name: attendeeNameMap[id] || `User ${id}`,
+                      };
+                    });
+                    setAttendees(selectedAttendees);
+                    setAttendeeIds(v);
+                    if (errors.attendees && v.length) setErrors({ ...errors, attendees: undefined });
+                  }}
+                  options={attendeesOptions}
+                  labelMap={attendeeNameMap}
+                  placeholder={attendeesOptions.length ? 'Please Search And Select Attendees' : 'Loading attendees...'}
+                  multi={true}
+                  horizontalScroll={true}
+                />
+                {errors.attendees && <div className="text-red-500 text-xs mt-1">{errors.attendees}</div>}
               </div>
-              <div className="col-span-2">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm text-[var(--text-secondary)] mb-1">Start Date & Time <span className="text-[#FF0000]">*</span></label>
-                    <input
-                      type="text"
-                      placeholder="yyyy-mm-dd HH:mm"
-                      value={startDateTime}
-                      onChange={(e) => setStartDateTime(e.target.value)}
-                      className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)]"
-                    />
-                    {errors.startDateTime && <div className="text-red-500 text-xs mt-1">{errors.startDateTime}</div>}
-                  </div>
-                  <div>
-                    <label className="block text-sm text-[var(--text-secondary)] mb-1">End Date & Time <span className="text-[#FF0000]">*</span></label>
-                    <input
-                      type="text"
-                      placeholder="yyyy-mm-dd HH:mm"
-                      value={endDateTime}
-                      onChange={(e) => setEndDateTime(e.target.value)}
-                      className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)]"
-                    />
-                    {errors.endDateTime && <div className="text-red-500 text-xs mt-1">{errors.endDateTime}</div>}
-                  </div>
-                </div>
+
+              <div className='w-full sm:w-[calc(50%-15px)]'>
+                <label className="block text-sm text-gray-800 mb-1">Agenda</label>
+                <input
+                  type="text"
+                  placeholder="Please Fill Meeting Agenda "
+                  value={agenda}
+                  onChange={(e) => setAgenda(e.target.value)}
+                  className="border border-gray-200 focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-gray-600"
+                />
               </div>
-              <div>
-                <label className="block text-sm text-[var(--text-secondary)] mb-1">Add Title <span className="text-[#FF0000]">*</span></label>
+
+              <div className='w-full sm:w-[calc(50%-15px)]'>
+                <label className="block text-sm text-gray-800 mb-1">Start Date & Time <span className="text-[#FF0000]">*</span></label>
+                <input
+                  type="text"
+                  placeholder="yyyy-mm-dd HH:mm"
+                  value={startDateTime}
+                  onChange={(e) => setStartDateTime(e.target.value)}
+                  className="border border-gray-200 focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-gray-600"
+                />
+                {errors.startDateTime && <div className="text-red-500 text-xs mt-1">{errors.startDateTime}</div>}
+              </div>
+
+              <div className='w-full sm:w-[calc(50%-15px)]'>
+                <label className="block text-sm text-gray-800 mb-1">End Date & Time <span className="text-[#FF0000]">*</span></label>
+                <input
+                  type="text"
+                  placeholder="yyyy-mm-dd HH:mm"
+                  value={endDateTime}
+                  onChange={(e) => setEndDateTime(e.target.value)}
+                  className="border border-gray-200 focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-gray-600"
+                />
+                {errors.endDateTime && <div className="text-red-500 text-xs mt-1">{errors.endDateTime}</div>}
+              </div>
+
+
+
+              <div className='w-full sm:w-[calc(50%-15px)]'>
+
+                <label className="block text-sm text-gray-800 mb-1">Add Title <span className="text-[#FF0000]">*</span></label>
                 <input
                   type="text"
                   placeholder="Please Fill Meeting Title"
@@ -308,18 +313,19 @@ const EditMeeting: React.FC = () => {
                     setTitle(e.target.value);
                     if (errors.title && e.target.value) setErrors({ ...errors, title: undefined });
                   }}
-                  className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)]"
+                  className="border border-gray-200 focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-gray-600"
                 />
                 {errors.title && <div className="text-red-500 text-xs mt-1">{errors.title}</div>}
               </div>
-              <div>
-                <label className="block text-sm text-[var(--text-secondary)] mb-1">Meeting Location</label>
+
+              <div className='w-full sm:w-[calc(50%-15px)]'>
+                <label className="block text-sm text-gray-800 mb-1">Meeting Location</label>
                 <input
                   type="text"
                   placeholder="Please Fill Meeting Location"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  className="border border-[var(--border-color)] focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)]"
+                  className="border border-gray-200 focus:ring-blue-500 w-full px-3 py-2 rounded-lg bg-white text-gray-600"
                 />
               </div>
             </div>
@@ -334,8 +340,8 @@ const EditMeeting: React.FC = () => {
             </div>
           </form>
         </div>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 };
 

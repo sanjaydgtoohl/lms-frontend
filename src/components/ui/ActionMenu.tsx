@@ -284,7 +284,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, onUpl
         {showIconFallback ? (
           <span aria-hidden className="text-gray-600 text-base leading-none">⋯</span>
         ) : (
-          <MoreHorizontal size={16} color="#4B5563" strokeWidth={2} />
+          <MoreHorizontal size={20} className='text-gray-800' strokeWidth={2} />
         )}
       </button>
 
