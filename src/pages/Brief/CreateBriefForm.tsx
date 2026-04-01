@@ -53,9 +53,6 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
   // State for calendar pickers
   const [calendarDate, setCalendarDate] = useState<Date | null>(null); // For date only
   const [calendarTime, setCalendarTime] = useState<Date | null>(null); // For time only
-  // Calendar pickers for campaign start/end
-  const [calendarStartDate, setCalendarStartDate] = useState<Date | null>(null);
-  const [calendarEndDate, setCalendarEndDate] = useState<Date | null>(null);
 
   // Contact person dropdown state (loaded from API - leads list)
   const [contactPersons, setContactPersons] = useState<Array<string | { value: string; label: string }>>([]);
@@ -186,20 +183,10 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
       }
       // Also update campaign calendar pickers when provided
       if (patched.campaignStartDate) {
-        const parts = String(patched.campaignStartDate).split('-');
-        if (parts.length === 3) {
-          const [dd, mm, yyyy] = parts;
-          const d = new Date(Number(yyyy), Number(mm) - 1, Number(dd));
-          if (!isNaN(d.getTime())) setCalendarStartDate(d);
-        }
+        // calendarStartDate state removed; no action needed
       }
       if (patched.campaignEndDate) {
-        const parts2 = String(patched.campaignEndDate).split('-');
-        if (parts2.length === 3) {
-          const [dd2, mm2, yyyy2] = parts2;
-          const d2 = new Date(Number(yyyy2), Number(mm2) - 1, Number(dd2));
-          if (!isNaN(d2.getTime())) setCalendarEndDate(d2);
-        }
+        // calendarEndDate state removed; no action needed
       }
     }
   }, [initialData]);

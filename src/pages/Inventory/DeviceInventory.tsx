@@ -1,118 +1,85 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Filter } from 'lucide-react';
 import Pagination from '../../components/ui/Pagination';
 import Table from '../../components/ui/Table';
 import SearchBar from '../../components/ui/SearchBar';
+import FilterPopup from '../../components/ui/FilterPopup';
+import ExportCsvButton from '../../components/ui/ExportCsvButton';
 import MasterHeader from '../../components/ui/MasterHeader';
 import { useNavigate } from 'react-router-dom';
-import dummyDeviceData from '../../services/DeviceInventory';
-
-export interface DeviceData {
-  device_details_id: string;
-  device_id: string;
-  screen_id: string;
-  device_name: string;
-  main_category_name: string;
-  category_name: string;
-  sub_category_name: string;
-  location_type: string;
-  screen_location: string;
-  latitude: string;
-  longitude: string;
-  width?: string;
-  height?: string;
-  sq_ft?: string;
-  screen_size: string;
-  total_sq_ft?: string;
-  elevation?: string;
-  tilt_degree?: string;
-  orientation?: string;
-  resolution: string;
-  aspect_ratio: string;
-  monthly_footfall: string;
-  languages?: string;
-  state: string;
-  city: string;
-  zone?: string;
-  sub_zone_area?: string;
-  pincode?: string;
-  arterial_route?: string;
-  stretch?: string;
-  property?: string;
-  touchpoint?: string;
-  traffic_direction?: string;
-  mode_of_media?: string;
-  illumination?: string;
-  old_device_image: string;
-  device_image: string;
-  aws_device_image?: string;
-  country: string;
-  on_field_screen_count: string;
-  monday_start_time: string;
-  monday_end_time: string;
-  tuesday_start_time: string;
-  tuesday_end_time: string;
-  wednesday_start_time: string;
-  wednesday_end_time: string;
-  thursday_start_time: string;
-  thursday_end_time: string;
-  friday_start_time: string;
-  friday_end_time: string;
-  saturday_start_time: string;
-  saturday_end_time: string;
-  sunday_start_time: string;
-  sunday_end_time: string;
-  daily_impression: string;
-  cost_for_impression: string;
-  cpi_cost: string;
-  facing?: string;
-  min_operating_price: string;
-  screen_type?: string;
-  loop_timing: string;
-  slot_timing: string;
-  slot_details: string;
-  spots_day?: string;
-  slot_per_month: string;
-  daily_hours_of_loop: string;
-  cost_per_spot: string;
-  cost_per_audience_imp: string;
-  max_traffic?: string;
-  status: string;
-  default_date: string;
-  update_date: string;
-  email_id: string;
-  second_email_id?: string;
-  first_name: string;
-  last_name: string;
-  admin_flag: string;
-  company_name: string;
-  user_password: string;
-  device_limit: string;
-  expiry_date: string;
-  manager_name: string;
-  access_type: string;
-  markup_applicable: string;
-  markup_type?: string;
-  markup_value?: string;
-  code: string;
-}
+import {
+  fetchAllDeviceInventoryRows,
+  listDeviceInventory,
+  type DeviceData,
+} from '../../services/DeviceInventory';
+import { DEVICE_INVENTORY_CSV_COLUMNS } from './deviceInventoryCsv';
 
 const DeviceInventory: React.FC = () => {
   const navigate = useNavigate();
-  const [data] = useState<DeviceData[]>(dummyDeviceData);
+  const filterAnchorRef = useRef<HTMLButtonElement>(null);
+  const [data, setData] = useState<DeviceData[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [appliedLocation, setAppliedLocation] = useState({ state: '', city: '' });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+  const [loading, setLoading] = useState(false);
 
-  const handlePageChange = (page: number) => setCurrentPage(page);
+  const hasActiveLocationFilter = Boolean(appliedLocation.state.trim() || appliedLocation.city.trim());
 
-  const filteredData = data.filter((item) =>
-    item.device_name.toLowerCase().includes(searchQuery.toLowerCase())
+  const exportFetchRows = useCallback(
+    () =>
+      fetchAllDeviceInventoryRows({
+        search: searchQuery?.trim() ? searchQuery.trim() : undefined,
+        state: appliedLocation.state.trim() || undefined,
+        city: appliedLocation.city.trim() || undefined,
+      }),
+    [searchQuery, appliedLocation.state, appliedLocation.city]
   );
 
-  const paginatedData = filteredData.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const totalPages = useMemo(() => {
+    const pages = Math.ceil(totalItems / itemsPerPage);
+    return pages > 0 ? pages : 1;
+  }, [totalItems, itemsPerPage]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
+  const handlePageChange = (page: number) => {
+    const next = Math.min(totalPages, Math.max(1, page));
+    setCurrentPage(next);
+  };
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await listDeviceInventory({
+          page: currentPage,
+          per_page: itemsPerPage,
+          search: searchQuery?.trim() ? searchQuery.trim() : undefined,
+          state: appliedLocation.state.trim() || undefined,
+          city: appliedLocation.city.trim() || undefined,
+        });
+        if (!alive) return;
+        setData(Array.isArray(res.data) ? res.data : []);
+        setTotalItems(Number(res.total_records || 0));
+      } catch {
+        if (!alive) return;
+        setData([]);
+        setTotalItems(0);
+      } finally {
+        if (!alive) return;
+        setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [currentPage, itemsPerPage, searchQuery, appliedLocation.state, appliedLocation.city]);
 
   return (
     <div className="flex-1 w-full max-w-full overflow-x-hidden">
@@ -120,124 +87,188 @@ const DeviceInventory: React.FC = () => {
         onCreateClick={() => navigate('/add-device')}
         createButtonLabel="Add Device"
         showBreadcrumb={true}
-        showCreateButton={true}
+        showCreateButton={false}
+        breadcrumbItems={[{ label: 'Inventory', path: '/inventory' }, { label: 'Device Inventory', path: '/inventory/device' }]}
       />
 
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
         <div className="bg-gray-50 px-3 md:px-6 py-3 md:py-4 flex flex-row items-center justify-between gap-3 flex-wrap md:flex-nowrap border-b border-gray-200">
           <h2 className="text-sm md:text-base font-semibold text-gray-900 flex-shrink-0">Device Inventory</h2>
-          <SearchBar
-            delay={300}
-            onSearch={(q: string) => {
-              setSearchQuery(q);
-              setCurrentPage(1);
-            }}
-          />
+          <div className="flex w-full min-w-0 items-center justify-end gap-2 sm:w-auto">
+            <ExportCsvButton<DeviceData>
+              fetchRows={exportFetchRows}
+              columns={DEVICE_INVENTORY_CSV_COLUMNS}
+              filenamePrefix="device-inventory"
+              aria-label="Export filtered data as CSV"
+            />
+            <div className="relative w-full min-w-0 sm:w-auto">
+            <SearchBar
+              delay={300}
+              placeholder="Search devices"
+              filterSlot={
+                <button
+                  ref={filterAnchorRef}
+                  type="button"
+                  onClick={() => setFilterOpen((open) => !open)}
+                  aria-expanded={filterOpen}
+                  aria-haspopup="dialog"
+                  aria-label="Filter by state and city"
+                  className={`flex h-full min-h-[2.5rem] items-center justify-center px-3 py-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2 ${
+                    hasActiveLocationFilter
+                      ? 'text-indigo-600'
+                      : 'text-gray-500 hover:text-gray-800'
+                  }`}
+                >
+                  <Filter className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+                </button>
+              }
+              onSearch={(q: string) => {
+                setSearchQuery(q);
+                setCurrentPage(1);
+              }}
+            />
+            <FilterPopup
+              isOpen={filterOpen}
+              onClose={() => setFilterOpen(false)}
+              appliedValues={appliedLocation}
+              onApply={(values) => {
+                setAppliedLocation(values);
+                setCurrentPage(1);
+              }}
+              onReset={() => {
+                setAppliedLocation({ state: '', city: '' });
+                setCurrentPage(1);
+              }}
+              anchorRef={filterAnchorRef}
+            />
+            </div>
+          </div>
         </div>
 
         <Table
-          data={paginatedData}
+          data={data}
+          loading={loading}
+          keyExtractor={(it: DeviceData, idx: number) => `${it.device_details_id || it.device_id || 'row'}-${idx}`}
           columns={[
-            { key: 'device_details_id', header: 'Device Details ID', render: (item) => item.device_details_id },
-            { key: 'device_id', header: 'Device ID', render: (item) => item.device_id },
-            { key: 'screen_id', header: 'Screen ID', render: (item) => item.screen_id },
-            { key: 'device_name', header: 'Device Name', render: (item) => item.device_name },
-            { key: 'main_category_name', header: 'Main Category', render: (item) => item.main_category_name },
-            { key: 'category_name', header: 'Category', render: (item) => item.category_name },
-            { key: 'sub_category_name', header: 'Sub Category', render: (item) => item.sub_category_name },
-            { key: 'location_type', header: 'Location Type', render: (item) => item.location_type },
-            { key: 'screen_location', header: 'Screen Location', render: (item) => item.screen_location },
-            { key: 'latitude', header: 'Latitude', render: (item) => item.latitude },
-            { key: 'longitude', header: 'Longitude', render: (item) => item.longitude },
-            { key: 'width', header: 'Width', render: (item) => item.width || '' },
-            { key: 'height', header: 'Height', render: (item) => item.height || '' },
-            { key: 'sq_ft', header: 'Square Feet', render: (item) => item.sq_ft || '' },
-            { key: 'screen_size', header: 'Screen Size', render: (item) => item.screen_size },
-            { key: 'total_sq_ft', header: 'Total Square Feet', render: (item) => item.total_sq_ft || '' },
-            { key: 'elevation', header: 'Elevation', render: (item) => item.elevation || '' },
-            { key: 'tilt_degree', header: 'Tilt Degree', render: (item) => item.tilt_degree || '' },
-            { key: 'orientation', header: 'Orientation', render: (item) => item.orientation || '' },
-            { key: 'resolution', header: 'Resolution', render: (item) => item.resolution },
-            { key: 'aspect_ratio', header: 'Aspect Ratio', render: (item) => item.aspect_ratio },
-            { key: 'monthly_footfall', header: 'Monthly Footfall', render: (item) => item.monthly_footfall },
-            { key: 'languages', header: 'Languages', render: (item) => item.languages || '' },
-            { key: 'state', header: 'State', render: (item) => item.state },
-            { key: 'city', header: 'City', render: (item) => item.city },
-            { key: 'zone', header: 'Zone', render: (item) => item.zone || '' },
-            { key: 'sub_zone_area', header: 'Sub Zone Area', render: (item) => item.sub_zone_area || '' },
-            { key: 'pincode', header: 'Pincode', render: (item) => item.pincode || '' },
-            { key: 'arterial_route', header: 'Arterial Route', render: (item) => item.arterial_route || '' },
-            { key: 'stretch', header: 'Stretch', render: (item) => item.stretch || '' },
-            { key: 'property', header: 'Property', render: (item) => item.property || '' },
-            { key: 'touchpoint', header: 'Touchpoint', render: (item) => item.touchpoint || '' },
-            { key: 'traffic_direction', header: 'Traffic Direction', render: (item) => item.traffic_direction || '' },
-            { key: 'mode_of_media', header: 'Mode of Media', render: (item) => item.mode_of_media || '' },
-            { key: 'illumination', header: 'Illumination', render: (item) => item.illumination || '' },
-            { key: 'old_device_image', header: 'Old Device Image', render: (item) => item.old_device_image },
-            { key: 'device_image', header: 'Device Image', render: (item) => (
+            { key: 'device_details_id', header: 'device_details_id', render: (item) => item.device_details_id },
+            { key: 'device_id', header: 'device_id', render: (item) => item.device_id },
+            { key: 'screen_id', header: 'screen_id', render: (item) => item.screen_id },
+            { key: 'device_name', header: 'device_name', render: (item) => item.device_name },
+            { key: 'main_category_name', header: 'main_category_name', render: (item) => item.main_category_name },
+            { key: 'category_name', header: 'category_name', render: (item) => item.category_name },
+            { key: 'sub_category_name', header: 'sub_category_name', render: (item) => item.sub_category_name },
+            { key: 'location_type', header: 'location_type', render: (item) => item.location_type },
+            { key: 'screen_location', header: 'screen_location', render: (item) => item.screen_location },
+            { key: 'latitude', header: 'latitude', render: (item) => item.latitude },
+            { key: 'longitude', header: 'longitude', render: (item) => item.longitude },
+            { key: 'width', header: 'width', render: (item) => item.width || '' },
+            { key: 'height', header: 'height', render: (item) => item.height || '' },
+            { key: 'sq_ft', header: 'sq_ft', render: (item) => item.sq_ft || '' },
+            { key: 'screen_size', header: 'screen_size', render: (item) => item.screen_size },
+            { key: 'total_sq_ft', header: 'total_sq_ft', render: (item) => item.total_sq_ft || '' },
+            { key: 'elevation', header: 'elevation', render: (item) => item.elevation || '' },
+            { key: 'tilt_degree', header: 'tilt_degree', render: (item) => item.tilt_degree || '' },
+            { key: 'orientation', header: 'orientation', render: (item) => item.orientation || '' },
+            { key: 'resolution', header: 'resolution', render: (item) => item.resolution },
+            { key: 'aspect_ratio', header: 'aspect_ratio', render: (item) => item.aspect_ratio },
+            { key: 'monthly_footfall', header: 'monthly_footfall', render: (item) => item.monthly_footfall },
+            { key: 'languages', header: 'languages', render: (item) => item.languages || '' },
+            { key: 'state', header: 'state', render: (item) => item.state },
+            { key: 'city', header: 'city', render: (item) => item.city },
+            { key: 'zone', header: 'zone', render: (item) => item.zone || '' },
+            { key: 'sub_zone_area', header: 'sub_zone_area', render: (item) => item.sub_zone_area || '' },
+            { key: 'pincode', header: 'pincode', render: (item) => item.pincode || '' },
+            { key: 'arterial_route', header: 'arterial_route', render: (item) => item.arterial_route || '' },
+            { key: 'stretch', header: 'stretch', render: (item) => item.stretch || '' },
+            { key: 'property', header: 'property', render: (item) => item.property || '' },
+            { key: 'touchpoint', header: 'touchpoint', render: (item) => item.touchpoint || '' },
+            { key: 'traffic_direction', header: 'traffic_direction', render: (item) => item.traffic_direction || '' },
+            { key: 'mode_of_media', header: 'mode_of_media', render: (item) => item.mode_of_media || '' },
+            { key: 'illumination', header: 'illumination', render: (item) => item.illumination || '' },
+            { key: 'old_device_image', header: 'Old Device Image', render: (item) => (
               <img
-                src={item.device_image}
-                alt={item.device_name}
+                src={item.old_device_image || undefined}
+                alt="Old Device"
                 className="w-16 h-16 object-cover rounded-md border border-gray-200"
               />
             ) },
-            { key: 'aws_device_image', header: 'AWS Device Image', render: (item) => item.aws_device_image || '' },
-            { key: 'country', header: 'Country', render: (item) => item.country },
-            { key: 'on_field_screen_count', header: 'On Field Screen Count', render: (item) => item.on_field_screen_count },
-            { key: 'monday_start_time', header: 'Monday Start Time', render: (item) => item.monday_start_time },
-            { key: 'monday_end_time', header: 'Monday End Time', render: (item) => item.monday_end_time },
-            { key: 'tuesday_start_time', header: 'Tuesday Start Time', render: (item) => item.tuesday_start_time },
-            { key: 'tuesday_end_time', header: 'Tuesday End Time', render: (item) => item.tuesday_end_time },
-            { key: 'wednesday_start_time', header: 'Wednesday Start Time', render: (item) => item.wednesday_start_time },
-            { key: 'wednesday_end_time', header: 'Wednesday End Time', render: (item) => item.wednesday_end_time },
-            { key: 'thursday_start_time', header: 'Thursday Start Time', render: (item) => item.thursday_start_time },
-            { key: 'thursday_end_time', header: 'Thursday End Time', render: (item) => item.thursday_end_time },
-            { key: 'friday_start_time', header: 'Friday Start Time', render: (item) => item.friday_start_time },
-            { key: 'friday_end_time', header: 'Friday End Time', render: (item) => item.friday_end_time },
-            { key: 'saturday_start_time', header: 'Saturday Start Time', render: (item) => item.saturday_start_time },
-            { key: 'saturday_end_time', header: 'Saturday End Time', render: (item) => item.saturday_end_time },
-            { key: 'sunday_start_time', header: 'Sunday Start Time', render: (item) => item.sunday_start_time },
-            { key: 'sunday_end_time', header: 'Sunday End Time', render: (item) => item.sunday_end_time },
-            { key: 'daily_impression', header: 'Daily Impression', render: (item) => item.daily_impression },
-            { key: 'cost_for_impression', header: 'Cost for Impression', render: (item) => item.cost_for_impression },
-            { key: 'cpi_cost', header: 'CPI Cost', render: (item) => item.cpi_cost },
-            { key: 'facing', header: 'Facing', render: (item) => item.facing || '' },
-            { key: 'min_operating_price', header: 'Min Operating Price', render: (item) => item.min_operating_price },
-            { key: 'screen_type', header: 'Screen Type', render: (item) => item.screen_type || '' },
-            { key: 'loop_timing', header: 'Loop Timing', render: (item) => item.loop_timing },
-            { key: 'slot_timing', header: 'Slot Timing', render: (item) => item.slot_timing },
-            { key: 'slot_details', header: 'Slot Details', render: (item) => item.slot_details },
-            { key: 'spots_day', header: 'Spots Day', render: (item) => item.spots_day || '' },
-            { key: 'slot_per_month', header: 'Slot Per Month', render: (item) => item.slot_per_month },
-            { key: 'daily_hours_of_loop', header: 'Daily Hours of Loop', render: (item) => item.daily_hours_of_loop },
-            { key: 'cost_per_spot', header: 'Cost Per Spot', render: (item) => item.cost_per_spot },
-            { key: 'cost_per_audience_imp', header: 'Cost Per Audience Impression', render: (item) => item.cost_per_audience_imp },
-            { key: 'max_traffic', header: 'Max Traffic', render: (item) => item.max_traffic || '' },
-            { key: 'status', header: 'Status', render: (item) => item.status },
-            { key: 'default_date', header: 'Default Date', render: (item) => item.default_date },
-            { key: 'update_date', header: 'Update Date', render: (item) => item.update_date },
-            { key: 'email_id', header: 'Email ID', render: (item) => item.email_id },
-            { key: 'second_email_id', header: 'Second Email ID', render: (item) => item.second_email_id || '' },
-            { key: 'first_name', header: 'First Name', render: (item) => item.first_name },
-            { key: 'last_name', header: 'Last Name', render: (item) => item.last_name },
-            { key: 'admin_flag', header: 'Admin Flag', render: (item) => item.admin_flag },
-            { key: 'company_name', header: 'Company Name', render: (item) => item.company_name },
-            { key: 'user_password', header: 'User Password', render: (item) => item.user_password },
-            { key: 'device_limit', header: 'Device Limit', render: (item) => item.device_limit },
-            { key: 'expiry_date', header: 'Expiry Date', render: (item) => item.expiry_date },
-            { key: 'manager_name', header: 'Manager Name', render: (item) => item.manager_name },
-            { key: 'access_type', header: 'Access Type', render: (item) => item.access_type },
-            { key: 'markup_applicable', header: 'Markup Applicable', render: (item) => item.markup_applicable },
-            { key: 'markup_type', header: 'Markup Type', render: (item) => item.markup_type || '' },
-            { key: 'markup_value', header: 'Markup Value', render: (item) => item.markup_value || '' },
-            { key: 'code', header: 'Code', render: (item) => item.code },
+            { key: 'device_image', header: 'Device Image', render: (item) => (
+              <img
+                src={item.device_image || undefined}
+                alt="Device"
+                className="w-16 h-16 object-cover rounded-md border border-gray-200"
+              />
+            ) },
+            { key: 'aws_device_image', header: 'AWS Device Image', render: (item) => (
+              <a href={item.aws_device_image || undefined} target="_blank" rel="noopener noreferrer">
+                <img
+                  src={item.aws_device_image || undefined}
+                  alt="AWS Device"
+                  className="w-16 h-16 object-cover rounded-md border border-gray-200"
+                />
+              </a>
+            ) },
+            { key: 'country', header: 'Country', render: (item) => (
+              <span className="text-sm text-gray-700">{item.country || 'N/A'}</span>
+            ) },
+            { key: 'on_field_screen_count', header: 'On Field Screen Count', render: (item) => (
+              <span className="text-sm text-gray-700">{item.on_field_screen_count || 'N/A'}</span>
+            ) },
+            { key: 'monday_start_time', header: 'monday_start_time', render: (item) => item.monday_start_time || '' },
+            { key: 'monday_end_time', header: 'monday_end_time', render: (item) => item.monday_end_time || '' },
+            { key: 'tuesday_start_time', header: 'tuesday_start_time', render: (item) => item.tuesday_start_time || '' },
+            { key: 'tuesday_end_time', header: 'tuesday_end_time', render: (item) => item.tuesday_end_time || '' },
+            { key: 'wednesday_start_time', header: 'wednesday_start_time', render: (item) => item.wednesday_start_time || '' },
+            { key: 'wednesday_end_time', header: 'wednesday_end_time', render: (item) => item.wednesday_end_time || '' },
+            { key: 'thursday_start_time', header: 'thursday_start_time', render: (item) => item.thursday_start_time || '' },
+            { key: 'thursday_end_time', header: 'thursday_end_time', render: (item) => item.thursday_end_time || '' },
+            { key: 'friday_start_time', header: 'friday_start_time', render: (item) => item.friday_start_time || '' },
+            { key: 'friday_end_time', header: 'friday_end_time', render: (item) => item.friday_end_time || '' },
+            { key: 'saturday_start_time', header: 'saturday_start_time', render: (item) => item.saturday_start_time || '' },
+            { key: 'saturday_end_time', header: 'saturday_end_time', render: (item) => item.saturday_end_time || '' },
+            { key: 'sunday_start_time', header: 'sunday_start_time', render: (item) => item.sunday_start_time || '' },
+            { key: 'sunday_end_time', header: 'sunday_end_time', render: (item) => item.sunday_end_time || '' },
+            { key: 'daily_impression', header: 'daily_impression', render: (item) => item.daily_impression || '' },
+            { key: 'cost_for_impression', header: 'cost_for_impression', render: (item) => item.cost_for_impression || '' },
+            { key: 'cpi_cost', header: 'cpi_cost', render: (item) => item.cpi_cost || '' },
+            { key: 'facing', header: 'facing', render: (item) => item.facing || '' },
+            { key: 'min_operating_price', header: 'min_operating_price', render: (item) => item.min_operating_price || '' },
+            { key: 'screen_type', header: 'screen_type', render: (item) => item.screen_type || '' },
+            { key: 'loop_timing', header: 'loop_timing', render: (item) => item.loop_timing || '' },
+            { key: 'slot_timing', header: 'slot_timing', render: (item) => item.slot_timing || '' },
+            { key: 'slot_details', header: 'slot_details', render: (item) => item.slot_details || '' },
+            { key: 'spots_day', header: 'spots_day', render: (item) => item.spots_day || '' },
+            { key: 'slot_per_month', header: 'slot_per_month', render: (item) => item.slot_per_month || '' },
+            { key: 'daily_hours_of_loop', header: 'daily_hours_of_loop', render: (item) => item.daily_hours_of_loop || '' },
+            { key: 'cost_per_spot', header: 'cost_per_spot', render: (item) => item.cost_per_spot || '' },
+            { key: 'cost_per_audience_imp', header: 'cost_per_audience_imp', render: (item) => item.cost_per_audience_imp || '' },
+            { key: 'max_traffic', header: 'max_traffic', render: (item) => item.max_traffic || '' },
+            { key: 'status', header: 'status', render: (item) => item.status || '' },
+            { key: 'default_date', header: 'default_date', render: (item) => item.default_date || '' },
+            { key: 'update_date', header: 'update_date', render: (item) => item.update_date || '' },
+            { key: 'email_id', header: 'email_id', render: (item) => item.email_id || '' },
+            { key: 'second_email_id', header: 'second_email_id', render: (item) => item.second_email_id || '' },
+            { key: 'first_name', header: 'first_name', render: (item) => item.first_name || '' },
+            { key: 'last_name', header: 'last_name', render: (item) => item.last_name || '' },
+            { key: 'admin_flag', header: 'admin_flag', render: (item) => item.admin_flag || '' },
+            { key: 'company_name', header: 'company_name', render: (item) => item.company_name || '' },
+            { key: 'user_password', header: 'user_password', render: (item) => item.user_password || '' },
+            { key: 'device_limit', header: 'device_limit', render: (item) => item.device_limit || '' },
+            { key: 'expiry_date', header: 'expiry_date', render: (item) => item.expiry_date || '' },
+            { key: 'manager_name', header: 'manager_name', render: (item) => item.manager_name || '' },
+            { key: 'access_type', header: 'access_type', render: (item) => item.access_type || '' },
+            { key: 'markup_applicable', header: 'markup_applicable', render: (item) => item.markup_applicable || '' },
+            { key: 'markup_type', header: 'markup_type', render: (item) => item.markup_type || '' },
+            { key: 'markup_value', header: 'markup_value', render: (item) => item.markup_value || '' },
+            { key: 'code', header: 'code', render: (item) => item.code || '' },
+            { key: 'media_owner', header: 'media_owner', render: (item) => item.media_owner?.name || '' },
           ]}
         />
 
         <div className="flex justify-between items-center mt-6 px-3 md:px-6 py-3 md:py-4">
           <Pagination
             currentPage={currentPage}
-            totalItems={filteredData.length}
+            totalItems={totalItems}
             itemsPerPage={itemsPerPage}
             onPageChange={handlePageChange}
           />
