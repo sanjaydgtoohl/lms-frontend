@@ -76,19 +76,19 @@ const AllLeads: React.FC = () => {
     loadCallStatuses();
   }, []);
 
-  // Fetch assign to (user) options from API
-  useEffect(() => {
-    const loadUsers = async () => {
-      try {
-        const res = await apiClient.get('/users/list');
-        const users = Array.isArray(res.data) ? res.data : [];
-        setAssignToOptions(users.map((u: any) => ({ id: u.id, name: u.name })));
-      } catch {
-        setAssignToOptions([]);
-      }
-    };
-    loadUsers();
-  }, []);
+    // Fetch assign to (user) options from API
+    useEffect(() => {
+      const loadUsers = async () => {
+        try {
+          const res = await apiClient.get('/users/list');
+          const users = Array.isArray(res.data) ? res.data : [];
+          setAssignToOptions(users.map((u: any) => ({ id: u.id, name: u.name })));
+        } catch {
+          setAssignToOptions([]);
+        }
+      };
+      loadUsers();
+    }, []);
   const [loading, setLoading] = useState(false);
   const [totalItems, setTotalItems] = useState(0);
 
