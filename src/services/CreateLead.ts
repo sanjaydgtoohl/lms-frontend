@@ -45,7 +45,8 @@ export type CreateLeadResponse = {
 // --- Fetch users for Assign To dropdown ---
 export async function getUsers(): Promise<User[]> {
   try {
-    const res = await apiClient.get<User[]>('/profile/child-users');
+    // Request a large page size to avoid truncation
+    const res = await apiClient.get<User[]>('/profile/child-users?per_page=1000');
     if (!res || !res.success) {
       throw new Error(res?.message || 'Failed to fetch users');
     }

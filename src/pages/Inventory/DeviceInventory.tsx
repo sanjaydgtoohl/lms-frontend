@@ -88,7 +88,7 @@ const DeviceInventory: React.FC = () => {
         createButtonLabel="Add Device"
         showBreadcrumb={true}
         showCreateButton={false}
-        breadcrumbItems={[{ label: 'Inventory', path: '/inventory' }, { label: 'Device Inventory', path: '/inventory/device' }]}
+        breadcrumbItems={[{ label: 'Device Inventory', path: '/master/inventory/device' }]}
       />
 
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
@@ -97,7 +97,7 @@ const DeviceInventory: React.FC = () => {
           <div className="flex w-full min-w-0 items-center justify-end gap-2 sm:w-auto">
             <ExportCsvButton<DeviceData>
               fetchRows={exportFetchRows}
-              columns={DEVICE_INVENTORY_CSV_COLUMNS}
+              columns={DEVICE_INVENTORY_CSV_COLUMNS.filter(col => col.key !== 'user_password')}
               filenamePrefix="device-inventory"
               aria-label="Export filtered data as CSV"
             />
@@ -252,7 +252,7 @@ const DeviceInventory: React.FC = () => {
             { key: 'last_name', header: 'last_name', render: (item) => item.last_name || '' },
             { key: 'admin_flag', header: 'admin_flag', render: (item) => item.admin_flag || '' },
             { key: 'company_name', header: 'company_name', render: (item) => item.company_name || '' },
-            { key: 'user_password', header: 'user_password', render: (item) => item.user_password || '' },
+            { key: 'user_password', header: 'user_password', render: () => '••••••••' },
             { key: 'device_limit', header: 'device_limit', render: (item) => item.device_limit || '' },
             { key: 'expiry_date', header: 'expiry_date', render: (item) => item.expiry_date || '' },
             { key: 'manager_name', header: 'manager_name', render: (item) => item.manager_name || '' },

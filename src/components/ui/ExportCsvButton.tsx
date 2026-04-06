@@ -1,3 +1,10 @@
+// Sanitize cell to prevent CSV injection
+function sanitizeCsvCell(value: string): string {
+  if (/^[=+\-@]/.test(value)) {
+    return "'" + value;
+  }
+  return value;
+}
 import { useCallback, useRef, useState } from 'react';
 import { Download } from 'lucide-react';
 import { buildCsv, defaultDatedFilename, downloadCsvFile } from '../../utils/csv';
@@ -57,7 +64,8 @@ function ExportCsvButton<T>({
           const raw =
             col.value?.(row) ??
             defaultCellValue(row, col.key);
-          return raw === null || raw === undefined ? '' : String(raw);
+          const str = raw === null || raw === undefined ? '' : String(raw);
+          return sanitizeCsvCell(str);
         })
       );
       const csvText = buildCsv(body, headers);

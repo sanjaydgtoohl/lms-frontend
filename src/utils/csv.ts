@@ -1,7 +1,9 @@
 /** Escape a single CSV cell (RFC-style quoting when needed). */
 export function csvEscape(value: unknown): string {
   if (value === null || value === undefined) return '';
-  const s = String(value);
+  let s = String(value);
+  // Neutralize spreadsheet formula injection
+  if (/^[=+\-@]/.test(s)) s = "'" + s;
   if (/[",\r\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
   return s;
 }

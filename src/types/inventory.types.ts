@@ -85,7 +85,6 @@ export interface DeviceData {
   last_name?: string | null;
   admin_flag?: string | null;
   company_name?: string | null;
-  user_password?: string | null;
   device_limit?: string | null;
   expiry_date?: string | null;
   manager_name?: string | null;

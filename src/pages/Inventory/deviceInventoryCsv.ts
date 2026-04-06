@@ -80,7 +80,6 @@ export const DEVICE_INVENTORY_CSV_COLUMNS: CsvColumn<DeviceData>[] = [
   { key: 'last_name' },
   { key: 'admin_flag' },
   { key: 'company_name' },
-  { key: 'user_password' },
   { key: 'device_limit' },
   { key: 'expiry_date' },
   { key: 'manager_name' },

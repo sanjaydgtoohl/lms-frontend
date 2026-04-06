@@ -34,7 +34,6 @@ export async function listDeviceInventory(
       const error = new Error(message);
       (error as any).statusCode = (resp as any)?.status;
       (error as any).responseData = json;
-      handleApiError(error);
       throw error;
     }
 
