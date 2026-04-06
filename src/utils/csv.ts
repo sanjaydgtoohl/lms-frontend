@@ -3,9 +3,9 @@ export function csvEscape(value: unknown): string {
   if (value === null || value === undefined) return '';
   let s = String(value);
   // Neutralize spreadsheet formula injection
-  if (/^[=+\-@]/.test(s)) s = "'" + s;
-  if (/[",\r\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
-  return s;
+  const safe = /^[=+\-@]/.test(s) ? "'" + s : s;
+  if (/[",\r\n]/.test(safe)) return `"${safe.replace(/"/g, '""')}"`;
+  return safe;
 }
 
 /** Build CSV text with header row and \r\n line endings. */
