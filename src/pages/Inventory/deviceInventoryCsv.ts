@@ -1,5 +1,5 @@
 import type { CsvColumn } from '../../components/ui/ExportCsvButton';
-import type { DeviceData } from '../../services/DeviceInventory';
+import type { DeviceData } from '../../types/inventory.types';
 
 export const DEVICE_INVENTORY_CSV_COLUMNS: CsvColumn<DeviceData>[] = [
   { key: 'device_details_id' },
