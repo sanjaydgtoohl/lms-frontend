@@ -153,7 +153,7 @@ function App() {
           <Route path="master/source/:id" element={<PermissionRoute><LeadSource /></PermissionRoute>} />
           <Route path="master/source/:id/edit" element={<PermissionRoute><LeadSource /></PermissionRoute>} />
 
-          <Route path="master/inventory/device" element={<PermissionRoute><DeviceInventory /></PermissionRoute>} />
+          <Route path="inventory/device" element={<PermissionRoute><DeviceInventory /></PermissionRoute>} />
 
           {/* Lead Management Routes */}
           <Route path="lead-management">

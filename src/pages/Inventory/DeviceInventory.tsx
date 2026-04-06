@@ -88,7 +88,7 @@ const DeviceInventory: React.FC = () => {
         createButtonLabel="Add Device"
         showBreadcrumb={true}
         showCreateButton={false}
-        breadcrumbItems={[{ label: 'Device Inventory', path: '/master/inventory/device' }]}
+        breadcrumbItems={[{ label: 'Device Inventory', path: '/inventory/device' }]}
       />
 
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
