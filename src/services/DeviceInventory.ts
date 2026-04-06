@@ -7,6 +7,8 @@ import type {
   ListDeviceInventoryParams,
 } from '../types/inventory.types';
 
+export type { DeviceData };
+
 const INVENTORY_ENDPOINT = '/api/inventory';
 
 
