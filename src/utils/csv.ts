@@ -2,8 +2,8 @@
 export function csvEscape(value: unknown): string {
   if (value === null || value === undefined) return '';
   let s = String(value);
-  // Neutralize spreadsheet formula injection
-  const safe = /^[=+\-@]/.test(s) ? "'" + s : s;
+  // Neutralize spreadsheet formula injection (block leading whitespace/control chars)
+  const safe = /^[\s\u0000-\u001F]*[=+\-@]/.test(s) ? "'" + s : s;
   if (/[",\r\n]/.test(safe)) return `"${safe.replace(/"/g, '""')}"`;
   return safe;
 }

@@ -1,6 +1,7 @@
 // Sanitize cell to prevent CSV injection
 function sanitizeCsvCell(value: string): string {
-  if (/^[=+\-@]/.test(value)) {
+  // Block formula injection even with leading whitespace/control chars
+  if (/^[\s\u0000-\u001F]*[=+\-@]/.test(value)) {
     return "'" + value;
   }
   return value;
