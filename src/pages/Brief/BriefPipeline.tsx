@@ -207,7 +207,8 @@ const BriefPipeline: React.FC = () => {
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        const res = await apiClient.get('/users/list');
+        // Request a large page size to avoid truncation
+        const res = await apiClient.get('/profile/child-users?page=1&per_page=1000');
         const users = Array.isArray(res.data) ? res.data : [];
         setAssignToOptions(users.map((u: any) => ({ id: u.id, name: u.name })));
       } catch {
