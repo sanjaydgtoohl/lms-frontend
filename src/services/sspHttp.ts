@@ -3,7 +3,13 @@ import axios from 'axios';
 // Resolve SSP base URL and special SSP API credentials from both import.meta.env and globalThis
 const SSP_BASE_URL =
   (typeof globalThis !== 'undefined' && (globalThis as any).VITE_SSP_BASE_URL) ||
-  String(import.meta.env.VITE_SSP_BASE_URL || '');
+  import.meta.env.VITE_SSP_BASE_URL;
+
+if (!SSP_BASE_URL) {
+  throw new Error(
+    'SSP_BASE_URL is not configured. Set VITE_SSP_BASE_URL environment variable.'
+  );
+}
 
 const SSP_BEARER_TOKEN =
   (typeof globalThis !== 'undefined' && (globalThis as any).VITE_SSP_BEARER_TOKEN) ||
@@ -15,7 +21,7 @@ const SSP_API_KEY =
 
 const sspHttp = axios.create({
   baseURL: SSP_BASE_URL,
-  withCredentials: true,
+  withCredentials: false,
 });
 
 sspHttp.interceptors.request.use((config: any) => {
