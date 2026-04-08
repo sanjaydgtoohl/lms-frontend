@@ -18,6 +18,14 @@ interface CreateProps {
   onSave?: (data: Record<string, any>) => void;
 }
 
+
+
+const mediaTypeOptions = [
+  { value: "OOH", label: "OOH" },
+  { value: "DOOH", label: "DOOH" },
+  { value: "CTV", label: "CTV" },
+];
+
 const Create: React.FC<CreateProps> = ({
   inline = false,
   mode = 'create',
@@ -94,12 +102,12 @@ const Create: React.FC<CreateProps> = ({
       try {
         setSourceLoading(true);
         // API call for lead sources
-          const response = await apiClient.get('/lead-sources');
-          const data = Array.isArray(response.data) ? response.data : [];
-          const options = data.map((source: { id: string; name: string }) => ({
-            id: source.id,
-            source: source.name,
-          }));
+        const response = await apiClient.get('/lead-sources');
+        const data = Array.isArray(response.data) ? response.data : [];
+        const options = data.map((source: { id: string; name: string }) => ({
+          id: source.id,
+          source: source.name,
+        }));
         setSourceOptions(options);
       } catch (err) {
         console.error('Failed to fetch lead sources:', err);
@@ -228,14 +236,14 @@ const Create: React.FC<CreateProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validation
     const next: Record<string, string> = {};
     if (!formData.brandName) next.brandName = 'Please select a brand';
     if (!formData.source) next.source = 'Please select a source';
     if (!formData.subSource) next.subSource = 'Please select a sub source';
     if (!formData.productName || formData.productName.trim() === '') next.productName = 'Please enter product name';
-    
+
     setErrors(next);
     if (Object.keys(next).length > 0) return;
 
@@ -396,9 +404,8 @@ const Create: React.FC<CreateProps> = ({
                 value={formData.productName}
                 onChange={(e) => { handleChange(e); setErrors(prev => ({ ...prev, productName: '' })); }}
                 placeholder="Please Enter Product Name"
-                className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 transition-colors ${
-                  errors.productName ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 transition-colors ${errors.productName ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'
+                  }`}
                 aria-invalid={errors.productName ? 'true' : 'false'}
                 aria-describedby={errors.productName ? 'productName-error' : undefined}
               />
@@ -411,6 +418,148 @@ const Create: React.FC<CreateProps> = ({
                 </div>
               )}
             </div>
+
+            {/* Pincode */}
+            <div className='w-full sm:w-[calc(50%-12px)]'>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Pincode  <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="productName"
+                value={formData.productName}
+                onChange={(e) => { handleChange(e); setErrors(prev => ({ ...prev, productName: '' })); }}
+                placeholder="Please Enter Pincode"
+                className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 transition-colors ${errors.productName ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'
+                  }`}
+                aria-invalid={errors.productName ? 'true' : 'false'}
+                aria-describedby={errors.productName ? 'productName-error' : undefined}
+              />
+              {errors.productName && (
+                <div id="productName-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.productName}
+                </div>
+              )}
+            </div>
+
+            {/* City */}
+            <div className='w-full sm:w-[calc(50%-12px)]'>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                City <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="productName"
+                value={formData.productName}
+                onChange={(e) => { handleChange(e); setErrors(prev => ({ ...prev, productName: '' })); }}
+                placeholder="Please Enter City"
+                className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 transition-colors ${errors.productName ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'
+                  }`}
+                aria-invalid={errors.productName ? 'true' : 'false'}
+                aria-describedby={errors.productName ? 'productName-error' : undefined}
+              />
+              {errors.productName && (
+                <div id="productName-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.productName}
+                </div>
+              )}
+            </div>
+
+            {/* state */}
+            <div className='w-full sm:w-[calc(50%-12px)]'>
+              <label className="block text-sm font-medium mb-2">
+                State <span className="text-[#FF0000]">*</span>
+              </label>
+              <div className='w-full'>
+                <SelectField
+                  name="brandName"
+                  value={formData.brandName}
+                  onChange={(v) => { setFormData(prev => ({ ...prev, brandName: typeof v === 'string' ? v : v[0] ?? '' })); setErrors(prev => ({ ...prev, brandName: '' })); }}
+                  options={brandOptions.map(b => ({ value: String(b.id), label: b.name }))}
+                  placeholder={brandLoading ? 'Loading brands...' : 'Search or select state'}
+                  inputClassName={errors.brandName ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}
+                  disabled={brandLoading}
+                />
+              </div>
+              {errors.brandName && (
+                <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.brandName}
+                </div>
+              )}
+            </div>
+
+            {/* Country */}
+            <div className='w-full sm:w-[calc(50%-12px)]'>
+              <label className="block text-sm font-medium mb-2">
+                Country <span className="text-[#FF0000]">*</span>
+              </label>
+              <div className='w-full'>
+                <SelectField
+                  name="brandName"
+                  value={formData.brandName}
+                  onChange={(v) => { setFormData(prev => ({ ...prev, brandName: typeof v === 'string' ? v : v[0] ?? '' })); setErrors(prev => ({ ...prev, brandName: '' })); }}
+                  options={brandOptions.map(b => ({ value: String(b.id), label: b.name }))}
+                  placeholder={brandLoading ? 'Loading brands...' : 'Search or select country'}
+                  inputClassName={errors.brandName ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}
+                  disabled={brandLoading}
+                />
+              </div>
+              {errors.brandName && (
+                <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.brandName}
+                </div>
+              )}
+            </div>
+
+            {/* Media type */}
+            <div className='w-full sm:w-[calc(50%-12px)]'>
+              <label className="block text-sm font-medium mb-2">
+                Media type <span className="text-[#FF0000]">*</span>
+              </label>
+
+              <div className='w-full'>
+                <SelectField
+                  name="mediaType"
+                  // value={formData.mediaType}
+                  onChange={(v) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      mediaType: typeof v === 'string' ? v : v[0] ?? ''
+                    }));
+                    setErrors(prev => ({ ...prev, mediaType: '' }));
+                  }}
+                  options={mediaTypeOptions}
+                  placeholder="Select media type"
+                  inputClassName={
+                    errors.mediaType
+                      ? 'border-red-500 bg-red-50 focus:ring-red-500'
+                      : 'border-gray-200 focus:ring-blue-500'
+                  }
+                />
+              </div>
+
+              {errors.mediaType && (
+                <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.mediaType}
+                </div>
+              )}
+            </div>
+
 
             {/* Image Upload & Preview */}
             <div className="w-full">
@@ -442,7 +591,7 @@ const Create: React.FC<CreateProps> = ({
                             title="Delete"
                             onClick={() => setFormData(prev => ({ ...prev, image_url: '', remove_image: true, image: null }))}
                           >
-                              <Trash2 className="w-5 h-5 text-red-600" />
+                            <Trash2 className="w-5 h-5 text-red-600" />
                           </div>
                         </div>
                         {initialData?.image_path && (
@@ -483,7 +632,7 @@ const Create: React.FC<CreateProps> = ({
                               setImagePreview('');
                             }}
                           >
-                              <Trash2 className="w-5 h-5 text-red-600" />
+                            <Trash2 className="w-5 h-5 text-red-600" />
                           </div>
                         </div>
                       </div>

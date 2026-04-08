@@ -121,7 +121,12 @@ export async function updateMissCampaignWithForm(id: string | number, payload: C
   }
 }
 
+export const createPreLead = createMissCampaign;
+export const updatePreLeadWithForm = updateMissCampaignWithForm;
+
 export default {
   createMissCampaign,
   updateMissCampaignWithForm,
+  createPreLead,
+  updatePreLeadWithForm,
 };

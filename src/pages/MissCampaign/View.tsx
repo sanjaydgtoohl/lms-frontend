@@ -31,6 +31,7 @@ const View: React.FC = () => {
   const [totalItems, setTotalItems] = useState(0);
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
   const [showCreate, setShowCreate] = useState(false);
   const [viewItem, setViewItem] = useState<MissCampaign | null>(null);
   const [editItem, setEditItem] = useState<MissCampaign | null>(null);
@@ -61,9 +62,27 @@ const View: React.FC = () => {
   }, [imageModalOpen]);
 
   const filteredCampaigns = campaigns.filter(c => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase().trim();
-    return c.brandName.toLowerCase().startsWith(q);
+    // Search filter
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase().trim();
+      if (!c.brandName.toLowerCase().startsWith(q) &&
+          !c.productName.toLowerCase().includes(q)) {
+        return false;
+      }
+    }
+
+    // Additional filters
+    if (activeFilters.industry && c.industry !== activeFilters.industry) {
+      return false;
+    }
+    if (activeFilters.source && c.source !== activeFilters.source) {
+      return false;
+    }
+    if (activeFilters.media && c.media !== activeFilters.media) {
+      return false;
+    }
+
+    return true;
   });
 
   // When searching, recalculate pagination based on filtered results
@@ -209,6 +228,48 @@ const View: React.FC = () => {
     return () => window.removeEventListener('missCampaigns:update', onExternalUpdate);
   }, []);
 
+  const handleFilterChange = (filters: Record<string, string>) => {
+    setActiveFilters(filters);
+    setCurrentPage(1); // Reset to first page when filtering
+  };
+
+  // Get unique values for filter options
+  const getUniqueValues = (key: keyof MissCampaign) => {
+    const values = campaigns
+      .map(c => c[key])
+      .filter((value): value is string => value !== null && value !== undefined && value !== '')
+      .filter((value, index, arr) => arr.indexOf(value) === index)
+      .sort();
+    return values;
+  };
+
+  const filterOptions = [
+    {
+      key: 'industry',
+      label: 'Industry',
+      options: getUniqueValues('industry').map(value => ({
+        value,
+        label: value
+      }))
+    },
+    {
+      key: 'source',
+      label: 'Source',
+      options: getUniqueValues('source').map(value => ({
+        value,
+        label: value
+      }))
+    },
+    {
+      key: 'media',
+      label: 'Media',
+      options: getUniqueValues('media').map(value => ({
+        value,
+        label: value
+      }))
+    }
+  ].filter(option => option.options.length > 0); // Only show filters that have options
+
   // If navigated back with a refresh flag in location.state, refresh and clear state
   useEffect(() => {
     const s = (location.state as any) || {};
@@ -261,7 +322,7 @@ const View: React.FC = () => {
             className="w-full bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden"
           >
             <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-800">Miss Campaign Details</h3>
+              <h3 className="text-lg font-semibold text-gray-800">Pre Lead Details</h3>
             </div>
 
             <div className="p-6">
@@ -327,14 +388,19 @@ const View: React.FC = () => {
       ) : (
         <>
           {hasPermission('miss-campaign.create') && (
-            <MasterHeader onCreateClick={handleCreate} createButtonLabel="Create Miss Campaign" />
+            <MasterHeader onCreateClick={handleCreate} createButtonLabel="Create Pre Lead" />
           )}
 
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
            {/* Table Header */}
-            <TableHeader title="Miss Campaign">
-              <SearchBar delay={0} placeholder="Search Miss Campaign" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
+            <TableHeader
+              title="Pre Lead"
+              filterOptions={filterOptions}
+              onFilterChange={handleFilterChange}
+            >
+              <SearchBar delay={0} placeholder="Search Pre Lead" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
             </TableHeader>
+            
 
             <div className="pt-0 overflow-visible">
               <Table
@@ -349,6 +415,11 @@ const View: React.FC = () => {
                   { key: 'productName', header: 'Product Name', render: (it: MissCampaign) => it.productName },
                   { key: 'source', header: 'Source', render: (it: MissCampaign) => it.source },
                   { key: 'subSource', header: 'Sub Source', render: (it: MissCampaign) => it.subSource },
+                  // { key: 'pincode', header: 'Pincode', render: (it: MissCampaign) => it.pincode },
+                  // { key: 'city', header: 'City', render: (it: MissCampaign) => it.city },
+                  // { key: 'state', header: 'State', render: (it: MissCampaign) => it.state },
+                  // { key: 'country', header: 'Country', render: (it: MissCampaign) => it.country },
+                  // { key: 'mediaType', header: 'Media Type', render: (it: MissCampaign) => it.mediaType },
                   {
                     key: 'proof',
                     header: 'Proof',

@@ -9,6 +9,8 @@ export interface MissCampaign {
   subSource: string;
   proof: string;
   dateTime: string;
+  industry?: string;
+  media?: string;
 }
 
 const ENDPOINTS = {
@@ -131,3 +133,11 @@ export async function deleteMissCampaign(id: string): Promise<void> {
   const res = await apiClient.delete<unknown>(ENDPOINTS.DELETE(id));
   await handleResponse<unknown>(res);
 }
+
+export type PreLead = MissCampaign;
+export type PreLeadListResponse = MissCampaignListResponse;
+export const listPreLeads = listMissCampaigns;
+export const getPreLead = getMissCampaign;
+export const createPreLead = createMissCampaign;
+export const updatePreLead = updateMissCampaign;
+export const deletePreLead = deleteMissCampaign;
