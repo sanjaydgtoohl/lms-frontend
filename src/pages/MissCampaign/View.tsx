@@ -17,6 +17,7 @@ import {
   updateMissCampaign,
   type MissCampaign
 } from '../../services/View';
+import { apiClient } from '../../utils/apiClient';
 import { usePermissions } from '../../hooks/SidebarMenuHooks';
 import { IoIosArrowBack } from 'react-icons/io';
 import TableHeader from '../../components/ui/TableHeader';
@@ -32,6 +33,7 @@ const View: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
+  const [industryOptions, setIndustryOptions] = useState<{ value: string; label: string }[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [viewItem, setViewItem] = useState<MissCampaign | null>(null);
   const [editItem, setEditItem] = useState<MissCampaign | null>(null);
@@ -78,7 +80,7 @@ const View: React.FC = () => {
     if (activeFilters.source && c.source !== activeFilters.source) {
       return false;
     }
-    if (activeFilters.media && c.media !== activeFilters.media) {
+    if (activeFilters.mediaType && c.mediaType !== activeFilters.mediaType) {
       return false;
     }
 
@@ -110,15 +112,33 @@ const View: React.FC = () => {
     }
   };
 
-  const handleEdit = (id: string) => navigate(`/miss-campaign/view/${encodeURIComponent(id)}/edit`);
-  const handleView = (id: string) => navigate(`/miss-campaign/view/${encodeURIComponent(id)}`);
+  useEffect(() => {
+    const fetchIndustries = async () => {
+      try {
+        const response = await apiClient.get<any[]>('/industries/list');
+        const industries = Array.isArray(response.data) ? response.data : [];
+        const options = industries.map((industry: any) => ({
+          value: String(industry.name ?? industry.label ?? industry),
+          label: String(industry.name ?? industry.label ?? industry),
+        }));
+        setIndustryOptions(options);
+      } catch (error) {
+        console.error('Failed to fetch industries:', error);
+        setIndustryOptions([]);
+      }
+    };
+    fetchIndustries();
+  }, []);
+
+  const handleEdit = (id: string) => navigate(`/pre-lead/view/${encodeURIComponent(id)}/edit`);
+  const handleView = (id: string) => navigate(`/pre-lead/view/${encodeURIComponent(id)}`);
   // open confirmation modal instead of immediate delete
   const handleDelete = (id: string, label?: string) => {
     setConfirmDeleteId(id);
     setConfirmDeleteLabel(label || id);
   };
 
-  const handleCreate = () => navigate('/miss-campaign/create');
+  const handleCreate = () => navigate('/pre-lead/create');
 
   const handleSave = async (data: any) => {
     try {
@@ -243,14 +263,19 @@ const View: React.FC = () => {
     return values;
   };
 
+  const mediaTypeOptions = [
+    { value: 'OOH', label: 'OOH' },
+    { value: 'DOOH', label: 'DOOH' },
+    { value: 'CTV', label: 'CTV' },
+  ];
+
   const filterOptions = [
     {
       key: 'industry',
       label: 'Industry',
-      options: getUniqueValues('industry').map(value => ({
-        value,
-        label: value
-      }))
+      options: industryOptions.length > 0
+        ? industryOptions
+        : getUniqueValues('industry').map(value => ({ value, label: value }))
     },
     {
       key: 'source',
@@ -261,12 +286,9 @@ const View: React.FC = () => {
       }))
     },
     {
-      key: 'media',
-      label: 'Media',
-      options: getUniqueValues('media').map(value => ({
-        value,
-        label: value
-      }))
+      key: 'mediaType',
+      label: 'Media Type',
+      options: mediaTypeOptions
     }
   ].filter(option => option.options.length > 0); // Only show filters that have options
 
@@ -288,7 +310,7 @@ const View: React.FC = () => {
   const handlePageChange = (page: number) => setCurrentPage(page);
 
   return (
-    <div className="flex-1 w-full max-w-full overflow-x-hidden">
+    <div className="flex-1 w-full max-w-full overflow-x-hidden h-full">
       {/* SweetAlert is used for inline success/error notifications */}
       <ConfirmDialog
         isOpen={!!confirmDeleteId}
@@ -301,14 +323,14 @@ const View: React.FC = () => {
         onConfirm={confirmDelete}
       />
       {showCreate ? (
-        <Create inline onClose={() => navigate('/miss-campaign/view')} onSave={handleSave} />
+        <Create inline onClose={() => navigate('/pre-lead/view')} onSave={handleSave} />
       ) : viewItem ? (
         <>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div className="flex flex-col">
               <Breadcrumb />
             </div>
-            <button onClick={() => navigate('/miss-campaign/view')} className="flex items-center space-x-2 btn-primary text-white px-3 py-1 rounded-lg">
+            <button onClick={() => navigate('/pre-lead/view')} className="flex items-center space-x-2 btn-primary text-white px-3 py-1 rounded-lg">
               <IoIosArrowBack className="w-5 h-5" />
               <span className="text-sm">Go Back</span>
             </button>
@@ -325,7 +347,7 @@ const View: React.FC = () => {
               <h3 className="text-lg font-semibold text-gray-800">Pre Lead Details</h3>
             </div>
 
-            <div className="p-6">
+            <div className="px-3 py-5 md:p-6">
               {/* Header Section */}
               <div className="mb-6">
                 <h2 className="text-4xl font-bold text-gray-800 mb-2">{viewItem.brandName}</h2>
@@ -351,7 +373,7 @@ const View: React.FC = () => {
 
 
                 {/* Details Grid */}
-                <div className="">
+                <div className="lg:grid lg:grid-cols-2 gap-4">
                   <div className='flex bg-gray-100 p-4 rounded-lg mb-3'>
                     <div className="text-sm text-gray-800 font-semibold min-w-[100px]">ID : </div>
                     <div className="text-sm text-gray-600">{viewItem.id}</div>
@@ -365,8 +387,31 @@ const View: React.FC = () => {
                     <div className="text-sm text-gray-800 font-semibold min-w-[100px]">Sub Source : </div>
                     <div className="text-sm text-gray-600">{viewItem.subSource || '-'}</div>
                   </div>
-
                   <div className='flex bg-gray-100 p-3 rounded-lg mb-3'>
+                    <div className="text-sm text-gray-800 font-semibold min-w-[100px]">Industry : </div>
+                    <div className="text-sm text-gray-600">{viewItem.industry || '-'}</div>
+                  </div>
+                  <div className='flex bg-gray-100 p-3 rounded-lg mb-3'>
+                    <div className="text-sm text-gray-800 font-semibold min-w-[100px]">Media Type : </div>
+                    <div className="text-sm text-gray-600">{viewItem.mediaType || '-'}</div>
+                  </div>
+                  <div className='flex bg-gray-100 p-3 rounded-lg mb-3'>
+                    <div className="text-sm text-gray-800 font-semibold min-w-[100px]">Pincode : </div>
+                    <div className="text-sm text-gray-600">{viewItem.pincode || '-'}</div>
+                  </div>
+                  <div className='flex bg-gray-100 p-3 rounded-lg mb-3'>
+                    <div className="text-sm text-gray-800 font-semibold min-w-[100px]">City : </div>
+                    <div className="text-sm text-gray-600">{viewItem.city || '-'}</div>
+                  </div>
+                  <div className='flex bg-gray-100 p-3 rounded-lg mb-3'>
+                    <div className="text-sm text-gray-800 font-semibold min-w-[100px]">State : </div>
+                    <div className="text-sm text-gray-600">{viewItem.state || '-'}</div>
+                  </div>
+                  <div className='flex bg-gray-100 p-3 rounded-lg mb-3 col-span-2'>
+                    <div className="text-sm text-gray-800 font-semibold min-w-[100px]">Country : </div>
+                    <div className="text-sm text-gray-600">{viewItem.country || '-'}</div>
+                  </div>
+                  <div className='flex bg-gray-100 p-3 rounded-lg mb-3 col-span-2'>
                     <div className="text-sm text-gray-800 font-semibold min-w-[100px]">Date & Time : </div>
                     <div className="text-sm text-gray-600">{viewItem.dateTime || '-'}</div>
                   </div>
@@ -382,7 +427,7 @@ const View: React.FC = () => {
           inline
           mode="edit"
           initialData={editItem}
-          onClose={() => navigate('/miss-campaign/view')}
+          onClose={() => navigate('/pre-lead/view')}
           onSave={(data: any) => handleSaveEdited({ ...(data as Record<string, any>) })}
         />
       ) : (
@@ -412,14 +457,15 @@ const View: React.FC = () => {
                 columns={([
                   { key: 'sr', header: 'Id', render: (it: MissCampaign) => `#${it.id}` },
                   { key: 'brandName', header: 'Brand Name', render: (it: MissCampaign) => it.brandName },
+                  { key: 'industry', header: 'Industry', render: (it: MissCampaign) => it.industry || '-' },
                   { key: 'productName', header: 'Product Name', render: (it: MissCampaign) => it.productName },
                   { key: 'source', header: 'Source', render: (it: MissCampaign) => it.source },
                   { key: 'subSource', header: 'Sub Source', render: (it: MissCampaign) => it.subSource },
-                  // { key: 'pincode', header: 'Pincode', render: (it: MissCampaign) => it.pincode },
-                  // { key: 'city', header: 'City', render: (it: MissCampaign) => it.city },
-                  // { key: 'state', header: 'State', render: (it: MissCampaign) => it.state },
-                  // { key: 'country', header: 'Country', render: (it: MissCampaign) => it.country },
-                  // { key: 'mediaType', header: 'Media Type', render: (it: MissCampaign) => it.mediaType },
+                  { key: 'pincode', header: 'Pincode', render: (it: MissCampaign) => it.pincode },
+                  { key: 'city', header: 'City', render: (it: MissCampaign) => it.city },
+                  { key: 'state', header: 'State', render: (it: MissCampaign) => it.state },
+                  { key: 'country', header: 'Country', render: (it: MissCampaign) => it.country },
+                  { key: 'mediaType', header: 'Media Type', render: (it: MissCampaign) => it.mediaType || it.media },
                   {
                     key: 'proof',
                     header: 'Proof',

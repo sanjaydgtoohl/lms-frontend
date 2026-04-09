@@ -7,6 +7,7 @@ import { apiClient } from '../../utils/apiClient';
 import { createMissCampaign } from '../../services/Create';
 import { updateMissCampaign } from '../../services/View';
 import { listBrands } from '../../services/BrandMaster';
+import { listCountries, listStates, listCities } from '../../services/CreateBrandForm';
 // Removed LeadSource import as per request
 import SweetAlert from '../../utils/SweetAlert';
 
@@ -38,7 +39,13 @@ const Create: React.FC<CreateProps> = ({
     brandName: '',
     source: '',
     subSource: '',
+    industry: '',
     productName: '',
+    pincode: '',
+    country: '',
+    state: '',
+    city: '',
+    mediaType: '',
     image: null as File | null,
     image_url: '', // for preview
     remove_image: false, // for delete flag
@@ -52,6 +59,14 @@ const Create: React.FC<CreateProps> = ({
   const [sourceLoading, setSourceLoading] = useState(false);
   const [subSourceOptions, setSubSourceOptions] = useState<{ id: string; label: string }[]>([]);
   const [subSourceLoading, setSubSourceLoading] = useState(false);
+  const [industryOptions, setIndustryOptions] = useState<{ id: string; name: string }[]>([]);
+  const [industryLoading, setIndustryLoading] = useState(false);
+  const [countryOptions, setCountryOptions] = useState<{ id: string; name: string }[]>([]);
+  const [countryLoading, setCountryLoading] = useState(false);
+  const [stateOptions, setStateOptions] = useState<{ id: string; name: string }[]>([]);
+  const [stateLoading, setStateLoading] = useState(false);
+  const [cityOptions, setCityOptions] = useState<{ id: string; name: string }[]>([]);
+  const [cityLoading, setCityLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string>(''); // for newly selected image preview
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [modalImageUrl, setModalImageUrl] = useState<string | null>(null);
@@ -119,6 +134,100 @@ const Create: React.FC<CreateProps> = ({
     fetchSources();
   }, []);
 
+  useEffect(() => {
+    const fetchIndustries = async () => {
+      try {
+        setIndustryLoading(true);
+        const response = await apiClient.get<any[]>('/industries/list');
+        const industries = Array.isArray(response.data) ? response.data : [];
+        const options = industries.map((industry) => ({
+          id: String(industry.id ?? industry.value ?? industry),
+          name: String(industry.name ?? industry.label ?? industry),
+        }));
+        setIndustryOptions(options);
+      } catch (err) {
+        console.error('Failed to fetch industries:', err);
+        setIndustryOptions([]);
+      } finally {
+        setIndustryLoading(false);
+      }
+    };
+    fetchIndustries();
+  }, []);
+
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        setCountryLoading(true);
+        const response = await listCountries();
+        const options = (response || []).map((country) => ({
+          id: String(country.id),
+          name: country.name,
+        }));
+        setCountryOptions(options);
+      } catch (err) {
+        console.error('Failed to fetch countries:', err);
+        setCountryOptions([]);
+      } finally {
+        setCountryLoading(false);
+      }
+    };
+    fetchCountries();
+  }, []);
+
+  useEffect(() => {
+    if (!formData.country) {
+      setStateOptions([]);
+      setCityOptions([]);
+      setFormData(prev => ({ ...prev, state: '', city: '' }));
+      return;
+    }
+
+    const fetchStates = async () => {
+      try {
+        setStateLoading(true);
+        const response = await listStates({ country_id: formData.country });
+        const options = (response || []).map((state) => ({
+          id: String(state.id),
+          name: state.name,
+        }));
+        setStateOptions(options);
+      } catch (err) {
+        console.error('Failed to fetch states:', err);
+        setStateOptions([]);
+      } finally {
+        setStateLoading(false);
+      }
+    };
+    fetchStates();
+  }, [formData.country]);
+
+  useEffect(() => {
+    if (!formData.state) {
+      setCityOptions([]);
+      setFormData(prev => ({ ...prev, city: '' }));
+      return;
+    }
+
+    const fetchCities = async () => {
+      try {
+        setCityLoading(true);
+        const response = await listCities({ state_id: formData.state });
+        const options = (response || []).map((city) => ({
+          id: String(city.id),
+          name: city.name,
+        }));
+        setCityOptions(options);
+      } catch (err) {
+        console.error('Failed to fetch cities:', err);
+        setCityOptions([]);
+      } finally {
+        setCityLoading(false);
+      }
+    };
+    fetchCities();
+  }, [formData.state]);
+
   // Store initial nested sub-source for reference during fetch cycles
   const initialSubSourceRef = useRef<{ id: string; label: string } | null>(null);
 
@@ -172,13 +281,25 @@ const Create: React.FC<CreateProps> = ({
       const brandId = initialData.brand_id || initialData.brand?.id || initialData.brandId || initialData.brandName;
       const sourceId = initialData.lead_source_id || initialData.lead_source?.id || initialData.source_id || initialData.source;
       const subSourceId = initialData.lead_sub_source_id || initialData.lead_sub_source?.id || initialData.sub_source_id || initialData.subSource;
+      const countryId = initialData.country?.id || initialData.country_id || initialData.country;
+      const stateId = initialData.state?.id || initialData.state_id || initialData.state;
+      const cityId = initialData.city?.id || initialData.city_id || initialData.city;
+      const industryId = initialData.industry?.id || initialData.industry_id || initialData.industry;
+      const pincodeVal = initialData.pincode ?? initialData.pin_code ?? initialData.zip_code ?? initialData.postal_code ?? initialData.zipcode ?? '';
+      const mediaTypeVal = initialData.mediaType ?? initialData.media_type ?? initialData.media ?? '';
 
       setFormData(prev => ({
         ...prev,
         brandName: String(brandId ?? prev.brandName ?? ''),
         source: String(sourceId ?? prev.source ?? ''),
         subSource: String(subSourceId ?? prev.subSource ?? ''),
+        industry: String(industryId ?? prev.industry ?? ''),
         productName: String(initialData.name ?? initialData.productName ?? prev.productName ?? ''),
+        pincode: String(pincodeVal ?? prev.pincode ?? ''),
+        country: String(countryId ?? prev.country ?? ''),
+        state: String(stateId ?? prev.state ?? ''),
+        city: String(cityId ?? prev.city ?? ''),
+        mediaType: String(mediaTypeVal ?? prev.mediaType ?? ''),
         image: null, // image is not prefilled
         image_url: initialData.image_url || initialData.image_path || '',
         remove_image: false,
@@ -242,7 +363,13 @@ const Create: React.FC<CreateProps> = ({
     if (!formData.brandName) next.brandName = 'Please select a brand';
     if (!formData.source) next.source = 'Please select a source';
     if (!formData.subSource) next.subSource = 'Please select a sub source';
+    if (!formData.industry) next.industry = 'Please select an industry';
     if (!formData.productName || formData.productName.trim() === '') next.productName = 'Please enter product name';
+    if (!formData.pincode || formData.pincode.trim() === '') next.pincode = 'Please enter pincode';
+    if (!formData.country) next.country = 'Please select a country';
+    if (!formData.state) next.state = 'Please select a state';
+    if (!formData.city) next.city = 'Please select a city';
+    if (!formData.mediaType) next.mediaType = 'Please select a media type';
 
     setErrors(next);
     if (Object.keys(next).length > 0) return;
@@ -256,6 +383,13 @@ const Create: React.FC<CreateProps> = ({
       brand_id: formData.brandName,
       lead_source_id: formData.source,
       lead_sub_source_id: formData.subSource,
+      industry_id: formData.industry,
+      pincode: formData.pincode,
+      country_id: formData.country,
+      state_id: formData.state,
+      city_id: formData.city,
+      mediaType: formData.mediaType,
+      media_type: formData.mediaType,
       remove_image: formData.remove_image,
     };
     // Only include image if a new file is selected
@@ -289,7 +423,7 @@ const Create: React.FC<CreateProps> = ({
       } else {
         // Navigate to view page after a short delay to show success message
         setTimeout(() => {
-          navigate('/miss-campaign/view', { state: { refreshedAt: Date.now() } });
+          navigate('/pre-lead/view', { state: { refreshedAt: Date.now() } });
         }, 1800);
       }
     } catch (err: any) {
@@ -393,6 +527,32 @@ const Create: React.FC<CreateProps> = ({
               )}
             </div>
 
+            {/* Industry */}
+            <div className='w-full sm:w-[calc(50%-12px)]'>
+              <label className="block text-sm font-medium mb-2">
+                Industry <span className="text-[#FF0000]">*</span>
+              </label>
+              <div>
+                <SelectField
+                  name="industry"
+                  value={formData.industry}
+                  onChange={(v) => { setFormData(prev => ({ ...prev, industry: typeof v === 'string' ? v : v[0] ?? '' })); setErrors(prev => ({ ...prev, industry: '' })); }}
+                  options={industryOptions.map(i => ({ value: String(i.id), label: i.name }))}
+                  placeholder={industryLoading ? 'Loading industries...' : 'Search or select industry'}
+                  inputClassName={errors.industry ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}
+                  disabled={industryLoading}
+                />
+              </div>
+              {errors.industry && (
+                <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.industry}
+                </div>
+              )}
+            </div>
+
             {/* Product Name */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -419,84 +579,6 @@ const Create: React.FC<CreateProps> = ({
               )}
             </div>
 
-            {/* Pincode */}
-            <div className='w-full sm:w-[calc(50%-12px)]'>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Pincode  <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="productName"
-                value={formData.productName}
-                onChange={(e) => { handleChange(e); setErrors(prev => ({ ...prev, productName: '' })); }}
-                placeholder="Please Enter Pincode"
-                className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 transition-colors ${errors.productName ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'
-                  }`}
-                aria-invalid={errors.productName ? 'true' : 'false'}
-                aria-describedby={errors.productName ? 'productName-error' : undefined}
-              />
-              {errors.productName && (
-                <div id="productName-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
-                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                  {errors.productName}
-                </div>
-              )}
-            </div>
-
-            {/* City */}
-            <div className='w-full sm:w-[calc(50%-12px)]'>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                City <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="productName"
-                value={formData.productName}
-                onChange={(e) => { handleChange(e); setErrors(prev => ({ ...prev, productName: '' })); }}
-                placeholder="Please Enter City"
-                className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 transition-colors ${errors.productName ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'
-                  }`}
-                aria-invalid={errors.productName ? 'true' : 'false'}
-                aria-describedby={errors.productName ? 'productName-error' : undefined}
-              />
-              {errors.productName && (
-                <div id="productName-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
-                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                  {errors.productName}
-                </div>
-              )}
-            </div>
-
-            {/* state */}
-            <div className='w-full sm:w-[calc(50%-12px)]'>
-              <label className="block text-sm font-medium mb-2">
-                State <span className="text-[#FF0000]">*</span>
-              </label>
-              <div className='w-full'>
-                <SelectField
-                  name="brandName"
-                  value={formData.brandName}
-                  onChange={(v) => { setFormData(prev => ({ ...prev, brandName: typeof v === 'string' ? v : v[0] ?? '' })); setErrors(prev => ({ ...prev, brandName: '' })); }}
-                  options={brandOptions.map(b => ({ value: String(b.id), label: b.name }))}
-                  placeholder={brandLoading ? 'Loading brands...' : 'Search or select state'}
-                  inputClassName={errors.brandName ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}
-                  disabled={brandLoading}
-                />
-              </div>
-              {errors.brandName && (
-                <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
-                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                  {errors.brandName}
-                </div>
-              )}
-            </div>
-
             {/* Country */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
               <label className="block text-sm font-medium mb-2">
@@ -504,21 +586,99 @@ const Create: React.FC<CreateProps> = ({
               </label>
               <div className='w-full'>
                 <SelectField
-                  name="brandName"
-                  value={formData.brandName}
-                  onChange={(v) => { setFormData(prev => ({ ...prev, brandName: typeof v === 'string' ? v : v[0] ?? '' })); setErrors(prev => ({ ...prev, brandName: '' })); }}
-                  options={brandOptions.map(b => ({ value: String(b.id), label: b.name }))}
-                  placeholder={brandLoading ? 'Loading brands...' : 'Search or select country'}
-                  inputClassName={errors.brandName ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}
-                  disabled={brandLoading}
+                  name="country"
+                  value={formData.country}
+                  onChange={(v) => { setFormData(prev => ({ ...prev, country: typeof v === 'string' ? v : v[0] ?? '' })); setErrors(prev => ({ ...prev, country: '' })); }}
+                  options={countryOptions.map(c => ({ value: String(c.id), label: c.name }))}
+                  placeholder={countryLoading ? 'Loading countries...' : 'Search or select country'}
+                  inputClassName={errors.country ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}
+                  disabled={countryLoading}
                 />
               </div>
-              {errors.brandName && (
+              {errors.country && (
                 <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
                   <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                   </svg>
-                  {errors.brandName}
+                  {errors.country}
+                </div>
+              )}
+            </div>
+
+            {/* State */}
+            <div className='w-full sm:w-[calc(50%-12px)]'>
+              <label className="block text-sm font-medium mb-2">
+                State <span className="text-[#FF0000]">*</span>
+              </label>
+              <div className='w-full'>
+                <SelectField
+                  name="state"
+                  value={formData.state}
+                  onChange={(v) => { setFormData(prev => ({ ...prev, state: typeof v === 'string' ? v : v[0] ?? '' })); setErrors(prev => ({ ...prev, state: '' })); }}
+                  options={stateOptions.map(s => ({ value: String(s.id), label: s.name }))}
+                  placeholder={stateLoading ? 'Loading states...' : (formData.country ? 'Search or select state' : 'Select a country first')}
+                  inputClassName={errors.state ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}
+                  disabled={stateLoading || !formData.country}
+                />
+              </div>
+              {errors.state && (
+                <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.state}
+                </div>
+              )}
+            </div>
+
+            {/* City */}
+            <div className='w-full sm:w-[calc(50%-12px)]'>
+              <label className="block text-sm font-medium mb-2">
+                City <span className="text-[#FF0000]">*</span>
+              </label>
+              <div className='w-full'>
+                <SelectField
+                  name="city"
+                  value={formData.city}
+                  onChange={(v) => { setFormData(prev => ({ ...prev, city: typeof v === 'string' ? v : v[0] ?? '' })); setErrors(prev => ({ ...prev, city: '' })); }}
+                  options={cityOptions.map(c => ({ value: String(c.id), label: c.name }))}
+                  placeholder={cityLoading ? 'Loading cities...' : (formData.state ? 'Search or select city' : 'Select a state first')}
+                  inputClassName={errors.city ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}
+                  disabled={cityLoading || !formData.state}
+                />
+              </div>
+              {errors.city && (
+                <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.city}
+                </div>
+              )}
+            </div>
+
+            {/* Pincode */}
+            <div className='w-full sm:w-[calc(50%-12px)]'>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Pincode <span className="text-[#FF0000]">*</span>
+              </label>
+              <input
+                type="text"
+                name="pincode"
+                value={formData.pincode}
+                onChange={(e) => { handleChange(e); setErrors(prev => ({ ...prev, pincode: '' })); }}
+                placeholder="Please Enter Pincode"
+                className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 transition-colors ${errors.pincode ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'
+                  }`}
+                aria-invalid={errors.pincode ? 'true' : 'false'}
+                aria-describedby={errors.pincode ? 'pincode-error' : undefined}
+              />
+              {errors.pincode && (
+                <div id="pincode-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.pincode}
                 </div>
               )}
             </div>
@@ -526,13 +686,12 @@ const Create: React.FC<CreateProps> = ({
             {/* Media type */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
               <label className="block text-sm font-medium mb-2">
-                Media type <span className="text-[#FF0000]">*</span>
+                Media Type <span className="text-[#FF0000]">*</span>
               </label>
-
-              <div className='w-full'>
+              <div>
                 <SelectField
                   name="mediaType"
-                  // value={formData.mediaType}
+                  value={formData.mediaType}
                   onChange={(v) => {
                     setFormData(prev => ({
                       ...prev,
@@ -549,7 +708,6 @@ const Create: React.FC<CreateProps> = ({
                   }
                 />
               </div>
-
               {errors.mediaType && (
                 <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
                   <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -560,12 +718,12 @@ const Create: React.FC<CreateProps> = ({
               )}
             </div>
 
-
             {/* Image Upload & Preview */}
             <div className="w-full">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 {(formData.image_url && !formData.remove_image) || imagePreview ? 'Uploaded Image' : 'Upload Image'}
               </label>
+
               <div>
                 {/* Uploaded image card (existing image_url preview) */}
                 {formData.image_url && !formData.remove_image && !imagePreview && (

@@ -12,6 +12,15 @@ export type CreateMissCampaignPayload = {
   lead_source_id?: string | number;
   subSource?: string | number; // will map to lead_sub_source_id
   lead_sub_source_id?: string | number;
+  pincode?: string;
+  city?: string | number;
+  city_id?: string | number;
+  state?: string | number;
+  state_id?: string | number;
+  country?: string | number;
+  country_id?: string | number;
+  mediaType?: string;
+  media_type?: string;
   image?: File | null; // file object
   [key: string]: any;
 };
@@ -66,7 +75,27 @@ export async function createMissCampaign(payload: CreateMissCampaignPayload): Pr
       form.append('image_path', file);
     }
 
-    // append any extra simple fields
+    // Media type helper
+    if (payload.mediaType !== undefined && payload.mediaType !== null && String(payload.mediaType) !== '') {
+      form.append('media_type', String(payload.mediaType));
+    }
+    if (payload.media_type !== undefined && payload.media_type !== null && String(payload.media_type) !== '') {
+      form.append('media_type', String(payload.media_type));
+    }
+
+    const knownKeys = new Set([
+      'productName', 'name', 'brandId', 'brand_id', 'brandName', 'source', 'lead_source_id',
+      'subSource', 'lead_sub_source_id', 'image', 'image_path', 'imagePath', 'status', 'mediaType', 'media_type'
+    ]);
+
+    Object.entries(payload).forEach(([key, value]) => {
+      if (value === undefined || value === null) return;
+      if (knownKeys.has(key)) return;
+      if (key === 'mediaType' || key === 'media_type') return;
+      if (key === 'image' || key === 'image_path' || key === 'imagePath') return;
+      form.append(key, String(value));
+    });
+
     if (payload.status !== undefined) form.append('status', String(payload.status));
 
     const res = await apiClient.post(ENDPOINTS.CREATE, form);
@@ -108,6 +137,26 @@ export async function updateMissCampaignWithForm(id: string | number, payload: C
     if (file instanceof File) {
       form.append('image_path', file);
     }
+
+    if (payload.mediaType !== undefined && payload.mediaType !== null && String(payload.mediaType) !== '') {
+      form.append('media_type', String(payload.mediaType));
+    }
+    if (payload.media_type !== undefined && payload.media_type !== null && String(payload.media_type) !== '') {
+      form.append('media_type', String(payload.media_type));
+    }
+
+    const knownKeys = new Set([
+      'productName', 'name', 'brandId', 'brand_id', 'brandName', 'source', 'lead_source_id',
+      'subSource', 'lead_sub_source_id', 'image', 'image_path', 'imagePath', 'status', 'mediaType', 'media_type'
+    ]);
+
+    Object.entries(payload).forEach(([key, value]) => {
+      if (value === undefined || value === null) return;
+      if (knownKeys.has(key)) return;
+      if (key === 'mediaType' || key === 'media_type') return;
+      if (key === 'image' || key === 'image_path' || key === 'imagePath') return;
+      form.append(key, String(value));
+    });
 
     if (payload.status !== undefined) form.append('status', String(payload.status));
 

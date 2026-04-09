@@ -11,6 +11,11 @@ export interface MissCampaign {
   dateTime: string;
   industry?: string;
   media?: string;
+  mediaType?: string;
+  pincode?: string;
+  city?: string;
+  state?: string;
+  country?: string;
 }
 
 const ENDPOINTS = {
@@ -79,6 +84,13 @@ export async function listMissCampaigns(page = 1, perPage = 10, search?: string)
       '';
     const proof = it.image_url ?? it.image_path ?? it.proof ?? '';
     const dateTime = it.created_at ?? it.date_time ?? it.dateTime ?? '';
+    const industry = it.industry?.name ?? it.industry ?? it.industry_name ?? '';
+    const pincode = it.pincode ?? it.pin_code ?? it.zip_code ?? it.postal_code ?? it.zipcode ?? '';
+    const city = it.city?.name ?? it.city ?? '';
+    const state = it.state?.name ?? it.state ?? '';
+    const country = it.country?.name ?? it.country ?? '';
+    const mediaType = it.mediaType ?? it.media_type ?? it.media ?? '';
+    const media = mediaType;
 
     return {
       id: String(id),
@@ -88,6 +100,13 @@ export async function listMissCampaigns(page = 1, perPage = 10, search?: string)
       subSource,
       proof,
       dateTime,
+      industry,
+      pincode,
+      city,
+      state,
+      country,
+      media,
+      mediaType,
     } as MissCampaign;
   });
 
