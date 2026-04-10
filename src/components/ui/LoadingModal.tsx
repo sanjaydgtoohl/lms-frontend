@@ -9,6 +9,10 @@ type LoadingModalProps = {
 const LoadingModal: React.FC<LoadingModalProps> = ({ isOpen, title = 'Please wait', message = 'Loading…' }) => {
   if (!isOpen) return null;
 
+  const idBase = `${title}-${message}`.toLowerCase().replace(/[^a-z0-9_-]+/g, '-');
+  const idTitle = `${idBase}-loading-modal-title`;
+  const idDesc = `${idBase}-loading-modal-description`;
+
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/30" aria-hidden="true" />
@@ -16,8 +20,8 @@ const LoadingModal: React.FC<LoadingModalProps> = ({ isOpen, title = 'Please wai
         className="fixed inset-0 z-50 flex items-center justify-center p-4"
         role="dialog"
         aria-modal="true"
-       aria-labelledby={`${`${title}-${message}`.toLowerCase().replace(/[^a-z0-9_-]+/g, '-')}-loading-modal-title`}
-        aria-describedby={`${`${title}-${message}`.toLowerCase().replace(/[^a-z0-9_-]+/g, '-')}-loading-modal-description`}
+        aria-labelledby={idTitle}
+        aria-describedby={idDesc}
       >
         <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl ring-1 ring-black/10">
           <div className="flex flex-col items-center gap-4 text-center">
@@ -38,8 +42,8 @@ const LoadingModal: React.FC<LoadingModalProps> = ({ isOpen, title = 'Please wai
               </svg>
             </div>
             <div>
-              <h2 id="loading-modal-title" className="text-lg font-semibold text-gray-900">{title}</h2>
-              <p id="loading-modal-description" className="mt-2 text-sm leading-6 text-gray-600">{message}</p>
+              <h2 id={idTitle} className="text-lg font-semibold text-gray-900">{title}</h2>
+              <p id={idDesc} className="mt-2 text-sm leading-6 text-gray-600">{message}</p>
             </div>
           </div>
         </div>

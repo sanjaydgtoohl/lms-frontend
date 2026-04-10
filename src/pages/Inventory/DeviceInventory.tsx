@@ -102,7 +102,7 @@ const DeviceInventory: React.FC = () => {
         <div className="bg-gray-50 px-3 md:px-6 py-3 md:py-4 flex flex-row items-center justify-between gap-3 flex-wrap md:flex-nowrap border-b border-gray-200">
           <h2 className="text-sm md:text-base font-semibold text-gray-900 flex-shrink-0">Device Inventory</h2>
           <div className="flex w-full min-w-0 items-center justify-end gap-2 sm:w-auto">
-           <PPTExport fetchRows={exportFetchRows} />
+           <PPTExport fetchRows={exportCurrentPageRows} />
             <ExportCsvButton<DeviceData>
               fetchRows={exportFetchRows}
               columns={DEVICE_INVENTORY_CSV_COLUMNS.filter(col => col.key !== 'user_password')}

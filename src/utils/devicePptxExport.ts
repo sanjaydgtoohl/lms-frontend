@@ -77,8 +77,11 @@ const getImageSource = async (url: string | undefined | null): Promise<ImageSour
     return { data: PLACEHOLDER_IMAGE };
   }
 
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 4000);
+
   try {
-    const response = await fetch(fetchUrl);
+    const response = await fetch(fetchUrl, { signal: controller.signal });
     if (!response.ok) {
       console.warn('PPT image fetch returned non-ok response:', response.status, normalizedUrl);
       return { data: PLACEHOLDER_IMAGE };
@@ -103,6 +106,8 @@ const getImageSource = async (url: string | undefined | null): Promise<ImageSour
   } catch (error) {
     console.warn('PPT image fetch failed, using placeholder:', error, normalizedUrl);
     return { data: PLACEHOLDER_IMAGE };
+  } finally {
+    window.clearTimeout(timeoutId);
   }
 };
 
@@ -141,11 +146,6 @@ export async function generateDeviceInventoryPptx(devices: DeviceData[]): Promis
   pptx.layout = 'LAYOUT_WIDE';
 
   const logoDataUrl = await getLogoDataUrl();
-  const imageSources = await Promise.all(
-    devices.map((device) =>
-      getImageSource(device.aws_device_image || device.device_image || device.old_device_image)
-    )
-  );
 
   const addReportHeader = (slide: any) => {
     slide.addImage({
@@ -296,15 +296,19 @@ export async function generateDeviceInventoryPptx(devices: DeviceData[]): Promis
     );
   };
 
-  devices.forEach((device, index) => {
+  for (const device of devices) {
     const slide = pptx.addSlide();
     slide.background = { color: SLIDE_BACKGROUND };
 
+    const imageSource = await getImageSource(
+      device.aws_device_image || device.device_image || device.old_device_image
+    );
+
     addReportHeader(slide);
-    addDeviceImagePanel(slide, imageSources[index]);
+    addDeviceImagePanel(slide, imageSource);
     addDeviceDetailsPanel(slide, device);
     addFooter(slide);
-  });
+  }
 
   await pptx.writeFile({ fileName: 'Device_Inventory_Report.pptx' });
 }
