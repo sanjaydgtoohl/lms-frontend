@@ -22,7 +22,7 @@ const EditSubmittedPlan: React.FC = () => {
   const [previewSource, setPreviewSource] = useState<any>(null);
 
   useEffect(() => {
-    if (!id) return; 
+    if (!id) return;
     // Fetch brief details
     getBriefById(Number(id))
       .then((data) => setBriefDetails(data))
@@ -47,7 +47,7 @@ const EditSubmittedPlan: React.FC = () => {
         setPlannerData(resp.data.data);
       } catch (error) {
         setPlannerData(null);
-         
+
         console.error('Failed to fetch planner data:', error);
       }
     };
@@ -72,10 +72,10 @@ const EditSubmittedPlan: React.FC = () => {
       formData.append('backup_plan', backupFiles[0]);
     }
     // Debug: log FormData keys and values
-     
+
     console.log('Submitting plan:', { briefId: id, plannerId, planFiles, backupFiles });
     for (const pair of formData.entries()) {
-       
+
       console.log(pair[0], pair[1]);
     }
     try {
@@ -90,7 +90,7 @@ const EditSubmittedPlan: React.FC = () => {
       }
       navigate(-1);
     } catch (err: any) {
-       
+
       console.error('Update plan error:', err, err?.response);
       if (window && (window as any).toast) {
         (window as any).toast.error(err.message || 'Failed to update plan');
@@ -204,93 +204,169 @@ const EditSubmittedPlan: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <div>
-                  <span className="text-gray-500">Brief ID:</span>
-                  <span className="font-medium text-gray-900 ml-2">{`#${briefDetails.id}`}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Brief ID:</span>
+                  <span className="text-gray-600">{`#${briefDetails.id}`}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Brief Name:</span>
-                  <span className="font-medium text-gray-900 ml-2">{briefDetails.name || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Brief Name:</span>
+                  <span className="text-gray-600">{briefDetails.name || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Sales Person:</span>
-                  <span className="font-medium text-gray-900 ml-2">{briefDetails.assigned_user?.name || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Sales Person:</span>
+                  <span className="text-gray-600">{briefDetails.assigned_user?.name || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Brief Status:</span>
-                  <span className="font-medium text-gray-900 ml-2">{briefDetails.brief_status?.name || briefDetails.status || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Brief Status:</span>
+                  <span className="text-gray-600">{briefDetails.brief_status?.name || briefDetails.status || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Budget:</span>
-                  <span className="font-medium text-gray-900 ml-2">{briefDetails.budget || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Budget:</span>
+                  <span className="text-gray-600">{briefDetails.budget || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Brief Submission Date & Time:</span>
-                  <span className="font-medium text-gray-900 ml-2">{briefDetails.submission_date || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Brief Submission Date & Time: </span>
+                  <span className="text-gray-600"> {  briefDetails.submission_date || '-'}</span>
                 </div>
               </div>
+              
               <div className="space-y-3">
                 <div>
-                  <span className="text-gray-500">Brand Name:</span>
-                  <span className="font-medium text-gray-900 ml-2">{briefDetails?.brand?.name || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Brand Name:</span>
+                  <span className="text-gray-600">{briefDetails?.brand?.name || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Product Name:</span>
-                  <span className="font-medium text-gray-900 ml-2">{briefDetails?.product_name || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Product Name: </span>
+                  <span className="text-gray-600">{briefDetails?.product_name || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Media:</span>
-                  <span className="font-medium text-gray-900 ml-2">{briefDetails?.mode_of_campaign || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Media:</span>
+                  <span className="text-gray-600">{briefDetails?.mode_of_campaign || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Media Type:</span>
-                  <span className="font-medium text-gray-900 ml-2">{briefDetails?.media_type || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Media Type:</span>
+                  <span className="text-gray-600">{briefDetails?.media_type || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Priority:</span>
-                  <span className="font-medium text-gray-900 ml-2">{briefDetails?.priority?.name || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Priority:</span>
+                  <span className="text-gray-600">{briefDetails?.priority?.name || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Brief Detail:</span>
-                  <span className="font-medium text-gray-900 ml-2">{briefDetails?.comment || '-'}</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Brief Detail: </span>
+                  <span className="text-gray-600">{briefDetails?.comment || '-'}</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Upload Plan Section */}
-          <div className="mb-8">
-            <h3 className="text-base font-medium text-gray-900 mb-4">Upload Plan</h3>
-            {/* Show existing submitted_plan files from plannerData using FileCard style, with delete */}
-            <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-              {plannerData?.submitted_plan?.map((file: any, idx: number) => {
-                const ext = getFileExtension(file.name);
-                const colorClass = getFileTypeColor(ext);
-                return (
-                  <div key={idx} className="relative inline-flex flex-col items-center p-4 border border-gray-200 rounded-lg bg-white hover:shadow-sm transition-shadow">
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Upload Plan Section */}
+            <div className="mb-8">
+              <h3 className="text-base font-medium text-gray-900">Upload Plan</h3>
+              {/* Show existing submitted_plan files from plannerData using FileCard style, with delete */}
+              <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                {plannerData?.submitted_plan?.map((file: any, idx: number) => {
+                  const ext = getFileExtension(file.name);
+                  const colorClass = getFileTypeColor(ext);
+                  return (
+                    <div key={idx} className="relative inline-flex flex-col items-center p-4 border border-gray-200 rounded-lg bg-white hover:shadow-sm transition-shadow">
+                      <div className="relative mb-3">
+                        <div className="w-24 h-32 border-2 border-gray-200 rounded bg-gray-50 flex items-center justify-center">
+                          <div className="text-center">
+                            <div className={`inline-block px-2 py-1 rounded text-xs font-bold mb-2 ${colorClass}`}>
+                              {ext}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-600 text-center truncate w-28 mb-3" title={file.name}>{file.name}</p>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          className="p-1.5 hover:bg-gray-100 rounded transition-colors"
+                          title="View"
+                          onClick={() => {
+                            setPreviewSource({ kind: 'remote', url: file.url, name: file.name });
+                            setPreviewOpen(true);
+                          }}
+                        >
+                          <Eye className="w-4 h-4 text-gray-600" />
+                        </button>
+                        <a
+                          href={file.url}
+                          download
+                          className="p-1.5 hover:bg-gray-100 rounded transition-colors"
+                          title="Download"
+                        >
+                          <Download className="w-4 h-4 text-gray-600" />
+                        </a>
+                        <button
+                          type="button"
+                          className="p-1.5 hover:bg-red-50 rounded transition-colors"
+                          title="Delete"
+                          onClick={() => {
+                            const updated = [...(plannerData.submitted_plan || [])];
+                            updated.splice(idx, 1);
+                            setPlannerData((prev: any) => ({ ...prev, submitted_plan: updated }));
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4 text-red-600" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+                {planFiles.map((file, idx) => (
+                  <FileCard
+                    key={`plan-upload-${idx}`}
+                    file={file}
+                    onRemove={() => setPlanFiles(planFiles.filter((_, i) => i !== idx))}
+                    onView={() => {
+                      setPreviewSource({ kind: 'file', file });
+                      setPreviewOpen(true);
+                    }}
+                  />
+                ))}
+              </div>
+              {/* Upload area only if total files < 2 */}
+              {(plannerData?.submitted_plan?.length || 0) + planFiles.length < 2 && (
+                <UploadCard
+                  files={planFiles}
+                  onChange={(files: File[]) => setPlanFiles(files.slice(0, 2 - (plannerData?.submitted_plan?.length || 0)))}
+                  accept=".xls,.xlsx,.xlsm,.csv,.doc,.docx,.ppt,.pptx"
+                  supported="Excel, Word, PPT"
+                />
+              )}
+            </div>
+
+            {/* Upload Back-Up Plan Section */}
+            <div className="mb-8">
+              <h3 className="text-base font-medium text-gray-900">Upload Back-Up Plan</h3>
+              <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                {plannerData?.backup_plan_url && (
+                  <div className="relative inline-flex flex-col items-center p-4 border border-gray-200 rounded-lg bg-white hover:shadow-sm transition-shadow">
                     <div className="relative mb-3">
                       <div className="w-24 h-32 border-2 border-gray-200 rounded bg-gray-50 flex items-center justify-center">
                         <div className="text-center">
-                          <div className={`inline-block px-2 py-1 rounded text-xs font-bold mb-2 ${colorClass}`}>
-                            {ext}
+                          <div className={`inline-block px-2 py-1 rounded text-xs font-bold mb-2 ${getFileTypeColor(getFileExtension(plannerData.backup_plan?.split('/').pop() || 'FILE'))}`}>
+                            {getFileExtension(plannerData.backup_plan?.split('/').pop() || 'FILE')}
                           </div>
                         </div>
                       </div>
                     </div>
-                    <p className="text-xs text-gray-600 text-center truncate w-28 mb-3" title={file.name}>{file.name}</p>
+                    <p className="text-xs text-gray-600 text-center truncate w-28 mb-3" title={plannerData.backup_plan?.split('/').pop()}>{plannerData.backup_plan?.split('/').pop()}</p>
                     <div className="flex items-center gap-2">
-                      <button
-                        type="button"
+                      <a
+                        href={plannerData.backup_plan_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="p-1.5 hover:bg-gray-100 rounded transition-colors"
                         title="View"
-                        onClick={() => {
-                          setPreviewSource({ kind: 'remote', url: file.url, name: file.name });
-                          setPreviewOpen(true);
-                        }}
                       >
                         <Eye className="w-4 h-4 text-gray-600" />
-                      </button>
+                      </a>
                       <a
-                        href={file.url}
+                        href={plannerData.backup_plan_url}
                         download
                         className="p-1.5 hover:bg-gray-100 rounded transition-colors"
                         title="Download"
@@ -302,109 +378,39 @@ const EditSubmittedPlan: React.FC = () => {
                         className="p-1.5 hover:bg-red-50 rounded transition-colors"
                         title="Delete"
                         onClick={() => {
-                          const updated = [...(plannerData.submitted_plan || [])];
-                          updated.splice(idx, 1);
-                          setPlannerData((prev: any) => ({ ...prev, submitted_plan: updated }));
+                          setPlannerData((prev: any) => ({ ...prev, backup_plan: null, backup_plan_url: null }));
                         }}
                       >
                         <Trash2 className="w-4 h-4 text-red-600" />
                       </button>
                     </div>
                   </div>
-                );
-              })}
-              {planFiles.map((file, idx) => (
-                <FileCard
-                  key={`plan-upload-${idx}`}
-                  file={file}
-                  onRemove={() => setPlanFiles(planFiles.filter((_, i) => i !== idx))}
-                  onView={() => {
-                    setPreviewSource({ kind: 'file', file });
-                    setPreviewOpen(true);
-                  }}
+                )}
+                {backupFiles.map((file, idx) => (
+                  <FileCard
+                    key={`backup-upload-${idx}`}
+                    file={file}
+                    onRemove={() => setBackupFiles(backupFiles.filter((_, i) => i !== idx))}
+                    onView={() => {
+                      setPreviewSource({ kind: 'file', file });
+                      setPreviewOpen(true);
+                    }}
+                  />
+                ))}
+              </div>
+              {/* Upload area only if total files < 1 */}
+              {(!plannerData?.backup_plan_url && backupFiles.length < 1) && (
+                <UploadCard
+                  files={backupFiles}
+                  onChange={(files: File[]) => setBackupFiles(files.slice(0, 1))}
+                  accept=".xls,.xlsx,.xlsm,.csv,.doc,.docx,.ppt,.pptx"
+                  supported="Excel, Word, PPT"
                 />
-              ))}
+              )}
             </div>
-            {/* Upload area only if total files < 2 */}
-            {(plannerData?.submitted_plan?.length || 0) + planFiles.length < 2 && (
-              <UploadCard
-                files={planFiles}
-                onChange={(files: File[]) => setPlanFiles(files.slice(0, 2 - (plannerData?.submitted_plan?.length || 0)))}
-                accept=".xls,.xlsx,.xlsm,.csv,.doc,.docx,.ppt,.pptx"
-                supported="Excel, Word, PPT"
-              />
-            )}
+
           </div>
 
-          {/* Upload Back-Up Plan Section */}
-          <div className="mb-8">
-            <h3 className="text-base font-medium text-gray-900 mb-4">Upload Back-Up Plan</h3>
-            <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-              {plannerData?.backup_plan_url && (
-                <div className="relative inline-flex flex-col items-center p-4 border border-gray-200 rounded-lg bg-white hover:shadow-sm transition-shadow">
-                  <div className="relative mb-3">
-                    <div className="w-24 h-32 border-2 border-gray-200 rounded bg-gray-50 flex items-center justify-center">
-                      <div className="text-center">
-                        <div className={`inline-block px-2 py-1 rounded text-xs font-bold mb-2 ${getFileTypeColor(getFileExtension(plannerData.backup_plan?.split('/').pop() || 'FILE'))}`}>
-                          {getFileExtension(plannerData.backup_plan?.split('/').pop() || 'FILE')}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-600 text-center truncate w-28 mb-3" title={plannerData.backup_plan?.split('/').pop()}>{plannerData.backup_plan?.split('/').pop()}</p>
-                  <div className="flex items-center gap-2">
-                    <a
-                      href={plannerData.backup_plan_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-1.5 hover:bg-gray-100 rounded transition-colors"
-                      title="View"
-                    >
-                      <Eye className="w-4 h-4 text-gray-600" />
-                    </a>
-                    <a
-                      href={plannerData.backup_plan_url}
-                      download
-                      className="p-1.5 hover:bg-gray-100 rounded transition-colors"
-                      title="Download"
-                    >
-                      <Download className="w-4 h-4 text-gray-600" />
-                    </a>
-                    <button
-                      type="button"
-                      className="p-1.5 hover:bg-red-50 rounded transition-colors"
-                      title="Delete"
-                      onClick={() => {
-                        setPlannerData((prev: any) => ({ ...prev, backup_plan: null, backup_plan_url: null }));
-                      }}
-                    >
-                      <Trash2 className="w-4 h-4 text-red-600" />
-                    </button>
-                  </div>
-                </div>
-              )}
-              {backupFiles.map((file, idx) => (
-                <FileCard
-                  key={`backup-upload-${idx}`}
-                  file={file}
-                  onRemove={() => setBackupFiles(backupFiles.filter((_, i) => i !== idx))}
-                  onView={() => {
-                    setPreviewSource({ kind: 'file', file });
-                    setPreviewOpen(true);
-                  }}
-                />
-              ))}
-            </div>
-            {/* Upload area only if total files < 1 */}
-            {(!plannerData?.backup_plan_url && backupFiles.length < 1) && (
-              <UploadCard
-                files={backupFiles}
-                onChange={(files: File[]) => setBackupFiles(files.slice(0, 1))}
-                accept=".xls,.xlsx,.xlsm,.csv,.doc,.docx,.ppt,.pptx"
-                supported="Excel, Word, PPT"
-              />
-            )}
-          </div>
 
           {/* Action Buttons */}
           <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">

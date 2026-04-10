@@ -22,7 +22,7 @@ const Input = forwardRef<HTMLInputElement, InputProps & React.InputHTMLAttribute
   const baseClasses = 'w-full px-3 py-2 border rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
   const stateClasses = error
     ? 'border-red-500 bg-red-50'
-    : 'border-[var(--border-color)] bg-white hover:border-[#A7B4FF] focus:shadow-[0_0_0_3px_rgba(66,133,244,0.12)]';
+    : 'border-gray-200 bg-white hover:border-[#A7B4FF] focus:shadow-[0_0_0_3px_rgba(66,133,244,0.12)]';
   const disabledClasses = disabled ? 'bg-gray-100 cursor-not-allowed opacity-60' : '';
   const inputClasses = `${baseClasses} ${stateClasses} ${disabledClasses} ${isPassword || rightElement ? 'pr-10' : ''}`;
 

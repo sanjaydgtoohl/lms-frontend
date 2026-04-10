@@ -381,7 +381,7 @@ button[data-btn-label="Save"]:hover,
 button[data-btn-label="Update"]:hover {
   @apply bg-black text-white;
 }
-
+/* 
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
@@ -390,18 +390,16 @@ button[data-btn-label="Update"]:hover {
   a:hover {
     color: #747bff;
   }
-  /* Don't set a global button background for light mode; limit to primary buttons only. */
   .btn-primary {
     background-color: var(--btn-bg) !important;
   }
-}
+} */
 
 /* Primary button helper class used by React Button component and utility buttons */
 .btn-primary {
   @apply bg-orange-500 hover:bg-black text-white border-0 flex items-center justify-center space-x-2 py-2 px-4 text-sm; 
 }
-
-
+ 
 /* Ensure icons inside primary buttons match the white text color
    Many icon libraries (lucide-react) use stroke/currentColor - this
    forces svg color and stroke to inherit the text color. */
@@ -464,7 +462,7 @@ button[data-btn-label="Update"]:hover {
 }
 
 .login-card-wrapper {
-  @apply px-8 py-14 rounded-2xl w-[400px] z-20 border-gray-300 mx-3;
+  @apply px-8 py-14 rounded-2xl w-[400px] z-20 border-gray-200 mx-3;
              border-radius: 50px;
 background: #1E1E1E;
 box-shadow:  5px 5px 10px #131313,
@@ -498,15 +496,11 @@ box-shadow:  5px 5px 10px #131313,
 }
 
 .login-btn {
-    @apply  bg-[#fe6000] text-white w-full rounded-full hover:bg-[#bd4900] border-0 transition-all;
+    @apply  bg-[#fe6000] text-white w-full rounded-full hover:bg-[#bd4900] border-0 transition-all !py-4;
 }
 
 .shadow-custom {
   box-shadow: rgba(149, 157, 165, 0.2) 0px 4px 12px;
-}
-
-.sidebar-wrapper {
-  border-radius: 0 30px 30px 0;
 }
 
 .pagination-btn.start {
@@ -550,7 +544,7 @@ box-shadow:  5px 5px 10px #131313,
 }
 
 .icon-button {
-  @apply flex items-center justify-center w-10 h-10 rounded-lg text-black bg-gray-200 cursor-pointer border-none focus:outline-none hover:bg-black hover:text-white flex-shrink-0 border border-gray-300;
+  @apply flex items-center justify-center w-10 h-10 rounded-lg text-black bg-gray-200 cursor-pointer border-none focus:outline-none hover:bg-black hover:text-white flex-shrink-0 border border-gray-200;
 }
 
 
@@ -575,6 +569,7 @@ box-shadow:  5px 5px 10px #131313,
 }
 
 
+<<<<<<< HEAD
 
 @keyframes fadeIn {
   from { opacity: 0; }
@@ -592,4 +587,8 @@ box-shadow:  5px 5px 10px #131313,
 
 .animate-fadeOut {
   animation: fadeOut 0.2s ease-in forwards;
+=======
+.react-datepicker-wrapper {
+  @apply w-full;
+>>>>>>> 904d97e83d48d5558be7241584a0005b91613871
 }

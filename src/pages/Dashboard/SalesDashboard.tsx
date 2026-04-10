@@ -213,7 +213,7 @@ const SalesDashboard: React.FC = () => {
       {/* Tabs and leads list */}
       <div className="border-b border-gray-200 pb-4">
         <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
-          <div className="flex items-center flex-wrap gap-1 md:gap-2 bg-white rounded-lg overflow-x-auto border border-gray-200 sm:p-1">
+          <div className="flex items-center flex-wrap gap-1 md:gap-2 bg-white rounded-lg overflow-x-auto border border-gray-200 sm:p-1 tabs-wrapper">
             <span
               onClick={() => setActiveTab('new')}
               className={`px-3 md:px-4 py-2 rounded-lg cursor-pointer font-medium text-xs md:text-sm transition-all duration-300 whitespace-nowrap ${activeTab === 'new' ? 'bg-black text-white shadow' : 'text-gray-600 bg-gray-100 md:bg-white hover:bg-gray-200'}`}
@@ -247,7 +247,7 @@ const SalesDashboard: React.FC = () => {
 
         <div className="space-y-2 md:space-y-3">
           {activeTab === 'new' && leads.map(l => (
-            <div key={l.id} className="flex flex-row flex-wrap items-center justify-between bg-white rounded-lg p-3 gap-2 md:gap-0 overflow-x-auto dashboard-tab-section">
+            <div key={l.id} className="flex flex-row flex-wrap items-center justify-between bg-white rounded-lg p-3 gap-2 md:gap-0 overflow-x-auto dashboard-tab-section border border-gray-200">
 
               <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-x-3 sm:gap-8 overflow-x-auto overflow-y-hidden tabs-wrapper">
 
@@ -303,7 +303,7 @@ const SalesDashboard: React.FC = () => {
             </div>
           ))}
           {activeTab === 'brief' && briefs.map(b => (
-            <div key={b.id} className="flex flex-row flex-wrap items-center justify-between bg-white rounded-lg p-3 gap-2 md:gap-0 overflow-x-auto dashboard-tab-section">
+            <div key={b.id} className="flex flex-row flex-wrap items-center justify-between bg-white rounded-lg p-3 gap-2 md:gap-0 overflow-x-auto dashboard-tab-section border border-gray-200">
 
               <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-x-3 sm:gap-8 overflow-x-auto overflow-y-hidden tabs-wrapper">
 
@@ -370,7 +370,7 @@ const SalesDashboard: React.FC = () => {
             </div>
           ))}
           {activeTab === 'follow' && followUpLeads.map(f => (
-            <div key={f.id} className="flex flex-row flex-wrap items-center justify-between bg-white rounded-lg p-3 gap-2 md:gap-0 overflow-x-auto dashboard-tab-section">
+            <div key={f.id} className="flex flex-row flex-wrap items-center justify-between bg-white rounded-lg p-3 gap-2 md:gap-0 overflow-x-auto dashboard-tab-section border border-gray-200">
 
               <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-x-3 sm:gap-8 overflow-x-auto overflow-y-hidden tabs-wrapper">
 
@@ -457,7 +457,7 @@ const SalesDashboard: React.FC = () => {
             </div>
           ))}
           {activeTab === 'meeting' && meetingLeads.map(m => (
-            <div key={m.id} className="flex flex-row flex-wrap items-center justify-between bg-white rounded-lg p-3 gap-2 md:gap-0 overflow-x-auto dashboard-tab-section">
+            <div key={m.id} className="flex flex-row flex-wrap items-center justify-between bg-white rounded-lg p-3 gap-2 md:gap-0 overflow-x-auto dashboard-tab-section border border-gray-200">
 
               <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-x-3 sm:gap-8 overflow-x-auto overflow-y-hidden tabs-wrapper">
 
@@ -560,11 +560,11 @@ const SalesDashboard: React.FC = () => {
                   {/* Single-row layout: content on left, status on right */}
                   <div className="flex flex-row items-start justify-between gap-3">
                     {/* Left side: Activity details */}
-                    <div className="flex-1 card-item">
-                      <div className="text-xs mb-1"><span className="font-semibold">Brand Name:</span> {a.brand_name}</div>
-                      <div className="text-xs mb-1"><span className="font-semibold">Assign To:</span> {a.assign_to}</div>
-                      <div className="text-xs mb-1"><span className="font-semibold">Contact Person:</span> {a.contact_person_name}</div>
-                      <div className="text-xs mb-1"><span className="font-semibold">Call Status:</span> {a.call_status}</div>
+                    <div className="flex-1 card-item text-gray-800">
+                      <div className="text-xs mb-1 text-gray-800"><span className="font-semibold">Brand Name:</span> {a.brand_name}</div>
+                      <div className="text-xs mb-1 text-gray-800"><span className="font-semibold">Assign To:</span> {a.assign_to}</div>
+                      <div className="text-xs mb-1 text-gray-800"><span className="font-semibold">Contact Person:</span> {a.contact_person_name}</div>
+                      <div className="text-xs mb-1 text-gray-800"><span className="font-semibold">Call Status:</span> {a.call_status}</div>
                       <div className="text-xs"><span className="font-semibold">Created At:</span> {a.created_at}</div>
                     </div>
 
@@ -593,12 +593,12 @@ const SalesDashboard: React.FC = () => {
                 {/* Single-row layout: content on left, progress circle on right */}
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex-1 pr-3 card-item">
-                    <div className="text-xs mb-1">
+                    <div className="text-xs mb-1 text-gray-800">
                       <span className="font-semibold">Brief Name:</span> {b.name}
                     </div>
-                    <div className="text-xs mb-1"><span className="font-semibold">Brand Name:</span> {b.brand_name || '-'}</div>
-                    <div className="text-xs mb-1"><span className="font-semibold">Product Name:</span> {b.product_name}</div>
-                    <div className="text-xs mb-1"><span className="font-semibold">Budget:</span> ₹{b.budget}</div>
+                    <div className="text-xs mb-1 text-gray-800"><span className="font-semibold">Brand Name:</span> {b.brand_name || '-'}</div>
+                    <div className="text-xs mb-1 text-gray-800"><span className="font-semibold">Product Name:</span> {b.product_name}</div>
+                    <div className="text-xs mb-1 text-gray-800"><span className="font-semibold">Budget:</span> ₹{b.budget}</div>
                     <div className="text-xs"><span className="font-semibold">Contact Person:</span> {b.contact_person_name || '-'}</div>
                   </div>
 

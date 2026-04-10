@@ -56,7 +56,6 @@ const baseClasses =  "inline-flex items-center justify-center font-medium rounde
   };
 
   const labelText = extractLabelText(children);
-
   const orangeLabels = ['Add', 'Create', 'Go Back', 'Save', 'Update'];
   const btnLabel = orangeLabels.includes(labelText) ? labelText : undefined;
 

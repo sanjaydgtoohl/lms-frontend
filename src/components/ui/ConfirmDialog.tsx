@@ -93,7 +93,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
                   <button
                     disabled={loading}
                     onClick={onCancel}
-                    className="flex-1 inline-flex items-center justify-center px-5 py-3 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 !bg-gray-200 hover:!bg-gray-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                    className="cancel-btn flex-1 inline-flex items-center justify-center px-5 py-3 rounded-lg border border-gray-200 text-sm font-semibold text-gray-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                   >
                     {cancelLabel}
                   </button>

@@ -74,7 +74,6 @@ const ViewLead: React.FC = () => {
 
   return (
     <div className="flex-1 w-full max-w-full overflow-x-hidden">
-
       {/* Breadcrumb */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <Breadcrumb
@@ -94,61 +93,69 @@ const ViewLead: React.FC = () => {
       </div>
 
       {/* Main Content - Two Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3 gap-4">
         {/* Left Column - Main Info */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="md:col-span-2 lg:col-span-2 xl:col-span-2 space-y-4">
           {/* Lead Overview Card */}
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-5">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">Lead Overview</h2>
-            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
+            <div className="grid sm:grid-cols-2 2xl:grid-cols-2 gap-3">
+
               {/* Brand */}
-              <div className='flex flex-wrap items-center gap-3'>
-                <label className="flex items-center text-sm font-semibold text-gray-800 gap-3">
-                  <span className='inline-flex items-center justify-center text-center rounded-md bg-gray-100 w-10 h-10  text-gray-800 text-sm'>
+              <div className='flex items-center gap-3'>
+                <span className='inline-flex items-center justify-center text-center rounded-md bg-gray-100 w-10 h-10  text-gray-800 text-sm'>
+                  <Tag />
+                </span>
 
-                    <Tag />
-                  </span>
-
-                  Brand : </label>
-
-                <p className="text-sm text-gray-600">{lead.brand?.name || '-'}</p>
+                <div className="flex items-center flex-wrap">
+                  <label className="flex items-center text-sm font-semibold text-gray-800 gap-3">
+                    Brand :  </label>
+                  <p className="text-sm text-gray-600">{lead.brand?.name || '-'}</p>
+                </div>
               </div>
 
               {/* Type */}
-              <div className='flex flex-wrap items-center gap-3'>
-                <label className="flex items-center text-sm font-semibold text-gray-800 gap-3">
-                  <span className='inline-flex items-center justify-center text-center rounded-md bg-gray-100 w-10 h-10  text-gray-800 text-sm'>
-                    <Layers />
-                  </span>
+              <div className='flex items-center gap-3'>
+                <span className='inline-flex items-center justify-center text-center rounded-md bg-gray-100 w-10 h-10  text-gray-800 text-sm'>
+                  <Layers />
+                </span>
 
-                  Type : </label>
-
-                <p className="text-sm text-gray-600">{lead.type}</p>
+                <div className="flex items-center flex-wrap">
+                  <label className="flex items-center text-sm font-semibold text-gray-800 gap-3">
+                    Type : </label>
+                  <p className="text-sm text-gray-600">{lead.type}</p>
+                </div>
               </div>
 
               {/* Status removed per request */}
               {/* Priority */}
-              <div className='flex flex-wrap items-center gap-3'>
-                <label className="flex items-center text-sm font-semibold text-gray-800 gap-3">
-                  <span className='inline-flex items-center justify-center text-center rounded-md bg-gray-100 w-10 h-10  text-gray-800 text-sm'>
-                    <ArrowUpCircle />
-                  </span>
+              <div className='flex items-center gap-3'>
+                <span className='inline-flex items-center justify-center text-center rounded-md bg-gray-100 w-10 h-10  text-gray-800 text-sm'>
+                  <ArrowUpCircle />
+                </span>
 
-                  Priority : </label>
-                <div className="flex items-center">
-                  <Flag size={16} className={`mr-2 ${getPriorityColor(lead.priority?.name || 'Medium')}`} />
-                  <span className="text-sm text-gray-600">{lead.priority?.name || 'Not Set'}</span>
+                <div className="flex items-center flex-wrap">
+                  <label className="flex items-center text-sm font-semibold text-gray-800 gap-3">
+                    Priority : </label>
+
+                  <div className="flex items-center">
+                    <Flag size={16} className={`mr-2 ${getPriorityColor(lead.priority?.name || 'Medium')}`} />
+                    <span className="text-sm text-gray-600">{lead.priority?.name || 'Not Set'}</span>
+                  </div>
                 </div>
               </div>
-              {/* Lead Status */}
-              <div className='flex flex-wrap items-center gap-3'>
-                <label className="flex items-center text-sm font-semibold text-gray-800 gap-3">
-                  <span className='inline-flex items-center justify-center text-center rounded-md bg-gray-100 w-10 h-10  text-gray-800 text-sm'>
-                    <UserCheck />
-                  </span>
 
-                  Lead Status :</label>
-                <p className="text-sm text-gray-600">{lead.lead_status_relation?.name || lead.lead_status || '-'}</p>
+              {/* Lead Status */}
+              <div className='flex items-center gap-3'>
+                <span className='inline-flex items-center justify-center text-center rounded-md bg-gray-100 w-10 h-10  text-gray-800 text-sm'>
+                  <UserCheck />
+                </span>
+
+                <div className="flex items-center flex-wrap">
+                  <label className="flex items-center text-sm font-semibold text-gray-800 gap-3">
+                    Lead Status :</label>
+                  <p className="text-sm text-gray-600">{lead.lead_status_relation?.name || lead.lead_status || '-'}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -157,92 +164,105 @@ const ViewLead: React.FC = () => {
           {/* Contact Information Card */}
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-5">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">Contact Information</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
               {/* Name */}
-              <div className='flex flex-wrap items-center gap-3'>
-                <div className="flex items-center text-sm font-semibold text-gray-800 gap-3">
-                  <span className='inline-flex items-center justify-center text-center rounded-md bg-gray-100 w-10 h-10  text-gray-800 text-xs'>
-                    <User />
-                  </span>
-                  Name :
+              <div className='flex items-center gap-3'>
+                <span className='inline-flex items-center justify-center text-center rounded-md bg-gray-100 w-10 h-10  text-gray-800 text-xs'>
+                  <User />
+                </span>
+
+                <div className="flex flex-wrap items-center gap-x-2">
+                  <label className="flex items-center text-sm font-semibold text-gray-800 gap-3">
+                    Name :
+                  </label>
+                  <p className="text-sm text-gray-600">{lead.name}</p>
                 </div>
-                <p className="text-sm text-gray-600">{lead.name}</p>
               </div>
+
               {/* Designation */}
-              <div className='flex flex-wrap items-center gap-3'>
-                <div className="flex items-center text-sm font-semibold text-gray-800 gap-3">
-                  <span className='inline-flex items-center justify-center text-center rounded-md bg-gray-100 w-10 h-10  text-gray-800 text-xs'>
+              <div className='flex items-center gap-3'>
+                <span className='inline-flex items-center justify-center text-center rounded-md bg-gray-100 w-10 h-10  text-gray-800 text-xs'>
+                  <Briefcase />
+                </span>
 
-                    <Briefcase />
-                  </span>
-
-                  Designation :
+                <div className="flex flex-wrap items-center gap-x-2">
+                  <label className="flex items-center text-sm font-semibold text-gray-800 gap-3">
+                    Designation :
+                  </label>
+                  <p className="text-sm text-gray-600">{lead.designation?.name || 'Not Set'}</p>
                 </div>
-                <p className="text-sm text-gray-600">{lead.designation?.name || 'Not Set'}</p>
+
               </div>
 
 
               {/* Department */}
-              <div className='flex flex-wrap items-center gap-3'>
-                <div className="flex items-center text-sm font-semibold text-gray-800 gap-3">
-                  <span className='inline-flex items-center justify-center text-center rounded-md bg-gray-100 w-10 h-10  text-gray-800 text-xs'>
-                    <Building2 />
-                  </span>
+              <div className='flex items-center gap-3'>
+                <span className='inline-flex items-center justify-center text-center rounded-md bg-gray-100 w-10 h-10  text-gray-800 text-xs'>
+                  <Building2 />
+                </span>
 
-                  Department :
+                <div className="flex flex-wrap items-center gap-x-2">
+                  <label className="flex items-center text-sm font-semibold text-gray-800 gap-3">
+                    Department :
+                  </label>
                   <p className="text-sm text-gray-800">{lead.department?.name || 'Not Set'}</p>
                 </div>
               </div>
 
               {/* Email */}
-              <div className='flex flex-wrap items-center gap-3'>
-                <div className="flex items-center text-sm font-semibold text-gray-800 gap-3">
-                  <span className='inline-flex items-center justify-center text-center rounded-md bg-gray-100 w-10 h-10  text-gray-800 text-sm'>
-                    <Mail />
-                  </span>
+              <div className='flex items-center gap-3'>
+                <span className='inline-flex items-center justify-center text-center rounded-md bg-gray-100 w-10 h-10  text-gray-800 text-sm'>
+                  <Mail />
+                </span>
 
-                  Email :
+                <div className="flex flex-wrap items-center gap-x-2">
+                  <label className="flex items-center text-sm font-semibold text-gray-800 gap-3">
+                    Email :
+                  </label>
+
+                  {lead.email ? (
+                    <a href={`mailto:${lead.email}`} className="text-sm !text-gray-600">
+                      {lead.email}
+                    </a>
+                  ) : (
+                    <p className="text-sm text-gray-600">Not provided</p>
+                  )}
                 </div>
-
-                {lead.email ? (
-                  <a href={`mailto:${lead.email}`} className="text-sm !text-gray-600">
-                    {lead.email}
-                  </a>
-                ) : (
-                  <p className="text-sm text-gray-600">Not provided</p>
-                )}
               </div>
 
 
               {/* Phone Number */}
-              <div className='flex flex-wrap items-center gap-3'>
-                <div className="flex items-center text-sm font-semibold text-gray-800 gap-3">
-                  <span className='inline-flex items-center justify-center text-center rounded-md bg-gray-100 w-10 h-10  text-gray-800 text-sm'>
-                    <Phone />
-                  </span>
+              <div className='flex items-center gap-3'>
+                <span className='inline-flex items-center justify-center text-center rounded-md bg-gray-100 w-10 h-10  text-gray-800 text-sm'>
+                  <Phone />
+                </span>
 
-                  Phone Number :
+                <div className="flex flex-wrap items-center gap-x-2">
+                  <label className="flex items-center text-sm font-semibold text-gray-800 gap-3">
+                    Phone Number :
+                  </label>
+                  {lead.mobile_number && lead.mobile_number.length > 0 ? (
+                    <a href={`tel:${typeof lead.mobile_number[0] === 'string' ? lead.mobile_number[0] : lead.mobile_number[0].number}`} className="text-sm !text-gray-600">
+                      {typeof lead.mobile_number[0] === 'string' ? lead.mobile_number[0] : lead.mobile_number[0].number}
+                    </a>
+                  ) : (
+                    <span className="text-sm text-gray-600">Not provided</span>
+                  )}
                 </div>
-                {lead.mobile_number && lead.mobile_number.length > 0 ? (
-                  <a href={`tel:${typeof lead.mobile_number[0] === 'string' ? lead.mobile_number[0] : lead.mobile_number[0].number}`} className="text-sm !text-gray-600">
-                    {typeof lead.mobile_number[0] === 'string' ? lead.mobile_number[0] : lead.mobile_number[0].number}
-                  </a>
-                ) : (
-                  <span className="text-sm text-gray-600">Not provided</span>
+                {/* Secondary Phone */}
+                {lead.mobile_number && lead.mobile_number.length > 1 && (
+                  <div>
+                    <div className="flex items-center text-sm font-medium text-gray-600 mb-2">
+                      <Phone size={16} className="mr-2" />
+                      Secondary Phone
+                    </div>
+                    <a href={`tel:${typeof lead.mobile_number[1] === 'string' ? lead.mobile_number[1] : lead.mobile_number[1].number}`} className="text-base font-medium text-orange-500 hover:text-orange-500 underline">
+                      {typeof lead.mobile_number[1] === 'string' ? lead.mobile_number[1] : lead.mobile_number[1].number}
+                    </a>
+                  </div>
                 )}
               </div>
-              {/* Secondary Phone */}
-              {lead.mobile_number && lead.mobile_number.length > 1 && (
-                <div>
-                  <div className="flex items-center text-sm font-medium text-gray-600 mb-2">
-                    <Phone size={16} className="mr-2" />
-                    Secondary Phone
-                  </div>
-                  <a href={`tel:${typeof lead.mobile_number[1] === 'string' ? lead.mobile_number[1] : lead.mobile_number[1].number}`} className="text-base font-medium text-orange-500 hover:text-orange-500 underline">
-                    {typeof lead.mobile_number[1] === 'string' ? lead.mobile_number[1] : lead.mobile_number[1].number}
-                  </a>
-                </div>
-              )}
             </div>
           </div>
 
@@ -254,60 +274,72 @@ const ViewLead: React.FC = () => {
             </div>
 
             <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
-              <div className='flex flex-wrap items-center gap-3'>
-                <label className="flex items-center text-sm font-semibold text-gray-800 gap-3">
-                  <span className='inline-flex items-center justify-center text-center rounded-md bg-gray-100 w-10 h-10  text-gray-800 text-sm'>
-                    <Globe />
-                  </span>
-                  Country :
-                </label>
+              <div className='flex items-center gap-3'>
+                <span className='inline-flex items-center justify-center text-center rounded-md bg-gray-100 w-10 h-10  text-gray-800 text-sm'>
+                  <Globe />
+                </span>
 
-                <p className="text-sm text-gray-800">{lead.country?.name || 'Not Set'}</p>
+                <div className="flex items-center flex-wrap gap-x-2">
+                  <label className="flex items-center text-sm font-semibold text-gray-800 gap-3">
+                    Country :
+                  </label>
+                  <p className="text-sm text-gray-800">{lead.country?.name || 'Not Set'}</p>
+                </div>
               </div>
 
-              <div className='flex flex-wrap items-center gap-3'>
-                <label className="flex items-center text-sm font-semibold text-gray-800 gap-3">
-                  <span className='inline-flex items-center justify-center text-center rounded-md bg-gray-100 w-10 h-10  text-gray-800 text-sm'>
-                    <MapPin />
-                  </span>
+              <div className='flex items-center gap-3'>
+                <span className='inline-flex items-center justify-center text-center rounded-md bg-gray-100 w-10 h-10  text-gray-800 text-sm'>
+                  <MapPin />
+                </span>
 
-                  State: </label>
-                <p className="text-sm text-gray-800">{lead.state?.name || 'Not Set'}</p>
-              </div>
-
-
-              <div className='flex flex-wrap items-center gap-3'>
-                <label className="flex items-center text-sm font-semibold text-gray-800 gap-3">
-                  <span className='inline-flex items-center justify-center text-center rounded-md bg-gray-100 w-10 h-10  text-gray-800 text-sm'>
-                    <Building />
-                  </span>
-
-                  City :</label>
-                <p className="text-sm text-gray-800">{lead.city?.name || 'Not Set'}</p>
+                <div className="flex items-center flex-wrap gap-x-2">
+                  <label className="flex items-center text-sm font-semibold text-gray-800 gap-3">
+                    State: </label>
+                  <p className="text-sm text-gray-800">{lead.state?.name || 'Not Set'}</p>
+                </div>
               </div>
 
 
-              <div className='flex flex-wrap items-center gap-3'>
-                <label className="flex items-center text-sm font-semibold text-gray-800 gap-3">
-                  <span className='inline-flex items-center justify-center text-center rounded-md bg-gray-100 w-10 h-10  text-gray-800 text-sm'>
-                    <Map />
-                  </span>
+              <div className='flex items-center gap-3'>
+                <span className='inline-flex items-center justify-center text-center rounded-md bg-gray-100 w-10 h-10  text-gray-800 text-sm'>
+                  <Building />
+                </span>
 
-                  Zone :</label>
-                <p className="text-sm text-gray-800">{lead.zone?.name || 'Not Set'}</p>
+                <div className="flex items-center flex-wrap gap-x-2">
+                  <label className="flex items-center text-sm font-semibold text-gray-800 gap-3">
+                    City :</label>
+                  <p className="text-sm text-gray-800">{lead.city?.name || 'Not Set'}</p>
+                </div>
               </div>
 
-              <div className='flex flex-wrap items-center gap-3'>
-                <label className="flex items-center text-sm font-semibold text-gray-800 gap-3">
-                  <span className='inline-flex items-center justify-center text-center rounded-md bg-gray-100 w-10 h-10  text-gray-800 text-sm'>
-                    <Hash />
-                  </span>
 
-                  Postal Code :</label>
-                <p className="text-sm text-gray-800">{lead.postal_code || 'Not Set'}</p>
+              <div className='flex items-center gap-3'>
+                <span className='inline-flex items-center justify-center text-center rounded-md bg-gray-100 w-10 h-10  text-gray-800 text-sm'>
+                  <Map />
+                </span>
+
+                <div className="flex items-center flex-wrap gap-x-2">
+                  <label className="flex items-center text-sm font-semibold text-gray-800 gap-3">
+                    Zone :</label>
+                  <p className="text-sm text-gray-800">{lead.zone?.name || 'Not Set'}</p>
+                </div>
               </div>
+
+              <div className='flex items-center gap-3'>
+                <span className='inline-flex items-center justify-center text-center rounded-md bg-gray-100 w-10 h-10  text-gray-800 text-sm'>
+                  <Hash />
+                </span>
+
+                <div className="flex items-center flex-wrap gap-x-2">
+                  <label className="flex items-center text-sm font-semibold text-gray-800 gap-3">
+                    Postal Code :</label>
+                  <p className="text-sm text-gray-800">{lead.postal_code || 'Not Set'}</p>
+                </div>
+              </div>
+
             </div>
           </div>
+
           {/* Additional Information Card */}
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-5">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">Additional Information</h2>
@@ -315,7 +347,7 @@ const ViewLead: React.FC = () => {
               {lead.comment && (
                 <div>
                   <label className="text-sm font-medium text-gray-600 block mb-2">Comment</label>
-                  <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                  <div className="bg-gray-100 rounded-lg p-3 border border-gray-200">
                     <p className="text-gray-700 leading-relaxed">{lead.comment}</p>
                   </div>
                 </div>
@@ -323,30 +355,32 @@ const ViewLead: React.FC = () => {
             </div>
           </div>
         </div>
+
         {/* Right Column - Sidebar */}
-        <div className="lg:col-span-1">
+        <div className="xl:col-span-1">
           {/* Assignment Info Card */}
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-5 mb-4">
-            <h3 className="text-lg font-semibold text-gray-800 mb-6">Assignment</h3>
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-5 mb-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Assignment</h3>
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-gray-600 block mb-2">Assigned User</label>
-                <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg p-3 border border-orange-200">
+                <div className="bg-orange-100 rounded-lg p-3 border border-orange-200">
                   <p className="text-base font-medium text-gray-800">{lead.assigned_user?.name || '-'}</p>
                   <p className="text-xs text-gray-600 mt-1">{lead.assigned_user?.email || ''}</p>
                 </div>
               </div>
+              
               <div>
                 <label className="text-sm font-medium text-gray-600 block mb-2">Current Assign User ID</label>
-                <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg p-3 border border-orange-200">
+                <div className="bg-orange-100 rounded-lg p-3 border border-orange-200">
                   <p className="text-base font-medium text-gray-800">{lead.current_assign_user}</p>
                 </div>
               </div>
             </div>
           </div>
           {/* Call Info Card */}
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-5 mb-4">
-            <h3 className="text-lg font-semibold text-gray-800 mb-6">Call Information</h3>
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-5 mb-5">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Call Information</h3>
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-gray-600 block mb-2">Call Status</label>

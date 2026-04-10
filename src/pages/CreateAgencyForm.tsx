@@ -355,14 +355,14 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.22 }}
-      className="flex-1 overflow-hidden w-full overflow-x-hidden bg-[#F6F8FB] min-h-screen"
+      className="flex-1 overflow-hidden w-full overflow-x-hidden bg-gray-50 min-h-screen"
     >
 
       <div className="">
         <MasterFormHeader onBack={onClose} title={mode === 'edit' ? 'Edit Group Agency' : 'Create Group Agency'} />
 
-        <div className="w-full max-w-full mx-auto sm:bg-white sm:rounded-2xl sm:border sm:border-gray-200 overflow-hidden">
-          <div className="sm:p-5 sm:bg-gray-50 sm:space-y-8">
+        <div className="w-full max-w-full mx-auto sm:bg-white agency-edit-outer sm:rounded-2xl sm:border sm:border-gray-200 overflow-hidden">
+          <div className="sm:p-5 sm:bg-gray-50 sm:space-y-8 agency-edit-wrapper">
             <div className="space-y-3">
               <div className="text-base font-semibold text-gray-900 mb-2">Group Agency Details</div>
 
@@ -370,7 +370,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
 
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
                   <div>
-                    <label className="block text-sm text-[#667085] mb-1">Agency Name <span className="text-red-500">*</span></label>
+                    <label className="block text-sm text-gray-800 mb-1">Agency Name <span className="text-red-500">*</span></label>
                     <input
                       value={parent.name}
                       onChange={e => {
@@ -378,7 +378,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                         setParentErrors(prev => ({ ...prev, name: undefined }));
                       }}
                       placeholder="Please Enter Agency Name"
-                      className={`w-full px-3 py-2 h-11 text-sm border rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-black ${parentErrors.name ? 'border-red-500' : 'border-[#D0D5DD]'}`}
+                      className={`w-full px-3 py-2 h-11 text-sm border rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-black ${parentErrors.name ? 'border-red-500' : 'border-gray-200'}`}
                     />
                     {parentErrors.name && (
                       <div className="text-xs text-red-500 mt-1">{parentErrors.name}</div>
@@ -386,14 +386,14 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                   </div>
 
                   <div>
-                    <label className="block text-sm text-[#667085] mb-1">Agency Type <span className="text-red-500">*</span></label>
+                    <label className="block text-sm text-gray-800 mb-1">Agency Type <span className="text-red-500">*</span></label>
                     <SelectField
                       name="parentType"
                       value={parent.type}
                       options={agencyTypes}
                       onChange={(v) => { setParent(prev => ({ ...prev, type: typeof v === 'string' ? v : v[0] ?? '' })); setParentErrors(prev => ({ ...prev, type: undefined })); }}
                       placeholder="Please Select Agency Type"
-                      inputClassName={`${parentErrors.type ? 'border-red-500' : 'border-[#D0D5DD]'} px-3 py-2 h-11`}
+                      inputClassName={`${parentErrors.type ? 'border-red-500' : 'border-gray-200'} px-3 py-2 h-11`}
                     />
                     {parentErrors.type && (
                       <div className="text-xs text-red-500 mt-1">{parentErrors.type}</div>
@@ -401,7 +401,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                   </div>
 
                   <div className="mb-2">
-                    <label className="block text-sm text-[#667085] mb-1">Agency Client <span className="text-red-500">*</span></label>
+                    <label className="block text-sm text-gray-800 mb-1">Agency Client <span className="text-red-500">*</span></label>
                     <div className="w-full">
                       <MultiSelectDropdown
                         name="parentClient"
@@ -409,7 +409,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                         options={agencyClients.map((c: any) => ({ value: String(c.id), label: c.name }))}
                         onChange={(v) => { setParent(prev => ({ ...prev, client: Array.isArray(v) ? v : [v] })); setParentErrors(prev => ({ ...prev, client: undefined })); }}
                         placeholder={isLoading.agencyClients ? 'Loading clients...' : 'Search or select options'}
-                        inputClassName={`border ${parentErrors.client ? 'border-red-500' : 'border-[#D0D5DD]'} px-3 py-2 h-11`}
+                        inputClassName={`border ${parentErrors.client ? 'border-red-500' : 'border-gray-200'} px-3 py-2 h-11`}
                         disabled={isLoading.agencyClients}
                         multi={true}
                         horizontalScroll={true}
@@ -453,7 +453,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
                       <div>
-                        <label className="block text-sm text-[#667085] mb-1">Agency Name <span className="text-red-500">*</span></label>
+                        <label className="block text-sm text-gray-800 mb-1">Agency Name <span className="text-red-500">*</span></label>
                         <input
                           value={c.name}
                           onChange={e => {
@@ -469,7 +469,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                         )}
                       </div>
                       <div>
-                        <label className="block text-sm text-[#667085] mb-1">Agency Type <span className="text-red-500">*</span></label>
+                        <label className="block text-sm text-gray-800 mb-1">Agency Type <span className="text-red-500">*</span></label>
                         <SelectField
                           name={`child-${c.id}-type`}
                           value={c.type}
@@ -483,7 +483,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                         )}
                       </div>
                       <div>
-                        <label className="block text-sm text-[#667085] mb-1">Agency Client <span className="text-red-500">*</span></label>
+                        <label className="block text-sm text-gray-800 mb-1">Agency Client <span className="text-red-500">*</span></label>
                         <div className="w-full">
                           <MultiSelectDropdown
                             name={`child-${c.id}-client`}

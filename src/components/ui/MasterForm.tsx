@@ -58,13 +58,13 @@ const MasterForm: React.FC<MasterFormProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-[var(--border-color)] p-6">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
       <form onSubmit={handleSubmit} className="space-y-6">
         {fields.map((field) => (
           <div key={field.name} className="space-y-2">
             <label
               htmlFor={field.name}
-              className="block text-sm font-medium text-[var(--text-primary)]"
+              className="block text-sm font-medium text-gray-800"
             >
               {field.label} {field.required && <span className="text-[#FF0000]">*</span>}
             </label>
@@ -84,7 +84,7 @@ const MasterForm: React.FC<MasterFormProps> = ({
                 value={formData[field.name] || ''}
                 onChange={handleChange}
                 placeholder={field.placeholder}
-                className="block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                className="block w-full rounded-lg border border-gray-200 px-4 py-2.5 text-gray-900 focus:border-green-500 focus:ring-green-500 sm:text-sm"
                 required={field.required}
               />
             )}

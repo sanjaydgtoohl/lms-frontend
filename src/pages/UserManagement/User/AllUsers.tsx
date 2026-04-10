@@ -1,3 +1,4 @@
+import TableHeader from '../../../components/ui/TableHeader';
 import React, { useEffect, useState } from 'react';
 import Table, { type Column } from '../../../components/ui/Table';
 import Pagination from '../../../components/ui/Pagination';
@@ -46,7 +47,7 @@ const AllUsers: React.FC = () => {
       const total = res.meta?.pagination?.total ?? res.meta?.total ?? data.length;
       setTotalItems(Number(total || 0));
     } catch (err) {
-       
+
       console.error('Failed to fetch users', err);
       SweetAlert.showError('Failed to fetch users.');
     } finally {
@@ -71,9 +72,9 @@ const AllUsers: React.FC = () => {
         // no need to action
       }
       fetchUsers();
-    } catch (err) {       
+    } catch (err) {
       console.error('Failed to delete user', err);
-      try { SweetAlert.showError('Failed to delete user.'); } catch{
+      try { SweetAlert.showError('Failed to delete user.'); } catch {
         // no need to action
       }
     } finally {
@@ -115,7 +116,7 @@ const AllUsers: React.FC = () => {
     setSelectedParentUser(null);
     setParentUserContextName('');
   };
-      // ...existing code...
+  // ...existing code...
 
   useEffect(() => {
     fetchUsers();
@@ -137,8 +138,8 @@ const AllUsers: React.FC = () => {
   };
 
   const getStatusBadgeColor = (status?: 'Active' | 'Inactive') => {
-    return status === 'Active' 
-      ? 'bg-green-100 text-green-700' 
+    return status === 'Active'
+      ? 'bg-green-100 text-green-700'
       : 'bg-red-100 text-red-700';
   };
 
@@ -152,7 +153,7 @@ const AllUsers: React.FC = () => {
       'S-BDM': 'border-yellow-300 text-yellow-700 bg-yellow-50',
       'Planner': 'border-pink-300 text-pink-700 bg-pink-50',
     };
-    return (roleName && roleColorMap[roleName]) || 'border-gray-300 text-gray-700 bg-gray-50';
+    return (roleName && roleColorMap[roleName]) || 'border-gray-200 text-gray-700 bg-gray-50';
   };
 
   const columns = ([
@@ -186,7 +187,7 @@ const AllUsers: React.FC = () => {
                   {parents[0].name || parents[0]}
                 </span>
                 {parents.length > 1 && (
-                  <span className="inline-flex items-center justify-center h-7 px-2 border border-gray-300 rounded-full text-xs font-medium leading-tight whitespace-nowrap bg-gray-50 text-gray-700">
+                  <span className="inline-flex items-center justify-center h-7 px-2 border border-gray-200 rounded-full text-xs font-medium leading-tight whitespace-nowrap bg-gray-50 text-gray-700">
                     +{parents.length - 1}
                   </span>
                 )}
@@ -243,7 +244,7 @@ const AllUsers: React.FC = () => {
                 {it.roles[0].display_name || it.roles[0].name}
               </span>
               {it.roles.length > 1 && (
-                <span className="inline-flex items-center justify-center h-7 px-2 border border-gray-300 rounded-full text-xs font-medium leading-tight whitespace-nowrap bg-gray-50 text-gray-700">
+                <span className="inline-flex items-center justify-center h-7 px-2 border border-gray-200 rounded-full text-xs font-medium leading-tight whitespace-nowrap bg-gray-50 text-gray-700">
                   +{it.roles.length - 1}
                 </span>
               )}
@@ -273,19 +274,16 @@ const AllUsers: React.FC = () => {
         createPermissionSlug="user.create"
       />
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-        <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-200">
-          <h2 className="text-base font-semibold text-gray-900">Team Members</h2>
-          <div className="ml-4">
-            <SearchBar
-              placeholder="Search users..."
-              delay={0}
-              onSearch={(q: string) => {
-                setSearchQuery(q);
-                setCurrentPage(1);
-              }}
-            />
-          </div>
-        </div>
+        <TableHeader title="Team Members">
+          <SearchBar
+            placeholder="Search users..."
+            delay={0}
+            onSearch={(q: string) => {
+              setSearchQuery(q);
+              setCurrentPage(1);
+            }}
+          />
+        </TableHeader>
 
         <div className="pt-0 overflow-visible">
           <Table
@@ -306,7 +304,7 @@ const AllUsers: React.FC = () => {
           <ConfirmDialog
             isOpen={confirmOpen}
             title="Delete User?"
-           message={deleteTarget ? `Are you sure you want to delete user "${deleteTarget.name}"? This action cannot be undone.` : ''}
+            message={deleteTarget ? `Are you sure you want to delete user "${deleteTarget.name}"? This action cannot be undone.` : ''}
             confirmLabel="Delete"
             cancelLabel="Cancel"
             loading={deleteLoading}

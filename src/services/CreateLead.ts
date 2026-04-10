@@ -1,4 +1,4 @@
-import { listUsers } from './AllUsers';
+// Fetching child users from profile endpoint instead of generic listUsers
 import { listCountries } from './CreateBrandForm';
 import { listStates } from './CreateBrandForm';
 import { listCities } from './CreateBrandForm';
@@ -45,8 +45,12 @@ export type CreateLeadResponse = {
 // --- Fetch users for Assign To dropdown ---
 export async function getUsers(): Promise<User[]> {
   try {
-    const { data } = await listUsers(1, 100);
-    return data || [];
+    // Request a large page size to avoid truncation
+    const res = await apiClient.get<User[]>('/profile/child-users?per_page=1000');
+    if (!res || !res.success) {
+      throw new Error(res?.message || 'Failed to fetch users');
+    }
+    return res.data || [];
   } catch (error) {
     handleApiError(error);
     throw error;

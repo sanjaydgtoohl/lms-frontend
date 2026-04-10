@@ -22,13 +22,13 @@ const LeadManagementSection: React.FC<Props> = ({
 }) => {
 
   return (
-    <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)]">
-      <div className="p-6 bg-[#F9FAFB]">
+    <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-200">
+      <div className="p-6 bg-gray-50 rounded-2xl ">
         <div className="flex items-center mb-6">
           <h3 className="text-base font-semibold text-gray-800">Lead Management</h3>
         </div>
 
-        <div className="flex items-center gap-6 mb-6">
+        <div className="flex items-center flex-wrap gap-6 mb-6">
           <label className="relative flex items-center cursor-pointer group">
             <div className="group-hover:bg-[rgba(66,133,244,0.05)] absolute -inset-2 rounded-md transition-colors duration-200"/>
             <input
@@ -40,7 +40,7 @@ const LeadManagementSection: React.FC<Props> = ({
                        text-[#4285F4] focus:ring-[#4285F4] focus:ring-offset-2
                        transition-all duration-200"
             />
-            <span className="relative ml-2.5 text-sm font-medium text-[#374151]">
+            <span className="relative ml-2.5 text-sm font-medium text-gray-800">
               Select Existing Brand
             </span>
           </label>
@@ -56,7 +56,7 @@ const LeadManagementSection: React.FC<Props> = ({
                        text-[#4285F4] focus:ring-[#4285F4] focus:ring-offset-2
                        transition-all duration-200"
             />
-            <span className="relative ml-2.5 text-sm font-medium text-[#374151]">
+            <span className="relative ml-2.5 text-sm font-medium text-gray-800">
               Select Existing Agency
             </span>
           </label>
@@ -64,7 +64,7 @@ const LeadManagementSection: React.FC<Props> = ({
 
         {(selectedOption === 'brand' || selectedOption === 'agency') && (
           <div className="w-full">
-            <label className="block text-sm text-[var(--text-secondary)] mb-1">
+            <label className="block text-sm text-gray-800 mb-1">
               {selectedOption === 'brand' ? 'Select Brand' : 'Select Agency'}
             </label>
             <SelectField
@@ -72,7 +72,7 @@ const LeadManagementSection: React.FC<Props> = ({
               options={options}
               value={value}
               onChange={(v) => onChange(typeof v === 'string' ? v : v[0] ?? '')}
-              inputClassName="w-full px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+              inputClassName="w-full px-3 py-2 rounded-lg bg-white text-gray-800 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               disabled={loading}
             />
             {loading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}

@@ -1,3 +1,4 @@
+import { ChevronRight } from "lucide-react";
 import React, { useState, useCallback, useEffect } from 'react';
 
 export interface PermissionNode {
@@ -173,28 +174,35 @@ const PermissionTree: React.FC<PermissionTreeProps> = ({ data, selectedPermissio
     const indeterminate = hasChildren && isAnyChildChecked(node) && !allChildrenChecked;
 
     return (
-      <div key={node.id} className="mb-0.5">
+      <div key={node.id} className="bg-gray-50 mb-2">
         <div
-          className="flex items-center gap-2 py-2.5 px-3 rounded-md transition-all duration-150 hover:bg-blue-50 group"
-          style={{ marginLeft: `${level * 20}px` }}
+          className="flex items-center flex-wrap gap-2 py-3 px-2 rounded-md transition-all duration-150 hover:bg-blue-50 group"
+          style={{ marginLeft: `${level * 10}px` }}
         >
-          {/* Expand/Collapse Icon */}
-          <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+
+          {/* /* Expand/Collapse Icon */}
+          <div className="w-5 h-5 flex items-center justify-center shrink-0">
             {hasChildren && (
-              <span
-                className="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+              <button
+                type="button"
                 onClick={() => handleExpand(node.id)}
-                role="button"
-                tabIndex={0}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
                     handleExpand(node.id);
                   }
                 }}
+                role="button"
+                tabIndex={0}
                 title={expandedState ? 'Collapse' : 'Expand'}
+                aria-label={expandedState ? 'Collapse' : 'Expand'}
+                className="w-5 h-5 flex items-center justify-center text-gray-600 hover:text-black hover:bg-gray-100 rounded transition-colors !p-0"
               >
-                <span className="text-sm">{expandedState ? '▼' : '▶'}</span>
-              </span>
+                <ChevronRight
+                  className={`w-4 h-4 transition-transform duration-200 ${expandedState ? "rotate-90" : ""
+                    }`}
+                />
+              </button>
             )}
           </div>
 
@@ -215,7 +223,7 @@ const PermissionTree: React.FC<PermissionTreeProps> = ({ data, selectedPermissio
           {/* Label */}
           <label
             htmlFor={`perm-${node.id}`}
-            className="select-none cursor-pointer flex-1 transition-colors text-sm text-gray-700"
+            className="select-none cursor-pointer flex-1 transition-colors text-xs sm:text-sm text-gray-700"
           >
             {node.display_name}
           </label>

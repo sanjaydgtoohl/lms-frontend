@@ -297,28 +297,28 @@ const Create: React.FC<CreateProps> = ({
   };
 
   return (
-    <div className={inline ? 'w-full' : 'p-6'}>
+    <div className={inline ? 'w-full' : 'p-0'}>
       <MasterCreateHeader
         title=""
         onClose={onClose ? onClose : () => navigate(-1)}
       />
-      <div className="mt-6 bg-white rounded-2xl shadow-sm border border-[var(--border-color)] p-6">
+      <div className="mt-6 bg-white rounded-2xl shadow-sm border border-gray-200 px-4 py-5 sm:p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           {error ? <p className="text-sm text-red-600 mb-4">{error}</p> : null}
-          <div className="grid grid-cols-2 gap-6">
+          <div className="flex flex-wrap gap-3">
             {/* Brand Name */}
-            <div>
+            <div className='w-full sm:w-[calc(50%-12px)]'>
               <label className="block text-sm font-medium mb-2">
                 Brand Name <span className="text-[#FF0000]">*</span>
               </label>
-              <div>
+              <div className='w-full'>
                 <SelectField
                   name="brandName"
                   value={formData.brandName}
                   onChange={(v) => { setFormData(prev => ({ ...prev, brandName: typeof v === 'string' ? v : v[0] ?? '' })); setErrors(prev => ({ ...prev, brandName: '' })); }}
                   options={brandOptions.map(b => ({ value: String(b.id), label: b.name }))}
                   placeholder={brandLoading ? 'Loading brands...' : 'Search or select option'}
-                  inputClassName={errors.brandName ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}
+                  inputClassName={errors.brandName ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}
                   disabled={brandLoading}
                 />
               </div>
@@ -333,7 +333,7 @@ const Create: React.FC<CreateProps> = ({
             </div>
 
             {/* Source */}
-            <div>
+            <div className='w-full sm:w-[calc(50%-12px)]'>
               <label className="block text-sm font-medium mb-2">
                 Source <span className="text-[#FF0000]">*</span>
               </label>
@@ -344,7 +344,7 @@ const Create: React.FC<CreateProps> = ({
                   onChange={(v) => { setFormData(prev => ({ ...prev, source: typeof v === 'string' ? v : v[0] ?? '' })); setErrors(prev => ({ ...prev, source: '' })); }}
                   options={sourceOptions.map(s => ({ value: String(s.id), label: s.source }))}
                   placeholder={sourceLoading ? 'Loading sources...' : 'Search or select option'}
-                  inputClassName={errors.source ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}
+                  inputClassName={errors.source ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}
                   disabled={sourceLoading}
                 />
               </div>
@@ -359,7 +359,7 @@ const Create: React.FC<CreateProps> = ({
             </div>
 
             {/* Sub Source (dropdown) */}
-            <div>
+            <div className='w-full sm:w-[calc(50%-12px)]'>
               <label className="block text-sm font-medium mb-2 flex items-center gap-2">
                 Sub Source <span className="text-[#FF0000]">*</span>
                 {subSourceLoading && <Loader className="w-4 h-4 animate-spin text-blue-500" />}
@@ -371,7 +371,7 @@ const Create: React.FC<CreateProps> = ({
                   onChange={(v) => { setFormData(prev => ({ ...prev, subSource: typeof v === 'string' ? v : v[0] ?? '' })); setErrors(prev => ({ ...prev, subSource: '' })); }}
                   options={subSourceOptions.map(s => ({ value: String(s.id), label: s.label }))}
                   placeholder={subSourceLoading ? 'Loading sub-sources...' : (formData.source ? 'Search or select option' : 'Select a source first')}
-                  inputClassName={errors.subSource ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}
+                  inputClassName={errors.subSource ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}
                   disabled={subSourceLoading || !formData.source}
                 />
               </div>
@@ -386,7 +386,7 @@ const Create: React.FC<CreateProps> = ({
             </div>
 
             {/* Product Name */}
-            <div>
+            <div className='w-full sm:w-[calc(50%-12px)]'>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 Product Name <span className="text-red-500">*</span>
               </label>
@@ -397,7 +397,7 @@ const Create: React.FC<CreateProps> = ({
                 onChange={(e) => { handleChange(e); setErrors(prev => ({ ...prev, productName: '' })); }}
                 placeholder="Please Enter Product Name"
                 className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 transition-colors ${
-                  errors.productName ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                  errors.productName ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'
                 }`}
                 aria-invalid={errors.productName ? 'true' : 'false'}
                 aria-describedby={errors.productName ? 'productName-error' : undefined}
@@ -413,8 +413,8 @@ const Create: React.FC<CreateProps> = ({
             </div>
 
             {/* Image Upload & Preview */}
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <div className="w-full">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 {(formData.image_url && !formData.remove_image) || imagePreview ? 'Uploaded Image' : 'Upload Image'}
               </label>
               <div>
@@ -493,7 +493,7 @@ const Create: React.FC<CreateProps> = ({
 
                 {/* Upload UI if no preview */}
                 {!imagePreview && (!formData.image_url || formData.remove_image) && (
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                  <div className="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center">
                     <input
                       type="file"
                       id="image-upload"
@@ -551,7 +551,7 @@ const Create: React.FC<CreateProps> = ({
               aria-label="Close"
               onClick={closeImageModal}
               onKeyDown={(e) => { if (e.key === 'Enter') closeImageModal(); }}
-              className="absolute top-3 right-3 bg-white/95 hover:bg-white rounded-full p-1 border z-50 cursor-pointer flex items-center justify-center"
+              className="absolute top-3 right-3 bg-white rounded-full p-1 border z-50 cursor-pointer flex items-center justify-center"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

@@ -40,3 +40,7 @@
 .read-the-docs {
   color: #888;
 }
+
+.proof-image-modal {
+  @apply w-xl h-xl;
+}

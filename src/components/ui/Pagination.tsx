@@ -16,8 +16,13 @@ const Pagination: React.FC<PaginationProps> = ({
   onPageChange,
 }) => {
   const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
+  // Clamp currentPage to valid range
+  const safePage = Math.min(Math.max(currentPage, 1), totalPages);
+  let startIndex = (safePage - 1) * itemsPerPage;
+  let endIndex = startIndex + itemsPerPage;
+  // Clamp indices to valid bounds
+  startIndex = Math.max(0, Math.min(startIndex, totalItems === 0 ? 0 : totalItems - 1));
+  endIndex = Math.max(startIndex + 1, Math.min(endIndex, totalItems));
 
   // If there are no items, don't render the summary or pagination controls.
   if (!totalItems || totalItems === 0) return null;
@@ -35,44 +40,43 @@ const Pagination: React.FC<PaginationProps> = ({
   for (let i = startPage; i <= endPage; i++) pages.push(i);
 
   return (
-    <>
-    
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-y-2 py-2">
-        <div className="text-sm text-[var(--text-secondary)] sm:mb-0 text-center w-full sm:w-auto order-2 sm:order-1">
-          Showing {startIndex + 1} to {Math.min(endIndex, totalItems)} of {totalItems} entries
-        </div>
-
-        <div className="pagination-container flex items-center justify-center sm:justify-end bg-transparent px-2 w-full sm:w-auto order-1 sm:order-2 gap-x-1">
-          <button
-            onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-            disabled={currentPage === 1}
-            className="pagination-btn start"
-          >
-            <IoIosArrowBack className="w-5 h-5" />
-          </button>
-
-          {pages.map(i => (
-            <button
-              key={i}
-              onClick={() => onPageChange(i)}
-              className={`pagination-btn no ${
-                i === currentPage ? 'text-black font-semibold' : 'text-[var(--text-secondary)] hover:text-black'
-              }`}
-            >
-              {i}
-            </button>
-          ))}
-
-          <button
-            onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-            disabled={currentPage === totalPages}
-            className="pagination-btn last"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
+    <div className="flex items-center justify-between flex-wrap gap-2 py-2 w-full">
+      <div className="text-sm text-gray-800 whitespace-nowrap">
+        Showing {totalItems === 0 ? 0 : startIndex + 1} to {endIndex} of {totalItems} entries
       </div>
-    </>
+
+      <div className="pagination-container flex items-center justify-end bg-transparent px-2 gap-x-1 ml-auto">
+        <button
+          onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+          disabled={currentPage === 1}
+          className="pagination-btn start"
+        >
+          <IoIosArrowBack className="w-5 h-5" />
+        </button>
+
+        {pages.map((i) => (
+          <button
+            key={i}
+            onClick={() => onPageChange(i)}
+            className={`pagination-btn no ${
+              i === currentPage
+                ? 'text-black font-semibold'
+                : 'text-gray-800 hover:text-black'
+            }`}
+          >
+            {i}
+          </button>
+        ))}
+
+        <button
+          onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+          disabled={currentPage === totalPages}
+          className="pagination-btn last"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
   );
 };
 

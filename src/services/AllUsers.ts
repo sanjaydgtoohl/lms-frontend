@@ -27,7 +27,7 @@ export interface User {
 
 const ENDPOINTS = {
   LIST: '/users',
-  LIST_ATTENDEES: '/users/list',
+  LIST_ATTENDEES: '/profile/child-users',
   DETAIL: (id: string) => `/users/${id}`,
   CREATE: '/users',
   UPDATE: (id: string) => `/users/${id}`,

@@ -58,7 +58,7 @@ const ApiErrorNotification: React.FC = () => {
         /* Bell icon should use orange color and ensure svg stroke/fill inherit it */
         .bell-icon,
         .bell-icon * {
-          color: var(--color-orange-400) !important;
+          color: var(--color-orange-500) !important;
           fill: currentColor !important;
           stroke: currentColor !important;
         }

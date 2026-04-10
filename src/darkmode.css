@@ -1,0 +1,172 @@
+@import "tailwindcss";
+
+.dark .bg-white {
+    @apply bg-gray-800 hover:!bg-none ;
+}
+
+.dark .bg-gray-100, .dark .bg-gray-50, .dark .agency-edit-wrapper, .dark .agency-edit-outer {
+    @apply bg-gray-800 hover:!bg-none ;
+}
+
+.dark .header-bg.bg-gray-50, .dark .sidebar-wrapper.bg-white {
+    @apply bg-gray-900 hover:!bg-none ;
+}
+
+.dark .border-gray-200, .dark .border-gray-100, .dark .agency-edit-outer {  
+    @apply !border-gray-600 focus:!border-gray-100 focus:ring-0;
+}
+
+ .dark .text-gray-700, .dark .text-gray-800, .dark .text-gray-900 , .dark .text-gray-600 , .dark .text-black, .dark h3 , .dark .text-gray-500{
+    @apply !text-white;
+ }
+
+ .sidebar-logo-item img {
+    @apply absolute left-0 w-auto !h-[30px] object-contain;
+ }
+
+/* Default: show normal logo, hide white logo */
+.sidebar-logo-item img.dark-theme-logo-white {
+  @apply opacity-0 hidden;
+}
+
+/* Dark mode: show white logo, hide default logo */
+.dark .sidebar-logo-item img.dark-theme-logo-white {
+  @apply opacity-100 block;
+}
+
+.dark .sidebar-logo-item img.default-logo {
+  @apply opacity-0;
+}
+
+
+.dark .bg-indigo-600 {
+  @apply bg-white;
+}
+
+.dark .process-item.bg-gray-100 {
+  @apply bg-gray-700;
+}
+
+.dark .sidebar-menu-item {
+  @apply hover:!bg-gray-800;
+}
+
+.dark .active-menu {
+  @apply !bg-gray-800;
+}
+
+.dark .shadow-custom {
+box-shadow:  9px 9px 18px #1b2533,
+             -9px -9px 18px #212d3f;
+}
+
+
+.dark .tabs-wrapper span.bg-black {
+  @apply bg-orange-500;
+}
+
+
+.dark .pagination-btn  {
+  @apply bg-gray-700 text-white;
+}
+
+.dark .icon-button {
+  @apply bg-gray-700 text-white;
+}
+
+
+.dark .text-blue-700, .dark .text-blue-400  {
+  @apply text-white;
+}
+
+
+.dark .breadcrumb-wrapper ol li a {
+  @apply !text-white;
+}
+
+
+.dark tr.transition-colors {
+  @apply hover:bg-gray-800;
+} 
+ 
+
+.dark .bg-orange-100 {
+ @apply bg-gray-700 hover:bg-orange-500 ; 
+}
+
+.dark .badge-item {
+  @apply !text-white;
+}
+
+.dark .bg-yellow-100 {
+  @apply bg-yellow-600;
+}
+ 
+
+.dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  @apply border-gray-700;
+}
+
+@layer utilities {
+  .dark .divide-gray-200 {
+    :where(& > :not(:last-child)) {
+      border-color: var(--color-gray-700);
+    }
+  }
+}
+
+.dark thead.bg-gray-100 {
+  @apply bg-gray-900; 
+}
+
+
+.dark .btn-primary {
+  @apply hover:bg-orange-600;
+}
+
+
+button.cancel-btn {
+  @apply bg-gray-200 hover:bg-gray-300
+}
+
+.dark button.cancel-btn {
+  @apply bg-gray-700;
+}
+
+.dark input {
+  @apply bg-gray-800 text-white border-gray-700 placeholder:!text-gray-400;
+}
+
+.dark .select-dropdown .hover-input {
+  @apply hover:!bg-gray-700 text-sm placeholder:!text-white;
+}
+
+.dark .bg-orange-100, .dark .border-orange-200 {
+  @apply bg-orange-500 border-orange-300;
+}
+
+.dark .bg-blue-50, .dark .border-blue-200 {
+  @apply bg-blue-500 border-blue-300;
+}
+
+.dark .bg-green-50, .dark .border-green-200 {
+  @apply bg-green-500 border-green-300;
+}
+
+.dark .sidebar-menu-item img {
+  filter: brightness(0) saturate(100%) invert(1);
+}
+
+
+.dark svg.text-orange-800 {
+  @apply !text-white;
+}
+
+
+.dark .text-yellow-800 {
+  @apply text-white;
+}
+
+.dark .text-blue-600 {
+  @apply text-white;
+} 

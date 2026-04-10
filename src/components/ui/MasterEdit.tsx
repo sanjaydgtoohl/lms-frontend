@@ -176,13 +176,13 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.18 }}
-        className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)] overflow-hidden"
+        className="w-full bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden"
       >
         <div className="p-4 bg-gray-50 space-y-4 h-[50dvh] ">
           <div>
             {Object.entries(form).filter(([k]) => k !== 'id' && k !== 'dateTime' && k !== 'date_time' && !(hideSource && k === 'source')).map(([k]) => (
               <div key={k}>
-                <label className="block text-sm text-[var(--text-secondary)] mb-1">
+                <label className="block text-sm text-gray-800 mb-1">
                   {(k === 'name' && nameLabel)
                     ? nameLabel
                     : k.replace(/([A-Z])/g, ' $1')
@@ -199,7 +199,7 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
                       options={options.map(o => ({ value: String(o.id), label: o.name }))}
                       placeholder={loadingOptions ? 'Loading...' : 'Search or select option'}
                       disabled={loadingOptions}
-                      inputClassName={errors[k] ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-black'}
+                      inputClassName={errors[k] ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-black'}
                     />
                     {errors[k] && (
                       <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
@@ -215,7 +215,7 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
                     <input
                       value={form[k] ?? ''}
                       onChange={(e) => handleChange(k, e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-lg bg-white text-[var(--text-primary)] focus:outline-none focus:ring-1 transition-colors ${errors[k] ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-[var(--border-color)] focus:ring-black'
+                      className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-1 transition-colors ${errors[k] ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-black'
                         }`}
                     />
                     {errors[k] && (

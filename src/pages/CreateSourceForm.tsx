@@ -115,7 +115,7 @@ const CreateSourceForm: React.FC<Props> = ({ onClose, onSave}) => {
       className="space-y-6"
     >
       <MasterFormHeader onBack={onClose} title="Create Source" />
-      <div className="w-full bg-white rounded-2xl shadow-sm border border-[var(--border-color)]">
+      <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-200">
         <div className="p-4 bg-gray-50 rounded-2xl h-[70dvh]">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid sm:grid-cols-2 gap-3">
@@ -130,7 +130,7 @@ const CreateSourceForm: React.FC<Props> = ({ onClose, onSave}) => {
                   onChange={(v) => { setSource(typeof v === 'string' ? v : v[0] ?? ''); setErrors(prev => ({ ...prev, source: '' })); }}
                   options={options.map(o => ({ value: String(o.id), label: o.name }))}
                   placeholder={loading ? 'Loading...' : 'Please Select Source Name'}
-                  inputClassName={errors.source || loadError ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}
+                  inputClassName={errors.source || loadError ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}
                   disabled={loading}
                 />
                 {loading && (
@@ -158,7 +158,7 @@ const CreateSourceForm: React.FC<Props> = ({ onClose, onSave}) => {
                 onChange={(e) => { setSubSource(e.target.value); setErrors(prev => ({ ...prev, subSource: '' })); }}
                 placeholder="Please Enter Sub Source"
                 className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-1 transition-colors ${
-                  errors.subSource ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-black'
+                  errors.subSource ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-black'
                 }`}
                 aria-invalid={errors.subSource ? 'true' : 'false'}
                 aria-describedby={errors.subSource ? 'subSource-error' : undefined}

@@ -105,8 +105,8 @@ const CreateDepartmentForm: React.FC<{
 			className="space-y-6"
 		>
 			<MasterFormHeader onBack={onClose} title="Create Department" />
-			<div className="w-full bg-white rounded-xl shadow-sm border border-[var(--border-color)] overflow-hidden">
-				<div className="p-6 bg-[#F9FAFB]">
+			<div className="w-full bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+				<div className="p-6 bg-gray-50 rounded-2xl ">
 					<form onSubmit={handleSubmit} className="space-y-6">
 						<div>
 							<label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -116,7 +116,7 @@ const CreateDepartmentForm: React.FC<{
 								name="departmentName"
 								value={name}
 								onChange={(e) => { setName(e.target.value); setError(''); }}
-								className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-1 transition-colors ${error ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-300 focus:ring-black'
+								className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-1 transition-colors ${error ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-black'
 									}`}
 								placeholder="Please Enter Department Name"
 								aria-invalid={error ? 'true' : 'false'}

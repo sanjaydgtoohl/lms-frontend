@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, User, LogOut, Settings, UserRound, LifeBuoy, ChevronDown, Menu } from 'lucide-react';
 import ApiErrorNotification from '../ui/ApiErrorNotification';
@@ -7,6 +7,7 @@ import { fetchCurrentUser } from '../../services/Header';
 import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '../../redux/store';
 import { logoutUser } from '../../redux/slices/authSlice';
+import { FaMoon, FaSun } from 'react-icons/fa';
 
 interface HeaderProps {
   onCreateClick?: () => void;
@@ -56,9 +57,34 @@ const Header: React.FC<HeaderProps> = ({
   };
   // --------------------------------
 
+
+
+  // dark mode state 
+  const [dark, setDark] = useState(false);
+
+  // Load user preference from localStorage (optional)
+  useEffect(() => {
+    if (localStorage.getItem("theme") === "dark") {
+      document.documentElement.classList.add("dark");
+      setDark(true);
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    if (dark) {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    } else {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    }
+    setDark(!dark);
+  };
+
   return (
-    <header className="sticky top-0 z-20 border-b border-gray-200 bg-[var(--background)] backdrop-blur supports-[backdrop-filter]:bg-white/70">
+    <header className="header-bg sticky top-0 z-20 border-b border-gray-200 bg-gray-50 backdrop-blur supports-[backdrop-filter]:bg-white/70">
       <div className="flex items-center justify-between px-3 md:px-4 sm:px-6 py-3" style={{ paddingTop: '4px', paddingBottom: '4px' }}>
+
         {/* Left: show hamburger on mobile only */}
         <div className="flex items-center">
           {showHamburger && (
@@ -80,6 +106,28 @@ const Header: React.FC<HeaderProps> = ({
         </div>
 
         <div className="flex items-center gap-3 sm:gap-4">
+          <button
+            onClick={toggleTheme}
+            className={`relative w-14 h-7 flex items-center !rounded-full p-1 border transition-colors duration-300
+          ${dark ? "!bg-gray-700 !border-gray-700" : "!bg-gray-100 !border-gray-200"}`}
+          >
+            {/* Circle */}
+            <span
+              className={`absolute left-1 w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300
+            ${dark ? "translate-x-7" : "translate-x-0"}`}
+            ></span>
+
+            {/* Icons */}
+            <FaSun
+              className={`absolute left-[7.1px] text-yellow-400 text-sm transition-opacity duration-300 ${dark ? "opacity-0" : "opacity-100"
+                }`}
+            />
+            <FaMoon
+              className={`absolute right-[5px] text-black text-sm transition-opacity duration-300 ${dark ? "opacity-100" : "opacity-0"
+                }`}
+            />
+          </button>
+
           <ApiErrorNotification />
 
           {/* User Menu */}
@@ -108,11 +156,11 @@ const Header: React.FC<HeaderProps> = ({
                 <div
                   role="menu"
                   aria-label="User menu"
-                  className="absolute right-0 w-72 bg-white border border-gray-300 rounded-xl shadow-lg overflow-hidden z-50 ring-opacity-5 transition duration-300 ease-in-out"
+                  className="absolute right-0 w-72 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-50 ring-opacity-5 transition duration-300 ease-in-out"
                 >
                   <div className="px-4 py-4 border-b border-gray-100 bg-white">
                     <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 text-blue-700 flex items-center justify-center font-semibold text-lg">
+                      <div className="min-w-14 min-h-14 max-w-14 max-h-14 rounded-full bg-gray-200 border-gray-300 text-gray-800 flex items-center justify-center font-semibold text-lg">
                         {user?.name ? user.name[0].toUpperCase() : ''}
                       </div>
                       <div className="min-w-0">
@@ -120,7 +168,7 @@ const Header: React.FC<HeaderProps> = ({
                         {user?.email && <p className="text-sm text-gray-500 truncate">{user.email}</p>}
                         {Array.isArray(user?.roles) && user.roles.length > 0 && (
                           <div className="mt-2 flex flex-wrap gap-2">
-                            {user.roles.slice(0,3).map((r: any) => (
+                            {user.roles.slice(0, 3).map((r: any) => (
                               <span key={r.id} className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">{r.display_name || r.name}</span>
                             ))}
                           </div>
