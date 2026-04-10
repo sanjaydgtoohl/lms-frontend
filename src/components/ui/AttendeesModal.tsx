@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { Meeting as ApiMeeting } from '../../services/Meeting';
 
 interface AttendeesModalProps {
@@ -8,42 +8,66 @@ interface AttendeesModalProps {
   title?: string;
 }
 
+const ANIMATION_DURATION = 200; // must match CSS
+
 const AttendeesModal: React.FC<AttendeesModalProps> = ({
   isOpen,
   attendees,
   onClose,
   title = 'Meeting Attendees',
 }) => {
+  const [shouldRender, setShouldRender] = useState(isOpen);
+  const [displayAttendees, setDisplayAttendees] = useState(attendees);
+
+  // Handle mount/unmount + body scroll
   useEffect(() => {
     if (isOpen) {
+      setShouldRender(true);
+      setDisplayAttendees(attendees);
       document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = 'auto';
+
+      const timer = setTimeout(() => {
+        setShouldRender(false);
+      }, ANIMATION_DURATION);
+
+      return () => clearTimeout(timer);
     }
 
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = 'auto';
     };
-  }, [isOpen]);
+  }, [isOpen, attendees]);
 
-  if (!isOpen) return null;
+  if (!shouldRender) return null;
 
   return (
     <>
-      <div className="fixed top-0 left-0 w-screen h-screen bg-black/50 z-40 animate-[fadeIn_0.2s_ease-out]"
+      {/* Overlay */}
+      <div
+        className={`fixed inset-0 bg-black/50 z-40 
+          ${isOpen ? 'animate-fadeIn' : 'animate-fadeOut pointer-events-none'}`}
         onClick={onClose}
       />
 
+      {/* Modal */}
       <div
-        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 !rounded-xl bg-white shadow-[0_20px_60px_rgba(0,0,0,0.3)] w-[90%] max-w-[520px] max-h-[85vh] z-50 flex flex-col animate-slideUp overflow-hidden" onClick={(e) => e.stopPropagation()} >
-
+        className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+          rounded-xl bg-white shadow-[0_20px_60px_rgba(0,0,0,0.3)] 
+          w-[90%] max-w-[520px] max-h-[85vh] z-50 flex flex-col overflow-hidden
+          ${isOpen ? 'animate-fadeIn' : 'animate-fadeOut pointer-events-none'}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-[linear-gradient(135deg,#f8fafc_0%,#f1f5f9_100%)]">
-
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 bg-gray-50">
           <div>
-            <h3 className="font-bold text-base md:text-lg xl:text-xl text-gray-800"> {title} </h3>
+            <h3 className="font-bold text-base md:text-lg xl:text-xl text-gray-800">
+              {title}
+            </h3>
             <p className="text-xs sm:text-sm text-gray-400">
-              {attendees.length} {attendees.length === 1 ? 'attendee' : 'attendees'}
+              {displayAttendees.length}{' '}
+              {displayAttendees.length === 1 ? 'attendee' : 'attendees'}
             </p>
           </div>
 
@@ -56,36 +80,25 @@ const AttendeesModal: React.FC<AttendeesModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-5 py-5 max-h-sm">
-          {attendees.length === 0 ? (
+        <div className="flex-1 overflow-y-auto px-5 py-5 max-h-[400px]">
+          {displayAttendees.length === 0 ? (
             <div className="text-center py-10 px-5 text-gray-400">
               <div className="text-5xl mb-3">👥</div>
-              <p className="text-sm m-0">No attendees found.</p>
+              <p className="text-sm">No attendees found.</p>
             </div>
           ) : (
-            <ul className="m-0 p-0 list-none">
-              {attendees.map((attendee, idx) => (
+            <ul className="space-y-2">
+              {displayAttendees.map((attendee) => (
                 <li
                   key={attendee.id}
-                  className="p-2 rounded-lg bg-gray-100 flex items-center gap-3 transition-all duration-300 border border-gray-200"
-                  style={{
-                    marginBottom: idx < attendees.length - 1 ? '8px' : '0',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#f3f4f6';
-                    e.currentTarget.style.transform = 'translateX(4px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = '#f9fafb';
-                    e.currentTarget.style.transform = 'translateX(0)';
-                  }}
+                  className="p-2 rounded-lg bg-gray-100 flex items-center gap-3 border border-gray-200 transition-all duration-200 hover:bg-gray-200 hover:translate-x-1"
                 >
                   <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 font-bold text-base shrink-0">
                     {attendee.name.charAt(0).toUpperCase()}
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-gray-800 text-sm mb-0.5">
+                    <div className="font-semibold text-gray-800 text-sm">
                       {attendee.name}
                     </div>
                     <div className="text-gray-500 text-xs break-words">
@@ -97,29 +110,7 @@ const AttendeesModal: React.FC<AttendeesModalProps> = ({
             </ul>
           )}
         </div>
-
-
       </div>
-
-      {/* CSS Animations */}
-      <style>
-        {`
-          @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-          }
-          @keyframes slideUp {
-            from {
-              opacity: 0;
-              transform: translate(-50%, -40%);
-            }
-            to {
-              opacity: 1;
-              transform: translate(-50%, -50%);
-            }
-          }
-        `}
-      </style>
     </>
   );
 };
