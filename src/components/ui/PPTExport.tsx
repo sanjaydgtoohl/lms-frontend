@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Download } from 'lucide-react';
 import type { DeviceData } from '../../types/inventory.types';
 import { generateDeviceInventoryPptx } from '../../utils/devicePptxExport';
@@ -12,12 +12,14 @@ type PPTExportProps = {
 function PPTExport({ fetchRows, className = '' }: PPTExportProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const inFlightRef = useRef(false);
 
   const handleExport = useCallback(async () => {
-    if (loading) {
+    if (inFlightRef.current) {
       return;
     }
 
+    inFlightRef.current = true;
     setError(null);
     setLoading(true);
 
@@ -34,8 +36,9 @@ function PPTExport({ fetchRows, className = '' }: PPTExportProps) {
       setError(`Unable to generate the PPT export. ${message}`);
     } finally {
       setLoading(false);
+      inFlightRef.current = false;
     }
-  }, [fetchRows, loading]);
+  }, [fetchRows]);
 
   return (
     <div className={className}>
@@ -50,7 +53,11 @@ function PPTExport({ fetchRows, className = '' }: PPTExportProps) {
         <Download className="text-gray-700 h-4 w-4 shrink-0" aria-hidden />
         {loading ? 'Exporting PPT…' : 'PPT Export'}
       </button>
-      {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
+      {error ? (
+        <p role="alert" aria-live="assertive" className="mt-2 text-sm text-red-600">
+          {error}
+        </p>
+      ) : null}
       <LoadingModal
         isOpen={loading}
         title="Generating PPT"

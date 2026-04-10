@@ -14,9 +14,10 @@ const LoadingModal: React.FC<LoadingModalProps> = ({ isOpen, title = 'Please wai
       <div className="fixed inset-0 z-40 bg-black/30" aria-hidden="true" />
       <div
         className="fixed inset-0 z-50 flex items-center justify-center p-4"
-        role="status"
-        aria-live="polite"
+        role="dialog"
         aria-modal="true"
+        aria-labelledby="loading-modal-title"
+        aria-describedby="loading-modal-description"
       >
         <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl ring-1 ring-black/10">
           <div className="flex flex-col items-center gap-4 text-center">
@@ -37,8 +38,8 @@ const LoadingModal: React.FC<LoadingModalProps> = ({ isOpen, title = 'Please wai
               </svg>
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-              <p className="mt-2 text-sm leading-6 text-gray-600">{message}</p>
+              <h2 id="loading-modal-title" className="text-lg font-semibold text-gray-900">{title}</h2>
+              <p id="loading-modal-description" className="mt-2 text-sm leading-6 text-gray-600">{message}</p>
             </div>
           </div>
         </div>
