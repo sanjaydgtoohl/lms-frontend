@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./modals.css";
 
 /* Force orange background for Add, Create, Go Back, Save, Update buttons */
 button,
@@ -591,3 +592,7 @@ box-shadow:  5px 5px 10px #131313,
   @apply w-full;
 }
 
+
+.dark .bg-blue-100 {
+  @apply !bg-gray-600;
+} 

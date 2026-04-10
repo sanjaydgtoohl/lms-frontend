@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { Meeting as ApiMeeting } from '../../services/Meeting';
 
 interface AttendeesModalProps {
@@ -8,7 +9,7 @@ interface AttendeesModalProps {
   title?: string;
 }
 
-const ANIMATION_DURATION = 200; // must match CSS
+const ANIMATION_DURATION = 250;
 
 const AttendeesModal: React.FC<AttendeesModalProps> = ({
   isOpen,
@@ -18,18 +19,21 @@ const AttendeesModal: React.FC<AttendeesModalProps> = ({
 }) => {
   const [shouldRender, setShouldRender] = useState(isOpen);
   const [displayAttendees, setDisplayAttendees] = useState(attendees);
+  const [isClosing, setIsClosing] = useState(false);
 
-  // Handle mount/unmount + body scroll
   useEffect(() => {
     if (isOpen) {
       setShouldRender(true);
+      setIsClosing(false);
       setDisplayAttendees(attendees);
       document.body.style.overflow = 'hidden';
     } else {
+      setIsClosing(true);
       document.body.style.overflow = 'auto';
 
       const timer = setTimeout(() => {
         setShouldRender(false);
+        setIsClosing(false);
       }, ANIMATION_DURATION);
 
       return () => clearTimeout(timer);
@@ -40,68 +44,76 @@ const AttendeesModal: React.FC<AttendeesModalProps> = ({
     };
   }, [isOpen, attendees]);
 
-  if (!shouldRender) return null;
+  if (!shouldRender || typeof document === 'undefined' || !document.body) return null;
 
-  return (
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(onClose, 100);
+  };
+
+  return createPortal(
     <>
       {/* Overlay */}
       <div
-        className={`fixed inset-0 bg-black/50 z-40 
-          ${isOpen ? 'animate-fadeIn' : 'animate-fadeOut pointer-events-none'}`}
-        onClick={onClose}
+        className={`modal-overlay fixed inset-0 bg-black/50 z-40 backdrop-blur-sm
+          ${isClosing ? 'closing' : ''}`}
+        onClick={handleClose}
       />
 
       {/* Modal */}
       <div
-        className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
-          rounded-xl bg-white shadow-[0_20px_60px_rgba(0,0,0,0.3)] 
-          w-[90%] max-w-[520px] max-h-[85vh] z-50 flex flex-col overflow-hidden
-          ${isOpen ? 'animate-fadeIn' : 'animate-fadeOut pointer-events-none'}`}
+        className={`modal-content 
+          modal-body rounded-2xl shadow-2xl
+           z-50 flex flex-col overflow-hidden
+          border border-gray-200 dark:border-gray-700
+          ${isClosing ? 'closing' : ''}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 bg-gray-50">
+        <div className="modal-header flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700 dark:to-gray-700">
           <div>
-            <h3 className="font-bold text-base md:text-lg xl:text-xl text-gray-800">
+            <h3 className="modal-title font-bold text-lg md:text-xl text-gray-900 dark:text-white">
               {title}
             </h3>
-            <p className="text-xs sm:text-sm text-gray-400">
+            <p className="modal-subtitle text-xs sm:text-sm text-gray-500 dark:text-gray-400">
               {displayAttendees.length}{' '}
               {displayAttendees.length === 1 ? 'attendee' : 'attendees'}
             </p>
           </div>
 
           <button
-            onClick={onClose}
-            className="bg-gray-100 text-gray-500 text-xl w-10 h-10 flex items-center justify-center rounded-lg transition-all duration-300 hover:bg-gray-200 hover:text-gray-700"
+            onClick={handleClose}
+            className="modal-close-btn bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-xl md:text-2xl w-10 h-10 flex items-center justify-center rounded-lg transition-all duration-300 hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-gray-700 dark:hover:text-gray-200 active:scale-95"
+            aria-label="Close modal"
           >
             ✕
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-5 py-5 max-h-[400px]">
+        <div className="modal-scrollable flex-1 overflow-y-auto px-4 py-4 max-h-[450px]">
           {displayAttendees.length === 0 ? (
-            <div className="text-center py-10 px-5 text-gray-400">
-              <div className="text-5xl mb-3">👥</div>
-              <p className="text-sm">No attendees found.</p>
+            <div className="modal-empty-state">
+              <div className="modal-empty-state-icon">👥</div>
+              <p className="modal-empty-state-text font-medium">No attendees found.</p>
             </div>
           ) : (
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {displayAttendees.map((attendee) => (
                 <li
                   key={attendee.id}
-                  className="p-2 rounded-lg bg-gray-100 flex items-center gap-3 border border-gray-200 transition-all duration-200 hover:bg-gray-200 hover:translate-x-1"
+                  className="modal-item p-2 rounded-xl flex items-center gap-4 border border-gray-200 dark:border-gray-600 transition-all duration-200 
+                    hover:bg-gray-100/50 dark:hover:bg-gray-600/70 hover:translate-x-0.5 hover:shadow-md dark:hover:shadow-lg"
                 >
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 font-bold text-base shrink-0">
+                  <div className="modal-avatar bg-blue-100 text-gray-600 font-bold text-base shrink-0">
                     {attendee.name.charAt(0).toUpperCase()}
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-gray-800 text-sm">
+                    <div className="modal-text font-semibold text-gray-900 dark:text-white text-sm md:text-base">
                       {attendee.name}
                     </div>
-                    <div className="text-gray-500 text-xs break-words">
+                    <div className="modal-text-muted text-xs sm:text-sm break-words text-gray-600 dark:text-gray-400">
                       {attendee.email}
                     </div>
                   </div>
@@ -111,7 +123,8 @@ const AttendeesModal: React.FC<AttendeesModalProps> = ({
           )}
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 };
 

@@ -106,8 +106,8 @@ const CallStatusDropdown: React.FC<CallStatusDropdownProps> = ({ value, options,
                   key={opt}
                   role="option"
                   aria-selected={opt === value}
-                  className={`px-4 py-2 cursor-pointer transition-all hover:bg-blue-50/60 ${
-                    opt === value ? 'bg-blue-50/80 text-blue-700 font-semibold' : 'text-gray-700'
+                  className={`px-4 py-2 cursor-pointer transition-all hover:bg-gray-700 hover:text-white ${
+                    opt === value ? 'bg-blue-100 text-gray-700 font-semibold' : 'text-gray-700'
                   }`}
                   onClick={(e) => {
                     e.stopPropagation();

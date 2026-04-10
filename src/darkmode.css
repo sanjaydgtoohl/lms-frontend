@@ -101,6 +101,11 @@ box-shadow:  9px 9px 18px #1b2533,
 .dark .bg-yellow-100 {
   @apply bg-yellow-600;
 }
+
+
+.dark .bg-green-100 {
+  @apply bg-green-600;
+}
  
 
 .dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
@@ -162,6 +167,10 @@ button.cancel-btn {
   @apply !text-white;
 }
 
+.dark .text-blue-800 {
+  @apply !text-white;
+}
+
 
 .dark .text-yellow-800 {
   @apply text-white;
@@ -169,4 +178,103 @@ button.cancel-btn {
 
 .dark .text-blue-600 {
   @apply text-white;
+}
+
+/* Enhanced Modal Dark Mode Styles */
+.dark .bg-gray-50 {
+  @apply bg-gray-800;
+}
+
+.dark .bg-gray-100 {
+  @apply bg-gray-700;
+}
+
+.dark .bg-gray-200 {
+  @apply bg-gray-600;
+}
+
+.dark .bg-white {
+  @apply bg-gray-800;
+}
+
+.dark .border-gray-200 {
+  @apply border-gray-700;
+}
+
+.dark .border-gray-100 {
+  @apply border-gray-700;
+}
+
+/* Modal specific dark mode colors */
+.dark .modal-body {
+  @apply bg-gray-800;
+}
+
+.dark .modal-header {
+  @apply bg-gray-700 border-gray-700;
+}
+
+.dark .modal-item {
+  @apply bg-gray-700 border-gray-600 text-gray-100;
+}
+
+.dark .modal-item:hover {
+  @apply bg-gray-600;
+}
+
+.dark .modal-close-btn {
+  @apply bg-gray-700 text-gray-400 hover:bg-gray-600 hover:text-gray-200;
+}
+
+.dark .modal-title {
+  @apply text-white;
+}
+
+.dark .modal-subtitle {
+  @apply text-gray-400;
+}
+
+.dark .modal-text {
+  @apply text-gray-100;
+}
+
+.dark .modal-text-muted {
+  @apply text-gray-400;
+}
+
+.dark .modal-empty-state {
+  @apply text-gray-500;
+}
+
+.dark .modal-avatar {
+  @apply shadow-lg;
+}
+
+/* Dark mode gradient backgrounds */
+.dark .bg-gradient-to-r {
+  @apply from-gray-700 to-gray-700;
 } 
+
+.action-btns-wrapper button {
+  @apply border-0 outline-none 
+         hover:border-0 hover:outline-none hover:bg-blue-50 hover:text-gray-800
+         focus:border-0 focus:outline-none focus:bg-blue-50 focus:text-gray-800;
+}
+
+.dark .action-btns-wrapper button {
+  @apply border-0 outline-none 
+         hover:border-0 hover:outline-none hover:bg-gray-600 hover:text-white
+         focus:border-0 focus:outline-none focus:bg-gray-600 focus:text-white;
+}
+
+.action-btns-wrapper button.delete-btn {
+  @apply border-0 outline-none 
+         hover:border-0 hover:outline-none hover:bg-red-50 hover:text-red-600
+         focus:border-0 focus:outline-none focus:bg-red-50 focus:text-red-600;
+}
+
+.dark .action-btns-wrapper button.delete-btn {
+  @apply border-0 outline-none 
+         hover:border-0 hover:outline-none hover:bg-red-600 hover:text-white
+         focus:border-0 focus:outline-none focus:bg-red-600 focus:text-white;
+}

@@ -1,0 +1,200 @@
+/* Enhanced Modal Animations & Styling */
+
+/* Color Definitions */
+:root {
+  --gray-750: #1f293a;
+  --gray-850: #0f172a;
+}
+
+/* Animations */
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalFadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes modalScaleIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes modalScaleOut {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+}
+
+@keyframes modalSlideDown {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -55%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -55%);
+  }
+}
+
+/* Overlay animations */
+.modal-overlay {
+  animation: modalFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.modal-overlay.closing {
+  animation: modalFadeOut 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Modal animations */
+.modal-content {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: min(90%, 580px) !important;
+  max-width: 580px !important;
+  max-height: 90vh !important;
+  animation: modalSlideDown 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.modal-content.closing {
+  animation: modalSlideUp 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Light mode modal styles */
+.modal-header {
+  @apply border-gray-200 bg-gray-50/50;
+}
+
+.modal-body {
+  @apply bg-white;
+}
+
+.modal-item {
+  @apply bg-gray-50 border-gray-200 text-gray-900;
+}
+
+.modal-item:hover {
+  @apply bg-gray-100/50;
+}
+
+.modal-close-btn {
+  @apply bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700;
+}
+
+/* Dark mode modal styles */
+.dark .modal-header {
+  @apply border-gray-700;
+  background: linear-gradient(to right, var(--gray-750), #374151);
+}
+
+.dark .modal-body {
+  background-color: var(--gray-750);
+}
+
+.dark .modal-item {
+  @apply bg-gray-700 border-gray-600 text-gray-100;
+}
+
+.dark .modal-item:hover {
+  @apply bg-gray-600/70;
+}
+
+.dark .modal-close-btn {
+  @apply bg-gray-700 text-gray-400 hover:bg-gray-600 hover:text-gray-200;
+}
+
+/* Light mode text colors */
+.modal-title,
+.modal-text {
+  @apply text-gray-900;
+}
+
+.modal-subtitle,
+.modal-text-muted {
+  @apply text-gray-500;
+}
+
+/* Dark mode text colors */
+.dark .modal-title,
+.dark .modal-text {
+  @apply text-white;
+}
+
+.dark .modal-subtitle,
+.dark .modal-text-muted {
+  @apply text-gray-400;
+}
+
+/* Avatar badge */
+.modal-avatar {
+  @apply w-12 h-12 rounded-lg flex items-center justify-center font-bold text-xs sm:text-sm shrink-0;
+}
+
+/* Empty state */
+.modal-empty-state {
+  @apply text-center py-12 px-6 text-gray-400;
+}
+
+.dark .modal-empty-state {
+  @apply text-gray-500;
+}
+
+.modal-empty-state-icon {
+  @apply text-5xl md:text-6xl mb-4;
+}
+
+.modal-empty-state-text {
+  @apply text-sm md:text-base;
+}
+
+/* Scrollbar */
+.modal-scrollable::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-scrollable::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-scrollable::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+
+.dark .modal-scrollable::-webkit-scrollbar-thumb {
+  background: #555;
+}

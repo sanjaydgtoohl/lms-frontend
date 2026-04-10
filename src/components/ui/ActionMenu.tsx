@@ -306,10 +306,11 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, onUpl
               bottom: portalStyles.bottom ?? undefined,
             }}
             className={`
-              bg-white rounded-lg shadow-xl border border-gray-200
-              py-1.5 min-w-[160px]
+              bg-white rounded-lg overflow-hidden shadow-xl border border-gray-200
+              min-w-[160px]
               focus:outline-none
               z-[9999]
+              action-btns-wrapper
             `}
             onClick={(e) => e.stopPropagation()}
           >
@@ -321,13 +322,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, onUpl
                   setIsOpen(false);
                 }}
 
-                className="
-                      text-gray-700 hover:text-gray-700 hover:bg-white
-                      flex items-center gap-3
-                      transition-colors duration-150 ease-in-out
-                      first:rounded-t-lg last:rounded-b-lg
-                      focus:outline-none focus:bg-white focus:text-gray-700
-                    "
+                className="text-gray-700 flex items-center gap-3 w-full !rounded-0 transition-colors duration-150 ease-in-out focus:outline-none edit-btn"
                 role="menuitem"
                 tabIndex={0}
               >
@@ -343,14 +338,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, onUpl
                   onView();
                   setIsOpen(false);
                 }}
-                className="
-                      w-full px-4 py-2.5 text-sm font-medium bg-white shadow-none outline-0
-                      text-gray-700 hover:text-gray-700 hover:bg-white
-                      flex items-center gap-3
-                      transition-colors duration-150 ease-in-out
-                      first:rounded-t-lg last:rounded-b-lg
-                      focus:outline-none focus:bg-white focus:text-gray-700
-                    "
+                className="text-gray-700 flex items-center gap-3 w-full !rounded-0 transition-colors duration-150 ease-in-out focus:outline-none view-btn"
                 role="menuitem"
                 tabIndex={0}
               >
@@ -366,14 +354,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, onUpl
                   onUpload();
                   setIsOpen(false);
                 }}
-                className="
-                      w-full px-4 py-2.5 text-sm font-medium bg-white shadow-none outline-0
-                      text-gray-700 hover:text-gray-700 hover:bg-white
-                      flex items-center gap-3
-                      transition-colors duration-150 ease-in-out
-                      first:rounded-t-lg last:rounded-b-lg
-                      focus:outline-none focus:bg-white focus:text-gray-700
-                    "
+                className="text-gray-700 flex items-center gap-3 w-full !rounded-0 transition-colors duration-150 ease-in-out focus:outline-none  upload-btn"
                 role="menuitem"
                 tabIndex={0}
               >
@@ -385,7 +366,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, onUpl
             {(onDelete && (!deletePermissionSlug || hasPermission(deletePermissionSlug))) && (
               <>
                 {((onEdit && (!editPermissionSlug || hasPermission(editPermissionSlug))) || (onView && (!viewPermissionSlug || hasPermission(viewPermissionSlug)))) && (
-                  <div className="my-1 border-t border-gray-200" />
+                  <div className="border-t border-gray-200" />
                 )}
                 <button
                   onClick={(e) => {
@@ -393,14 +374,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, onUpl
                     onDelete();
                     setIsOpen(false);
                   }}
-                  className="
-                        w-full px-4 py-2.5 text-sm font-medium bg-wihte shadow-none outline-0
-                        text-red-600 hover:text-red-700 hover:bg-white
-                        flex items-center gap-3
-                        transition-colors duration-150 ease-in-out
-                        first:rounded-t-lg last:rounded-b-lg
-                        focus:outline-none focus:bg-white focus:text-red-700
-                      "
+                  className="flex items-center gap-3 w-full !rounded-0 transition-colors duration-150 ease-in-out focus:outline-none text-red-600 delete-btn" 
                   role="menuitem"
                   tabIndex={0}
                 >
