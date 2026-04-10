@@ -16,8 +16,8 @@ const LoadingModal: React.FC<LoadingModalProps> = ({ isOpen, title = 'Please wai
         className="fixed inset-0 z-50 flex items-center justify-center p-4"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="loading-modal-title"
-        aria-describedby="loading-modal-description"
+       aria-labelledby={`${`${title}-${message}`.toLowerCase().replace(/[^a-z0-9_-]+/g, '-')}-loading-modal-title`}
+        aria-describedby={`${`${title}-${message}`.toLowerCase().replace(/[^a-z0-9_-]+/g, '-')}-loading-modal-description`}
       >
         <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl ring-1 ring-black/10">
           <div className="flex flex-col items-center gap-4 text-center">
