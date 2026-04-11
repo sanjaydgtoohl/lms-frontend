@@ -86,10 +86,19 @@ const getImageSource = async (url: string | undefined | null): Promise<ImageSour
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), IMAGE_FETCH_TIMEOUT);
 
+  const sanitizedUrl = (() => {
+    try {
+      const url = new URL(normalizedUrl, origin);
+      return url.origin + url.pathname;
+    } catch {
+      return normalizedUrl;
+    }
+  })();
+
   try {
     const response = await fetch(fetchUrl, { signal: controller.signal });
     if (!response.ok) {
-      console.warn('PPT image fetch returned non-ok response:', response.status, normalizedUrl);
+      console.warn('PPT image fetch returned non-ok response:', response.status, sanitizedUrl);
       return { data: PLACEHOLDER_IMAGE };
     }
 
@@ -110,7 +119,7 @@ const getImageSource = async (url: string | undefined | null): Promise<ImageSour
 
     return { data: dataUrl };
   } catch (error) {
-    console.warn('PPT image fetch failed, using placeholder:', error, normalizedUrl);
+    console.warn('PPT image fetch failed, using placeholder:', error, sanitizedUrl);
     return { data: PLACEHOLDER_IMAGE };
   } finally {
     window.clearTimeout(timeoutId);
