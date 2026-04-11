@@ -311,19 +311,21 @@ export async function generateDeviceInventoryPptx(devices: DeviceData[]): Promis
     );
   };
 
-  for (const device of devices) {
+  const imageSources = await Promise.all(
+    devices.map((device) =>
+      getImageSource(device.aws_device_image || device.device_image || device.old_device_image)
+    )
+  );
+
+  devices.forEach((device, index) => {
     const slide = pptx.addSlide();
     slide.background = { color: SLIDE_BACKGROUND };
 
-    const imageSource = await getImageSource(
-      device.aws_device_image || device.device_image || device.old_device_image
-    );
-
     addReportHeader(slide);
-    addDeviceImagePanel(slide, imageSource);
+    addDeviceImagePanel(slide, imageSources[index]);
     addDeviceDetailsPanel(slide, device);
     addFooter(slide);
-  }
+  });
 
   await pptx.writeFile({ fileName: 'Device_Inventory_Report.pptx' });
 }
