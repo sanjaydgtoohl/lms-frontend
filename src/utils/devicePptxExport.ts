@@ -72,12 +72,10 @@ const getImageSource = async (url: string | undefined | null): Promise<ImageSour
 
   try {
     const imageUrl = new URL(normalizedUrl, origin);
-    if (imageUrl.origin !== origin) {
-      if (import.meta.env.DEV && imageUrl.host === 'd2nljoxssb7y4b.cloudfront.net') {
-        fetchUrl = `/remote-images${imageUrl.pathname}${imageUrl.search}`;
-      } else {
-        fetchUrl = normalizedUrl;
-      }
+    const shouldUseDevProxy = import.meta.env.DEV && imageUrl.host === 'd2nljoxssb7y4b.cloudfront.net';
+
+    if (imageUrl.origin !== origin && shouldUseDevProxy) {
+      fetchUrl = `/remote-images${imageUrl.pathname}${imageUrl.search}`;
     }
   } catch {
     return { data: PLACEHOLDER_IMAGE };
