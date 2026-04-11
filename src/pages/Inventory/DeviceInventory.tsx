@@ -6,6 +6,7 @@ import SearchBar from '../../components/ui/SearchBar';
 import FilterPopup from '../../components/ui/FilterPopup';
 import ExportCsvButton from '../../components/ui/ExportCsvButton';
 import MasterHeader from '../../components/ui/MasterHeader';
+import PPTExport from '../../components/ui/PPTExport';
 import { useNavigate } from 'react-router-dom';
 import {
   fetchAllDeviceInventoryRows,
@@ -72,8 +73,9 @@ const DeviceInventory: React.FC = () => {
         setData([]);
         setTotalItems(0);
       } finally {
-        if (!alive) return;
-        setLoading(false);
+        if (alive) {
+          setLoading(false);
+        }
       }
     })();
     return () => {
@@ -95,6 +97,7 @@ const DeviceInventory: React.FC = () => {
         <div className="bg-gray-50 px-3 md:px-6 py-3 md:py-4 flex flex-row items-center justify-between gap-3 flex-wrap md:flex-nowrap border-b border-gray-200">
           <h2 className="text-sm md:text-base font-semibold text-gray-900 flex-shrink-0">Device Inventory</h2>
           <div className="flex w-full min-w-0 items-center justify-end gap-2 sm:w-auto">
+           <PPTExport fetchRows={exportFetchRows} />
             <ExportCsvButton<DeviceData>
               fetchRows={exportFetchRows}
               columns={DEVICE_INVENTORY_CSV_COLUMNS.filter(col => col.key !== 'user_password')}

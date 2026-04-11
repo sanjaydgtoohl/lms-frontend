@@ -27,6 +27,12 @@ export default defineConfig(({ mode }) => {
           secure: true,
           rewrite: (path) => path.replace(/^\/api/, '/api/v1'),
         },
+        '/remote-images': {
+          target: 'https://d2nljoxssb7y4b.cloudfront.net',
+          changeOrigin: true,
+          secure: true,
+          rewrite: (path) => path.replace(/^\/remote-images/, ''),
+        },
       },
     },
     build: {

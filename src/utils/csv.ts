@@ -1,9 +1,19 @@
 /** Escape a single CSV cell (RFC-style quoting when needed). */
 export function csvEscape(value: unknown): string {
   if (value === null || value === undefined) return '';
-  let s = String(value);
-  // Neutralize spreadsheet formula injection (block leading whitespace/control chars)
-  const safe = /^[\s\u0000-\u001F]*[=+\-@]/.test(s) ? "'" + s : s;
+  const s = String(value);
+
+  let index = 0;
+  while (index < s.length) {
+    const code = s.charCodeAt(index);
+    if (code === 0x20 || code <= 0x1f) {
+      index += 1;
+      continue;
+    }
+    break;
+  }
+
+  const safe = ['=', '+', '-', '@'].includes(s.charAt(index)) ? "'" + s : s;
   if (/[",\r\n]/.test(safe)) return `"${safe.replace(/"/g, '""')}"`;
   return safe;
 }

@@ -1,7 +1,18 @@
 // Sanitize cell to prevent CSV injection
 function sanitizeCsvCell(value: string): string {
-  // Block formula injection even with leading whitespace/control chars
-  if (/^[\s\u0000-\u001F]*[=+\-@]/.test(value)) {
+  // Block formula injection even with leading whitespace/control chars.
+  let index = 0;
+  while (index < value.length) {
+    const code = value.charCodeAt(index);
+    if (code === 0x20 || code <= 0x1f) {
+      index += 1;
+      continue;
+    }
+    break;
+  }
+
+  const firstChar = value.charAt(index);
+  if (firstChar === '=' || firstChar === '+' || firstChar === '-' || firstChar === '@') {
     return "'" + value;
   }
   return value;
@@ -9,6 +20,7 @@ function sanitizeCsvCell(value: string): string {
 import { useCallback, useRef, useState } from 'react';
 import { Download } from 'lucide-react';
 import { buildCsv, defaultDatedFilename, downloadCsvFile } from '../../utils/csv';
+import LoadingModal from './LoadingModal';
 
 export type CsvColumn<T> = {
   /** Column key used as CSV header when `header` is omitted */
@@ -91,6 +103,11 @@ function ExportCsvButton<T>({
         <Download className="h-4 w-4 shrink-0" aria-hidden />
         {exporting ? exportingLabel : label}
       </button>
+      <LoadingModal
+        isOpen={exporting}
+        title="Preparing CSV export"
+        message="Your CSV export is being generated. Please wait a moment."
+      />
     </div>
   );
 }

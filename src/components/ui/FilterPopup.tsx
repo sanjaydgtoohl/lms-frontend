@@ -31,13 +31,14 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const stateInputRef = useRef<HTMLInputElement>(null);
+  const { state: appliedState, city: appliedCity } = appliedValues;
   const [draft, setDraft] = useState<LocationFilterValues>(() => initialDraft(appliedValues));
   const [position, setPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
   useEffect(() => {
     if (!isOpen) return;
-    setDraft(initialDraft(appliedValues));
-  }, [isOpen, appliedValues.state, appliedValues.city]);
+    setDraft(initialDraft({ state: appliedState, city: appliedCity }));
+  }, [isOpen, appliedState, appliedCity]);
 
   useLayoutEffect(() => {
     if (!isOpen) return;
