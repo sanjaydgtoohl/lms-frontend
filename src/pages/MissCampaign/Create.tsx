@@ -302,48 +302,107 @@ const Create: React.FC<CreateProps> = ({
   }, [formData.source]);
 
   useEffect(() => {
-    if (mode === 'edit' && initialData) {
-      // Extract the actual IDs from the raw API response
-      const brandId = initialData.brand_id || initialData.brand?.id || initialData.brandId || initialData.brandName;
-      const sourceId = initialData.lead_source_id || initialData.lead_source?.id || initialData.source_id || initialData.source;
-      const subSourceId = initialData.lead_sub_source_id || initialData.lead_sub_source?.id || initialData.sub_source_id || initialData.subSource;
-      const countryId = initialData.country?.id || initialData.country_id || initialData.country;
-      const stateId = initialData.state?.id || initialData.state_id || initialData.state;
-      const cityId = initialData.city?.id || initialData.city_id || initialData.city;
-      const industryId = initialData.industry?.id || initialData.industry_id || initialData.industry;
-      const mediaVal = normalizeMediaTypeValue(initialData.media ?? initialData.media_type ?? initialData.mediaType ?? '');
+    const resolveLocationIds = async () => {
+      if (mode === 'edit' && initialData) {
+        const brandId = initialData.brand_id || initialData.brand?.id || initialData.brandId || initialData.brandName;
+        const sourceId = initialData.lead_source_id || initialData.lead_source?.id || initialData.source_id || initialData.source;
+        const subSourceId = initialData.lead_sub_source_id || initialData.lead_sub_source?.id || initialData.sub_source_id || initialData.subSource;
+        const industryId = initialData.industry?.id || initialData.industry_id || initialData.industry;
 
-      setFormData(prev => ({
-        ...prev,
-        brandName: String(brandId ?? prev.brandName ?? ''),
-        source: String(sourceId ?? prev.source ?? ''),
-        subSource: String(subSourceId ?? prev.subSource ?? ''),
-        industry: String(industryId ?? prev.industry ?? ''),
-        productName: String(initialData.name ?? initialData.productName ?? prev.productName ?? ''),
-        country: String(countryId ?? prev.country ?? ''),
-        state: String(stateId ?? prev.state ?? ''),
-        city: String(cityId ?? prev.city ?? ''),
-        mediaType: mediaVal || String(prev.mediaType ?? ''),
-        image: null, // image is not prefilled
-        image_url: initialData.image_url || initialData.image_path || '',
-        remove_image: false,
-      }));
+        let countryId: any = initialData.country?.id || initialData.country_id || initialData.country;
+        let stateId: any = initialData.state?.id || initialData.state_id || initialData.state;
+        let cityId: any = initialData.city?.id || initialData.city_id || initialData.city;
 
-      // If API returned a nested `lead_sub_source` object, inject it immediately
-      const nestedSub = initialData.lead_sub_source ?? initialData.sub_source ?? initialData.subSource;
-      if (nestedSub && typeof nestedSub === 'object') {
-        const nid = String(nestedSub.id ?? nestedSub.lead_sub_source_id ?? nestedSub.sub_source_id ?? '');
-        const nlabel = String(nestedSub.name ?? nestedSub.subSource ?? nestedSub.label ?? '');
-        if (nid && nlabel) {
-          // Inject the initial sub-source option
-          setSubSourceOptions(prev => {
-            const exists = prev.find(p => String(p.id) === nid);
-            if (exists) return prev;
-            return [{ id: nid, label: nlabel }, ...prev];
-          });
+        const isNumeric = (val: any) => !isNaN(Number(val));
+
+        try {
+          // ✅ Resolve State (if name)
+          if (countryId && stateId && !isNumeric(stateId)) {
+            const states = await listStates({ country_id: countryId });
+
+            const foundState = states?.find(
+              (s: any) =>
+                String(s.name).toLowerCase() === String(stateId).toLowerCase()
+            );
+
+            if (foundState) {
+              stateId = String(foundState.id);
+            }
+          }
+
+          // ✅ Resolve City (if name)
+          if (stateId && cityId && !isNumeric(cityId)) {
+            const cities = await listCities({ state_id: stateId });
+
+            const foundCity = cities?.find(
+              (c: any) =>
+                String(c.name).toLowerCase() === String(cityId).toLowerCase()
+            );
+
+            if (foundCity) {
+              cityId = String(foundCity.id);
+            }
+          }
+        } catch (err) {
+          console.error("Location resolve error:", err);
+        }
+
+        const mediaVal = normalizeMediaTypeValue(
+          initialData.media ??
+          initialData.media_type ??
+          initialData.mediaType ??
+          ''
+        );
+
+        // ✅ FINAL setFormData (only after resolving IDs)
+        setFormData(prev => ({
+          ...prev,
+          brandName: String(brandId ?? prev.brandName ?? ''),
+          source: String(sourceId ?? prev.source ?? ''),
+          subSource: String(subSourceId ?? prev.subSource ?? ''),
+          industry: String(industryId ?? prev.industry ?? ''),
+          productName: String(initialData.name ?? initialData.productName ?? prev.productName ?? ''),
+          country: String(countryId ?? prev.country ?? ''),
+          state: String(stateId ?? prev.state ?? ''),
+          city: String(cityId ?? prev.city ?? ''),
+          mediaType: mediaVal || String(prev.mediaType ?? ''),
+          image: null,
+          image_url: initialData.image_url || initialData.image_path || '',
+          remove_image: false,
+        }));
+
+        // ✅ Sub-source injection (same as your code)
+        const nestedSub =
+          initialData.lead_sub_source ??
+          initialData.sub_source ??
+          initialData.subSource;
+
+        if (nestedSub && typeof nestedSub === 'object') {
+          const nid = String(
+            nestedSub.id ??
+            nestedSub.lead_sub_source_id ??
+            nestedSub.sub_source_id ??
+            ''
+          );
+          const nlabel = String(
+            nestedSub.name ??
+            nestedSub.subSource ??
+            nestedSub.label ??
+            ''
+          );
+
+          if (nid && nlabel) {
+            setSubSourceOptions(prev => {
+              const exists = prev.find(p => String(p.id) === nid);
+              if (exists) return prev;
+              return [{ id: nid, label: nlabel }, ...prev];
+            });
+          }
         }
       }
-    }
+    };
+
+    resolveLocationIds();
   }, [mode, initialData]);
 
   useEffect(() => {

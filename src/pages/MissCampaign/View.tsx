@@ -64,32 +64,28 @@ const View: React.FC = () => {
   }, [imageModalOpen]);
 
   const filteredCampaigns = campaigns.filter(c => {
-    // Search filter
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase().trim();
-      if (!c.brandName.toLowerCase().startsWith(q) &&
-          !c.productName.toLowerCase().includes(q)) {
-        return false;
-      }
+    const brand = (c.brandName || '').toLowerCase();
+    const product = (c.productName || '').toLowerCase();
+    const q = searchQuery.toLowerCase().trim();
+
+    if (q && !brand.startsWith(q) && !product.includes(q)) {
+      return false;
     }
 
     const industryValue = String(c.industry ?? '').toLowerCase();
     const sourceValue = String(c.source ?? '').toLowerCase();
     const mediaTypeValue = String(c.mediaType ?? '').toLowerCase();
 
-    // Additional filters
-    if (activeFilters.industry && industryValue !== activeFilters.industry.toLowerCase()) {
-      return false;
-    }
-    if (activeFilters.source && sourceValue !== activeFilters.source.toLowerCase()) {
-      return false;
-    }
-    if (activeFilters.mediaType && mediaTypeValue !== activeFilters.mediaType.toLowerCase()) {
-      return false;
-    }
+    if (activeFilters.industry && industryValue !== activeFilters.industry.toLowerCase()) return false;
+    if (activeFilters.source && sourceValue !== activeFilters.source.toLowerCase()) return false;
+    if (activeFilters.mediaType && mediaTypeValue !== activeFilters.mediaType.toLowerCase()) return false;
 
     return true;
   });
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, activeFilters]);
 
   // When searching or filtering, recalculate pagination based on filtered results
   const hasActiveFilters = Object.keys(activeFilters).length > 0;
@@ -456,7 +452,7 @@ const View: React.FC = () => {
           )}
 
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-           {/* Table Header */}
+            {/* Table Header */}
             <TableHeader
               title="Pre Lead"
               filterOptions={filterOptions}
@@ -464,7 +460,7 @@ const View: React.FC = () => {
             >
               <SearchBar delay={0} placeholder="Search Pre Lead" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
             </TableHeader>
-            
+
 
             <div className="pt-0 overflow-visible">
               <Table
