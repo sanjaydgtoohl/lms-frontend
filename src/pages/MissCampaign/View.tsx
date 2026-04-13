@@ -15,7 +15,6 @@ import {
   getMissCampaign,
   type MissCampaign
 } from '../../services/View';
-import { createMissCampaign, updateMissCampaignWithForm } from '../../services/Create';
 import { apiClient } from '../../utils/apiClient';
 import { usePermissions } from '../../hooks/SidebarMenuHooks';
 import { IoIosArrowBack } from 'react-icons/io';
@@ -437,7 +436,7 @@ const View: React.FC = () => {
           mode="edit"
           initialData={editItem}
           onClose={() => navigate('/pre-lead/view')}
-          onSave={(data: any) => handleSaveEdited({ ...(data as Record<string, any>) })}
+          onSave={handleSaveEdited}
         />
       ) : (
         <>
