@@ -4,8 +4,7 @@ import { MasterCreateHeader } from '../../components/ui/MasterCreateHeader';
 import { Upload, Loader, Trash2 } from 'lucide-react';
 import { SelectField } from '../../components/ui';
 import { apiClient } from '../../utils/apiClient';
-import { createMissCampaign } from '../../services/Create';
-import { updateMissCampaign } from '../../services/View';
+import { createMissCampaign, updateMissCampaignWithForm } from '../../services/Create';
 import { listBrands } from '../../services/BrandMaster';
 import { listCountries, listStates, listCities } from '../../services/CreateBrandForm';
 // Removed LeadSource import as per request
@@ -21,12 +20,6 @@ interface CreateProps {
 
 
 
-const mediaTypeOptions = [
-  { value: "OOH", label: "OOH" },
-  { value: "DOOH", label: "DOOH" },
-  { value: "CTV", label: "CTV" },
-];
-
 const Create: React.FC<CreateProps> = ({
   inline = false,
   mode = 'create',
@@ -41,7 +34,6 @@ const Create: React.FC<CreateProps> = ({
     subSource: '',
     industry: '',
     productName: '',
-    pincode: '',
     country: '',
     state: '',
     city: '',
@@ -67,9 +59,22 @@ const Create: React.FC<CreateProps> = ({
   const [stateLoading, setStateLoading] = useState(false);
   const [cityOptions, setCityOptions] = useState<{ id: string; name: string }[]>([]);
   const [cityLoading, setCityLoading] = useState(false);
+  const [mediaTypeOptions, setMediaTypeOptions] = useState<{ value: string; label: string }[]>([]);
+  const [mediaTypeLoading, setMediaTypeLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string>(''); // for newly selected image preview
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [modalImageUrl, setModalImageUrl] = useState<string | null>(null);
+
+  const normalizeMediaTypeValue = (raw: any): string => {
+    if (raw === undefined || raw === null) return '';
+    if (typeof raw === 'string' || typeof raw === 'number') return String(raw);
+    if (typeof raw === 'object') {
+      return String(
+        raw.id ?? raw.value ?? raw.media_type ?? raw.mediaType ?? raw.name ?? raw.label ?? raw.type ?? raw.title ?? raw.media ?? ''
+      );
+    }
+    return '';
+  };
 
   const openImageModal = (url: string) => {
     setModalImageUrl(url);
@@ -153,6 +158,27 @@ const Create: React.FC<CreateProps> = ({
       }
     };
     fetchIndustries();
+  }, []);
+
+  useEffect(() => {
+    const fetchMediaTypes = async () => {
+      try {
+        setMediaTypeLoading(true);
+        const response = await apiClient.get<any[]>('/media-types');
+        const mediaTypes = Array.isArray(response.data) ? response.data : [];
+        const options = mediaTypes.map((item) => ({
+          value: String(item.id ?? item.value ?? item.type ?? item.name ?? item.label ?? item),
+          label: String(item.name ?? item.label ?? item.type ?? item.value ?? item),
+        }));
+        setMediaTypeOptions(options);
+      } catch (err) {
+        console.error('Failed to fetch media types:', err);
+        setMediaTypeOptions([]);
+      } finally {
+        setMediaTypeLoading(false);
+      }
+    };
+    fetchMediaTypes();
   }, []);
 
   useEffect(() => {
@@ -285,8 +311,7 @@ const Create: React.FC<CreateProps> = ({
       const stateId = initialData.state?.id || initialData.state_id || initialData.state;
       const cityId = initialData.city?.id || initialData.city_id || initialData.city;
       const industryId = initialData.industry?.id || initialData.industry_id || initialData.industry;
-      const pincodeVal = initialData.pincode ?? initialData.pin_code ?? initialData.zip_code ?? initialData.postal_code ?? initialData.zipcode ?? '';
-      const mediaTypeVal = initialData.mediaType ?? initialData.media_type ?? initialData.media ?? '';
+      const mediaVal = normalizeMediaTypeValue(initialData.media ?? initialData.media_type ?? initialData.mediaType ?? '');
 
       setFormData(prev => ({
         ...prev,
@@ -295,11 +320,10 @@ const Create: React.FC<CreateProps> = ({
         subSource: String(subSourceId ?? prev.subSource ?? ''),
         industry: String(industryId ?? prev.industry ?? ''),
         productName: String(initialData.name ?? initialData.productName ?? prev.productName ?? ''),
-        pincode: String(pincodeVal ?? prev.pincode ?? ''),
         country: String(countryId ?? prev.country ?? ''),
         state: String(stateId ?? prev.state ?? ''),
         city: String(cityId ?? prev.city ?? ''),
-        mediaType: String(mediaTypeVal ?? prev.mediaType ?? ''),
+        mediaType: mediaVal || String(prev.mediaType ?? ''),
         image: null, // image is not prefilled
         image_url: initialData.image_url || initialData.image_path || '',
         remove_image: false,
@@ -365,7 +389,6 @@ const Create: React.FC<CreateProps> = ({
     if (!formData.subSource) next.subSource = 'Please select a sub source';
     if (!formData.industry) next.industry = 'Please select an industry';
     if (!formData.productName || formData.productName.trim() === '') next.productName = 'Please enter product name';
-    if (!formData.pincode || formData.pincode.trim() === '') next.pincode = 'Please enter pincode';
     if (!formData.country) next.country = 'Please select a country';
     if (!formData.state) next.state = 'Please select a state';
     if (!formData.city) next.city = 'Please select a city';
@@ -377,6 +400,7 @@ const Create: React.FC<CreateProps> = ({
     setError(null);
     setSaving(true);
 
+    const selectedMediaTypeOption = mediaTypeOptions.find(opt => String(opt.value) === String(formData.mediaType));
     const payload: Record<string, any> = {
       name: formData.productName,
       productName: formData.productName,
@@ -384,12 +408,12 @@ const Create: React.FC<CreateProps> = ({
       lead_source_id: formData.source,
       lead_sub_source_id: formData.subSource,
       industry_id: formData.industry,
-      pincode: formData.pincode,
       country_id: formData.country,
       state_id: formData.state,
       city_id: formData.city,
       mediaType: formData.mediaType,
-      media_type: formData.mediaType,
+      media_type_id: selectedMediaTypeOption && !Number.isNaN(Number(selectedMediaTypeOption.value)) ? selectedMediaTypeOption.value : undefined,
+      media_type_name: selectedMediaTypeOption?.label ?? formData.mediaType,
       remove_image: formData.remove_image,
     };
     // Only include image if a new file is selected
@@ -401,7 +425,7 @@ const Create: React.FC<CreateProps> = ({
       let result: any;
       if (mode === 'edit' && initialData && (initialData.id || initialData.uuid)) {
         const id = String(initialData.id ?? initialData.uuid);
-        result = await updateMissCampaign(id, payload);
+        result = await updateMissCampaignWithForm(id, payload);
         SweetAlert.showUpdateSuccess();
       } else {
         result = await createMissCampaign(payload);
@@ -657,33 +681,7 @@ const Create: React.FC<CreateProps> = ({
               )}
             </div>
 
-            {/* Pincode */}
-            <div className='w-full sm:w-[calc(50%-12px)]'>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Pincode <span className="text-[#FF0000]">*</span>
-              </label>
-              <input
-                type="text"
-                name="pincode"
-                value={formData.pincode}
-                onChange={(e) => { handleChange(e); setErrors(prev => ({ ...prev, pincode: '' })); }}
-                placeholder="Please Enter Pincode"
-                className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 transition-colors ${errors.pincode ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'
-                  }`}
-                aria-invalid={errors.pincode ? 'true' : 'false'}
-                aria-describedby={errors.pincode ? 'pincode-error' : undefined}
-              />
-              {errors.pincode && (
-                <div id="pincode-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
-                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                  {errors.pincode}
-                </div>
-              )}
-            </div>
-
-            {/* Media type */}
+            {/* Media */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
               <label className="block text-sm font-medium mb-2">
                 Media Type <span className="text-[#FF0000]">*</span>
@@ -700,12 +698,13 @@ const Create: React.FC<CreateProps> = ({
                     setErrors(prev => ({ ...prev, mediaType: '' }));
                   }}
                   options={mediaTypeOptions}
-                  placeholder="Select media type"
+                  placeholder={mediaTypeLoading ? 'Loading media types...' : 'Select media type'}
                   inputClassName={
                     errors.mediaType
                       ? 'border-red-500 bg-red-50 focus:ring-red-500'
                       : 'border-gray-200 focus:ring-blue-500'
                   }
+                  disabled={mediaTypeLoading}
                 />
               </div>
               {errors.mediaType && (

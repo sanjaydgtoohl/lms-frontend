@@ -10,7 +10,6 @@ export interface MissCampaign {
   proof: string;
   dateTime: string;
   industry?: string;
-  media?: string;
   mediaType?: string;
   pincode?: string;
   city?: string;
@@ -89,8 +88,25 @@ export async function listMissCampaigns(page = 1, perPage = 10, search?: string)
     const city = it.city?.name ?? it.city ?? '';
     const state = it.state?.name ?? it.state ?? '';
     const country = it.country?.name ?? it.country ?? '';
-    const mediaType = it.mediaType ?? it.media_type ?? it.media ?? '';
-    const media = mediaType;
+    const normalizeNestedValue = (raw: any): string => {
+      if (typeof raw === 'string') return raw;
+      if (typeof raw === 'number') return String(raw);
+      if (raw && typeof raw === 'object') {
+        const candidate = raw.name ?? raw.label ?? raw.type ?? raw.value ?? raw.title ?? raw.media_type ?? raw.mediaType ?? raw.media;
+        if (typeof candidate === 'string' && candidate.trim() !== '') return candidate;
+        if (typeof candidate === 'number') return String(candidate);
+        // Try any string value in the object if common keys not found
+        const firstString = Object.values(raw).find((v) => typeof v === 'string');
+        if (typeof firstString === 'string' && firstString.trim() !== '') return firstString;
+        const firstNumber = Object.values(raw).find((v) => typeof v === 'number');
+        if (typeof firstNumber === 'number') return String(firstNumber);
+      }
+      return '';
+    };
+
+    const mediaType = normalizeNestedValue(
+      it.media ?? it.media_type ?? it.mediaType ?? it.media_type_name ?? it.mediaTypeName ?? it.media_type_id
+    );
 
     return {
       id: String(id),
@@ -105,7 +121,6 @@ export async function listMissCampaigns(page = 1, perPage = 10, search?: string)
       city,
       state,
       country,
-      media,
       mediaType,
     } as MissCampaign;
   });
@@ -130,19 +145,32 @@ export async function getMissCampaign(id: string): Promise<any> {
 }
 
 export async function createMissCampaign(payload: Partial<MissCampaign>): Promise<MissCampaign> {
-  const res = await apiClient.post<MissCampaign>(ENDPOINTS.CREATE, payload);
+  const formData = new FormData();
+  const mediaTypeValue = payload.mediaType ?? (payload as any).media_type;
+  Object.entries(payload || {}).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    if (key === 'mediaType' || key === 'media_type') return;
+    formData.append(key, value as any);
+  });
+  if (mediaTypeValue !== undefined && mediaTypeValue !== null && String(mediaTypeValue).trim() !== '') {
+    formData.append('media_type', String(mediaTypeValue));
+  }
+  const res = await apiClient.post<MissCampaign>(ENDPOINTS.CREATE, formData);
   return handleResponse<MissCampaign>(res);
 }
 
 export async function updateMissCampaign(id: string, payload: Partial<MissCampaign>): Promise<MissCampaign> {
   // Use POST with _method: 'PUT' for method spoofing (backend expects this)
   const formData = new FormData();
-  // Append all payload fields to formData
+  const mediaTypeValue = payload.mediaType ?? (payload as any).media_type;
   Object.entries(payload || {}).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) {
-      formData.append(key, value as any);
-    }
+    if (value === undefined || value === null) return;
+    if (key === 'mediaType' || key === 'media_type') return;
+    formData.append(key, value as any);
   });
+  if (mediaTypeValue !== undefined && mediaTypeValue !== null && String(mediaTypeValue).trim() !== '') {
+    formData.append('media_type', String(mediaTypeValue));
+  }
   formData.append('_method', 'PUT');
   const res = await apiClient.post<MissCampaign>(ENDPOINTS.UPDATE(id), formData);
   return handleResponse<MissCampaign>(res);

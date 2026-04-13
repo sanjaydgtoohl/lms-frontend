@@ -1,6 +1,7 @@
 // components/PageHeader.tsx
-import React, { useState } from "react";
 import { Filter, X } from "lucide-react";
+import SelectField from "./SelectField";
+import React, { useState, useRef, useEffect } from "react";
 
 interface FilterOption {
     key: string;
@@ -21,9 +22,9 @@ const TableHeader: React.FC<PageHeaderProps> = ({
     filterOptions = [],
     onFilterChange
 }) => {
+    const filterRef = useRef<HTMLDivElement>(null);
     const [showFilters, setShowFilters] = useState(false);
     const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
-
     const handleFilterChange = (key: string, value: string) => {
         const newFilters = { ...activeFilters };
         if (value === '') {
@@ -40,25 +41,41 @@ const TableHeader: React.FC<PageHeaderProps> = ({
         onFilterChange?.({});
     };
 
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                filterRef.current &&
+                !filterRef.current.contains(event.target as Node)
+            ) {
+                setShowFilters(false);
+            }
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
+
     const hasActiveFilters = Object.keys(activeFilters).length > 0;
 
     return (
         <div className="bg-gray-50 px-3 md:px-5 py-3 md:py-4 border-b border-gray-200">
             <div className="flex flex-row items-center justify-between gap-3 flex-wrap md:flex-nowrap">
-                <h2 className="text-sm md:text-base font-semibold text-gray-900 flex-shrink-0">
+                <h2 className="text-sm md:text-base font-semibold text-gray-900 shrink-0">
                     {title}
                 </h2>
 
                 <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
                     {filterOptions.length > 0 && (
-                        <div className="relative">
+                        <div className="relative" ref={filterRef}>
                             <button
                                 onClick={() => setShowFilters(!showFilters)}
-                                className={`flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg !border !border-gray-200 transition-colors ${
-                                    hasActiveFilters
-                                        ? 'bg-orange-50 !border-orange-300 text-orange-600'
-                                        : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                                }`}
+                                className={`flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg border! border-gray-200! transition-colors ${hasActiveFilters
+                                    ? 'bg-orange-50 border-orange-300! text-orange-600'
+                                    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                                    }`}
                             >
                                 <Filter className="w-4 h-4" />
                                 Filters
@@ -87,22 +104,35 @@ const TableHeader: React.FC<PageHeaderProps> = ({
 
                                         <div className="space-y-3">
                                             {filterOptions.map((filter) => (
-                                                <div key={filter.key}>
+                                                <div key={filter.key} className="relative">
                                                     <label className="block text-xs font-medium text-gray-700 mb-1">
                                                         {filter.label}
                                                     </label>
-                                                    <select
-                                                        value={activeFilters[filter.key] || ''}
-                                                        onChange={(e) => handleFilterChange(filter.key, e.target.value)}
-                                                        className="w-full px-2 py-2 text-sm border border-gray-200 rounded  focus:border-gray-400 focus-visible:!border-gray-400 "
-                                                    >
-                                                        <option value="">All {filter.label}</option>
-                                                        {filter.options.map((option) => (
-                                                            <option key={option.value} value={option.value}>
-                                                                {option.label}
-                                                            </option>
-                                                        ))}
-                                                    </select>
+
+                                                    <div className="relative">
+                                                        <SelectField
+                                                            name={filter.key}
+                                                            value={activeFilters[filter.key] || ''}
+                                                            onChange={(value) =>
+                                                                handleFilterChange(filter.key, String(value))
+                                                            }
+                                                            options={filter.options}
+                                                            placeholder={`Search or select ${filter.label}`}
+                                                            searchable={true}
+                                                            inputClassName="border-gray-200 focus:ring-blue-500 pr-8"
+                                                            className="w-full"
+                                                        />
+
+                                                        {/* ✅ Remove single filter icon */}
+                                                        {activeFilters[filter.key] && (
+                                                            <button
+                                                                onClick={() => handleFilterChange(filter.key, '')}
+                                                                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500"
+                                                            >
+                                                                <X className="w-4 h-4" />
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>

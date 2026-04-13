@@ -11,12 +11,11 @@ import SweetAlert from '../../utils/SweetAlert';
 import Create from './Create';
 import {
   listMissCampaigns,
-  createMissCampaign,
   deleteMissCampaign,
   getMissCampaign,
-  updateMissCampaign,
   type MissCampaign
 } from '../../services/View';
+import { createMissCampaign, updateMissCampaignWithForm } from '../../services/Create';
 import { apiClient } from '../../utils/apiClient';
 import { usePermissions } from '../../hooks/SidebarMenuHooks';
 import { IoIosArrowBack } from 'react-icons/io';
@@ -34,6 +33,7 @@ const View: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
   const [industryOptions, setIndustryOptions] = useState<{ value: string; label: string }[]>([]);
+  const [mediaTypeOptions, setMediaTypeOptions] = useState<{ value: string; label: string }[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [viewItem, setViewItem] = useState<MissCampaign | null>(null);
   const [editItem, setEditItem] = useState<MissCampaign | null>(null);
@@ -73,22 +73,27 @@ const View: React.FC = () => {
       }
     }
 
+    const industryValue = String(c.industry ?? '').toLowerCase();
+    const sourceValue = String(c.source ?? '').toLowerCase();
+    const mediaTypeValue = String(c.mediaType ?? '').toLowerCase();
+
     // Additional filters
-    if (activeFilters.industry && c.industry !== activeFilters.industry) {
+    if (activeFilters.industry && industryValue !== activeFilters.industry.toLowerCase()) {
       return false;
     }
-    if (activeFilters.source && c.source !== activeFilters.source) {
+    if (activeFilters.source && sourceValue !== activeFilters.source.toLowerCase()) {
       return false;
     }
-    if (activeFilters.mediaType && c.mediaType !== activeFilters.mediaType) {
+    if (activeFilters.mediaType && mediaTypeValue !== activeFilters.mediaType.toLowerCase()) {
       return false;
     }
 
     return true;
   });
 
-  // When searching, recalculate pagination based on filtered results
-  const totalFilteredItems = searchQuery ? filteredCampaigns.length : totalItems;
+  // When searching or filtering, recalculate pagination based on filtered results
+  const hasActiveFilters = Object.keys(activeFilters).length > 0;
+  const totalFilteredItems = searchQuery || hasActiveFilters ? filteredCampaigns.length : totalItems;
 
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentData = filteredCampaigns.slice(startIndex, startIndex + itemsPerPage);
@@ -117,10 +122,13 @@ const View: React.FC = () => {
       try {
         const response = await apiClient.get<any[]>('/industries/list');
         const industries = Array.isArray(response.data) ? response.data : [];
-        const options = industries.map((industry: any) => ({
-          value: String(industry.name ?? industry.label ?? industry),
-          label: String(industry.name ?? industry.label ?? industry),
-        }));
+        const options = industries.map((industry: any) => {
+          const display = industry.name ?? industry.label ?? industry.value ?? industry;
+          return {
+            value: String(display),
+            label: String(display),
+          };
+        });
         setIndustryOptions(options);
       } catch (error) {
         console.error('Failed to fetch industries:', error);
@@ -128,6 +136,27 @@ const View: React.FC = () => {
       }
     };
     fetchIndustries();
+  }, []);
+
+  useEffect(() => {
+    const fetchMediaTypes = async () => {
+      try {
+        const response = await apiClient.get<any[]>('/media-types');
+        const mediaTypes = Array.isArray(response.data) ? response.data : [];
+        const options = mediaTypes.map((item: any) => {
+          const display = item.name ?? item.label ?? item.type ?? item.value ?? item;
+          return {
+            value: String(display),
+            label: String(display),
+          };
+        });
+        setMediaTypeOptions(options);
+      } catch (error) {
+        console.error('Failed to fetch media types:', error);
+        setMediaTypeOptions([]);
+      }
+    };
+    fetchMediaTypes();
   }, []);
 
   const handleEdit = (id: string) => navigate(`/pre-lead/view/${encodeURIComponent(id)}/edit`);
@@ -142,9 +171,9 @@ const View: React.FC = () => {
 
   const handleSave = async (data: any) => {
     try {
-      const newCampaign = await createMissCampaign(data);
-      setCampaigns(prev => [newCampaign, ...prev]);
+      await createMissCampaign(data);
       setCurrentPage(1);
+      await fetchCampaigns(1);
       try { SweetAlert.showCreateSuccess(); } catch {
         //no need to action
       }
@@ -221,7 +250,7 @@ const View: React.FC = () => {
 
   const handleSaveEdited = async (updated: Record<string, any>) => {
     try {
-      await updateMissCampaign(updated.id, updated);
+      await updateMissCampaignWithForm(updated.id, updated);
       await fetchCampaigns(currentPage); // Refresh table from server
       try { SweetAlert.showUpdateSuccess(); } catch {
         // no need to action
@@ -263,12 +292,6 @@ const View: React.FC = () => {
     return values;
   };
 
-  const mediaTypeOptions = [
-    { value: 'OOH', label: 'OOH' },
-    { value: 'DOOH', label: 'DOOH' },
-    { value: 'CTV', label: 'CTV' },
-  ];
-
   const filterOptions = [
     {
       key: 'industry',
@@ -288,7 +311,7 @@ const View: React.FC = () => {
     {
       key: 'mediaType',
       label: 'Media Type',
-      options: mediaTypeOptions
+      options: mediaTypeOptions.length > 0 ? mediaTypeOptions : getUniqueValues('mediaType').map(value => ({ value, label: value }))
     }
   ].filter(option => option.options.length > 0); // Only show filters that have options
 
@@ -373,7 +396,7 @@ const View: React.FC = () => {
 
 
                 {/* Details Grid */}
-                <div className="lg:grid lg:grid-cols-2 gap-4">
+                <div className="xl:grid xl:grid-cols-2 gap-4">
                   <div className='flex bg-gray-100 p-4 rounded-lg mb-3'>
                     <div className="text-sm text-gray-800 font-semibold min-w-[100px]">ID : </div>
                     <div className="text-sm text-gray-600">{viewItem.id}</div>
@@ -396,10 +419,6 @@ const View: React.FC = () => {
                     <div className="text-sm text-gray-600">{viewItem.mediaType || '-'}</div>
                   </div>
                   <div className='flex bg-gray-100 p-3 rounded-lg mb-3'>
-                    <div className="text-sm text-gray-800 font-semibold min-w-[100px]">Pincode : </div>
-                    <div className="text-sm text-gray-600">{viewItem.pincode || '-'}</div>
-                  </div>
-                  <div className='flex bg-gray-100 p-3 rounded-lg mb-3'>
                     <div className="text-sm text-gray-800 font-semibold min-w-[100px]">City : </div>
                     <div className="text-sm text-gray-600">{viewItem.city || '-'}</div>
                   </div>
@@ -407,7 +426,7 @@ const View: React.FC = () => {
                     <div className="text-sm text-gray-800 font-semibold min-w-[100px]">State : </div>
                     <div className="text-sm text-gray-600">{viewItem.state || '-'}</div>
                   </div>
-                  <div className='flex bg-gray-100 p-3 rounded-lg mb-3 col-span-2'>
+                  <div className='flex bg-gray-100 p-3 rounded-lg mb-3'>
                     <div className="text-sm text-gray-800 font-semibold min-w-[100px]">Country : </div>
                     <div className="text-sm text-gray-600">{viewItem.country || '-'}</div>
                   </div>
@@ -461,11 +480,10 @@ const View: React.FC = () => {
                   { key: 'productName', header: 'Product Name', render: (it: MissCampaign) => it.productName },
                   { key: 'source', header: 'Source', render: (it: MissCampaign) => it.source },
                   { key: 'subSource', header: 'Sub Source', render: (it: MissCampaign) => it.subSource },
-                  { key: 'pincode', header: 'Pincode', render: (it: MissCampaign) => it.pincode },
                   { key: 'city', header: 'City', render: (it: MissCampaign) => it.city },
                   { key: 'state', header: 'State', render: (it: MissCampaign) => it.state },
                   { key: 'country', header: 'Country', render: (it: MissCampaign) => it.country },
-                  { key: 'mediaType', header: 'Media Type', render: (it: MissCampaign) => it.mediaType || it.media },
+                  { key: 'mediaType', header: 'Media Type', render: (it: MissCampaign) => it.mediaType || '-' },
                   {
                     key: 'proof',
                     header: 'Proof',
