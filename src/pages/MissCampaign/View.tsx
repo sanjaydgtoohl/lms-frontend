@@ -165,16 +165,13 @@ const View: React.FC = () => {
 
   const handleCreate = () => navigate('/pre-lead/create');
 
-  const handleSave = async (data: any) => {
+  const handleSave = async () => {
     try {
-      await createMissCampaign(data);
       setCurrentPage(1);
       await fetchCampaigns(1);
-      try { SweetAlert.showCreateSuccess(); } catch {
-        //no need to action
-      }
+      SweetAlert.showCreateSuccess();
     } catch (error) {
-      console.error('Failed to create campaign:', error);
+      console.error('Failed to refresh campaigns:', error);
     }
   };
 
@@ -244,15 +241,12 @@ const View: React.FC = () => {
 
   // Tooltip helpers removed - tooltip functionality not currently in use
 
-  const handleSaveEdited = async (updated: Record<string, any>) => {
+  const handleSaveEdited = async () => {
     try {
-      await updateMissCampaignWithForm(updated.id, updated);
-      await fetchCampaigns(currentPage); // Refresh table from server
-      try { SweetAlert.showUpdateSuccess(); } catch {
-        // no need to action
-      }
+      await fetchCampaigns(currentPage);
+      SweetAlert.showUpdateSuccess();
     } catch (error) {
-      console.error('Failed to update campaign:', error);
+      console.error('Failed to refresh campaigns:', error);
     }
   };
 

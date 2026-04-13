@@ -671,7 +671,21 @@ const Create: React.FC<CreateProps> = ({
                 <SelectField
                   name="country"
                   value={formData.country}
-                  onChange={(v) => { setFormData(prev => ({ ...prev, country: typeof v === 'string' ? v : v[0] ?? '' })); setErrors(prev => ({ ...prev, country: '' })); }}
+                  onChange={(v) => {
+                    const country = typeof v === 'string' ? v : v[0] ?? '';
+                    setFormData(prev => ({
+                      ...prev,
+                      country,
+                      state: '',
+                      city: ''
+                    }));
+                    setErrors(prev => ({
+                      ...prev,
+                      country: '',
+                      state: '',
+                      city: ''
+                    }));
+                  }}
                   options={countryOptions.map(c => ({ value: String(c.id), label: c.name }))}
                   placeholder={countryLoading ? 'Loading countries...' : 'Search or select country'}
                   inputClassName={errors.country ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}
@@ -697,7 +711,19 @@ const Create: React.FC<CreateProps> = ({
                 <SelectField
                   name="state"
                   value={formData.state}
-                  onChange={(v) => { setFormData(prev => ({ ...prev, state: typeof v === 'string' ? v : v[0] ?? '' })); setErrors(prev => ({ ...prev, state: '' })); }}
+                  onChange={(v) => {
+                    const state = typeof v === 'string' ? v : v[0] ?? '';
+                    setFormData(prev => ({
+                      ...prev,
+                      state,
+                      city: ''
+                    }));
+                    setErrors(prev => ({
+                      ...prev,
+                      state: '',
+                      city: ''
+                    }));
+                  }}
                   options={stateOptions.map(s => ({ value: String(s.id), label: s.name }))}
                   placeholder={stateLoading ? 'Loading states...' : (formData.country ? 'Search or select state' : 'Select a country first')}
                   inputClassName={errors.state ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}
