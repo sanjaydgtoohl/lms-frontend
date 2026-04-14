@@ -64,9 +64,10 @@ const View: React.FC = () => {
   }, [imageModalOpen]);
 
   const totalFilteredItems = totalItems;
+  const shouldFetchAll = Boolean(searchQuery.trim()) || Object.keys(activeFilters).length > 0;
 
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentData = campaigns.slice(startIndex, startIndex + itemsPerPage);
+  const currentData = shouldFetchAll ? campaigns.slice(startIndex, startIndex + itemsPerPage) : campaigns;
 
   const navigate = useNavigate();
   const params = useParams();
@@ -309,12 +310,12 @@ const View: React.FC = () => {
     }
   };
 
-  const shouldFetchAll = Boolean(searchQuery.trim()) || Object.keys(activeFilters).length > 0;
-
-  // Fetch campaigns on mount and when search/filter changes
+  // Fetch campaigns on mount and when search/filter changes in all-data mode
   useEffect(() => {
-    fetchCampaigns(1, searchQuery, activeFilters);
-  }, [searchQuery, activeFilters, fetchCampaigns]);
+    if (shouldFetchAll) {
+      fetchCampaigns(1, searchQuery, activeFilters);
+    }
+  }, [shouldFetchAll, searchQuery, activeFilters, fetchCampaigns]);
 
   // Fetch only non-filtered paginated pages when page changes
   useEffect(() => {
