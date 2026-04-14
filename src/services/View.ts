@@ -6,11 +6,14 @@ export interface MissCampaign {
   brandName: string;
   productName: string;
   source: string;
+  sourceId?: string;
   subSource: string;
   proof: string;
   dateTime: string;
   industry?: string;
+  industryId?: string;
   mediaType?: string;
+  mediaTypeId?: string;
   pincode?: string;
   city?: string;
   state?: string;
@@ -41,6 +44,7 @@ async function handleResponse<T>(res: any): Promise<T> {
 export type MissCampaignListResponse = {
   data: MissCampaign[];
   meta?: {
+    total?: number;
     pagination?: {
       current_page: number;
       per_page: number;
@@ -58,14 +62,21 @@ export async function listMissCampaigns(page = 1, perPage = 10, search?: string,
   params.set('per_page', String(perPage));
   if (search && String(search).trim()) params.set('search', String(search).trim());
   if (filters) {
-    const keyMap: Record<string, string> = {
-      mediaType: 'media_type',
-    };
-
     Object.entries(filters).forEach(([key, value]) => {
-      if (value && value.trim()) {
-        const apiKey = keyMap[key] ?? key;
-        params.set(apiKey, value.trim());
+      if (!value || !value.trim()) return;
+      const trimmed = value.trim();
+
+      if (key === 'industry_id') {
+        params.set('industry_id', trimmed);
+        params.set('industry', trimmed);
+      } else if (key === 'lead_source_id') {
+        params.set('lead_source_id', trimmed);
+        params.set('source', trimmed);
+      } else if (key === 'media_type') {
+        params.set('media_type', trimmed);
+        params.set('media_type_id', trimmed);
+      } else {
+        params.set(key, trimmed);
       }
     });
   }
@@ -96,6 +107,7 @@ export async function listMissCampaigns(page = 1, perPage = 10, search?: string,
     const proof = it.image_url ?? it.image_path ?? it.proof ?? '';
     const dateTime = it.created_at ?? it.date_time ?? it.dateTime ?? '';
     const industry = it.industry?.name ?? it.industry ?? it.industry_name ?? '';
+    const industryId = it.industry?.id ?? it.industry_id ?? it.industryId ?? it.industry?.value ?? '';
     const pincode = it.pincode ?? it.pin_code ?? it.zip_code ?? it.postal_code ?? it.zipcode ?? '';
     const city = it.city?.name ?? it.city ?? '';
     const state = it.state?.name ?? it.state ?? '';
@@ -116,6 +128,8 @@ export async function listMissCampaigns(page = 1, perPage = 10, search?: string,
       return '';
     };
 
+    const sourceId = it.lead_source?.id ?? it.lead_source_id ?? it.source_id ?? it.sourceId ?? it.lead_source?.value ?? '';
+    const mediaTypeId = it.media?.id ?? it.media_type_id ?? it.mediaTypeId ?? it.media_type?.id ?? '';
     const mediaType = normalizeNestedValue(
       it.media ?? it.media_type ?? it.mediaType ?? it.media_type_name ?? it.mediaTypeName ?? it.media_type_id
     );
@@ -125,15 +139,18 @@ export async function listMissCampaigns(page = 1, perPage = 10, search?: string,
       brandName,
       productName,
       source,
+      sourceId,
       subSource,
       proof,
       dateTime,
       industry,
+      industryId,
       pincode,
       city,
       state,
       country,
       mediaType,
+      mediaTypeId,
     } as MissCampaign;
   });
 

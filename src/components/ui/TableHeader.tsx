@@ -14,30 +14,30 @@ interface PageHeaderProps {
     children?: React.ReactNode;
     filterOptions?: FilterOption[];
     onFilterChange?: (filters: Record<string, string>) => void;
+    appliedFilters?: Record<string, string>;
 }
 
 const TableHeader: React.FC<PageHeaderProps> = ({
     title,
     children,
     filterOptions = [],
-    onFilterChange
+    onFilterChange,
+    appliedFilters = {}
 }) => {
     const filterRef = useRef<HTMLDivElement>(null);
     const [showFilters, setShowFilters] = useState(false);
-    const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
+    
     const handleFilterChange = (key: string, value: string) => {
-        const newFilters = { ...activeFilters };
+        const newFilters = { ...appliedFilters };
         if (value === '') {
             delete newFilters[key];
         } else {
             newFilters[key] = value;
         }
-        setActiveFilters(newFilters);
         onFilterChange?.(newFilters);
     };
 
     const clearFilters = () => {
-        setActiveFilters({});
         onFilterChange?.({});
     };
 
@@ -58,7 +58,7 @@ const TableHeader: React.FC<PageHeaderProps> = ({
         };
     }, []);
 
-    const hasActiveFilters = Object.keys(activeFilters).length > 0;
+    const hasActiveFilters = Object.keys(appliedFilters).length > 0;
 
     return (
         <div className="bg-gray-50 px-3 md:px-5 py-3 md:py-4 border-b border-gray-200">
@@ -81,7 +81,7 @@ const TableHeader: React.FC<PageHeaderProps> = ({
                                 Filters
                                 {hasActiveFilters && (
                                     <span className="bg-orange-600 text-white text-xs w-5 leading-none flex justify-center items-center aspect-square rounded-full">
-                                        {Object.keys(activeFilters).length}
+                                        {Object.keys(appliedFilters).length}
                                     </span>
                                 )}
                             </button>
@@ -112,7 +112,7 @@ const TableHeader: React.FC<PageHeaderProps> = ({
                                                     <div className="relative">
                                                         <SelectField
                                                             name={filter.key}
-                                                            value={activeFilters[filter.key] || ''}
+                                                            value={appliedFilters[filter.key] || ''}
                                                             onChange={(value) =>
                                                                 handleFilterChange(filter.key, String(value))
                                                             }
@@ -124,7 +124,7 @@ const TableHeader: React.FC<PageHeaderProps> = ({
                                                         />
 
                                                         {/* ✅ Remove single filter icon */}
-                                                        {activeFilters[filter.key] && (
+                                                        {appliedFilters[filter.key] && (
                                                             <button
                                                                 onClick={() => handleFilterChange(filter.key, '')}
                                                                 className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500"

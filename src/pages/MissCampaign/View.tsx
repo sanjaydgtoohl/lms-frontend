@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Pagination from '../../components/ui/Pagination';
@@ -33,6 +33,7 @@ const View: React.FC = () => {
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
   const [industryOptions, setIndustryOptions] = useState<{ value: string; label: string }[]>([]);
   const [mediaTypeOptions, setMediaTypeOptions] = useState<{ value: string; label: string }[]>([]);
+  const [sourceOptions, setSourceOptions] = useState<{ value: string; label: string }[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [viewItem, setViewItem] = useState<MissCampaign | null>(null);
   const [editItem, setEditItem] = useState<MissCampaign | null>(null);
@@ -62,30 +63,87 @@ const View: React.FC = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, [imageModalOpen]);
 
-  // No need for client-side filtering anymore
   const totalFilteredItems = totalItems;
 
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentData = campaigns; // campaigns is already paginated from server
+  const currentData = campaigns.slice(startIndex, startIndex + itemsPerPage);
 
   const navigate = useNavigate();
   const params = useParams();
   const location = useLocation();
 
+  const normalizeString = (value?: string | null): string => String(value ?? '').trim().toLowerCase();
+
+  const matchesFilters = useCallback((item: MissCampaign, filters?: Record<string, string>) => {
+    if (!filters) return true;
+
+    if (filters.industry_id) {
+      const selected = normalizeString(filters.industry_id);
+      const itemIndustry = normalizeString(item.industry);
+      const itemIndustryId = normalizeString((item as any).industryId);
+      if (itemIndustry !== selected && itemIndustryId !== selected) return false;
+    }
+
+    if (filters.lead_source_id) {
+      const selected = normalizeString(filters.lead_source_id);
+      const itemSource = normalizeString(item.source);
+      const itemSourceId = normalizeString((item as any).sourceId);
+      if (itemSource !== selected && itemSourceId !== selected) return false;
+    }
+
+    if (filters.media_type) {
+      const selected = normalizeString(filters.media_type);
+      const itemMediaType = normalizeString(item.mediaType);
+      const itemMediaTypeId = normalizeString((item as any).mediaTypeId);
+      if (itemMediaType !== selected && itemMediaTypeId !== selected) return false;
+    }
+
+    return true;
+  }, []);
+
   // Fetch campaigns from API with search and filters
-  const fetchCampaigns = async (page: number, search?: string, filters?: Record<string, string>) => {
+  const fetchCampaigns = useCallback(async (pageNum: number, search?: string, filters?: Record<string, string>) => {
     try {
       setLoading(true);
-      const response = await listMissCampaigns(page, itemsPerPage, search, filters);
-      setCampaigns(response.data || []);
-      setTotalItems(response.meta?.pagination?.total || 0);
+      const shouldFetchAll = Boolean(search?.trim()) || Boolean(filters && Object.keys(filters).length > 0);
+      const fetchPerPage = shouldFetchAll ? 100 : itemsPerPage;
+      const pageToFetch = shouldFetchAll ? 1 : pageNum;
+
+      const firstResponse = await listMissCampaigns(pageToFetch, fetchPerPage, search, filters);
+      let allItems = firstResponse.data || [];
+
+      if (shouldFetchAll) {
+        const lastPage = firstResponse.meta?.pagination?.last_page ?? 1;
+        if (lastPage > 1) {
+          const fetchPromises = [];
+          for (let p = 2; p <= lastPage; p += 1) {
+            fetchPromises.push(listMissCampaigns(p, fetchPerPage, search, filters));
+          }
+          const responses = await Promise.all(fetchPromises);
+          responses.forEach((resp) => {
+            allItems = allItems.concat(resp.data || []);
+          });
+        }
+
+        if (filters && Object.keys(filters).length > 0) {
+          allItems = allItems.filter((item) => matchesFilters(item, filters));
+        }
+
+        setCampaigns(allItems);
+        setTotalItems(allItems.length);
+      } else {
+        setCampaigns(allItems);
+        const totalCount = Number(firstResponse.meta?.pagination?.total ?? firstResponse.meta?.total ?? allItems.length ?? 0);
+        setTotalItems(totalCount);
+      }
     } catch (error) {
       console.error('Failed to fetch campaigns:', error);
       setCampaigns([]);
+      setTotalItems(0);
     } finally {
       setLoading(false);
     }
-  };
+  }, [matchesFilters]);
 
   useEffect(() => {
     const fetchIndustries = async () => {
@@ -93,10 +151,12 @@ const View: React.FC = () => {
         const response = await apiClient.get<any[]>('/industries/list');
         const industries = Array.isArray(response.data) ? response.data : [];
         const options = industries.map((industry: any) => {
-          const display = industry.name ?? industry.label ?? industry.value ?? industry;
+          const rawId = industry.id ?? industry.value ?? industry.industry_id;
+          const id = rawId !== undefined && rawId !== null ? String(rawId) : '';
+          const name = String(industry.name ?? industry.label ?? industry.value ?? industry.industry ?? industry);
           return {
-            value: String(display),
-            label: String(display),
+            value: id || name,
+            label: name,
           };
         });
         setIndustryOptions(options);
@@ -109,15 +169,40 @@ const View: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    const fetchSources = async () => {
+      try {
+        const response = await apiClient.get<any[]>('/lead-sources');
+        const sources = Array.isArray(response.data) ? response.data : [];
+        const options = sources.map((source: any) => {
+          const rawId = source.id ?? source.value ?? source.source_id ?? source.lead_source_id;
+          const id = rawId !== undefined && rawId !== null ? String(rawId) : '';
+          const name = String(source.name ?? source.label ?? source.source ?? source.value ?? '');
+          return {
+            value: id || name,
+            label: name,
+          };
+        });
+        setSourceOptions(options);
+      } catch (error) {
+        console.error('Failed to fetch lead sources:', error);
+        setSourceOptions([]);
+      }
+    };
+    fetchSources();
+  }, []);
+
+  useEffect(() => {
     const fetchMediaTypes = async () => {
       try {
         const response = await apiClient.get<any[]>('/media-types');
         const mediaTypes = Array.isArray(response.data) ? response.data : [];
         const options = mediaTypes.map((item: any) => {
-          const display = item.name ?? item.label ?? item.type ?? item.value ?? item;
+          const rawId = item.id ?? item.value;
+          const id = rawId !== undefined && rawId !== null ? String(rawId) : '';
+          const name = String(item.name ?? item.label ?? item.type ?? '');
           return {
-            value: String(display),
-            label: String(display),
+            value: id || name,
+            label: name,
           };
         });
         setMediaTypeOptions(options);
@@ -217,17 +302,26 @@ const View: React.FC = () => {
 
   const handleSaveEdited = async () => {
     try {
-      await fetchCampaigns(currentPage, searchQuery, activeFilters);
+      await fetchCampaigns(1, searchQuery, activeFilters);
       SweetAlert.showUpdateSuccess();
     } catch (error) {
       console.error('Failed to refresh campaigns:', error);
     }
   };
 
-  // Fetch campaigns on mount and when page/search/filters change
+  const shouldFetchAll = Boolean(searchQuery.trim()) || Object.keys(activeFilters).length > 0;
+
+  // Fetch campaigns on mount and when search/filter changes
   useEffect(() => {
-    fetchCampaigns(currentPage, searchQuery, activeFilters);
-  }, [currentPage, searchQuery, activeFilters]);
+    fetchCampaigns(1, searchQuery, activeFilters);
+  }, [searchQuery, activeFilters, fetchCampaigns]);
+
+  // Fetch only non-filtered paginated pages when page changes
+  useEffect(() => {
+    if (!shouldFetchAll) {
+      fetchCampaigns(currentPage, searchQuery, activeFilters);
+    }
+  }, [currentPage, shouldFetchAll, fetchCampaigns, searchQuery, activeFilters]);
 
   // Listen for external updates (create/edit from other routes) and refresh list
   useEffect(() => {
@@ -239,43 +333,28 @@ const View: React.FC = () => {
 
     window.addEventListener('missCampaigns:update', onExternalUpdate);
     return () => window.removeEventListener('missCampaigns:update', onExternalUpdate);
-  }, [searchQuery, activeFilters]);
+  }, [searchQuery, activeFilters, fetchCampaigns]);
 
   const handleFilterChange = (filters: Record<string, string>) => {
     setActiveFilters(filters);
     setCurrentPage(1); // Reset to first page when filtering
   };
 
-  // Get unique values for filter options
-  const getUniqueValues = (key: keyof MissCampaign) => {
-    const values = campaigns
-      .map(c => c[key])
-      .filter((value): value is string => value !== null && value !== undefined && value !== '')
-      .filter((value, index, arr) => arr.indexOf(value) === index)
-      .sort();
-    return values;
-  };
-
   const filterOptions = [
     {
-      key: 'industry',
+      key: 'industry_id',
       label: 'Industry',
-      options: industryOptions.length > 0
-        ? industryOptions
-        : getUniqueValues('industry').map(value => ({ value, label: value }))
+      options: industryOptions
     },
     {
-      key: 'source',
+      key: 'lead_source_id',
       label: 'Source',
-      options: getUniqueValues('source').map(value => ({
-        value,
-        label: value
-      }))
+      options: sourceOptions
     },
     {
-      key: 'mediaType',
+      key: 'media_type',
       label: 'Media Type',
-      options: mediaTypeOptions.length > 0 ? mediaTypeOptions : getUniqueValues('mediaType').map(value => ({ value, label: value }))
+      options: mediaTypeOptions
     }
   ].filter(option => option.options.length > 0); // Only show filters that have options
 
@@ -292,7 +371,7 @@ const View: React.FC = () => {
         // no need to action
       }
     }
-  }, [location.state, location.pathname, navigate, searchQuery, activeFilters]); // ✅ added location.pathname
+  }, [location.state, location.pathname, navigate, searchQuery, activeFilters, fetchCampaigns]);
 
   const handlePageChange = (page: number) => setCurrentPage(page);
 
@@ -425,6 +504,7 @@ const View: React.FC = () => {
               title="Pre Lead"
               filterOptions={filterOptions}
               onFilterChange={handleFilterChange}
+              appliedFilters={activeFilters}
             >
               <SearchBar delay={0} placeholder="Search Pre Lead" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
             </TableHeader>
