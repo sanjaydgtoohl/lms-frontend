@@ -58,9 +58,14 @@ export async function listMissCampaigns(page = 1, perPage = 10, search?: string,
   params.set('per_page', String(perPage));
   if (search && String(search).trim()) params.set('search', String(search).trim());
   if (filters) {
+    const keyMap: Record<string, string> = {
+      mediaType: 'media_type',
+    };
+
     Object.entries(filters).forEach(([key, value]) => {
       if (value && value.trim()) {
-        params.set(key, value.trim());
+        const apiKey = keyMap[key] ?? key;
+        params.set(apiKey, value.trim());
       }
     });
   }
