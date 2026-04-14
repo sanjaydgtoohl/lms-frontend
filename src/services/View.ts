@@ -52,11 +52,18 @@ export type MissCampaignListResponse = {
   }
 };
 
-export async function listMissCampaigns(page = 1, perPage = 10, search?: string): Promise<MissCampaignListResponse> {
+export async function listMissCampaigns(page = 1, perPage = 10, search?: string, filters?: Record<string, string>): Promise<MissCampaignListResponse> {
   const params = new URLSearchParams();
   params.set('page', String(page));
   params.set('per_page', String(perPage));
   if (search && String(search).trim()) params.set('search', String(search).trim());
+  if (filters) {
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value && value.trim()) {
+        params.set(key, value.trim());
+      }
+    });
+  }
 
   const res = await apiClient.get<MissCampaign[]>(`${ENDPOINTS.LIST}?${params.toString()}`);
   const items = (res.data || []).map((it: any, idx: number) => {

@@ -185,8 +185,9 @@ export async function updateMissCampaignWithForm(id: string | number, payload: C
     });
 
     if (payload.status !== undefined) form.append('status', String(payload.status));
+    if (!form.has('_method')) form.append('_method', 'PUT');
 
-    const res = await apiClient.put(ENDPOINTS.UPDATE(id), form);
+    const res = await apiClient.post(ENDPOINTS.UPDATE(id), form);
     return handleResponse<any>(res);
   } catch (error) {
     try { handleApiError(error as Error); } catch {

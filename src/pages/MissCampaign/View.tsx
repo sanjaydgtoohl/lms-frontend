@@ -62,46 +62,21 @@ const View: React.FC = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, [imageModalOpen]);
 
-  const filteredCampaigns = campaigns.filter(c => {
-    const brand = (c.brandName || '').toLowerCase();
-    const product = (c.productName || '').toLowerCase();
-    const q = searchQuery.toLowerCase().trim();
-
-    if (q && !brand.startsWith(q) && !product.includes(q)) {
-      return false;
-    }
-
-    const industryValue = String(c.industry ?? '').toLowerCase();
-    const sourceValue = String(c.source ?? '').toLowerCase();
-    const mediaTypeValue = String(c.mediaType ?? '').toLowerCase();
-
-    if (activeFilters.industry && industryValue !== activeFilters.industry.toLowerCase()) return false;
-    if (activeFilters.source && sourceValue !== activeFilters.source.toLowerCase()) return false;
-    if (activeFilters.mediaType && mediaTypeValue !== activeFilters.mediaType.toLowerCase()) return false;
-
-    return true;
-  });
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, activeFilters]);
-
-  // When searching or filtering, recalculate pagination based on filtered results
-  const hasActiveFilters = Object.keys(activeFilters).length > 0;
-  const totalFilteredItems = searchQuery || hasActiveFilters ? filteredCampaigns.length : totalItems;
+  // No need for client-side filtering anymore
+  const totalFilteredItems = totalItems;
 
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentData = filteredCampaigns.slice(startIndex, startIndex + itemsPerPage);
+  const currentData = campaigns; // campaigns is already paginated from server
 
   const navigate = useNavigate();
   const params = useParams();
   const location = useLocation();
 
-  // Fetch campaigns from API (without search - we do client-side filtering)
-  const fetchCampaigns = async (page: number) => {
+  // Fetch campaigns from API with search and filters
+  const fetchCampaigns = async (page: number, search?: string, filters?: Record<string, string>) => {
     try {
       setLoading(true);
-      const response = await listMissCampaigns(page, itemsPerPage);
+      const response = await listMissCampaigns(page, itemsPerPage, search, filters);
       setCampaigns(response.data || []);
       setTotalItems(response.meta?.pagination?.total || 0);
     } catch (error) {
@@ -167,7 +142,7 @@ const View: React.FC = () => {
   const handleSave = async () => {
     try {
       setCurrentPage(1);
-      await fetchCampaigns(1);
+      await fetchCampaigns(1, searchQuery, activeFilters);
       SweetAlert.showCreateSuccess();
     } catch (error) {
       console.error('Failed to refresh campaigns:', error);
@@ -182,7 +157,7 @@ const View: React.FC = () => {
       try { SweetAlert.showDeleteSuccess(); } catch {
         //no need to action
       }
-      await fetchCampaigns(currentPage); // Refresh table from server
+      await fetchCampaigns(currentPage, searchQuery, activeFilters); // Refresh table from server
     } catch (error) {
       console.error('Failed to delete campaign:', error);
       try { SweetAlert.showError((error as any)?.message || 'Failed to delete campaign'); } catch {
@@ -242,29 +217,29 @@ const View: React.FC = () => {
 
   const handleSaveEdited = async () => {
     try {
-      await fetchCampaigns(currentPage);
+      await fetchCampaigns(currentPage, searchQuery, activeFilters);
       SweetAlert.showUpdateSuccess();
     } catch (error) {
       console.error('Failed to refresh campaigns:', error);
     }
   };
 
-  // Fetch campaigns on mount and when page changes
+  // Fetch campaigns on mount and when page/search/filters change
   useEffect(() => {
-    fetchCampaigns(currentPage);
-  }, [currentPage]);
+    fetchCampaigns(currentPage, searchQuery, activeFilters);
+  }, [currentPage, searchQuery, activeFilters]);
 
   // Listen for external updates (create/edit from other routes) and refresh list
   useEffect(() => {
     const onExternalUpdate = () => {
       // go to first page and refresh from server
       setCurrentPage(1);
-      fetchCampaigns(1);
+      fetchCampaigns(1, searchQuery, activeFilters);
     };
 
     window.addEventListener('missCampaigns:update', onExternalUpdate);
     return () => window.removeEventListener('missCampaigns:update', onExternalUpdate);
-  }, []);
+  }, [searchQuery, activeFilters]);
 
   const handleFilterChange = (filters: Record<string, string>) => {
     setActiveFilters(filters);
@@ -309,7 +284,7 @@ const View: React.FC = () => {
     const s = (location.state as any) || {};
     if (s.refreshedAt) {
       setCurrentPage(1);
-      fetchCampaigns(1);
+      fetchCampaigns(1, searchQuery, activeFilters);
       // clear the navigation state so this runs only once
       try {
         navigate(location.pathname, { replace: true, state: {} });
@@ -317,7 +292,7 @@ const View: React.FC = () => {
         // no need to action
       }
     }
-  }, [location.state, location.pathname, navigate]); // ✅ added location.pathname
+  }, [location.state, location.pathname, navigate, searchQuery, activeFilters]); // ✅ added location.pathname
 
   const handlePageChange = (page: number) => setCurrentPage(page);
 

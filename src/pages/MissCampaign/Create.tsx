@@ -309,7 +309,13 @@ const Create: React.FC<CreateProps> = ({
         const subSourceId = initialData.lead_sub_source_id || initialData.lead_sub_source?.id || initialData.sub_source_id || initialData.subSource;
         const industryId = initialData.industry?.id || initialData.industry_id || initialData.industry;
 
-        let countryId: any = initialData.country?.id || initialData.country_id || initialData.country;
+        let resolvedIndustryId = industryId;
+        if (industryOptions.length > 0 && industryId && typeof industryId === 'string') {
+          const found = industryOptions.find(opt => opt.name.toLowerCase() === industryId.toLowerCase() || opt.id === industryId);
+          if (found) resolvedIndustryId = found.id;
+        }
+
+        const countryId: any = initialData.country?.id || initialData.country_id || initialData.country;
         let stateId: any = initialData.state?.id || initialData.state_id || initialData.state;
         let cityId: any = initialData.city?.id || initialData.city_id || initialData.city;
 
@@ -354,18 +360,24 @@ const Create: React.FC<CreateProps> = ({
           ''
         );
 
+        let mediaId = mediaVal;
+        if (mediaTypeOptions.length > 0 && mediaVal) {
+          const found = mediaTypeOptions.find(opt => opt.label.toLowerCase() === mediaVal.toLowerCase() || opt.value === mediaVal);
+          if (found) mediaId = found.value;
+        }
+
         // ✅ FINAL setFormData (only after resolving IDs)
         setFormData(prev => ({
           ...prev,
           brandName: String(brandId ?? prev.brandName ?? ''),
           source: String(sourceId ?? prev.source ?? ''),
           subSource: String(subSourceId ?? prev.subSource ?? ''),
-          industry: String(industryId ?? prev.industry ?? ''),
+          industry: String(resolvedIndustryId ?? prev.industry ?? ''),
           productName: String(initialData.name ?? initialData.productName ?? prev.productName ?? ''),
           country: String(countryId ?? prev.country ?? ''),
           state: String(stateId ?? prev.state ?? ''),
           city: String(cityId ?? prev.city ?? ''),
-          mediaType: mediaVal || String(prev.mediaType ?? ''),
+          mediaType: mediaId || String(prev.mediaType ?? ''),
           image: null,
           image_url: initialData.image_url || initialData.image_path || '',
           remove_image: false,
@@ -403,7 +415,7 @@ const Create: React.FC<CreateProps> = ({
     };
 
     resolveLocationIds();
-  }, [mode, initialData]);
+  }, [mode, initialData, industryOptions, mediaTypeOptions]);
 
   useEffect(() => {
     // Do not blindly merge raw API `initialData` into form state.
@@ -459,10 +471,8 @@ const Create: React.FC<CreateProps> = ({
     setError(null);
     setSaving(true);
 
-    const selectedMediaTypeOption = mediaTypeOptions.find(opt => String(opt.value) === String(formData.mediaType));
     const payload: Record<string, any> = {
       name: formData.productName,
-      productName: formData.productName,
       brand_id: formData.brandName,
       lead_source_id: formData.source,
       lead_sub_source_id: formData.subSource,
@@ -470,9 +480,7 @@ const Create: React.FC<CreateProps> = ({
       country_id: formData.country,
       state_id: formData.state,
       city_id: formData.city,
-      mediaType: formData.mediaType,
-      media_type_id: selectedMediaTypeOption && !Number.isNaN(Number(selectedMediaTypeOption.value)) ? selectedMediaTypeOption.value : undefined,
-      media_type_name: selectedMediaTypeOption?.label ?? formData.mediaType,
+      media_type: formData.mediaType,
       remove_image: formData.remove_image,
     };
     // Only include image if a new file is selected
