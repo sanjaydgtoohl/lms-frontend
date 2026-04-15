@@ -7,8 +7,10 @@ import { apiClient } from '../../utils/apiClient';
 import { createMissCampaign, updateMissCampaignWithForm } from '../../services/Create';
 import { listBrands } from '../../services/BrandMaster';
 import { listCountries, listStates, listCities } from '../../services/CreateBrandForm';
-// Removed LeadSource import as per request
+import { listAttendees } from '../../services/AllUsers';
+import { fetchCurrentUser } from '../../services/Header';
 import SweetAlert from '../../utils/SweetAlert';
+
 
 interface CreateProps {
   inline?: boolean;
@@ -33,6 +35,8 @@ const Create: React.FC<CreateProps> = ({
     source: '',
     subSource: '',
     industry: '',
+    assignBy: '',
+    assignTo: '',
     productName: '',
     country: '',
     state: '',
@@ -59,22 +63,16 @@ const Create: React.FC<CreateProps> = ({
   const [stateLoading, setStateLoading] = useState(false);
   const [cityOptions, setCityOptions] = useState<{ id: string; name: string }[]>([]);
   const [cityLoading, setCityLoading] = useState(false);
-  const [mediaTypeOptions, setMediaTypeOptions] = useState<{ value: string; label: string }[]>([]);
-  const [mediaTypeLoading, setMediaTypeLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string>(''); // for newly selected image preview
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [modalImageUrl, setModalImageUrl] = useState<string | null>(null);
 
-  const normalizeMediaTypeValue = (raw: any): string => {
-    if (raw === undefined || raw === null) return '';
-    if (typeof raw === 'string' || typeof raw === 'number') return String(raw);
-    if (typeof raw === 'object') {
-      return String(
-        raw.id ?? raw.value ?? raw.media_type ?? raw.mediaType ?? raw.name ?? raw.label ?? raw.type ?? raw.title ?? raw.media ?? ''
-      );
-    }
-    return '';
-  };
+  // Assign To users dropdown state
+  const [assignToOptions, setAssignToOptions] = useState<{ value: string; label: string }[]>([]);
+  const [assignToLoading, setAssignToLoading] = useState(false);
+
+  // Current user state
+  const [currentUser, setCurrentUser] = useState<{ id: string; name: string } | null>(null);
 
   const openImageModal = (url: string) => {
     setModalImageUrl(url);
@@ -161,24 +159,38 @@ const Create: React.FC<CreateProps> = ({
   }, []);
 
   useEffect(() => {
-    const fetchMediaTypes = async () => {
+    const fetchAssignToUsers = async () => {
       try {
-        setMediaTypeLoading(true);
-        const response = await apiClient.get<any[]>('/media-types');
-        const mediaTypes = Array.isArray(response.data) ? response.data : [];
-        const options = mediaTypes.map((item) => ({
-          value: String(item.id ?? item.value ?? item.type ?? item.name ?? item.label ?? item),
-          label: String(item.name ?? item.label ?? item.type ?? item.value ?? item),
+        setAssignToLoading(true);
+        const response = await listAttendees(1, 200);
+        const options = (response.data || []).map((user: any) => ({
+          value: String(user.id),
+          label: String(user.name),
         }));
-        setMediaTypeOptions(options);
+        setAssignToOptions(options);
       } catch (err) {
-        console.error('Failed to fetch media types:', err);
-        setMediaTypeOptions([]);
+        console.error('Failed to fetch assign to users:', err);
+        setAssignToOptions([]);
       } finally {
-        setMediaTypeLoading(false);
+        setAssignToLoading(false);
       }
     };
-    fetchMediaTypes();
+    fetchAssignToUsers();
+  }, []);
+
+  // Fetch current user for assignBy
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const user = await fetchCurrentUser();
+        if (user && user.name) {
+          setCurrentUser({ id: String(user.id), name: user.name });
+        }
+      } catch (err) {
+        console.error('Failed to fetch current user:', err);
+      }
+    };
+    fetchUser();
   }, []);
 
   useEffect(() => {
@@ -353,31 +365,21 @@ const Create: React.FC<CreateProps> = ({
           console.error("Location resolve error:", err);
         }
 
-        const mediaVal = normalizeMediaTypeValue(
-          initialData.media ??
-          initialData.media_type ??
-          initialData.mediaType ??
-          ''
-        );
-
-        let mediaId = mediaVal;
-        if (mediaTypeOptions.length > 0 && mediaVal) {
-          const found = mediaTypeOptions.find(opt => opt.label.toLowerCase() === mediaVal.toLowerCase() || opt.value === mediaVal);
-          if (found) mediaId = found.value;
-        }
-
         // ✅ FINAL setFormData (only after resolving IDs)
+        const assignToValue = initialData.assign_to_name ?? initialData.current_assign_user_name ?? initialData.assigned_user?.name ?? (initialData.current_assign_user && typeof initialData.current_assign_user === 'object' ? initialData.current_assign_user.name : '') ?? (initialData.assigned_user && typeof initialData.assigned_user === 'object' ? initialData.assigned_user.name : '') ?? initialData.assignTo ?? initialData.assign_to ?? '';
+
         setFormData(prev => ({
           ...prev,
           brandName: String(brandId ?? prev.brandName ?? ''),
           source: String(sourceId ?? prev.source ?? ''),
           subSource: String(subSourceId ?? prev.subSource ?? ''),
           industry: String(resolvedIndustryId ?? prev.industry ?? ''),
+          assignBy: mode === 'edit' ? (initialData.assign_by_name ?? initialData.created_by_user?.name ?? initialData.created_by ?? '') : (currentUser?.name ?? ''),
+          assignTo: String(assignToValue ?? prev.assignTo ?? ''),
           productName: String(initialData.name ?? initialData.productName ?? prev.productName ?? ''),
           country: String(countryId ?? prev.country ?? ''),
           state: String(stateId ?? prev.state ?? ''),
           city: String(cityId ?? prev.city ?? ''),
-          mediaType: mediaId || String(prev.mediaType ?? ''),
           image: null,
           image_url: initialData.image_url || initialData.image_path || '',
           remove_image: false,
@@ -415,7 +417,7 @@ const Create: React.FC<CreateProps> = ({
     };
 
     resolveLocationIds();
-  }, [mode, initialData, industryOptions, mediaTypeOptions]);
+  }, [mode, initialData, industryOptions, currentUser]);
 
   useEffect(() => {
     // Do not blindly merge raw API `initialData` into form state.
@@ -477,6 +479,8 @@ const Create: React.FC<CreateProps> = ({
       lead_source_id: formData.source,
       lead_sub_source_id: formData.subSource,
       industry_id: formData.industry,
+      assign_by: currentUser?.id || '',
+      assign_to: formData.assignTo,
       country_id: formData.country,
       state_id: formData.state,
       city_id: formData.city,
@@ -593,7 +597,7 @@ const Create: React.FC<CreateProps> = ({
 
             {/* Sub Source (dropdown) */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
-              <label className="block text-sm font-medium mb-2 flex items-center gap-2">
+              <label className="flex text-sm font-medium mb-2 items-center gap-2">
                 Sub Source <span className="text-[#FF0000]">*</span>
                 {subSourceLoading && <Loader className="w-4 h-4 animate-spin text-blue-500" />}
               </label>
@@ -616,6 +620,24 @@ const Create: React.FC<CreateProps> = ({
                   {errors.subSource}
                 </div>
               )}
+            </div>
+
+            {/* Assign To */}
+            <div className='w-full sm:w-[calc(50%-12px)]'>
+              <label className="block text-sm font-medium mb-2">
+                Assign To
+              </label>
+              <div>
+                <SelectField
+                  name="assignTo"
+                  value={formData.assignTo}
+                  onChange={(v) => { setFormData(prev => ({ ...prev, assignTo: typeof v === 'string' ? v : v[0] ?? '' })); }}
+                  options={assignToOptions}
+                  placeholder={assignToLoading ? 'Loading users...' : 'Select Assign To'}
+                  inputClassName="border-gray-200 focus:ring-blue-500"
+                  disabled={assignToLoading}
+                />
+              </div>
             </div>
 
             {/* Industry */}
@@ -770,42 +792,6 @@ const Create: React.FC<CreateProps> = ({
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                   </svg>
                   {errors.city}
-                </div>
-              )}
-            </div>
-
-            {/* Media */}
-            <div className='w-full sm:w-[calc(50%-12px)]'>
-              <label className="block text-sm font-medium mb-2">
-                Media Type <span className="text-[#FF0000]">*</span>
-              </label>
-              <div>
-                <SelectField
-                  name="mediaType"
-                  value={formData.mediaType}
-                  onChange={(v) => {
-                    setFormData(prev => ({
-                      ...prev,
-                      mediaType: typeof v === 'string' ? v : v[0] ?? ''
-                    }));
-                    setErrors(prev => ({ ...prev, mediaType: '' }));
-                  }}
-                  options={mediaTypeOptions}
-                  placeholder={mediaTypeLoading ? 'Loading media types...' : 'Select media type'}
-                  inputClassName={
-                    errors.mediaType
-                      ? 'border-red-500 bg-red-50 focus:ring-red-500'
-                      : 'border-gray-200 focus:ring-blue-500'
-                  }
-                  disabled={mediaTypeLoading}
-                />
-              </div>
-              {errors.mediaType && (
-                <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
-                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                  {errors.mediaType}
                 </div>
               )}
             </div>

@@ -223,6 +223,14 @@ const View: React.FC = () => {
     setConfirmDeleteLabel(label || id);
   };
 
+  const handleChat = (item: MissCampaign) => {
+    // TODO: Implement chat functionality
+    console.log('Chat clicked for item:', item);
+    // You can navigate to a chat page or open a chat modal here
+    // For now, just showing an alert
+    SweetAlert.showInfo(`Chat with ${item.assignTo || 'user'}`, { title: 'Chat feature coming soon!' });
+  };
+
   const handleCreate = () => navigate('/pre-lead/create');
 
   const handleSave = async () => {
@@ -459,6 +467,14 @@ const View: React.FC = () => {
                     <div className="text-sm text-gray-600">{viewItem.industry || '-'}</div>
                   </div>
                   <div className='flex bg-gray-100 p-3 rounded-lg mb-3'>
+                    <div className="text-sm text-gray-800 font-semibold min-w-[100px]">Assign By : </div>
+                    <div className="text-sm text-gray-600">{viewItem.assignBy || '-'}</div>
+                  </div>
+                  <div className='flex bg-gray-100 p-3 rounded-lg mb-3'>
+                    <div className="text-sm text-gray-800 font-semibold min-w-[100px]">Assign To : </div>
+                    <div className="text-sm text-gray-600">{viewItem.assignTo || '-'}</div>
+                  </div>
+                  <div className='flex bg-gray-100 p-3 rounded-lg mb-3'>
                     <div className="text-sm text-gray-800 font-semibold min-w-[100px]">Media Type : </div>
                     <div className="text-sm text-gray-600">{viewItem.mediaType || '-'}</div>
                   </div>
@@ -522,12 +538,14 @@ const View: React.FC = () => {
                   { key: 'sr', header: 'Id', render: (it: MissCampaign) => `#${it.id}` },
                   { key: 'brandName', header: 'Brand Name', render: (it: MissCampaign) => it.brandName },
                   { key: 'industry', header: 'Industry', render: (it: MissCampaign) => it.industry || '-' },
-                  { key: 'productName', header: 'Product Name', render: (it: MissCampaign) => it.productName },
+                  { key: 'productName', header: 'Product Name ', render: (it: MissCampaign) => it.productName },
                   { key: 'source', header: 'Source', render: (it: MissCampaign) => it.source },
                   { key: 'subSource', header: 'Sub Source', render: (it: MissCampaign) => it.subSource },
                   { key: 'city', header: 'City', render: (it: MissCampaign) => it.city },
                   { key: 'state', header: 'State', render: (it: MissCampaign) => it.state },
                   { key: 'country', header: 'Country', render: (it: MissCampaign) => it.country },
+                  { key: 'assignBy', header: 'Assign By', render: (it: MissCampaign) => it.assignBy || '-' },
+                  { key: 'assignTo', header: 'Assign To', render: (it: MissCampaign) => it.assignTo || '-' },
                   { key: 'mediaType', header: 'Media Type', render: (it: MissCampaign) => it.mediaType || '-' },
                   {
                     key: 'proof',
@@ -552,6 +570,7 @@ const View: React.FC = () => {
                 onEdit={(it: MissCampaign) => handleEdit(it.id)}
                 onView={(it: MissCampaign) => handleView(it.id)}
                 onDelete={(it: MissCampaign) => handleDelete(it.id, it.productName || it.brandName)}
+                onChat={(it: MissCampaign) => handleChat(it)}
                 editPermissionSlug="miss-campaign.edit"
                 viewPermissionSlug="miss-campaign.view"
                 deletePermissionSlug="miss-campaign.delete"

@@ -25,6 +25,7 @@ interface TableProps<T> {
   onView?: (item: T) => void;
   onDelete?: (item: T) => void;
   onUpload?: (item: T) => void;
+  onChat?: (item: T) => void;
   /** Permission slugs for actions */
   editPermissionSlug?: string;
   viewPermissionSlug?: string;
@@ -39,7 +40,7 @@ interface TableProps<T> {
 }
 
 const Table = <T,>(props: TableProps<T>) => {
-  const { data, columns, startIndex = 0, loading = false, onEdit, onView, onDelete, onUpload, editPermissionSlug, viewPermissionSlug, deletePermissionSlug, uploadPermissionSlug, keyExtractor, compact = false, desktopOnMobile = true } = props;
+  const { data, columns, startIndex = 0, loading = false, onEdit, onView, onDelete, onUpload, onChat, editPermissionSlug, viewPermissionSlug, deletePermissionSlug, uploadPermissionSlug, keyExtractor, compact = false, desktopOnMobile = true } = props;
 
   // responsive padding classes used for cells/headers; compact mode reduces padding further
   // small screens get compact padding while larger screens keep desktop spacing
@@ -164,6 +165,7 @@ const Table = <T,>(props: TableProps<T>) => {
                           onView={() => onView?.(item)}
                           {...(onDelete && { onDelete: () => onDelete(item) })}
                           {...(onUpload && { onUpload: () => onUpload(item) })}
+                          {...(onChat && { onChat: () => onChat(item) })}
                           editPermissionSlug={editPermissionSlug}
                           viewPermissionSlug={viewPermissionSlug}
                           deletePermissionSlug={deletePermissionSlug}
@@ -226,6 +228,12 @@ const Table = <T,>(props: TableProps<T>) => {
                   onEdit={() => onEdit?.(item)}
                   onView={() => onView?.(item)}
                   {...(onDelete && { onDelete: () => onDelete(item) })}
+                  {...(onUpload && { onUpload: () => onUpload(item) })}
+                  {...(onChat && { onChat: () => onChat(item) })}
+                  editPermissionSlug={editPermissionSlug}
+                  viewPermissionSlug={viewPermissionSlug}
+                  deletePermissionSlug={deletePermissionSlug}
+                  uploadPermissionSlug={uploadPermissionSlug}
                 />
               </div>
 

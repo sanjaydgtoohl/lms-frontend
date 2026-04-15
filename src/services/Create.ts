@@ -23,6 +23,9 @@ export type CreateMissCampaignPayload = {
   media_type?: string;
   media_type_id?: string | number;
   media_type_name?: string;
+  assignBy?: string;
+  assign_to?: string;
+  assignByName?: string;
   image?: File | null; // file object
   [key: string]: any;
 };

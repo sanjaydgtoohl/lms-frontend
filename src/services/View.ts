@@ -18,6 +18,8 @@ export interface MissCampaign {
   city?: string;
   state?: string;
   country?: string;
+  assignTo?: string;
+  assignBy?: string;
 }
 
 const ENDPOINTS = {
@@ -112,6 +114,8 @@ export async function listMissCampaigns(page = 1, perPage = 10, search?: string,
     const city = it.city?.name ?? it.city ?? '';
     const state = it.state?.name ?? it.state ?? '';
     const country = it.country?.name ?? it.country ?? '';
+    const assignTo = it.assign_to_name ?? it.current_assign_user_name ?? it.assigned_user?.name ?? (it.current_assign_user && typeof it.current_assign_user === 'object' ? it.current_assign_user.name : '') ?? '';
+    const assignBy = it.assign_by_name ?? it.created_by_user?.name ?? it.created_by ?? '';
     const normalizeNestedValue = (raw: any): string => {
       if (typeof raw === 'string') return raw;
       if (typeof raw === 'number') return String(raw);
@@ -149,6 +153,8 @@ export async function listMissCampaigns(page = 1, perPage = 10, search?: string,
       city,
       state,
       country,
+      assignTo,
+      assignBy,
       mediaType,
       mediaTypeId,
     } as MissCampaign;
