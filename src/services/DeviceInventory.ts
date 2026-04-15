@@ -25,6 +25,21 @@ export async function listDeviceInventory(
         ...(params.state ? { state: params.state } : {}),
         ...(params.city ? { city: params.city } : {}),
         ...(params.country ? { country: params.country } : {}),
+        ...(params.zone ? { zone: params.zone } : {}),
+        ...(params.subZoneArea ? { sub_zone_area: params.subZoneArea } : {}),
+        ...(params.pincode ? { pincode: params.pincode } : {}),
+        ...(params.arterialRoute ? { arterial_route: params.arterialRoute } : {}),
+        ...(params.modeOfMedia ? { mode_of_media: params.modeOfMedia } : {}),
+        ...(params.publisher ? { publisher: params.publisher } : {}),
+        ...(params.mainCategory ? { main_category_name: params.mainCategory } : {}),
+        ...(params.categorySub ? { sub_category_name: params.categorySub } : {}),
+        ...(params.category ? { category_name: params.category } : {}),
+        ...(params.locationType ? { location_type: params.locationType } : {}),
+        ...(params.orientation ? { orientation: params.orientation } : {}),
+        ...(params.resolution ? { resolution: params.resolution } : {}),
+        ...(params.screenLocation ? { screen_location: params.screenLocation } : {}),
+        ...(params.stretch ? { stretch: params.stretch } : {}),
+        ...(params.property ? { property: params.property } : {}),
       },
     });
 
@@ -49,7 +64,7 @@ const EXPORT_MAX_PAGES = 2000;
 
 /** Fetch every page for the given filters (for CSV export). */
 export async function fetchAllDeviceInventoryRows(
-  filters: Pick<ListDeviceInventoryParams, 'search' | 'state' | 'city' | 'country'>
+  filters: Omit<ListDeviceInventoryParams, 'page' | 'per_page'>
 ): Promise<DeviceData[]> {
   let page = 1;
   let all: DeviceData[] = [];

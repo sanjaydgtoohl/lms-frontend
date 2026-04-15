@@ -21,13 +21,33 @@ const DeviceInventory: React.FC = () => {
   const [data, setData] = useState<DeviceData[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
-  const [appliedLocation, setAppliedLocation] = useState({ state: '', city: '' });
+  const [appliedLocation, setAppliedLocation] = useState({
+    state: '',
+    city: '',
+    zoneArea: '',
+    subZoneArea: '',
+    pincode: '',
+    arterialRoute: '',
+    modeOfMedia: '',
+    publisher: '',
+    mainCategory: '',
+    categorySub: '',
+    category: '',
+    locationType: '',
+    orientation: '',
+    resolution: '',
+    screenLocation: '',
+    stretch: '',
+    property: '',
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  const hasActiveLocationFilter = Boolean(appliedLocation.state.trim() || appliedLocation.city.trim());
+  const hasActiveLocationFilter = Boolean(
+    Object.values(appliedLocation).some((value) => value.trim())
+  );
 
   const exportFetchRows = useCallback(
     () =>
@@ -35,8 +55,42 @@ const DeviceInventory: React.FC = () => {
         search: searchQuery?.trim() ? searchQuery.trim() : undefined,
         state: appliedLocation.state.trim() || undefined,
         city: appliedLocation.city.trim() || undefined,
+        zone: appliedLocation.zoneArea.trim() || undefined,
+        subZoneArea: appliedLocation.subZoneArea.trim() || undefined,
+        pincode: appliedLocation.pincode.trim() || undefined,
+        arterialRoute: appliedLocation.arterialRoute.trim() || undefined,
+        modeOfMedia: appliedLocation.modeOfMedia.trim() || undefined,
+        publisher: appliedLocation.publisher.trim() || undefined,
+        mainCategory: appliedLocation.mainCategory.trim() || undefined,
+        categorySub: appliedLocation.categorySub.trim() || undefined,
+        category: appliedLocation.category.trim() || undefined,
+        locationType: appliedLocation.locationType.trim() || undefined,
+        orientation: appliedLocation.orientation.trim() || undefined,
+        resolution: appliedLocation.resolution.trim() || undefined,
+        screenLocation: appliedLocation.screenLocation.trim() || undefined,
+        stretch: appliedLocation.stretch.trim() || undefined,
+        property: appliedLocation.property.trim() || undefined,
       }),
-    [searchQuery, appliedLocation.state, appliedLocation.city]
+    [
+      searchQuery,
+      appliedLocation.state,
+      appliedLocation.city,
+      appliedLocation.zoneArea,
+      appliedLocation.subZoneArea,
+      appliedLocation.pincode,
+      appliedLocation.arterialRoute,
+      appliedLocation.modeOfMedia,
+      appliedLocation.publisher,
+      appliedLocation.mainCategory,
+      appliedLocation.categorySub,
+      appliedLocation.category,
+      appliedLocation.locationType,
+      appliedLocation.orientation,
+      appliedLocation.resolution,
+      appliedLocation.screenLocation,
+      appliedLocation.stretch,
+      appliedLocation.property,
+    ]
   );
 
   const totalPages = useMemo(() => {
@@ -64,6 +118,21 @@ const DeviceInventory: React.FC = () => {
           search: searchQuery?.trim() ? searchQuery.trim() : undefined,
           state: appliedLocation.state.trim() || undefined,
           city: appliedLocation.city.trim() || undefined,
+          zone: appliedLocation.zoneArea.trim() || undefined,
+          subZoneArea: appliedLocation.subZoneArea.trim() || undefined,
+          pincode: appliedLocation.pincode.trim() || undefined,
+          arterialRoute: appliedLocation.arterialRoute.trim() || undefined,
+          modeOfMedia: appliedLocation.modeOfMedia.trim() || undefined,
+          publisher: appliedLocation.publisher.trim() || undefined,
+          mainCategory: appliedLocation.mainCategory.trim() || undefined,
+          categorySub: appliedLocation.categorySub.trim() || undefined,
+          category: appliedLocation.category.trim() || undefined,
+          locationType: appliedLocation.locationType.trim() || undefined,
+          orientation: appliedLocation.orientation.trim() || undefined,
+          resolution: appliedLocation.resolution.trim() || undefined,
+          screenLocation: appliedLocation.screenLocation.trim() || undefined,
+          stretch: appliedLocation.stretch.trim() || undefined,
+          property: appliedLocation.property.trim() || undefined,
         });
         if (!alive) return;
         setData(Array.isArray(res.data) ? res.data : []);
@@ -81,7 +150,28 @@ const DeviceInventory: React.FC = () => {
     return () => {
       alive = false;
     };
-  }, [currentPage, itemsPerPage, searchQuery, appliedLocation.state, appliedLocation.city]);
+  }, [
+    currentPage,
+    itemsPerPage,
+    searchQuery,
+    appliedLocation.state,
+    appliedLocation.city,
+    appliedLocation.zoneArea,
+    appliedLocation.subZoneArea,
+    appliedLocation.pincode,
+    appliedLocation.arterialRoute,
+    appliedLocation.modeOfMedia,
+    appliedLocation.publisher,
+    appliedLocation.mainCategory,
+    appliedLocation.categorySub,
+    appliedLocation.category,
+    appliedLocation.locationType,
+    appliedLocation.orientation,
+    appliedLocation.resolution,
+    appliedLocation.screenLocation,
+    appliedLocation.stretch,
+    appliedLocation.property,
+  ]);
 
   return (
     <div className="flex-1 w-full max-w-full overflow-x-hidden">
@@ -139,7 +229,25 @@ const DeviceInventory: React.FC = () => {
                 setCurrentPage(1);
               }}
               onReset={() => {
-                setAppliedLocation({ state: '', city: '' });
+                setAppliedLocation({
+                  state: '',
+                  city: '',
+                  zoneArea: '',
+                  subZoneArea: '',
+                  pincode: '',
+                  arterialRoute: '',
+                  modeOfMedia: '',
+                  publisher: '',
+                  mainCategory: '',
+                  categorySub: '',
+                  category: '',
+                  locationType: '',
+                  orientation: '',
+                  resolution: '',
+                  screenLocation: '',
+                  stretch: '',
+                  property: '',
+                });
                 setCurrentPage(1);
               }}
               anchorRef={filterAnchorRef}

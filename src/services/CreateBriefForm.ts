@@ -48,7 +48,10 @@ export function mapFormToApiPayload(form: Record<string, any>) {
       else payload.priority = String(pVal);
     }
   }
-  if (form.budget) payload.budget = form.budget;
+  if (form.budget !== undefined && form.budget !== null && String(form.budget).trim() !== '') {
+    const budgetValue = Number(String(form.budget).trim().replace(/,/g, ''));
+    if (!Number.isNaN(budgetValue)) payload.budget = budgetValue;
+  }
   if (form.createdBy) {
     const aid = parseId(form.createdBy);
     if (typeof aid === 'number') payload.agency_id = aid;
