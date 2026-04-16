@@ -1,17 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, Plus, User, LogOut, Settings, UserRound, LifeBuoy, ChevronDown, Menu } from 'lucide-react';
-import ApiErrorNotification from '../ui/ApiErrorNotification';
 import { Button } from '../ui';
 import { fetchCurrentUser } from '../../services/Header';
-import { getTotalNotificationCount, getUnreadNotificationCount, listNotifications } from '../../services/notifications';
+import { clearAllNotifications, getUnreadNotificationCount, listNotifications, markAllNotificationsRead, markNotificationRead } from '../../services/notifications';
 import { ROUTES } from '../../constants';
 import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '../../redux/store';
 import { logoutUser } from '../../redux/slices/authSlice';
 import { FaMoon, FaSun } from 'react-icons/fa';
 import type { NotificationItem, NotificationTab, NotificationCategory } from '../../services/notifications';
-import { markAllNotificationsRead } from '../../services/notifications';
 import { Check } from 'lucide-react';
 
 interface HeaderProps {
@@ -30,7 +28,6 @@ const Header: React.FC<HeaderProps> = ({
   const [isUserMenuOpen, setIsUserMenuOpen] = React.useState(false);
   const userMenuRef = React.useRef<HTMLDivElement | null>(null);
   const [user, setUser] = React.useState<any>(null);
-  const [notificationCount, setNotificationCount] = React.useState<number>(0);
   const [unreadCount, setUnreadCount] = React.useState<number>(0);
   const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] = React.useState(false);
   const [recentNotifications, setRecentNotifications] = React.useState<NotificationItem[]>([]);
@@ -38,6 +35,7 @@ const Header: React.FC<HeaderProps> = ({
   const [activeDropdownTab, setActiveDropdownTab] = React.useState<NotificationTab>('all');
   const [isMarkingRead, setIsMarkingRead] = React.useState(false);
   const notificationDropdownRef = React.useRef<HTMLDivElement | null>(null);
+  const notificationButtonRef = React.useRef<HTMLButtonElement | null>(null);
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
 
@@ -51,25 +49,22 @@ const Header: React.FC<HeaderProps> = ({
 
   React.useEffect(() => {
     let active = true;
-    async function loadNotificationCounts() {
+    async function loadNotificationCount() {
       try {
-        const [total, unread] = await Promise.all([
-          getTotalNotificationCount(),
-          getUnreadNotificationCount(),
-        ]);
+        const count = await getUnreadNotificationCount();
         if (active) {
-          setNotificationCount(total);
-          setUnreadCount(unread);
+          setUnreadCount(count);
         }
       } catch (error) {
-        console.error('Failed to load notification counts:', error);
+        console.error('Failed to load notification count:', error);
       }
     }
-    loadNotificationCounts();
+    loadNotificationCount();
+    
     return () => {
       active = false;
     };
-  }, []);
+  }, []); // Only load unread count once on mount
 
   const getTabCategories = (tab: NotificationTab): NotificationCategory[] => {
     const tabConfig = [
@@ -91,11 +86,17 @@ const Header: React.FC<HeaderProps> = ({
 
       if (unreadOnly) {
         effectiveTab = 'unread';
-        effectiveCategories = [];
       }
 
       const response = await listNotifications(1, 5, effectiveTab, effectiveCategories);
-      setRecentNotifications(response.data || []);
+      
+      // Frontend-side filtering: if unreadOnly is true, filter to show only unread notifications
+      let filteredNotifications = response.data || [];
+      if (unreadOnly) {
+        filteredNotifications = filteredNotifications.filter(n => !n.read);
+      }
+      
+      setRecentNotifications(filteredNotifications);
     } catch (error) {
       console.error('Failed to load recent notifications:', error);
     }
@@ -106,7 +107,12 @@ const Header: React.FC<HeaderProps> = ({
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
         setIsUserMenuOpen(false);
       }
-      if (notificationDropdownRef.current && !notificationDropdownRef.current.contains(e.target as Node)) {
+
+      const targetNode = e.target as Node;
+      const clickedInsideDropdown = notificationDropdownRef.current?.contains(targetNode);
+      const clickedBellButton = notificationButtonRef.current?.contains(targetNode);
+
+      if (!clickedInsideDropdown && !clickedBellButton) {
         setIsNotificationDropdownOpen(false);
       }
     };
@@ -115,10 +121,22 @@ const Header: React.FC<HeaderProps> = ({
   }, []);
 
   const handleNotificationClick = () => {
-    setIsNotificationDropdownOpen(!isNotificationDropdownOpen);
-    if (!isNotificationDropdownOpen) {
-      loadRecentNotifications(activeDropdownTab, showUnreadOnly);
-    }
+    setIsNotificationDropdownOpen((prev) => {
+      const next = !prev;
+      if (next) {
+        // Refresh count and notifications only when opening dropdown
+        (async () => {
+          try {
+            const count = await getUnreadNotificationCount();
+            setUnreadCount(count);
+          } catch (error) {
+            console.error('Failed to refresh notification count:', error);
+          }
+        })();
+        loadRecentNotifications(activeDropdownTab, showUnreadOnly);
+      }
+      return next;
+    });
   };
 
   const handleDropdownTabChange = (tab: NotificationTab) => {
@@ -138,11 +156,7 @@ const Header: React.FC<HeaderProps> = ({
       await markAllNotificationsRead();
       setShowUnreadOnly(false);
       await loadRecentNotifications(activeDropdownTab, false);
-      const [total, unread] = await Promise.all([
-        getTotalNotificationCount(),
-        getUnreadNotificationCount(),
-      ]);
-      setNotificationCount(total);
+      const unread = await getUnreadNotificationCount();
       setUnreadCount(unread);
     } catch (error) {
       console.error('Failed to mark all as read:', error);
@@ -151,10 +165,32 @@ const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  const handleRemoveAllNotifications = () => {
-    setRecentNotifications([]);
-    setNotificationCount(0);
-    setShowUnreadOnly(false);
+  const handleRemoveAllNotifications = async () => {
+    try {
+      await clearAllNotifications();
+      setRecentNotifications([]);
+      setShowUnreadOnly(false);
+      const unread = await getUnreadNotificationCount();
+      setUnreadCount(unread);
+    } catch (error) {
+      console.error('Failed to remove all notifications:', error);
+    }
+  };
+
+  const handleNotificationItemClick = async (notification: NotificationItem) => {
+    if (!notification.read) {
+      // Mark as read if not already read
+      try {
+        await markNotificationRead(notification.id);
+        // Immediately refresh after marking as read
+        loadRecentNotifications(activeDropdownTab, showUnreadOnly);
+        const unread = await getUnreadNotificationCount();
+        setUnreadCount(unread);
+      } catch (error) {
+        console.error('Failed to mark notification as read:', error);
+      }
+    }
+    // Keep dropdown open for now, let user continue browsing
   };
 
   // ---- Updated logout handler ----
@@ -242,14 +278,15 @@ const Header: React.FC<HeaderProps> = ({
           <div className="notification-button relative">
             <button
               type="button"
+              ref={notificationButtonRef}
               onClick={handleNotificationClick}
-              className="relative inline-flex !border-0 !outline-0 focus:outline-0 items-center !p-2 justify-center !rounded-full text-gray-600 !bg-gray-100 focus:outline-none focus:ring-0 aspect-square"
+              className="relative inline-flex border-0! outline-0! focus:outline-0 items-center p-2! justify-center rounded-full! text-gray-600 bg-gray-100! focus:outline-none focus:ring-0 aspect-square"
               aria-label="Open notifications"
             >
               <Bell className="text-orange-600" />
-              {notificationCount > 0 && (
+              {unreadCount > 0 && (
                 <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-orange-600 px-1.5 aspect-square text-[10px] font-semibold text-white">
-                  {notificationCount > 99 ? '99+' : notificationCount}
+                  {unreadCount > 99 ? '99+' : unreadCount}
                 </span>
               )}
             </button>
@@ -259,19 +296,22 @@ const Header: React.FC<HeaderProps> = ({
               <div className="" ref={notificationDropdownRef}>
                 {/* <div className="absolute left-0 top-full -mt-2 w-4 h-4 bg-white transform rotate-45 border-l border-t border-gray-400 z-60 -mb-2" aria-hidden="true" /> */}
 
-                <div className="absolute right-0 top-full w-80 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-50 ring-opacity-5 transition duration-300 ease-in-out">
+               <div className="fixed left-1/2 -translate-x-1/2 top-full sm:absolute sm:left-auto sm:translate-x-0 sm:right-0 sm:top-full w-80 max-w-[90vw] bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-50 ring-opacity-5 transition duration-300 ease-in-out">
                   <div className="px-4 py-3 border-b border-gray-100 bg-white">
                     <div className="flex items-center justify-between mb-6">
                       <h3 className="text-sm font-semibold text-gray-900 flex gap-2 items-center">Notifications
-                        {notificationCount > 0 && (
+                        {unreadCount > 0 && (
                           <span className="inline-flex w-5 items-center justify-center rounded-full bg-gray-100 px-1.5 aspect-square text-[10px] font-semibold text-black">
-                            {notificationCount > 99 ? '99+' : notificationCount}
+                            {unreadCount > 99 ? '99+' : unreadCount}
                           </span>
                         )}
                       </h3>
                       <button
-                        onClick={() => navigate(ROUTES.NOTIFICATIONS)}
-                        className="!text-sm text-gray-600 !p-0 hover:text-gray-800 underline"
+                        onClick={() => {
+                          setIsNotificationDropdownOpen(false);
+                          navigate(ROUTES.NOTIFICATIONS);
+                        }}
+                        className="text-sm! text-gray-600 p-0! hover:text-gray-800 underline"
                       >
                         View all
                       </button>
@@ -285,7 +325,7 @@ const Header: React.FC<HeaderProps> = ({
                             type="checkbox"
                             checked={showUnreadOnly}
                             onChange={handleUnreadFilterChange}
-                            className=" text-gray-800 !p-0 bg-white border border-gray-300 rounded cursor-pointer"
+                          className="text-gray-800 p-0! bg-white border border-gray-300 rounded cursor-pointer"
                           />
                           <span className="text-xs font-medium text-gray-800">Unread</span>
                         </label>
@@ -293,7 +333,7 @@ const Header: React.FC<HeaderProps> = ({
                         <button
                           onClick={handleMarkAllRead}
                           disabled={isMarkingRead || unreadCount === 0}
-                          className="inline-flex items-center gap-1.5 !text-xs font-medium !p-0 text-gray-700  disabled:opacity-50 disabled:cursor-not-allowed transition"
+                          className="inline-flex items-center gap-1.5 text-xs! font-medium p-0! text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
                         >
                           <Check className="w-4 h-4" />
                           Mark Read
@@ -303,7 +343,7 @@ const Header: React.FC<HeaderProps> = ({
 
                       <button
                         onClick={handleRemoveAllNotifications}
-                        className="!text-xs font-medium !p-0 text-red-800 !border-0 transition !outline-0 focus:!outline-none"
+                        className="text-xs! font-medium p-0! text-red-800 border-0! transition outline-0! focus:outline-none!"
                       >
                         Remove All
                       </button>
@@ -320,9 +360,9 @@ const Header: React.FC<HeaderProps> = ({
                         <button
                           key={tab.key}
                           onClick={() => handleDropdownTabChange(tab.key as NotificationTab)}
-                          className={`!px-3 py-1 leading-none !text-sm !rounded-md outline-none border-0 font-medium transition ${activeDropdownTab === tab.key
-                            ? '!bg-gray-800 text-white'
-                            : '!bg-gray-200 !text-gray-700 hover:!text-white hover:!bg-gray-800'
+                          className={`px-3! py-1 leading-none text-sm! rounded-md! outline-none border-0 font-medium transition ${activeDropdownTab === tab.key
+                            ? 'bg-gray-800! text-white'
+                            : 'bg-gray-200! text-gray-700! hover:text-white! hover:bg-gray-800!'
                             }`}
                         >
                           {tab.label}
@@ -341,7 +381,7 @@ const Header: React.FC<HeaderProps> = ({
                           key={notification.id}
                           className="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
                           onClick={() => {
-                            setIsNotificationDropdownOpen(false);
+                            handleNotificationItemClick(notification);
                           }}
                         >
                           <div className="flex items-start gap-3">
@@ -368,8 +408,6 @@ const Header: React.FC<HeaderProps> = ({
               </div>
             )}
           </div>
-
-          <ApiErrorNotification />
 
           {/* User Menu */}
           <div className="relative" ref={userMenuRef}>
