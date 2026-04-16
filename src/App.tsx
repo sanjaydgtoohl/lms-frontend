@@ -35,6 +35,7 @@ import GmailPanel from './components/Gmail/GmailPanel';
 import SendEmail from './components/Gmail/SendEmail';
 import ReceiveEmail from './components/Gmail/ReceiveEmail';
 import DeviceInventory from './pages/Inventory/DeviceInventory';
+import Notifications from './pages/Notifications';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -115,6 +116,7 @@ function App() {
           <Route path="dashboard/sales" element={<PermissionRoute><SalesDashboard /></PermissionRoute>} />
           <Route path="dashboard/planner" element={<PermissionRoute><PlannerDashboard /></PermissionRoute>} />
           <Route path="courses" element={<PermissionRoute><Courses /></PermissionRoute>} />
+          <Route path="notifications" element={<PermissionRoute><Notifications /></PermissionRoute>} />
           <Route path="profile" element={<PermissionRoute><Profile /></PermissionRoute>} />
           <Route path="gmail" element={<PermissionRoute><GmailPanel /></PermissionRoute>} />
           <Route path="gmail/send" element={<PermissionRoute><SendEmail /></PermissionRoute>} />
