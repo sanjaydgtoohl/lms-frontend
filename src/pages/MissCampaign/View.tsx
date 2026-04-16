@@ -223,13 +223,13 @@ const View: React.FC = () => {
     setConfirmDeleteLabel(label || id);
   };
 
-  const handleChat = (item: MissCampaign) => {
-    // TODO: Implement chat functionality
-    console.log('Chat clicked for item:', item);
-    // You can navigate to a chat page or open a chat modal here
-    // For now, just showing an alert
-    SweetAlert.showInfo(`Chat with ${item.assignTo || 'user'}`, { title: 'Chat feature coming soon!' });
-  };
+  // const handleChat = (item: MissCampaign) => {
+  //   // TODO: Implement chat functionality
+  //   console.log('Chat clicked for item:', item);
+  //   // You can navigate to a chat page or open a chat modal here
+  //   // For now, just showing an alert
+  //   SweetAlert.showInfo(`Chat with ${item.assignTo || 'user'}`, { title: 'Chat feature coming soon!' });
+  // };
 
   const handleCreate = () => navigate('/pre-lead/create');
 
@@ -570,7 +570,6 @@ const View: React.FC = () => {
                 onEdit={(it: MissCampaign) => handleEdit(it.id)}
                 onView={(it: MissCampaign) => handleView(it.id)}
                 onDelete={(it: MissCampaign) => handleDelete(it.id, it.productName || it.brandName)}
-                onChat={(it: MissCampaign) => handleChat(it)}
                 editPermissionSlug="miss-campaign.edit"
                 viewPermissionSlug="miss-campaign.view"
                 deletePermissionSlug="miss-campaign.delete"
