@@ -179,38 +179,6 @@ export async function getMissCampaign(id: string): Promise<any> {
   return res.data as any;
 }
 
-export async function createMissCampaign(payload: Partial<MissCampaign>): Promise<MissCampaign> {
-  const formData = new FormData();
-  const mediaTypeValue = payload.mediaType ?? (payload as any).media_type;
-  Object.entries(payload || {}).forEach(([key, value]) => {
-    if (value === undefined || value === null) return;
-    if (key === 'mediaType' || key === 'media_type') return;
-    formData.append(key, value as any);
-  });
-  if (mediaTypeValue !== undefined && mediaTypeValue !== null && String(mediaTypeValue).trim() !== '') {
-    formData.append('media_type', String(mediaTypeValue));
-  }
-  const res = await apiClient.post<MissCampaign>(ENDPOINTS.CREATE, formData);
-  return handleResponse<MissCampaign>(res);
-}
-
-export async function updateMissCampaign(id: string, payload: Partial<MissCampaign>): Promise<MissCampaign> {
-  // Use POST with _method: 'PUT' for method spoofing (backend expects this)
-  const formData = new FormData();
-  const mediaTypeValue = payload.mediaType ?? (payload as any).media_type;
-  Object.entries(payload || {}).forEach(([key, value]) => {
-    if (value === undefined || value === null) return;
-    if (key === 'mediaType' || key === 'media_type') return;
-    formData.append(key, value as any);
-  });
-  if (mediaTypeValue !== undefined && mediaTypeValue !== null && String(mediaTypeValue).trim() !== '') {
-    formData.append('media_type', String(mediaTypeValue));
-  }
-  formData.append('_method', 'PUT');
-  const res = await apiClient.post<MissCampaign>(ENDPOINTS.UPDATE(id), formData);
-  return handleResponse<MissCampaign>(res);
-}
-
 export async function deleteMissCampaign(id: string): Promise<void> {
   const res = await apiClient.delete<unknown>(ENDPOINTS.DELETE(id));
   await handleResponse<unknown>(res);
@@ -220,6 +188,4 @@ export type PreLead = MissCampaign;
 export type PreLeadListResponse = MissCampaignListResponse;
 export const listPreLeads = listMissCampaigns;
 export const getPreLead = getMissCampaign;
-export const createPreLead = createMissCampaign;
-export const updatePreLead = updateMissCampaign;
 export const deletePreLead = deleteMissCampaign;

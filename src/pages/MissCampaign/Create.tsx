@@ -71,6 +71,10 @@ const Create: React.FC<CreateProps> = ({
   const [assignToOptions, setAssignToOptions] = useState<{ value: string; label: string }[]>([]);
   const [assignToLoading, setAssignToLoading] = useState(false);
 
+  // Media Type dropdown state
+  const [mediaTypeOptions, setMediaTypeOptions] = useState<{ id: string; name: string }[]>([]);
+  const [mediaTypeLoading, setMediaTypeLoading] = useState(false);
+
   // Current user state
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string } | null>(null);
 
@@ -176,6 +180,28 @@ const Create: React.FC<CreateProps> = ({
       }
     };
     fetchAssignToUsers();
+  }, []);
+
+  // Fetch media types on component mount
+  useEffect(() => {
+    const fetchMediaTypes = async () => {
+      try {
+        setMediaTypeLoading(true);
+        const response = await apiClient.get('/media-types');
+        const data = Array.isArray(response.data) ? response.data : [];
+        const options = data.map((item: { id: string; name: string }) => ({
+          id: item.id,
+          name: item.name,
+        }));
+        setMediaTypeOptions(options);
+      } catch (err) {
+        console.error('Failed to fetch media types:', err);
+        setMediaTypeOptions([]);
+      } finally {
+        setMediaTypeLoading(false);
+      }
+    };
+    fetchMediaTypes();
   }, []);
 
   // Fetch current user for assignBy
@@ -368,6 +394,9 @@ const Create: React.FC<CreateProps> = ({
         // ✅ FINAL setFormData (only after resolving IDs)
         const assignToValue = initialData.assign_to_name ?? initialData.current_assign_user_name ?? initialData.assigned_user?.name ?? (initialData.current_assign_user && typeof initialData.current_assign_user === 'object' ? initialData.current_assign_user.name : '') ?? (initialData.assigned_user && typeof initialData.assigned_user === 'object' ? initialData.assigned_user.name : '') ?? initialData.assignTo ?? initialData.assign_to ?? '';
 
+        // Resolve media type
+        const mediaTypeId = initialData.media_type?.id ?? initialData.media_type_id ?? initialData.mediaType ?? initialData.media_type ?? '';
+        
         setFormData(prev => ({
           ...prev,
           brandName: String(brandId ?? prev.brandName ?? ''),
@@ -380,6 +409,7 @@ const Create: React.FC<CreateProps> = ({
           country: String(countryId ?? prev.country ?? ''),
           state: String(stateId ?? prev.state ?? ''),
           city: String(cityId ?? prev.city ?? ''),
+          mediaType: String(mediaTypeId ?? prev.mediaType ?? ''),
           image: null,
           image_url: initialData.image_url || initialData.image_path || '',
           remove_image: false,
@@ -792,6 +822,32 @@ const Create: React.FC<CreateProps> = ({
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                   </svg>
                   {errors.city}
+                </div>
+              )}
+            </div>
+
+            {/* Media Type */}
+            <div className='w-full sm:w-[calc(50%-12px)]'>
+              <label className="block text-sm font-medium mb-2">
+                Media Type <span className="text-[#FF0000]">*</span>
+              </label>
+              <div>
+                <SelectField
+                  name="mediaType"
+                  value={formData.mediaType}
+                  onChange={(v) => { setFormData(prev => ({ ...prev, mediaType: typeof v === 'string' ? v : v[0] ?? '' })); setErrors(prev => ({ ...prev, mediaType: '' })); }}
+                  options={mediaTypeOptions.map(m => ({ value: String(m.id), label: m.name }))}
+                  placeholder={mediaTypeLoading ? 'Loading media types...' : 'Search or select media type'}
+                  inputClassName={errors.mediaType ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}
+                  disabled={mediaTypeLoading}
+                />
+              </div>
+              {errors.mediaType && (
+                <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.mediaType}
                 </div>
               )}
             </div>
