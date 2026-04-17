@@ -189,10 +189,12 @@ const Create: React.FC<CreateProps> = ({
         setMediaTypeLoading(true);
         const response = await apiClient.get('/media-types');
         const data = Array.isArray(response.data) ? response.data : [];
-        const options = data.map((item: { id: string; name: string }) => ({
-          id: item.id,
-          name: item.name,
-        }));
+        const options = data.map((item: any) => {
+          const rawId = item.id ?? item.value;
+          const id = rawId !== undefined && rawId !== null ? String(rawId) : '';
+          const name = String(item.name ?? item.label ?? item.type ?? '');
+          return { id: id || name, name };
+        });
         setMediaTypeOptions(options);
       } catch (err) {
         console.error('Failed to fetch media types:', err);
@@ -394,9 +396,13 @@ const Create: React.FC<CreateProps> = ({
         // ✅ FINAL setFormData (only after resolving IDs)
         const assignToValue = initialData.assign_to_name ?? initialData.current_assign_user_name ?? initialData.assigned_user?.name ?? (initialData.current_assign_user && typeof initialData.current_assign_user === 'object' ? initialData.current_assign_user.name : '') ?? (initialData.assigned_user && typeof initialData.assigned_user === 'object' ? initialData.assigned_user.name : '') ?? initialData.assignTo ?? initialData.assign_to ?? '';
 
-        // Resolve media type
-        const mediaTypeId = initialData.media_type?.id ?? initialData.media_type_id ?? initialData.mediaType ?? initialData.media_type ?? '';
-        
+        // Resolve media type robustly
+        const rawMediaType = initialData.media_type ?? initialData.media_type_id ?? initialData.mediaType ?? initialData.media_type ?? '';
+        const mediaTypeId =
+          rawMediaType && typeof rawMediaType === 'object'
+            ? String((rawMediaType as any).id ?? (rawMediaType as any).value ?? (rawMediaType as any).name ?? (rawMediaType as any).type ?? '')
+            : String(rawMediaType ?? '');
+
         setFormData(prev => ({
           ...prev,
           brandName: String(brandId ?? prev.brandName ?? ''),
@@ -409,7 +415,7 @@ const Create: React.FC<CreateProps> = ({
           country: String(countryId ?? prev.country ?? ''),
           state: String(stateId ?? prev.state ?? ''),
           city: String(cityId ?? prev.city ?? ''),
-          mediaType: String(mediaTypeId ?? prev.mediaType ?? ''),
+          mediaType: mediaTypeId || prev.mediaType || '',
           image: null,
           image_url: initialData.image_url || initialData.image_path || '',
           remove_image: false,
@@ -652,6 +658,21 @@ const Create: React.FC<CreateProps> = ({
               )}
             </div>
 
+
+            {/* Assign By (read-only) */}
+            <div className='w-full sm:w-[calc(50%-12px)]'>
+              <label className="block text-sm font-medium mb-2">
+                Assign By
+              </label>
+              <input
+                type="text"
+                value={currentUser?.name || ''}
+                readOnly
+                className="w-full px-3 py-2 border rounded-lg bg-gray-100 text-gray-900 focus:outline-none"
+                tabIndex={-1}
+              />
+            </div>
+
             {/* Assign To */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
               <label className="block text-sm font-medium mb-2">
@@ -660,7 +681,7 @@ const Create: React.FC<CreateProps> = ({
               <div>
                 <SelectField
                   name="assignTo"
-                  value={formData.assignTo}
+                  value={formData.assignTo || ''}
                   onChange={(v) => { setFormData(prev => ({ ...prev, assignTo: typeof v === 'string' ? v : v[0] ?? '' })); }}
                   options={assignToOptions}
                   placeholder={assignToLoading ? 'Loading users...' : 'Select Assign To'}
