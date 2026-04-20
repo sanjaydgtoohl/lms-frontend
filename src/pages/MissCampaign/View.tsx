@@ -244,6 +244,17 @@ const View: React.FC = () => {
       try { SweetAlert.showCreateSuccess(); } catch {
         //no need to action
       }
+      // Refresh notifications in Redux after campaign create
+      try {
+        const [count, notificationsRes] = await Promise.all([
+          getUnreadNotificationCount(),
+          listNotifications(1, 10, 'all', [])
+        ]);
+        dispatch(setUnreadCount({ module: 'all', count }));
+        dispatch(setNotifications({ module: 'all', notifications: notificationsRes.data || [], total: notificationsRes.meta?.pagination?.total || 0 }));
+      } catch (notifErr) {
+        console.error('Failed to refresh notifications:', notifErr);
+      }
     } catch (error) {
       console.error('Failed to refresh campaigns:', error);
     }
@@ -258,6 +269,17 @@ const View: React.FC = () => {
         //no need to action
       }
       await fetchCampaigns(currentPage); // Refresh table from server
+      // Refresh notifications in Redux after campaign delete
+      try {
+        const [count, notificationsRes] = await Promise.all([
+          getUnreadNotificationCount(),
+          listNotifications(1, 10, 'all', [])
+        ]);
+        dispatch(setUnreadCount({ module: 'all', count }));
+        dispatch(setNotifications({ module: 'all', notifications: notificationsRes.data || [], total: notificationsRes.meta?.pagination?.total || 0 }));
+      } catch (notifErr) {
+        console.error('Failed to refresh notifications:', notifErr);
+      }
     } catch (error) {
       console.error('Failed to delete campaign:', error);
       try { SweetAlert.showError((error as any)?.message || 'Failed to delete campaign'); } catch {
@@ -321,6 +343,17 @@ const View: React.FC = () => {
       await fetchCampaigns(currentPage); // Refresh table from server
       try { SweetAlert.showUpdateSuccess(); } catch {
         // no need to action
+      }
+      // Refresh notifications in Redux after campaign update
+      try {
+        const [count, notificationsRes] = await Promise.all([
+          getUnreadNotificationCount(),
+          listNotifications(1, 10, 'all', [])
+        ]);
+        dispatch(setUnreadCount({ module: 'all', count }));
+        dispatch(setNotifications({ module: 'all', notifications: notificationsRes.data || [], total: notificationsRes.meta?.pagination?.total || 0 }));
+      } catch (notifErr) {
+        console.error('Failed to refresh notifications:', notifErr);
       }
     } catch (error) {
       console.error('Failed to refresh campaigns:', error);
