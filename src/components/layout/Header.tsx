@@ -65,7 +65,7 @@ const Header: React.FC<HeaderProps> = ({
     return () => {
       active = false;
     };
-  }, []); // Only load unread count once on mount
+  }, [dispatch]); // Only load unread count once on mount
 
   // const getTabCategories = (tab: NotificationTab): NotificationCategory[] => {
   //   const tabConfig = [

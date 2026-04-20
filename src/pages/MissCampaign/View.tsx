@@ -339,8 +339,8 @@ const View: React.FC = () => {
 
   const handleSaveEdited = async () => {
     try {
-      await updateMissCampaign(updated.id, updated);
-      await fetchCampaigns(currentPage); // Refresh table from server
+      setCurrentPage(1);
+      await fetchCampaigns(1); // Refresh table from server
       try { SweetAlert.showUpdateSuccess(); } catch {
         // no need to action
       }

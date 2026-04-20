@@ -86,13 +86,13 @@ const Notifications: React.FC = () => {
 
   const moduleKey = getModuleKey(activeTab);
   const moduleState = useSelector((state: RootState) => state.notifications[moduleKey]);
-  const notifications = moduleState?.notifications || [];
+  const notifications = useMemo(() => moduleState?.notifications || [], [moduleState?.notifications]);
   const reduxUnreadCount = moduleState?.unreadCount || 0;
   const reduxTotalItems = moduleState?.totalItems || 0;
 
   const activeCategoryLabels = selectedCategories.map((item) => item.toString()).join(', ');
 
-  const fetchUnreadCount = async () => {
+  const fetchUnreadCount = useCallback(async () => {
     setLoadingCount(true);
     try {
       const count = await getUnreadNotificationCount();
@@ -102,21 +102,16 @@ const Notifications: React.FC = () => {
     } finally {
       setLoadingCount(false);
     }
-  };
+  }, [dispatch, moduleKey]);
 
   const loadNotifications = useCallback(async (page = 1, append = false) => {
     setLoading(true);
     setError(null);
 
     try {
-      let effectiveTab = activeTab;
-      let effectiveCategories = selectedCategories;
+      const effectiveTab = showUnreadOnly && activeTab !== 'unread' ? 'unread' : activeTab;
 
-      if (showUnreadOnly && activeTab !== 'unread') {
-        effectiveTab = 'unread';
-      }
-
-      const response = await listNotifications(page, ITEMS_PER_PAGE, effectiveTab, effectiveCategories);
+      const response = await listNotifications(page, ITEMS_PER_PAGE, effectiveTab, selectedCategories);
       const items = response.data || [];
       const total = response.meta?.pagination?.total ?? items.length;
 
@@ -142,7 +137,7 @@ const Notifications: React.FC = () => {
 
   useEffect(() => {
     fetchUnreadCount();
-  }, [refreshKey]);
+  }, [refreshKey, fetchUnreadCount]);
 
   useEffect(() => {
     setCurrentPage(1);
