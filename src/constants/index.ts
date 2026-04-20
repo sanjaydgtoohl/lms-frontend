@@ -17,6 +17,7 @@ export const ROUTES = {
   COURSES: '/courses',
   PROFILE: '/profile',
   SETTINGS: '/settings',
+  NOTIFICATIONS: '/notifications',
   // LMS Routes
   LEAD_SOURCE: '/lead-source',
   LEAD_MANAGEMENT: '/lead-management',
