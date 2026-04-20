@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { MoreHorizontal, Edit, Eye, Trash, Upload } from 'lucide-react';
+import { MoreHorizontal, Edit, Eye, Trash, Upload, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 // import { usePermissions } from '../../hooks/SidebarMenuHooks';
 import { usePermissions } from '../../hooks/SidebarMenuHooks';
@@ -11,6 +11,7 @@ interface ActionMenuProps {
   onView?: () => void;
   onDelete?: () => void;
   onUpload?: () => void;
+  onChat?: () => void;
   /** Permission slugs for additional checks */
   editPermissionSlug?: string;
   viewPermissionSlug?: string;
@@ -24,7 +25,7 @@ interface ActionMenuProps {
   totalRows?: number;
 }
 
-const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, onUpload, editPermissionSlug, viewPermissionSlug, deletePermissionSlug, uploadPermissionSlug, isLast, rowIndex, totalRows }) => {
+const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, onUpload, onChat, editPermissionSlug, viewPermissionSlug, deletePermissionSlug, uploadPermissionSlug, isLast, rowIndex, totalRows }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [showAbove, setShowAbove] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -379,6 +380,29 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, onUpl
               >
                 <Upload className="w-4 h-4 flex-shrink-0" />
                 <span>Upload</span>
+              </button>
+            )}
+
+            {(onChat) && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onChat();
+                  setIsOpen(false);
+                }}
+                className="
+                      w-full px-4 py-2.5 text-sm font-medium bg-white shadow-none outline-0
+                      text-gray-700 hover:text-gray-700 hover:bg-white
+                      flex items-center gap-3
+                      transition-colors duration-150 ease-in-out
+                      first:rounded-t-lg last:rounded-b-lg
+                      focus:outline-none focus:bg-white focus:text-gray-700
+                    "
+                role="menuitem"
+                tabIndex={0}
+              >
+                <MessageCircle className="w-4 h-4 flex-shrink-0" />
+                <span>Chat</span>
               </button>
             )}
 

@@ -56,7 +56,7 @@ const sidebarRoutes = [
   '/brief/create',
   '/brief/log',
 
-  // Miss Campaign
+  // Pre Lead
   '/miss-campaign/view',
 
   // Campaign Management

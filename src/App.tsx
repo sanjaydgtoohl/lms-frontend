@@ -175,10 +175,10 @@ function App() {
           <Route path="meeting-schedule" element={<PermissionRoute><MeetingSchedule /></PermissionRoute>} />
 
           {/* Miss Campaign Routes */}
-          <Route path="miss-campaign/view" element={<PermissionRoute><MissCampaignView /></PermissionRoute>} />
-          <Route path="miss-campaign/create" element={<PermissionRoute><MissCampaignCreate /></PermissionRoute>} />
-          <Route path="miss-campaign/view/:id" element={<PermissionRoute><MissCampaignView /></PermissionRoute>} />
-          <Route path="miss-campaign/view/:id/edit" element={<PermissionRoute><MissCampaignView /></PermissionRoute>} />
+          <Route path="pre-lead/view" element={<PermissionRoute><MissCampaignView /></PermissionRoute>} />
+          <Route path="pre-lead/create" element={<PermissionRoute><MissCampaignCreate /></PermissionRoute>} />
+          <Route path="pre-lead/view/:id" element={<PermissionRoute><MissCampaignView /></PermissionRoute>} />
+          <Route path="pre-lead/view/:id/edit" element={<PermissionRoute><MissCampaignView /></PermissionRoute>} />
           {/* Brief Pipeline Routes */}
           <Route path="brief">
             <Route path="Brief_Pipeline" element={<PermissionRoute><BriefPipeline /></PermissionRoute>} />
