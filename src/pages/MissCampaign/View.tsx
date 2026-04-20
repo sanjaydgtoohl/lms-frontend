@@ -19,9 +19,14 @@ import { apiClient } from '../../utils/apiClient';
 import { usePermissions } from '../../hooks/SidebarMenuHooks';
 import { IoIosArrowBack } from 'react-icons/io';
 import TableHeader from '../../components/ui/TableHeader';
+import { useDispatch } from 'react-redux';
+import type { AppDispatch } from '../../redux/store';
+import { setUnreadCount, setNotifications } from '../../redux/slices/notificationSlice';
+import { getUnreadNotificationCount, listNotifications } from '../../services/notifications';
 
 const View: React.FC = () => {
   const { hasPermission } = usePermissions();
+  const dispatch = useDispatch<AppDispatch>();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -236,8 +241,9 @@ const View: React.FC = () => {
   const handleSave = async () => {
     try {
       setCurrentPage(1);
-      await fetchCampaigns(1, searchQuery, activeFilters);
-      SweetAlert.showCreateSuccess();
+      try { SweetAlert.showCreateSuccess(); } catch {
+        //no need to action
+      }
     } catch (error) {
       console.error('Failed to refresh campaigns:', error);
     }
@@ -251,7 +257,7 @@ const View: React.FC = () => {
       try { SweetAlert.showDeleteSuccess(); } catch {
         //no need to action
       }
-      await fetchCampaigns(currentPage, searchQuery, activeFilters); // Refresh table from server
+      await fetchCampaigns(currentPage); // Refresh table from server
     } catch (error) {
       console.error('Failed to delete campaign:', error);
       try { SweetAlert.showError((error as any)?.message || 'Failed to delete campaign'); } catch {
@@ -311,8 +317,11 @@ const View: React.FC = () => {
 
   const handleSaveEdited = async () => {
     try {
-      await fetchCampaigns(1, searchQuery, activeFilters);
-      SweetAlert.showUpdateSuccess();
+      await updateMissCampaign(updated.id, updated);
+      await fetchCampaigns(currentPage); // Refresh table from server
+      try { SweetAlert.showUpdateSuccess(); } catch {
+        // no need to action
+      }
     } catch (error) {
       console.error('Failed to refresh campaigns:', error);
     }

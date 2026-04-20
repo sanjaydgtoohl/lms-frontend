@@ -1,14 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import type { AppDispatch, RootState } from '../redux/store';
+import { setNotifications, setUnreadCount, markNotificationRead, markAllNotificationsRead } from '../redux/slices/notificationSlice';
 import { Bell, Check, Clock3, ChevronRight, ArrowRight } from 'lucide-react';
 import { Button } from '../components/ui';
 import {
   getUnreadNotificationCount,
   listNotifications,
-  markAllNotificationsRead,
-  markCategoryRead,
-  markNotificationRead,
 } from '../services/notifications';
-import type { NotificationCategory, NotificationItem, NotificationTab } from '../services/notifications';
+import type { NotificationCategory, NotificationTab } from '../services/notifications';
 
 const CATEGORY_OPTIONS: Array<{ key: NotificationCategory; label: string }> = [
   { key: 'Lead Created', label: 'Lead Created' },
@@ -60,18 +60,35 @@ const formatTimeAgo = (value: string) => {
 };
 
 const Notifications: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
+
   const [activeTab, setActiveTab] = useState<NotificationTab>('all');
   const [selectedCategories, setSelectedCategories] = useState<NotificationCategory[]>([]);
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingCount, setLoadingCount] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isMarking, setIsMarking] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [showUnreadOnly, setShowUnreadOnly] = useState(false);
+  const [hasCategories, setHasCategories] = useState(false);
+
+  // Map tab to module key
+  const getModuleKey = (tab: NotificationTab): 'all' | 'leadManagement' | 'brief' | 'preLead' | 'system' => {
+    switch (tab) {
+      case 'lead-management': return 'leadManagement';
+      case 'brief': return 'brief';
+      case 'pre-lead': return 'preLead';
+      case 'system': return 'system';
+      default: return 'all';
+    }
+  };
+
+  const moduleKey = getModuleKey(activeTab);
+  const moduleState = useSelector((state: RootState) => state.notifications[moduleKey]);
+  const notifications = moduleState?.notifications || [];
+  const reduxUnreadCount = moduleState?.unreadCount || 0;
+  const reduxTotalItems = moduleState?.totalItems || 0;
 
   const activeCategoryLabels = selectedCategories.map((item) => item.toString()).join(', ');
 
@@ -79,7 +96,7 @@ const Notifications: React.FC = () => {
     setLoadingCount(true);
     try {
       const count = await getUnreadNotificationCount();
-      setUnreadCount(count);
+      dispatch(setUnreadCount({ module: moduleKey, count }));
     } catch (err) {
       console.error('Failed to fetch notification count:', err);
     } finally {
@@ -101,17 +118,27 @@ const Notifications: React.FC = () => {
 
       const response = await listNotifications(page, ITEMS_PER_PAGE, effectiveTab, effectiveCategories);
       const items = response.data || [];
-      setNotifications((prev) => (append ? [...prev, ...items] : items));
-      setCurrentPage(page);
       const total = response.meta?.pagination?.total ?? items.length;
-      setTotalItems(total);
+
+      // Always set hasCategories based on current items
+      if (page === 1) {
+        const hasCategoryData = items.some((item: any) => item.category || item.data?.category);
+        setHasCategories(hasCategoryData);
+      }
+
+      if (append) {
+        dispatch(setNotifications({ module: moduleKey, notifications: [...notifications, ...items], total }));
+      } else {
+        dispatch(setNotifications({ module: moduleKey, notifications: items, total }));
+      }
+      setCurrentPage(page);
     } catch (err) {
       console.error(err);
       setError('Unable to load notifications. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [activeTab, selectedCategories, showUnreadOnly]);
+  }, [activeTab, selectedCategories, showUnreadOnly, notifications, dispatch, moduleKey]);
 
   useEffect(() => {
     fetchUnreadCount();
@@ -155,8 +182,7 @@ const Notifications: React.FC = () => {
   const handleMarkAllRead = async () => {
     setIsMarking(true);
     try {
-      await markAllNotificationsRead();
-      setRefreshKey((key) => key + 1);
+      dispatch(markAllNotificationsRead({ module: moduleKey }));
       setShowUnreadOnly(false);
     } catch (err) {
       console.error(err);
@@ -167,9 +193,9 @@ const Notifications: React.FC = () => {
   };
 
   const handleMarkCategoryRead = async (category: NotificationCategory) => {
+    void category; // mark as intentionally unused
     setIsMarking(true);
     try {
-      await markCategoryRead(category);
       setRefreshKey((key) => key + 1);
     } catch (err) {
       console.error(err);
@@ -182,9 +208,7 @@ const Notifications: React.FC = () => {
   const handleMarkRead = async (id: string) => {
     setIsMarking(true);
     try {
-      await markNotificationRead(id);
-      setNotifications((prev) => prev.map((item) => (item.id === id ? { ...item, read: true } : item)));
-      setUnreadCount((prev) => Math.max(prev - 1, 0));
+      dispatch(markNotificationRead({ module: moduleKey, id }));
     } catch (err) {
       console.error(err);
       setError('Failed to mark notification read.');
@@ -196,8 +220,8 @@ const Notifications: React.FC = () => {
   const unreadInView = useMemo(() => notifications.filter((item) => !item.read).length, [notifications]);
 
   const hasMore = useMemo(() => {
-    return notifications.length < totalItems;
-  }, [notifications.length, totalItems]);
+    return notifications.length < reduxTotalItems;
+  }, [notifications.length, reduxTotalItems]);
 
   const onViewAll = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -212,7 +236,7 @@ const Notifications: React.FC = () => {
             <h1 className="text-2xl font-semibold">Notifications</h1>
           </div>
           <p className="mt-2 text-sm text-gray-500">
-            {loadingCount ? 'Loading unread count…' : `Unread notifications: ${unreadCount}`}
+            {loadingCount ? 'Loading unread count…' : `Unread notifications: ${reduxUnreadCount}`}
             {selectedCategories.length > 0 && (
               <span className="ml-2">
                 · Filtered by: {activeCategoryLabels}
@@ -227,7 +251,7 @@ const Notifications: React.FC = () => {
             variant="outline"
             size="sm"
             onClick={handleMarkAllRead}
-            disabled={isMarking || unreadCount === 0}
+            disabled={isMarking || reduxUnreadCount === 0}
           >
             <Check className="w-4 h-4 mr-2" />
             Mark all read
@@ -259,7 +283,7 @@ const Notifications: React.FC = () => {
           </label>
           <button
             onClick={handleMarkAllRead}
-            disabled={isMarking || unreadCount === 0}
+            disabled={isMarking || reduxUnreadCount === 0}
             className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
             <Check className="w-4 h-4" />
@@ -267,52 +291,52 @@ const Notifications: React.FC = () => {
           </button>
         </div>
 
-        <div className="flex flex-wrap gap-2 mb-4">
-          {TAB_OPTIONS.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => handleTabChange(tab.key)}
-              className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-                tab.key === activeTab
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex flex-wrap gap-2 mb-4">
-          {CATEGORY_OPTIONS.map((option) => {
-            const isModuleTab = ['lead-management', 'brief', 'pre-lead', 'system'].includes(activeTab);
-            const tabConfig = TAB_OPTIONS.find(tab => tab.key === activeTab);
-            const isAutoSelected = tabConfig?.categories?.includes(option.key) || false;
-            const isManuallySelected = selectedCategories.includes(option.key);
-            const isActive = isAutoSelected || (isManuallySelected && !isModuleTab);
-
-            return (
+        {hasCategories && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {TAB_OPTIONS.map((tab) => (
               <button
-                key={option.key}
+                key={tab.key}
                 type="button"
-                onClick={() => !isModuleTab && handleToggleCategory(option.key)}
-                disabled={isModuleTab}
-                className={`rounded-full border px-4 py-2 text-sm transition ${
-                  isActive
-                    ? isAutoSelected
-                      ? 'border-blue-500 bg-blue-100 text-blue-700 cursor-not-allowed'
-                      : 'border-blue-500 bg-blue-50 text-blue-700'
-                    : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50'
-                } ${isModuleTab ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'}`}
+                onClick={() => handleTabChange(tab.key)}
+                className={`rounded-full px-4 py-2 text-sm font-medium transition ${tab.key === activeTab
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
               >
-                {option.label}
-                {isAutoSelected && <span className="ml-1 text-xs">(Auto)</span>}
+                {tab.label}
               </button>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
 
+        {hasCategories && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {CATEGORY_OPTIONS.map((option) => {
+              const isModuleTab = ['lead-management', 'brief', 'pre-lead', 'system'].includes(activeTab);
+              const tabConfig = TAB_OPTIONS.find(tab => tab.key === activeTab);
+              const isAutoSelected = tabConfig?.categories?.includes(option.key) || false;
+              const isManuallySelected = selectedCategories.includes(option.key);
+              const isActive = isAutoSelected || (isManuallySelected && !isModuleTab);
+
+              return (
+                <button
+                  key={option.key}
+                  type="button"
+                  onClick={() => !isModuleTab && handleToggleCategory(option.key)}
+                  disabled={isModuleTab}
+                  className={`rounded-full border px-4 py-2 text-sm transition ${isActive
+                      ? isAutoSelected
+                        ? 'border-blue-500 bg-blue-100 text-blue-700 cursor-not-allowed'
+                        : 'border-blue-500 bg-blue-50 text-blue-700'
+                      : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50'
+                    } ${isModuleTab ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'}`}
+                >
+                  {option.label}
+                  {isAutoSelected && <span className="ml-1 text-xs">(Auto)</span>}
+                </button>
+              );
+            })}
+          </div>)}
         {error && (
           <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
@@ -424,7 +448,7 @@ const Notifications: React.FC = () => {
           <div className="text-sm text-gray-600">
             {notifications.length > 0 && (
               <>
-                Showing {notifications.length} of {totalItems} notifications · {unreadInView} unread in this view
+                Showing {notifications.length} of {reduxTotalItems} notifications · {unreadInView} unread in this view
               </>
             )}
           </div>
@@ -440,7 +464,7 @@ const Notifications: React.FC = () => {
                 Load More
               </Button>
             )}
-            {!hasMore && totalItems > ITEMS_PER_PAGE && (
+            {!hasMore && reduxTotalItems > ITEMS_PER_PAGE && (
               <button
                 type="button"
                 onClick={onViewAll}
