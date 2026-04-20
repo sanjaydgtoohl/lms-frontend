@@ -12,6 +12,10 @@ import { ROUTES } from '../../constants';
 import { listLeads, listLeadsByStatus, updateLead, deleteLead } from '../../services/AllLeads';
 import { assignUserToLead } from '../../services/leadAssignTo';
 import { usePermissions } from '../../hooks/SidebarMenuHooks';
+import { useDispatch } from 'react-redux';
+import type { AppDispatch } from '../../redux/store';
+import { setUnreadCount, setNotifications, incrementUnreadCount } from '../../redux/slices/notificationSlice';
+import { getUnreadNotificationCount, listNotifications } from '../../services/notifications';
 
 interface Lead {
   id: string;
@@ -122,6 +126,7 @@ interface Props {
 }
 
 const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
+  const dispatch = useDispatch<AppDispatch>();
   // Assign To options state and effect (must be inside component)
   const [assignToOptions, setAssignToOptions] = useState<UserOption[]>([]);
   const { hasPermission } = usePermissions();
@@ -332,6 +337,23 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
           await updateLead(numericId, { current_assign_user: newSalesMan });
         }
         SweetAlert.showUpdateSuccess();
+        
+        // Immediately increment badge in Redux, then sync with server
+        dispatch(incrementUnreadCount({ module: 'all' }));
+        dispatch(incrementUnreadCount({ module: 'leadManagement' }));
+        
+        // Sync with server count
+        try {
+          const [count, notificationsRes] = await Promise.all([
+            getUnreadNotificationCount(),
+            listNotifications(1, 10, 'lead-management', ['Lead Created', 'Assignment Updated'])
+          ]);
+          dispatch(setUnreadCount({ module: 'all', count }));
+          dispatch(setUnreadCount({ module: 'leadManagement', count: notificationsRes.data?.filter((n: any) => !n.read).length || 0 }));
+          dispatch(setNotifications({ module: 'leadManagement', notifications: notificationsRes.data || [], total: notificationsRes.meta?.pagination?.total || 0 }));
+        } catch (notifErr) {
+          console.error('Failed to refresh notifications:', notifErr);
+        }
       } catch (err) {
         console.warn('Failed to persist assignTo change', err);
         try { SweetAlert.showError('Failed to update assignment'); } catch {
@@ -358,6 +380,24 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
     try {
       await deleteLead(numericId);
       setLeads((prev) => prev.filter((l) => l.id !== confirmDeleteId));
+      SweetAlert.showDeleteSuccess();
+      
+      // Immediately increment badge in Redux, then sync with server
+      dispatch(incrementUnreadCount({ module: 'all' }));
+      dispatch(incrementUnreadCount({ module: 'leadManagement' }));
+      
+      // Sync with server count
+      try {
+        const [count, notificationsRes] = await Promise.all([
+          getUnreadNotificationCount(),
+          listNotifications(1, 10, 'lead-management', ['Lead Created', 'Assignment Updated'])
+        ]);
+        dispatch(setUnreadCount({ module: 'all', count }));
+        dispatch(setUnreadCount({ module: 'leadManagement', count: notificationsRes.data?.filter((n: any) => !n.read).length || 0 }));
+        dispatch(setNotifications({ module: 'leadManagement', notifications: notificationsRes.data || [], total: notificationsRes.meta?.pagination?.total || 0 }));
+      } catch (notifErr) {
+        console.error('Failed to refresh notifications:', notifErr);
+      }
     } catch (err: any) {
       console.error('Failed to delete lead', err);
       SweetAlert.showError(err?.message || 'Failed to delete lead');

@@ -57,6 +57,10 @@ const notificationSlice = createSlice({
       const { module, count } = action.payload;
       state[module].unreadCount = count;
     },
+    incrementUnreadCount(state, action: PayloadAction<{ module: 'all' | 'leadManagement' | 'brief' | 'preLead' | 'system'; by?: number }>) {
+      const { module, by = 1 } = action.payload;
+      state[module].unreadCount += by;
+    },
     markNotificationRead(state, action: PayloadAction<{ module: 'all' | 'leadManagement' | 'brief' | 'preLead' | 'system'; id: string }>) {
       const { module, id } = action.payload;
       const notification = state[module].notifications.find(n => n.id === id);
@@ -101,6 +105,7 @@ export const {
   setNotifications,
   addNotification,
   setUnreadCount,
+  incrementUnreadCount,
   markNotificationRead,
   markAllNotificationsRead,
   updateNotificationInList,

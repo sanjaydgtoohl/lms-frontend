@@ -19,9 +19,14 @@ import { apiClient } from '../../utils/apiClient';
 import { usePermissions } from '../../hooks/SidebarMenuHooks';
 import { IoIosArrowBack } from 'react-icons/io';
 import TableHeader from '../../components/ui/TableHeader';
+import { useDispatch } from 'react-redux';
+import type { AppDispatch } from '../../redux/store';
+import { setUnreadCount, setNotifications } from '../../redux/slices/notificationSlice';
+import { getUnreadNotificationCount, listNotifications } from '../../services/notifications';
 
 const View: React.FC = () => {
   const { hasPermission } = usePermissions();
+  const dispatch = useDispatch<AppDispatch>();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -237,7 +242,20 @@ const View: React.FC = () => {
     try {
       setCurrentPage(1);
       await fetchCampaigns(1, searchQuery, activeFilters);
-      SweetAlert.showCreateSuccess();
+      try { SweetAlert.showCreateSuccess(); } catch {
+        //no need to action
+      }
+      // Refresh notifications in Redux after campaign create
+      try {
+        const [count, notificationsRes] = await Promise.all([
+          getUnreadNotificationCount(),
+          listNotifications(1, 10, 'all', [])
+        ]);
+        dispatch(setUnreadCount({ module: 'all', count }));
+        dispatch(setNotifications({ module: 'all', notifications: notificationsRes.data || [], total: notificationsRes.meta?.pagination?.total || 0 }));
+      } catch (notifErr) {
+        console.error('Failed to refresh notifications:', notifErr);
+      }
     } catch (error) {
       console.error('Failed to refresh campaigns:', error);
     }
@@ -252,6 +270,17 @@ const View: React.FC = () => {
         //no need to action
       }
       await fetchCampaigns(currentPage, searchQuery, activeFilters); // Refresh table from server
+      // Refresh notifications in Redux after campaign delete
+      try {
+        const [count, notificationsRes] = await Promise.all([
+          getUnreadNotificationCount(),
+          listNotifications(1, 10, 'all', [])
+        ]);
+        dispatch(setUnreadCount({ module: 'all', count }));
+        dispatch(setNotifications({ module: 'all', notifications: notificationsRes.data || [], total: notificationsRes.meta?.pagination?.total || 0 }));
+      } catch (notifErr) {
+        console.error('Failed to refresh notifications:', notifErr);
+      }
     } catch (error) {
       console.error('Failed to delete campaign:', error);
       try { SweetAlert.showError((error as any)?.message || 'Failed to delete campaign'); } catch {
@@ -312,7 +341,20 @@ const View: React.FC = () => {
   const handleSaveEdited = async () => {
     try {
       await fetchCampaigns(1, searchQuery, activeFilters);
-      SweetAlert.showUpdateSuccess();
+      try { SweetAlert.showUpdateSuccess(); } catch {
+        // no need to action
+      }
+      // Refresh notifications in Redux after campaign update
+      try {
+        const [count, notificationsRes] = await Promise.all([
+          getUnreadNotificationCount(),
+          listNotifications(1, 10, 'all', [])
+        ]);
+        dispatch(setUnreadCount({ module: 'all', count }));
+        dispatch(setNotifications({ module: 'all', notifications: notificationsRes.data || [], total: notificationsRes.meta?.pagination?.total || 0 }));
+      } catch (notifErr) {
+        console.error('Failed to refresh notifications:', notifErr);
+      }
     } catch (error) {
       console.error('Failed to refresh campaigns:', error);
     }

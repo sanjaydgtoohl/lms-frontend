@@ -4,12 +4,12 @@ import { Bell, Plus, User, LogOut, Settings, UserRound, LifeBuoy, ChevronDown, M
 import { Button } from '../ui';
 import { fetchCurrentUser } from '../../services/Header';
 import { clearAllNotifications, getUnreadNotificationCount, listNotifications, markAllNotificationsRead, markNotificationRead } from '../../services/notifications';
-import { ROUTES } from '../../constants';
-import { useDispatch } from 'react-redux';
-import type { AppDispatch } from '../../redux/store';
+import { useDispatch, useSelector } from 'react-redux';
+import type { AppDispatch, RootState } from '../../redux/store';
 import { logoutUser } from '../../redux/slices/authSlice';
+import { setUnreadCount } from '../../redux/slices/notificationSlice';
 import { FaMoon, FaSun } from 'react-icons/fa';
-import type { NotificationItem, NotificationTab, NotificationCategory } from '../../services/notifications';
+import type { NotificationItem, NotificationTab } from '../../services/notifications';
 import { Check } from 'lucide-react';
 
 interface HeaderProps {
@@ -28,11 +28,12 @@ const Header: React.FC<HeaderProps> = ({
   const [isUserMenuOpen, setIsUserMenuOpen] = React.useState(false);
   const userMenuRef = React.useRef<HTMLDivElement | null>(null);
   const [user, setUser] = React.useState<any>(null);
-  const [unreadCount, setUnreadCount] = React.useState<number>(0);
+  const allNotifications = useSelector((state: RootState) => state.notifications.all);
+  const reduxUnreadCount = allNotifications?.unreadCount || 0;
   const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] = React.useState(false);
   const [recentNotifications, setRecentNotifications] = React.useState<NotificationItem[]>([]);
   const [showUnreadOnly, setShowUnreadOnly] = React.useState(false);
-  const [activeDropdownTab, setActiveDropdownTab] = React.useState<NotificationTab>('all');
+  const [activeDropdownTab] = React.useState<NotificationTab>('all');
   const [isMarkingRead, setIsMarkingRead] = React.useState(false);
   const notificationDropdownRef = React.useRef<HTMLDivElement | null>(null);
   const notificationButtonRef = React.useRef<HTMLButtonElement | null>(null);
@@ -53,7 +54,7 @@ const Header: React.FC<HeaderProps> = ({
       try {
         const count = await getUnreadNotificationCount();
         if (active) {
-          setUnreadCount(count);
+          dispatch(setUnreadCount({ module: 'all', count }));
         }
       } catch (error) {
         console.error('Failed to load notification count:', error);
@@ -66,36 +67,36 @@ const Header: React.FC<HeaderProps> = ({
     };
   }, []); // Only load unread count once on mount
 
-  const getTabCategories = (tab: NotificationTab): NotificationCategory[] => {
-    const tabConfig = [
-      { key: 'all', categories: [] },
-      { key: 'unread', categories: [] },
-      { key: 'lead-management', categories: ['Lead Created', 'Assignment Updated'] },
-      { key: 'brief', categories: ['Brief Created', 'Status Updated', 'Assignment Updated'] },
-      { key: 'pre-lead', categories: ['Pre Lead Created'] },
-      { key: 'system', categories: ['System'] },
-    ];
-    const config = tabConfig.find(c => c.key === tab);
-    return config?.categories || [];
-  };
+  // const getTabCategories = (tab: NotificationTab): NotificationCategory[] => {
+  //   const tabConfig = [
+  //     { key: 'all', categories: [] },
+  //     { key: 'unread', categories: [] },
+  //     { key: 'lead-management', categories: ['Lead Created', 'Assignment Updated'] },
+  //     { key: 'brief', categories: ['Brief Created', 'Status Updated', 'Assignment Updated'] },
+  //     { key: 'pre-lead', categories: ['Pre Lead Created'] },
+  //     { key: 'system', categories: ['System'] },
+  //   ];
+  //   const config = tabConfig.find(c => c.key === tab);
+  //   return config?.categories || [];
+  // };
 
   const loadRecentNotifications = async (tab: NotificationTab = activeDropdownTab, unreadOnly: boolean = showUnreadOnly) => {
     try {
       let effectiveTab = tab;
-      let effectiveCategories = getTabCategories(tab);
+      // let effectiveCategories = getTabCategories(tab); // Commented out category functionality
 
       if (unreadOnly) {
         effectiveTab = 'unread';
       }
 
-      const response = await listNotifications(1, 5, effectiveTab, effectiveCategories);
-      
+      const response = await listNotifications(1, 5, effectiveTab, []);
+
       // Frontend-side filtering: if unreadOnly is true, filter to show only unread notifications
       let filteredNotifications = response.data || [];
       if (unreadOnly) {
         filteredNotifications = filteredNotifications.filter(n => !n.read);
       }
-      
+
       setRecentNotifications(filteredNotifications);
     } catch (error) {
       console.error('Failed to load recent notifications:', error);
@@ -128,7 +129,7 @@ const Header: React.FC<HeaderProps> = ({
         (async () => {
           try {
             const count = await getUnreadNotificationCount();
-            setUnreadCount(count);
+            dispatch(setUnreadCount({ module: 'all', count }));
           } catch (error) {
             console.error('Failed to refresh notification count:', error);
           }
@@ -137,11 +138,6 @@ const Header: React.FC<HeaderProps> = ({
       }
       return next;
     });
-  };
-
-  const handleDropdownTabChange = (tab: NotificationTab) => {
-    setActiveDropdownTab(tab);
-    loadRecentNotifications(tab, showUnreadOnly);
   };
 
   const handleUnreadFilterChange = () => {
@@ -157,7 +153,7 @@ const Header: React.FC<HeaderProps> = ({
       setShowUnreadOnly(false);
       await loadRecentNotifications(activeDropdownTab, false);
       const unread = await getUnreadNotificationCount();
-      setUnreadCount(unread);
+      dispatch(setUnreadCount({ module: 'all', count: unread }));
     } catch (error) {
       console.error('Failed to mark all as read:', error);
     } finally {
@@ -171,7 +167,7 @@ const Header: React.FC<HeaderProps> = ({
       setRecentNotifications([]);
       setShowUnreadOnly(false);
       const unread = await getUnreadNotificationCount();
-      setUnreadCount(unread);
+      dispatch(setUnreadCount({ module: 'all', count: unread }));
     } catch (error) {
       console.error('Failed to remove all notifications:', error);
     }
@@ -185,7 +181,7 @@ const Header: React.FC<HeaderProps> = ({
         // Immediately refresh after marking as read
         loadRecentNotifications(activeDropdownTab, showUnreadOnly);
         const unread = await getUnreadNotificationCount();
-        setUnreadCount(unread);
+        dispatch(setUnreadCount({ module: 'all', count: unread }));
       } catch (error) {
         console.error('Failed to mark notification as read:', error);
       }
@@ -284,9 +280,9 @@ const Header: React.FC<HeaderProps> = ({
               aria-label="Open notifications"
             >
               <Bell className="text-orange-600" />
-              {unreadCount > 0 && (
+              {reduxUnreadCount > 0 && (
                 <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-orange-600 px-1.5 aspect-square text-[10px] font-semibold text-white">
-                  {unreadCount > 99 ? '99+' : unreadCount}
+                  {reduxUnreadCount > 99 ? '99+' : reduxUnreadCount}
                 </span>
               )}
             </button>
@@ -300,25 +296,16 @@ const Header: React.FC<HeaderProps> = ({
                   <div className="px-4 py-3 border-b border-gray-100 bg-white">
                     <div className="flex items-center justify-between mb-6">
                       <h3 className="text-sm font-semibold text-gray-900 flex gap-2 items-center">Notifications
-                        {unreadCount > 0 && (
+                        {reduxUnreadCount > 0 && (
                           <span className="inline-flex w-5 items-center justify-center rounded-full bg-gray-100 px-1.5 aspect-square text-[10px] font-semibold text-black">
-                            {unreadCount > 99 ? '99+' : unreadCount}
+                            {reduxUnreadCount > 99 ? '99+' : reduxUnreadCount}
                           </span>
                         )}
                       </h3>
-                      <button
-                        onClick={() => {
-                          setIsNotificationDropdownOpen(false);
-                          navigate(ROUTES.NOTIFICATIONS);
-                        }}
-                        className="text-sm! text-gray-600 p-0! hover:text-gray-800 underline"
-                      >
-                        View all
-                      </button>
                     </div>
 
                     {/* Checkboxes */}
-                    <div className="flex flex-wrap justify-between gap-3 mb-3 pb-3 border-b border-gray-200">
+                    <div className="flex flex-wrap justify-between gap-3">
                       <div className="flex gap-3 items-center">
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
@@ -332,7 +319,7 @@ const Header: React.FC<HeaderProps> = ({
 
                         <button
                           onClick={handleMarkAllRead}
-                          disabled={isMarkingRead || unreadCount === 0}
+                          disabled={isMarkingRead || reduxUnreadCount === 0}
                           className="inline-flex items-center gap-1.5 text-xs! font-medium p-0! text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
                         >
                           <Check className="w-4 h-4" />
@@ -349,29 +336,31 @@ const Header: React.FC<HeaderProps> = ({
                       </button>
                     </div>
 
-                    {/* Tabs */}
-                    <div className="flex flex-wrap gap-1.5">
-                      {[
-                        { key: 'all', label: 'All' },
-                        { key: 'lead-management', label: 'Lead' },
-                        { key: 'brief', label: 'Brief' },
-                        { key: 'pre-lead', label: 'Pre Lead' },
-                      ].map((tab) => (
-                        <button
-                          key={tab.key}
-                          onClick={() => handleDropdownTabChange(tab.key as NotificationTab)}
-                          className={`px-3! py-1 leading-none text-sm! rounded-md! outline-none border-0 font-medium transition ${activeDropdownTab === tab.key
-                            ? 'bg-gray-800! text-white'
-                            : 'bg-gray-200! text-gray-700! hover:text-white! hover:bg-gray-800!'
-                            }`}
-                        >
-                          {tab.label}
-                        </button>
-                      ))}
-                    </div>
+                    {/* Tabs - only show if API has category data */}
+                    {/* {hasCategories && (
+                      <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-gray-200">
+                        {[
+                          { key: 'all', label: 'All' }, 
+                          { key: 'lead-management', label: 'Lead' },
+                          { key: 'brief', label: 'Brief' },
+                          { key: 'pre-lead', label: 'Pre Lead' },
+                        ].map((tab) => (
+                          <button
+                            key={tab.key}
+                            onClick={() => handleDropdownTabChange(tab.key as NotificationTab)}
+                            className={`px-3! py-1 leading-none text-sm! rounded-md! outline-none border-0 font-medium transition ${activeDropdownTab === tab.key
+                              ? 'bg-gray-800! text-white'
+                              : 'bg-gray-200! text-gray-700! hover:text-white! hover:bg-gray-800!'
+                              }`}
+                          >
+                            {tab.label}
+                          </button>
+                        ))}
+                      </div>
+                    )} */}
                   </div>
-                  <div className="max-h-64 overflow-y-auto">
-                    {recentNotifications.length === 0 ? (
+                  <div className="min-h-30 max-h-100 overflow-y-auto flex flex-col items-center">
+                    {recentNotifications.length === 0 ? ( 
                       <div className="px-4 py-6 text-center text-sm text-gray-500">
                         No notifications yet
                       </div>
