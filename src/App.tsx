@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { useAuthStore } from './store/auth';
-import { handleTokenExpiration } from './utils/auth';
+import { useDispatch, useSelector } from 'react-redux';
+import type { AppDispatch, RootState } from './redux/store';
+import { forceLogout, setAuthenticated } from './redux/slices/authSlice';
 import authService from './services/authService';
 import LoginCard from './pages/Auth/LoginCard';
 import Dashboard from './pages/Dashboard';
@@ -39,20 +40,18 @@ import Notifications from './pages/Notifications';
 
 const AuthSessionHandler: React.FC = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
 
   useEffect(() => {
     const redirectToLogin = () => {
-      useAuthStore.setState({
-        user: null,
-        token: null,
-        refreshTokenValue: null,
-        isAuthenticated: false,
-        isLoading: false,
-      });
+      dispatch(forceLogout());
       navigate(ROUTES.LOGIN, { replace: true });
     };
 
-    if (!authService.getAccessToken()) {
+    const hasAccessToken = Boolean(authService.getAccessToken());
+    dispatch(setAuthenticated(hasAccessToken));
+
+    if (!hasAccessToken) {
       redirectToLogin();
       return;
     }
@@ -77,23 +76,14 @@ const AuthSessionHandler: React.FC = () => {
       window.removeEventListener('auth:force-logout', handleForceLogout);
       clearInterval(tokenCheckInterval);
     };
-  }, [navigate]);
+  }, [dispatch, navigate]);
 
   return null;
 };
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated, token } = useAuthStore();
-  const navigate = useNavigate();
-  
-  useEffect(() => {
-    if (isAuthenticated && token) {
-      handleTokenExpiration().catch(() => {
-        navigate(ROUTES.LOGIN, { replace: true });
-      });
-    }
-  }, [token, isAuthenticated, navigate]);
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
   
   if (!isAuthenticated) {
     return <Navigate to={ROUTES.LOGIN} replace />;
@@ -104,7 +94,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
 // Public Route Component (redirect if authenticated)
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated } = useAuthStore();
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
   
   if (isAuthenticated) {
     return <Navigate to={ROUTES.DASHBOARD} replace />;

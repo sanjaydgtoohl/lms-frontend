@@ -52,6 +52,11 @@ const Input = forwardRef<HTMLInputElement, InputProps & React.InputHTMLAttribute
           className={inputClasses}
           aria-invalid={error ? 'true' : 'false'}
           aria-describedby={error ? `${name}-error` : undefined}
+          autoComplete={
+            type === 'email' ? 'email' :
+            type === 'password' ? 'current-password' :
+            props.autoComplete
+          }
           {...props}
         />
         {rightElement ? (

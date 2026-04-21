@@ -118,20 +118,29 @@ export function checkAndHandleMissingToken() {
 
 /**
  * Clear all local storage related to authentication
+ * Only removes known auth-related keys, not aggressive wildcard matching
  */
 export function clearLocalStorage() {
   try {
-    localStorage.removeItem('auth-storage');
-    // Remove any other auth-related localStorage items
-    const keysToRemove = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && (key.includes('auth') || key.includes('token') || key.includes('user'))) {
-        keysToRemove.push(key);
+    // Only remove these specific auth storage keys
+    const authStorageKeys = [
+      'auth-storage',
+      'auth_token',
+      'refresh_token',
+      'user_info',
+      'permissions',
+      'sidebar_menu'
+    ];
+    
+    authStorageKeys.forEach(key => {
+      try {
+        localStorage.removeItem(key);
+      } catch {
+        // Ignore individual key removal errors
       }
-    }
-    keysToRemove.forEach(key => localStorage.removeItem(key));
-    console.log('[sessionManager] Local storage cleared');
+    });
+    
+    console.log('[sessionManager] Known auth storage keys cleared');
   } catch (e) {
     console.error('Error clearing local storage:', e);
   }
