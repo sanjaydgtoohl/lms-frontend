@@ -7,6 +7,9 @@ import { Button } from '../components/ui';
 import {
   getUnreadNotificationCount,
   listNotifications,
+  markNotificationRead as markNotificationReadApi,
+  markCategoryRead,
+  markAllNotificationsRead as markAllNotificationsReadApi,
 } from '../services/notifications';
 import type { NotificationCategory, NotificationTab } from '../services/notifications';
 
@@ -57,6 +60,11 @@ const formatTimeAgo = (value: string) => {
   const diffWeeks = Math.floor(diffDays / 7);
   if (diffWeeks < 4) return `${diffWeeks}w ago`;
   return date.toLocaleDateString();
+};
+
+const isSafeExternalUrl = (url: unknown): url is string => {
+  if (typeof url !== 'string') return false;
+  return /^https?:\/\//i.test(url.trim());
 };
 
 const Notifications: React.FC = () => {
@@ -182,8 +190,20 @@ const Notifications: React.FC = () => {
   const handleMarkAllRead = async () => {
     setIsMarking(true);
     try {
+      if (moduleKey === 'all') {
+        await markAllNotificationsReadApi();
+      } else {
+        const categoriesToMark =
+          selectedCategories.length > 0
+            ? selectedCategories
+            : (TAB_OPTIONS.find((tab) => tab.key === activeTab)?.categories || []);
+
+        await Promise.all(categoriesToMark.map((category) => markCategoryRead(category)));
+      }
+
       dispatch(markAllNotificationsRead({ module: moduleKey }));
       setShowUnreadOnly(false);
+      setRefreshKey((key) => key + 1);
     } catch (err) {
       console.error(err);
       setError('Failed to mark all notifications read.');
@@ -193,9 +213,9 @@ const Notifications: React.FC = () => {
   };
 
   const handleMarkCategoryRead = async (category: NotificationCategory) => {
-    void category; // mark as intentionally unused
     setIsMarking(true);
     try {
+      await markCategoryRead(category);
       setRefreshKey((key) => key + 1);
     } catch (err) {
       console.error(err);
@@ -208,7 +228,9 @@ const Notifications: React.FC = () => {
   const handleMarkRead = async (id: string) => {
     setIsMarking(true);
     try {
+      await markNotificationReadApi(id);
       dispatch(markNotificationRead({ module: moduleKey, id }));
+      setRefreshKey((key) => key + 1);
     } catch (err) {
       console.error(err);
       setError('Failed to mark notification read.');
@@ -425,11 +447,11 @@ const Notifications: React.FC = () => {
                       >
                         {notification.read ? 'Read' : 'Mark Read'}
                       </Button>
-                      {notification.link && (
+                      {isSafeExternalUrl(notification.link) && (
                         <a
                           href={notification.link}
                           target="_blank"
-                          rel="noreferrer"
+                          rel="noopener noreferrer"
                           className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
                         >
                           Open

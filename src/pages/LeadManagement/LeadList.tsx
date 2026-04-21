@@ -321,6 +321,30 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
     navigate(ROUTES.LEAD.DETAIL(cleanId));
   };
 
+  const syncLeadNotificationCounts = useCallback(async () => {
+    const [count, notificationsRes, unreadLeadRes] = await Promise.all([
+      getUnreadNotificationCount(),
+      listNotifications(1, 10, 'lead-management', ['Lead Created', 'Assignment Updated']),
+      listNotifications(1, 1, 'unread', ['Lead Created', 'Assignment Updated']),
+    ]);
+
+    const leadUnreadCount =
+      unreadLeadRes.meta?.pagination?.total ??
+      unreadLeadRes.meta?.total ??
+      unreadLeadRes.data?.length ??
+      0;
+
+    dispatch(setUnreadCount({ module: 'all', count }));
+    dispatch(setUnreadCount({ module: 'leadManagement', count: leadUnreadCount }));
+    dispatch(
+      setNotifications({
+        module: 'leadManagement',
+        notifications: notificationsRes.data || [],
+        total: notificationsRes.meta?.pagination?.total || 0,
+      })
+    );
+  }, [dispatch]);
+
   const handleAssignToChange = (leadId: string, newSalesMan: string) => {
     setLeads((prev) =>
       prev.map((lead) =>
@@ -344,13 +368,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
         
         // Sync with server count
         try {
-          const [count, notificationsRes] = await Promise.all([
-            getUnreadNotificationCount(),
-            listNotifications(1, 10, 'lead-management', ['Lead Created', 'Assignment Updated'])
-          ]);
-          dispatch(setUnreadCount({ module: 'all', count }));
-          dispatch(setUnreadCount({ module: 'leadManagement', count: notificationsRes.data?.filter((n: any) => !n.read).length || 0 }));
-          dispatch(setNotifications({ module: 'leadManagement', notifications: notificationsRes.data || [], total: notificationsRes.meta?.pagination?.total || 0 }));
+          await syncLeadNotificationCounts();
         } catch (notifErr) {
           console.error('Failed to refresh notifications:', notifErr);
         }
@@ -381,20 +399,10 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
       await deleteLead(numericId);
       setLeads((prev) => prev.filter((l) => l.id !== confirmDeleteId));
       SweetAlert.showDeleteSuccess();
-      
-      // Immediately increment badge in Redux, then sync with server
-      dispatch(incrementUnreadCount({ module: 'all' }));
-      dispatch(incrementUnreadCount({ module: 'leadManagement' }));
-      
+
       // Sync with server count
       try {
-        const [count, notificationsRes] = await Promise.all([
-          getUnreadNotificationCount(),
-          listNotifications(1, 10, 'lead-management', ['Lead Created', 'Assignment Updated'])
-        ]);
-        dispatch(setUnreadCount({ module: 'all', count }));
-        dispatch(setUnreadCount({ module: 'leadManagement', count: notificationsRes.data?.filter((n: any) => !n.read).length || 0 }));
-        dispatch(setNotifications({ module: 'leadManagement', notifications: notificationsRes.data || [], total: notificationsRes.meta?.pagination?.total || 0 }));
+        await syncLeadNotificationCounts();
       } catch (notifErr) {
         console.error('Failed to refresh notifications:', notifErr);
       }
