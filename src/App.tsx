@@ -37,6 +37,51 @@ import ReceiveEmail from './components/Gmail/ReceiveEmail';
 import DeviceInventory from './pages/Inventory/DeviceInventory';
 import Notifications from './pages/Notifications';
 
+const AuthSessionHandler: React.FC = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const redirectToLogin = () => {
+      useAuthStore.setState({
+        user: null,
+        token: null,
+        refreshTokenValue: null,
+        isAuthenticated: false,
+        isLoading: false,
+      });
+      navigate(ROUTES.LOGIN, { replace: true });
+    };
+
+    if (!authService.getAccessToken()) {
+      redirectToLogin();
+      return;
+    }
+
+    authService.startSessionFromCookies();
+
+    const handleForceLogout = () => {
+      redirectToLogin();
+    };
+
+    window.addEventListener('auth:force-logout', handleForceLogout);
+
+    const tokenCheckInterval = setInterval(() => {
+      const isMissing = authService.checkAndHandleMissingToken();
+      if (isMissing) {
+        redirectToLogin();
+        clearInterval(tokenCheckInterval);
+      }
+    }, 30000);
+
+    return () => {
+      window.removeEventListener('auth:force-logout', handleForceLogout);
+      clearInterval(tokenCheckInterval);
+    };
+  }, [navigate]);
+
+  return null;
+};
+
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, token } = useAuthStore();
@@ -69,26 +114,11 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 function App() {
-  // Initialize session refresh scheduling if user has valid cookies (e.g., page refresh)
-  useEffect(() => {
-    authService.startSessionFromCookies();
-    
-    // Setup periodic check for missing token (every 30 seconds)
-    const tokenCheckInterval = setInterval(() => {
-      const isMissing = authService.checkAndHandleMissingToken();
-      if (isMissing) {
-        // Token was missing, redirect will happen in checkAndHandleMissingToken
-        clearInterval(tokenCheckInterval);
-      }
-    }, 30000); // Check every 30 seconds
-    
-    return () => clearInterval(tokenCheckInterval);
-  }, []);
-
   return (
     <ErrorBoundary>
       <SidebarMenuProvider>
         <Router>
+          <AuthSessionHandler />
           <Routes>
         {/* Public Routes */}
         <Route 

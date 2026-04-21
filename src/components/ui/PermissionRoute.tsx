@@ -57,7 +57,6 @@ const PermissionRoute: React.FC<PermissionRouteProps> = ({ children }) => {
       if (permSegment.startsWith(':')) {
         // Dynamic segment - match anything EXCEPT known route keywords
         if (routeKeywords.has(currSegment.toLowerCase())) {
-          console.log(`⚠️  Segment "${currSegment}" is a route keyword, not an ID`);
           return false;
         }
         // It's an ID (numeric, alphanumeric, slug, UUID, etc.)
@@ -71,23 +70,12 @@ const PermissionRoute: React.FC<PermissionRouteProps> = ({ children }) => {
   }
 
   const hasPermission = allPermittedPaths.some(permittedPath => matchPath(permittedPath, path));
-  console.log('🔍 Checking permissions for path:', path, '=>', hasPermission ? 'Allowed' : 'Denied');
-  // Log permission check for debugging
   if (!hasPermission) {
-    console.warn('❌ Access Denied:', {
-      currentPath: path,
-      permittedPaths: allPermittedPaths,
-      reason: 'No matching permission found'
-    });
-
     if (allPermittedPaths.length != 0) {
        // Redirect to first permitted path if none match
       window.location.href = allPermittedPaths[0];
     }
 
-  } else {
-    const matchedPath = allPermittedPaths.find(p => matchPath(p, path));
-    console.log('✅ Access Granted:', path, `(matched: ${matchedPath})`);
   }
   
   if (hasPermission) {

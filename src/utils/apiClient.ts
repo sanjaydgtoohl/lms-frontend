@@ -76,6 +76,25 @@ class EnhancedApiClient {
     );
   }
 
+  private forceLogoutAndRedirect(): void {
+    document.cookie = 'auth_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = 'refresh_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = 'auth_token_expires=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = 'refresh_token_expires=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT';
+
+    useAuthStore.setState({
+      user: null,
+      token: null,
+      refreshTokenValue: null,
+      isAuthenticated: false,
+      isLoading: false,
+    });
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('auth:force-logout'));
+    }
+  }
+
   /**
    * Handle token refresh
    */
@@ -176,7 +195,7 @@ class EnhancedApiClient {
             // Recreate controller for retried request
             continue;
           } else {
-            // Refresh failed, but do not auto-logout or redirect
+            this.forceLogoutAndRedirect();
             throw new Error('Session expired. Unable to refresh token.');
           }
         }

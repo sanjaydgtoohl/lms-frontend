@@ -12,6 +12,29 @@ class Http {
   refreshPromise: Promise<any> | null = null;
   requestQueue: Array<(token: string | null) => void> = [];
 
+  private notifyUnauthorizedSession() {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('auth:force-logout'));
+    }
+  }
+
+  private clearClientAuthState() {
+    this.notifyUnauthorizedSession();
+    useAuthStore.setState({
+      user: null,
+      token: null,
+      refreshTokenValue: null,
+      isAuthenticated: false,
+      isLoading: false,
+    });
+
+    try {
+      localStorage.removeItem('auth-storage');
+    } catch (error) {
+      console.error('Error clearing auth storage:', error);
+    }
+  }
+
   constructor() {
     this.instance = axios.create({
       baseURL: API_BASE_URL,
@@ -65,6 +88,13 @@ class Http {
       async (error: any) => {
         const originalRequest = (error.config as any) as { _retry?: boolean } & Record<string, any>;
         const status = error?.response?.status;
+        const requestUrl = String(originalRequest?.url || '');
+        const isRefreshRequest = requestUrl.includes(API_ENDPOINTS.AUTH.REFRESH);
+
+        if (status === 401 && isRefreshRequest) {
+          this.clearSessionAndRedirect();
+          return Promise.reject(error);
+        }
 
         if (status === 401 && !originalRequest._retry) {
           originalRequest._retry = true;
@@ -159,8 +189,7 @@ class Http {
     deleteCookie('refresh_token');
     deleteCookie('auth_token_expires');
     deleteCookie('refresh_token_expires');
-    // force navigation
-    window.location.href = '/login';
+    this.clearClientAuthState();
   }
 
   autoLogoutDueToMissingToken() {
@@ -169,15 +198,7 @@ class Http {
     deleteCookie('refresh_token');
     deleteCookie('auth_token_expires');
     deleteCookie('refresh_token_expires');
-    
-    // Clear auth store and local storage
-    const authStore = useAuthStore.getState();
-    authStore.logout().catch((err) => {
-      console.error('Error during auto logout:', err);
-    });
-    
-    // Redirect to login
-    window.location.href = '/login';
+    this.clearClientAuthState();
   }
 }
 
