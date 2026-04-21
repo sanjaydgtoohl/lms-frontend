@@ -11,6 +11,7 @@ interface SidebarMenuContextType {
   allPermittedPaths: string[];
   allPermittedSlugs: string[];
   loading: boolean;
+  permissionsLoaded: boolean;
 }
 
 export const SidebarMenuContext = createContext<SidebarMenuContextType>({
@@ -18,6 +19,7 @@ export const SidebarMenuContext = createContext<SidebarMenuContextType>({
   allPermittedPaths: [],
   allPermittedSlugs: [],
   loading: true,
+  permissionsLoaded: false,
 });
 
 export const SidebarMenuProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -25,15 +27,22 @@ export const SidebarMenuProvider: React.FC<{ children: ReactNode }> = ({ childre
   const [allPermittedPaths, setAllPermittedPaths] = useState<string[]>([]);
   const [allPermittedSlugs, setAllPermittedSlugs] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [permissionsLoaded, setPermissionsLoaded] = useState(false);
   const { isAuthenticated } = useAuthStore();
 
   useEffect(() => {
     async function fetchSidebar() {
       if (!isAuthenticated) {
+        setSidebarMenu([]);
+        setAllPermittedPaths([]);
+        setAllPermittedSlugs([]);
         setLoading(false);
+        setPermissionsLoaded(false);
         return;
       }
+
       setLoading(true);
+      setPermissionsLoaded(false);
       try {
         const res = await apiClient.get<any>('/permissions/sidebar');
         if (res && res.data && Array.isArray(res.data)) {
@@ -51,6 +60,7 @@ export const SidebarMenuProvider: React.FC<{ children: ReactNode }> = ({ childre
         setAllPermittedSlugs([]);
       } finally {
         setLoading(false);
+        setPermissionsLoaded(true);
       }
     }
     fetchSidebar();
@@ -58,7 +68,7 @@ export const SidebarMenuProvider: React.FC<{ children: ReactNode }> = ({ childre
 
   return (
     <SidebarMenuContext.Provider
-      value={{ sidebarMenu, allPermittedPaths, allPermittedSlugs, loading }}
+      value={{ sidebarMenu, allPermittedPaths, allPermittedSlugs, loading, permissionsLoaded }}
     >
       {children}
     </SidebarMenuContext.Provider>

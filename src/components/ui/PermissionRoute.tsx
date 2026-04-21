@@ -1,20 +1,20 @@
 import { useSidebarMenu } from '../../hooks/SidebarMenuHooks';
 import React from 'react';
 import { PermissionDenied } from './index';
-import { useLocation } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 
 interface PermissionRouteProps {
   children: React.ReactNode;
 }
 
 const PermissionRoute: React.FC<PermissionRouteProps> = ({ children }) => {
-  const { allPermittedPaths, loading } = useSidebarMenu();
+  const { allPermittedPaths, loading, permissionsLoaded } = useSidebarMenu();
   const location = useLocation();
   const path = location.pathname;
 
   // Always allow login route
   if (path === 'login' || path === '/login') return <>{children}</>;
-  if (loading) return null; // or a loader
+  if (loading || !permissionsLoaded) return null; // Wait until permissions hydrate
   
   // Helper to normalize paths
   function normalizePath(p: string): string {
@@ -70,12 +70,10 @@ const PermissionRoute: React.FC<PermissionRouteProps> = ({ children }) => {
   }
 
   const hasPermission = allPermittedPaths.some(permittedPath => matchPath(permittedPath, path));
-  if (!hasPermission) {
-    if (allPermittedPaths.length != 0) {
-       // Redirect to first permitted path if none match
-      window.location.href = allPermittedPaths[0];
-    }
 
+  if (!hasPermission && allPermittedPaths.length !== 0) {
+    // Redirect to first permitted path instead of flashing Access Denied.
+    return <Navigate to={allPermittedPaths[0]} replace />;
   }
   
   if (hasPermission) {
