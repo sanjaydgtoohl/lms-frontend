@@ -43,9 +43,9 @@ export async function scheduleRefresh() {
 export async function refreshTokens() {
   if (refreshInProgress) return;
   refreshInProgress = true;
+  
   try {
     const refreshToken = getCookie('refresh_token');
-    console.log('[sessionManager] refresh_token cookie:', refreshToken);
     if (!refreshToken) throw new Error('No refresh token');
 
     // If backend expects token in header, uncomment below and comment body
@@ -139,8 +139,7 @@ export function clearLocalStorage() {
         // Ignore individual key removal errors
       }
     });
-    
-    console.log('[sessionManager] Known auth storage keys cleared');
+
   } catch (e) {
     console.error('Error clearing local storage:', e);
   }
