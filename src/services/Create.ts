@@ -12,6 +12,20 @@ export type CreateMissCampaignPayload = {
   lead_source_id?: string | number;
   subSource?: string | number; // will map to lead_sub_source_id
   lead_sub_source_id?: string | number;
+  pincode?: string;
+  city?: string | number;
+  city_id?: string | number;
+  state?: string | number;
+  state_id?: string | number;
+  country?: string | number;
+  country_id?: string | number;
+  mediaType?: string;
+  media_type?: string;
+  media_type_id?: string | number;
+  media_type_name?: string;
+  assignBy?: string;
+  assign_to?: string;
+  assignByName?: string;
   image?: File | null; // file object
   [key: string]: any;
 };
@@ -66,7 +80,39 @@ export async function createMissCampaign(payload: CreateMissCampaignPayload): Pr
       form.append('image_path', file);
     }
 
-    // append any extra simple fields
+    // Media type helper
+    if (payload.mediaType !== undefined && payload.mediaType !== null && String(payload.mediaType) !== '') {
+      form.append('media_type', String(payload.mediaType));
+      if (!Number.isNaN(Number(payload.mediaType))) {
+        form.append('media_type_id', String(payload.mediaType));
+      }
+    }
+    if (payload.media_type !== undefined && payload.media_type !== null && String(payload.media_type) !== '') {
+      form.append('media_type', String(payload.media_type));
+      if (!Number.isNaN(Number(payload.media_type))) {
+        form.append('media_type_id', String(payload.media_type));
+      }
+    }
+    if (payload.media_type_id !== undefined && payload.media_type_id !== null && String(payload.media_type_id) !== '') {
+      form.append('media_type_id', String(payload.media_type_id));
+    }
+    if (payload.media_type_name !== undefined && payload.media_type_name !== null && String(payload.media_type_name) !== '') {
+      form.append('media_type_name', String(payload.media_type_name));
+    }
+
+    const knownKeys = new Set([
+      'productName', 'name', 'brandId', 'brand_id', 'brandName', 'source', 'lead_source_id',
+      'subSource', 'lead_sub_source_id', 'image', 'image_path', 'imagePath', 'status', 'mediaType', 'media_type', 'media_type_id', 'media_type_name'
+    ]);
+
+    Object.entries(payload).forEach(([key, value]) => {
+      if (value === undefined || value === null) return;
+      if (knownKeys.has(key)) return;
+      if (key === 'mediaType' || key === 'media_type') return;
+      if (key === 'image' || key === 'image_path' || key === 'imagePath') return;
+      form.append(key, String(value));
+    });
+
     if (payload.status !== undefined) form.append('status', String(payload.status));
 
     const res = await apiClient.post(ENDPOINTS.CREATE, form);
@@ -109,9 +155,42 @@ export async function updateMissCampaignWithForm(id: string | number, payload: C
       form.append('image_path', file);
     }
 
-    if (payload.status !== undefined) form.append('status', String(payload.status));
+    if (payload.mediaType !== undefined && payload.mediaType !== null && String(payload.mediaType) !== '') {
+      form.append('media_type', String(payload.mediaType));
+      if (!Number.isNaN(Number(payload.mediaType))) {
+        form.append('media_type_id', String(payload.mediaType));
+      }
+    }
+    if (payload.media_type !== undefined && payload.media_type !== null && String(payload.media_type) !== '') {
+      form.append('media_type', String(payload.media_type));
+      if (!Number.isNaN(Number(payload.media_type))) {
+        form.append('media_type_id', String(payload.media_type));
+      }
+    }
+    if (payload.media_type_id !== undefined && payload.media_type_id !== null && String(payload.media_type_id) !== '') {
+      form.append('media_type_id', String(payload.media_type_id));
+    }
+    if (payload.media_type_name !== undefined && payload.media_type_name !== null && String(payload.media_type_name) !== '') {
+      form.append('media_type_name', String(payload.media_type_name));
+    }
 
-    const res = await apiClient.put(ENDPOINTS.UPDATE(id), form);
+    const knownKeys = new Set([
+      'productName', 'name', 'brandId', 'brand_id', 'brandName', 'source', 'lead_source_id',
+      'subSource', 'lead_sub_source_id', 'image', 'image_path', 'imagePath', 'status', 'mediaType', 'media_type', 'media_type_id', 'media_type_name'
+    ]);
+
+    Object.entries(payload).forEach(([key, value]) => {
+      if (value === undefined || value === null) return;
+      if (knownKeys.has(key)) return;
+      if (key === 'mediaType' || key === 'media_type') return;
+      if (key === 'image' || key === 'image_path' || key === 'imagePath') return;
+      form.append(key, String(value));
+    });
+
+    if (payload.status !== undefined) form.append('status', String(payload.status));
+    if (!form.has('_method')) form.append('_method', 'PUT');
+
+    const res = await apiClient.post(ENDPOINTS.UPDATE(id), form);
     return handleResponse<any>(res);
   } catch (error) {
     try { handleApiError(error as Error); } catch {
@@ -121,7 +200,12 @@ export async function updateMissCampaignWithForm(id: string | number, payload: C
   }
 }
 
+export const createPreLead = createMissCampaign;
+export const updatePreLeadWithForm = updateMissCampaignWithForm;
+
 export default {
   createMissCampaign,
   updateMissCampaignWithForm,
+  createPreLead,
+  updatePreLeadWithForm,
 };

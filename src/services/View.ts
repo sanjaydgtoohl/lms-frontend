@@ -6,9 +6,20 @@ export interface MissCampaign {
   brandName: string;
   productName: string;
   source: string;
+  sourceId?: string;
   subSource: string;
   proof: string;
   dateTime: string;
+  industry?: string;
+  industryId?: string;
+  mediaType?: string;
+  mediaTypeId?: string;
+  pincode?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  assignTo?: string;
+  assignBy?: string;
 }
 
 const ENDPOINTS = {
@@ -35,6 +46,7 @@ async function handleResponse<T>(res: any): Promise<T> {
 export type MissCampaignListResponse = {
   data: MissCampaign[];
   meta?: {
+    total?: number;
     pagination?: {
       current_page: number;
       per_page: number;
@@ -46,11 +58,30 @@ export type MissCampaignListResponse = {
   }
 };
 
-export async function listMissCampaigns(page = 1, perPage = 10, search?: string): Promise<MissCampaignListResponse> {
+export async function listMissCampaigns(page = 1, perPage = 10, search?: string, filters?: Record<string, string>): Promise<MissCampaignListResponse> {
   const params = new URLSearchParams();
   params.set('page', String(page));
   params.set('per_page', String(perPage));
   if (search && String(search).trim()) params.set('search', String(search).trim());
+  if (filters) {
+    Object.entries(filters).forEach(([key, value]) => {
+      if (!value || !value.trim()) return;
+      const trimmed = value.trim();
+
+      if (key === 'industry_id') {
+        params.set('industry_id', trimmed);
+        params.set('industry', trimmed);
+      } else if (key === 'lead_source_id') {
+        params.set('lead_source_id', trimmed);
+        params.set('source', trimmed);
+      } else if (key === 'media_type') {
+        params.set('media_type', trimmed);
+        params.set('media_type_id', trimmed);
+      } else {
+        params.set(key, trimmed);
+      }
+    });
+  }
 
   const res = await apiClient.get<MissCampaign[]>(`${ENDPOINTS.LIST}?${params.toString()}`);
   const items = (res.data || []).map((it: any, idx: number) => {
@@ -77,15 +108,55 @@ export async function listMissCampaigns(page = 1, perPage = 10, search?: string)
       '';
     const proof = it.image_url ?? it.image_path ?? it.proof ?? '';
     const dateTime = it.created_at ?? it.date_time ?? it.dateTime ?? '';
+    const industry = it.industry?.name ?? it.industry ?? it.industry_name ?? '';
+    const industryId = it.industry?.id ?? it.industry_id ?? it.industryId ?? it.industry?.value ?? '';
+    const pincode = it.pincode ?? it.pin_code ?? it.zip_code ?? it.postal_code ?? it.zipcode ?? '';
+    const city = it.city?.name ?? it.city ?? '';
+    const state = it.state?.name ?? it.state ?? '';
+    const country = it.country?.name ?? it.country ?? '';
+    const assignTo = it.assign_to_name ?? it.current_assign_user_name ?? it.assigned_user?.name ?? (it.current_assign_user && typeof it.current_assign_user === 'object' ? it.current_assign_user.name : '') ?? '';
+    const assignBy = it.assign_by_name ?? it.created_by_user?.name ?? it.created_by ?? '';
+    const normalizeNestedValue = (raw: any): string => {
+      if (typeof raw === 'string') return raw;
+      if (typeof raw === 'number') return String(raw);
+      if (raw && typeof raw === 'object') {
+        const candidate = raw.name ?? raw.label ?? raw.type ?? raw.value ?? raw.title ?? raw.media_type ?? raw.mediaType ?? raw.media;
+        if (typeof candidate === 'string' && candidate.trim() !== '') return candidate;
+        if (typeof candidate === 'number') return String(candidate);
+        // Try any string value in the object if common keys not found
+        const firstString = Object.values(raw).find((v) => typeof v === 'string');
+        if (typeof firstString === 'string' && firstString.trim() !== '') return firstString;
+        const firstNumber = Object.values(raw).find((v) => typeof v === 'number');
+        if (typeof firstNumber === 'number') return String(firstNumber);
+      }
+      return '';
+    };
+
+    const sourceId = it.lead_source?.id ?? it.lead_source_id ?? it.source_id ?? it.sourceId ?? it.lead_source?.value ?? '';
+    const mediaTypeId = it.media?.id ?? it.media_type_id ?? it.mediaTypeId ?? it.media_type?.id ?? '';
+    const mediaType = normalizeNestedValue(
+      it.media ?? it.media_type ?? it.mediaType ?? it.media_type_name ?? it.mediaTypeName ?? it.media_type_id
+    );
 
     return {
       id: String(id),
       brandName,
       productName,
       source,
+      sourceId,
       subSource,
       proof,
       dateTime,
+      industry,
+      industryId,
+      pincode,
+      city,
+      state,
+      country,
+      assignTo,
+      assignBy,
+      mediaType,
+      mediaTypeId,
     } as MissCampaign;
   });
 
@@ -108,26 +179,13 @@ export async function getMissCampaign(id: string): Promise<any> {
   return res.data as any;
 }
 
-export async function createMissCampaign(payload: Partial<MissCampaign>): Promise<MissCampaign> {
-  const res = await apiClient.post<MissCampaign>(ENDPOINTS.CREATE, payload);
-  return handleResponse<MissCampaign>(res);
-}
-
-export async function updateMissCampaign(id: string, payload: Partial<MissCampaign>): Promise<MissCampaign> {
-  // Use POST with _method: 'PUT' for method spoofing (backend expects this)
-  const formData = new FormData();
-  // Append all payload fields to formData
-  Object.entries(payload || {}).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) {
-      formData.append(key, value as any);
-    }
-  });
-  formData.append('_method', 'PUT');
-  const res = await apiClient.post<MissCampaign>(ENDPOINTS.UPDATE(id), formData);
-  return handleResponse<MissCampaign>(res);
-}
-
 export async function deleteMissCampaign(id: string): Promise<void> {
   const res = await apiClient.delete<unknown>(ENDPOINTS.DELETE(id));
   await handleResponse<unknown>(res);
 }
+
+export type PreLead = MissCampaign;
+export type PreLeadListResponse = MissCampaignListResponse;
+export const listPreLeads = listMissCampaigns;
+export const getPreLead = getMissCampaign;
+export const deletePreLead = deleteMissCampaign;

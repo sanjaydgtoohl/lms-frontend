@@ -150,10 +150,10 @@ export const rolePermissionsData: Module[] = [
     ],
   },
   {
-    name: 'Miss Campaign',
+    name: 'Pre Lead',
     submodules: [
       {
-        name: 'Create Miss Cam',
+        name: 'Create Pre Lead',
         permissions: {
           read: false,
           create: false,
