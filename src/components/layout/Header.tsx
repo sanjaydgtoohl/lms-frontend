@@ -179,7 +179,7 @@ const Header: React.FC<HeaderProps> = ({
       try {
         await markNotificationRead(notification.id);
         // Immediately refresh after marking as read
-        loadRecentNotifications(activeDropdownTab, showUnreadOnly);
+        await loadRecentNotifications(activeDropdownTab, showUnreadOnly);
         const unread = await getUnreadNotificationCount();
         dispatch(setUnreadCount({ module: 'all', count: unread }));
       } catch (error) {
