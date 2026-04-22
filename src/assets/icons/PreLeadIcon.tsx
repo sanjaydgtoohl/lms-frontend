@@ -12,6 +12,8 @@ const PreLeadIcon: React.FC<IconProps> = ({ className }) => (
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
     className={className}
+    aria-hidden="true"
+    focusable="false"
   >
     <path
       d="M13.3334 4.66667V11.3333C13.3334 13.3333 12.3334 14.6667 10.0001 14.6667H6.00008C3.66675 14.6667 2.66675 13.3333 2.66675 11.3333V4.66667C2.66675 2.66667 3.66675 1.33334 6.00008 1.33334H10.0001C12.3334 1.33334 13.3334 2.66667 13.3334 4.66667Z"

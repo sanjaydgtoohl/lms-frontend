@@ -17,11 +17,16 @@ import AssignDropdown from '../../components/ui/AssignDropdown';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import SweetAlert from '../../utils/SweetAlert';
 import TableHeader from '../../components/ui/TableHeader';
+import { useDispatch } from 'react-redux';
+import type { AppDispatch } from '../../redux/store';
+import { setUnreadCount, setNotifications } from '../../redux/slices/notificationSlice';
+import { getUnreadNotificationCount, listNotifications } from '../../services/notifications';
 
 type Brief = ServiceBriefItem;
 
 const BriefPipeline: React.FC = () => {
   const { hasPermission } = usePermissions();
+  const dispatch = useDispatch<AppDispatch>();
     // Helper to fetch briefs (for refresh)
     const fetchBriefs = async () => {
       try {
@@ -347,6 +352,19 @@ const BriefPipeline: React.FC = () => {
           // refresh list to show updated status
           setTimeout(() => { fetchBriefs(); }, 300);
           SweetAlert.showUpdateSuccess();
+          
+          // Refresh notifications in Redux after status update
+          try {
+            const [count, notificationsRes] = await Promise.all([
+              getUnreadNotificationCount(),
+              listNotifications(1, 10, 'brief', ['Brief Created', 'Status Updated', 'Assignment Updated'])
+            ]);
+            dispatch(setUnreadCount({ module: 'all', count }));
+            dispatch(setUnreadCount({ module: 'brief', count: notificationsRes.data?.filter((n: any) => !n.read).length || 0 }));
+            dispatch(setNotifications({ module: 'brief', notifications: notificationsRes.data || [], total: notificationsRes.meta?.pagination?.total || 0 }));
+          } catch (notifErr) {
+            console.error('Failed to refresh notifications:', notifErr);
+          }
         }
       } catch (err) {
         console.error('Failed to update status', err);
