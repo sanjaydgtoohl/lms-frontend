@@ -37,7 +37,7 @@ const notificationSlice = createSlice({
       const { module, notifications, total } = action.payload;
       state[module].notifications = notifications;
       state[module].totalItems = total;
-      state[module].unreadCount = notifications.filter(n => !n.read).length;
+      // Do NOT overwrite unreadCount here; it is set by setUnreadCount action only.
     },
     addNotification(state, action: PayloadAction<{ module: 'all' | 'leadManagement' | 'brief' | 'preLead' | 'system'; notification: NotificationItem }>) {
       const { module, notification } = action.payload;
