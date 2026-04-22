@@ -117,14 +117,13 @@ const Notifications: React.FC = () => {
     setError(null);
 
     try {
-      let effectiveTab = activeTab;
+      const effectiveTab = activeTab;
       const effectiveCategories = selectedCategories;
 
       const response = await listNotifications(page, ITEMS_PER_PAGE, effectiveTab, effectiveCategories);
       const items = response.data || [];
       const total = response.meta?.pagination?.total ?? items.length;
 
-      // Always set hasCategories based on current items
       if (page === 1) {
         const hasCategoryData = items.some((item: any) => item.category || item.data?.category);
         setHasCategories(hasCategoryData);
@@ -135,6 +134,7 @@ const Notifications: React.FC = () => {
       } else {
         dispatch(setNotifications({ module: moduleKey, notifications: items, total }));
       }
+
       setCurrentPage(page);
     } catch (err) {
       console.error(err);
@@ -142,7 +142,7 @@ const Notifications: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [activeTab, selectedCategories, showUnreadOnly, notifications, dispatch, moduleKey]);
+  }, [activeTab, selectedCategories, notifications, dispatch, moduleKey]);  
 
   useEffect(() => {
     fetchUnreadCount();
@@ -152,6 +152,7 @@ const Notifications: React.FC = () => {
     setCurrentPage(1);
     loadNotifications(1, false);
   }, [activeTab, selectedCategories, refreshKey, showUnreadOnly, loadNotifications]);
+
 
   const handleTabChange = (tabKey: NotificationTab) => {
     setShowUnreadOnly(false);
@@ -317,8 +318,8 @@ const Notifications: React.FC = () => {
                 type="button"
                 onClick={() => handleTabChange(tab.key)}
                 className={`rounded-full px-4 py-2 text-sm font-medium transition ${tab.key === activeTab
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
               >
                 {tab.label}
@@ -343,10 +344,10 @@ const Notifications: React.FC = () => {
                   onClick={() => !isModuleTab && handleToggleCategory(option.key)}
                   disabled={isModuleTab}
                   className={`rounded-full border px-4 py-2 text-sm transition ${isActive
-                      ? isAutoSelected
-                        ? 'border-blue-500 bg-blue-100 text-blue-700 cursor-not-allowed'
-                        : 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50'
+                    ? isAutoSelected
+                      ? 'border-blue-500 bg-blue-100 text-blue-700 cursor-not-allowed'
+                      : 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50'
                     } ${isModuleTab ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'}`}
                 >
                   {option.label}
