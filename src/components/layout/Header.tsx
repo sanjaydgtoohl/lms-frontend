@@ -46,7 +46,7 @@ const Header: React.FC<HeaderProps> = ({
       setUser(u ?? null);
     }
     getUser();
-  }, []);
+  }, [dispatch]);
 
   React.useEffect(() => {
     let active = true;
@@ -65,7 +65,7 @@ const Header: React.FC<HeaderProps> = ({
     return () => {
       active = false;
     };
-  }, []); // Only load unread count once on mount
+  }, [dispatch]); // Only load unread count once on mount
 
   // const getTabCategories = (tab: NotificationTab): NotificationCategory[] => {
   //   const tabConfig = [
@@ -211,7 +211,7 @@ const Header: React.FC<HeaderProps> = ({
       document.documentElement.classList.add("dark");
       setDark(true);
     }
-  }, []);
+  }, [dispatch]);
 
   const toggleTheme = () => {
     if (dark) {
