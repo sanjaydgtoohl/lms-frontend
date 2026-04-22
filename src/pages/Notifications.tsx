@@ -7,6 +7,9 @@ import { Button } from '../components/ui';
 import {
   getUnreadNotificationCount,
   listNotifications,
+  markNotificationRead as markNotificationReadApi,
+  markCategoryRead,
+  markAllNotificationsRead as markAllNotificationsReadApi,
 } from '../services/notifications';
 import type { NotificationCategory, NotificationTab } from '../services/notifications';
 
@@ -59,6 +62,11 @@ const formatTimeAgo = (value: string) => {
   return date.toLocaleDateString();
 };
 
+const isSafeExternalUrl = (url: unknown): url is string => {
+  if (typeof url !== 'string') return false;
+  return /^https?:\/\//i.test(url.trim());
+};
+
 const Notifications: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
 
@@ -86,7 +94,7 @@ const Notifications: React.FC = () => {
 
   const moduleKey = getModuleKey(activeTab);
   const moduleState = useSelector((state: RootState) => state.notifications[moduleKey]);
-  const notifications = useMemo(() => moduleState?.notifications || [], [moduleState?.notifications]);
+  const notifications = useMemo(() => moduleState?.notifications || [], [moduleState]);
   const reduxUnreadCount = moduleState?.unreadCount || 0;
   const reduxTotalItems = moduleState?.totalItems || 0;
 
@@ -109,9 +117,10 @@ const Notifications: React.FC = () => {
     setError(null);
 
     try {
-      const effectiveTab = showUnreadOnly && activeTab !== 'unread' ? 'unread' : activeTab;
+      let effectiveTab = activeTab;
+      const effectiveCategories = selectedCategories;
 
-      const response = await listNotifications(page, ITEMS_PER_PAGE, effectiveTab, selectedCategories);
+      const response = await listNotifications(page, ITEMS_PER_PAGE, effectiveTab, effectiveCategories);
       const items = response.data || [];
       const total = response.meta?.pagination?.total ?? items.length;
 
@@ -177,8 +186,20 @@ const Notifications: React.FC = () => {
   const handleMarkAllRead = async () => {
     setIsMarking(true);
     try {
+      if (moduleKey === 'all') {
+        await markAllNotificationsReadApi();
+      } else {
+        const categoriesToMark =
+          selectedCategories.length > 0
+            ? selectedCategories
+            : (TAB_OPTIONS.find((tab) => tab.key === activeTab)?.categories || []);
+
+        await Promise.all(categoriesToMark.map((category) => markCategoryRead(category)));
+      }
+
       dispatch(markAllNotificationsRead({ module: moduleKey }));
       setShowUnreadOnly(false);
+      setRefreshKey((key) => key + 1);
     } catch (err) {
       console.error(err);
       setError('Failed to mark all notifications read.');
@@ -203,7 +224,9 @@ const Notifications: React.FC = () => {
   const handleMarkRead = async (id: string) => {
     setIsMarking(true);
     try {
+      await markNotificationReadApi(id);
       dispatch(markNotificationRead({ module: moduleKey, id }));
+      setRefreshKey((key) => key + 1);
     } catch (err) {
       console.error(err);
       setError('Failed to mark notification read.');
@@ -420,11 +443,11 @@ const Notifications: React.FC = () => {
                       >
                         {notification.read ? 'Read' : 'Mark Read'}
                       </Button>
-                      {notification.link && (
+                      {isSafeExternalUrl(notification.link) && (
                         <a
                           href={notification.link}
                           target="_blank"
-                          rel="noreferrer"
+                          rel="noopener noreferrer"
                           className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
                         >
                           Open

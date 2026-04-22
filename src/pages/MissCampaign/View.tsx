@@ -241,6 +241,7 @@ const View: React.FC = () => {
   const handleSave = async () => {
     try {
       setCurrentPage(1);
+      await fetchCampaigns(1, searchQuery, activeFilters);
       try { SweetAlert.showCreateSuccess(); } catch {
         //no need to action
       }
@@ -268,7 +269,7 @@ const View: React.FC = () => {
       try { SweetAlert.showDeleteSuccess(); } catch {
         //no need to action
       }
-      await fetchCampaigns(currentPage); // Refresh table from server
+      await fetchCampaigns(currentPage, searchQuery, activeFilters); // Refresh table from server
       // Refresh notifications in Redux after campaign delete
       try {
         const [count, notificationsRes] = await Promise.all([
@@ -339,8 +340,7 @@ const View: React.FC = () => {
 
   const handleSaveEdited = async () => {
     try {
-      setCurrentPage(1);
-      await fetchCampaigns(1); // Refresh table from server
+      await fetchCampaigns(1, searchQuery, activeFilters);
       try { SweetAlert.showUpdateSuccess(); } catch {
         // no need to action
       }

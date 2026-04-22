@@ -37,7 +37,7 @@ const notificationSlice = createSlice({
       const { module, notifications, total } = action.payload;
       state[module].notifications = notifications;
       state[module].totalItems = total;
-      state[module].unreadCount = notifications.filter(n => !n.read).length;
+      // Do NOT overwrite unreadCount here; it is set by setUnreadCount action only.
     },
     addNotification(state, action: PayloadAction<{ module: 'all' | 'leadManagement' | 'brief' | 'preLead' | 'system'; notification: NotificationItem }>) {
       const { module, notification } = action.payload;
@@ -46,16 +46,22 @@ const notificationSlice = createSlice({
       if (!notification.read) {
         state[module].unreadCount += 1;
       }
-      // Also add to 'all' module
-      state.all.notifications.unshift(notification);
-      state.all.totalItems += 1;
-      if (!notification.read) {
-        state.all.unreadCount += 1;
+      // Also add to 'all' module when source module is not already 'all'
+      if (module !== 'all') {
+        state.all.notifications.unshift(notification);
+        state.all.totalItems += 1;
+        if (!notification.read) {
+          state.all.unreadCount += 1;
+        }
       }
     },
     setUnreadCount(state, action: PayloadAction<{ module: 'all' | 'leadManagement' | 'brief' | 'preLead' | 'system'; count: number }>) {
       const { module, count } = action.payload;
       state[module].unreadCount = count;
+    },
+    incrementUnreadCount(state, action: PayloadAction<{ module: 'all' | 'leadManagement' | 'brief' | 'preLead' | 'system'; by?: number }>) {
+      const { module, by = 1 } = action.payload;
+      state[module].unreadCount += by;
     },
     markNotificationRead(state, action: PayloadAction<{ module: 'all' | 'leadManagement' | 'brief' | 'preLead' | 'system'; id: string }>) {
       const { module, id } = action.payload;
@@ -75,9 +81,17 @@ const notificationSlice = createSlice({
       const module = action.payload.module;
       state[module].notifications = state[module].notifications.map((n: NotificationItem) => ({ ...n, read: true }));
       state[module].unreadCount = 0;
-      // Also mark all in 'all' module
-      state.all.notifications = state.all.notifications.map((n: NotificationItem) => ({ ...n, read: true }));
-      state.all.unreadCount = 0;
+      // Keep 'all' in sync without clearing unrelated modules
+      if (module === 'all') {
+        state.all.notifications = state.all.notifications.map((n: NotificationItem) => ({ ...n, read: true }));
+        state.all.unreadCount = 0;
+      } else {
+        const updatedIds = new Set(state[module].notifications.map((n: NotificationItem) => n.id));
+        state.all.notifications = state.all.notifications.map((n: NotificationItem) => (
+          updatedIds.has(n.id) ? { ...n, read: true } : n
+        ));
+        state.all.unreadCount = state.all.notifications.filter((n: NotificationItem) => !n.read).length;
+      }
     },
     updateNotificationInList(state, action: PayloadAction<{ module: 'all' | 'leadManagement' | 'brief' | 'preLead' | 'system'; notification: NotificationItem }>) {
       const { module, notification } = action.payload;
@@ -101,6 +115,7 @@ export const {
   setNotifications,
   addNotification,
   setUnreadCount,
+  incrementUnreadCount,
   markNotificationRead,
   markAllNotificationsRead,
   updateNotificationInList,
