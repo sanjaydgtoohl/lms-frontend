@@ -82,7 +82,7 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   return (
     <div ref={ref} className={`relative ${className}`}>
       <div className="w-full">
-  <div className={`flex items-center ${horizontalScroll ? 'flex-nowrap overflow-x-auto msd-scroll' : 'flex-wrap'} gap-2 w-full h-11 px-3 rounded-[10px] bg-white border border-[#DDE1E7] ${inputClassName} ${disabled ? 'opacity-60' : ''}`} onClick={() => { if (disabled) return; setOpen(prev => !prev); }}>
+  <div className={`flex items-center overflow-y-hidden ${horizontalScroll ? 'flex-nowrap overflow-x-auto msd-scroll' : 'flex-wrap'} gap-2 w-full h-11 px-3 rounded-[10px] bg-white border border-[#DDE1E7] ${inputClassName} ${disabled ? 'opacity-60' : ''}`} onClick={() => { if (disabled) return; setOpen(prev => !prev); }}>
           {/* tags */}
           {safeValue.length > 0 && (
             <div className={`flex items-center gap-2 ${horizontalScroll ? 'flex-1 flex-nowrap' : 'flex-wrap'}`}>

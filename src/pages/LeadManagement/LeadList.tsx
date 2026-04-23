@@ -488,7 +488,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
           onConfirm={handleAssignConfirm}
           context="lead"
         />
-      ),
+      ), 
       className: 'min-w-[140px]',
     } as Column<Lead>] : []),
     { key: 'dateTime', header: 'Date & Time', render: (it: Lead) => it.dateTime || '-', className: 'whitespace-nowrap' },
