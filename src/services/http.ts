@@ -69,14 +69,14 @@ class Http {
     // use any here to avoid strict axios internal types mismatch in interceptor callbacks
     this.instance.interceptors.request.use((config: any) => {
       const token = getCookie('auth_token');
-      
+
       // Check if token is missing but user is authenticated
       if (!token && useAuthStore.getState().isAuthenticated) {
         console.warn('[http] Token missing from cookies - triggering auto logout');
         this.autoLogoutDueToMissingToken();
         return Promise.reject(new Error('Token missing - auto logout triggered'));
       }
-      
+
       if (token && config.headers) {
         config.headers['Authorization'] = `Bearer ${token}`;
       }
@@ -90,8 +90,11 @@ class Http {
         const status = error?.response?.status;
         const requestUrl = String(originalRequest?.url || '');
         const isRefreshRequest = requestUrl.includes(API_ENDPOINTS.AUTH.REFRESH);
-
+     
         if (status === 401 && isRefreshRequest) {
+          this.requestQueue.forEach((cb) => cb(null));
+          this.requestQueue = [];
+
           this.clearSessionAndRedirect();
           return Promise.reject(error);
         }
