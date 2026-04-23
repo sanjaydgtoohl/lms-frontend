@@ -1,7 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import AssignButton from './AssignButton';
 import ConfirmDialog from './ConfirmDialog';
+
+const DROPDOWN_MIN_WIDTH = 180;
+const DROPDOWN_EST_HEIGHT = 220;
+const VIEWPORT_GAP = 8;
 
 interface AssignDropdownProps {
   value: string;
@@ -20,6 +24,28 @@ const AssignDropdown: React.FC<AssignDropdownProps> = ({ value, options, onChang
   const portalRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ top: 0, left: 0 });
 
+  const updatePosition = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const rect = el.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const openAbove = spaceBelow < DROPDOWN_EST_HEIGHT && spaceAbove > spaceBelow;
+
+    let left = rect.left;
+    if (left + DROPDOWN_MIN_WIDTH > window.innerWidth - VIEWPORT_GAP) {
+      left = Math.max(VIEWPORT_GAP, rect.right - DROPDOWN_MIN_WIDTH);
+    }
+
+    setPosition({
+      top: openAbove
+        ? Math.max(VIEWPORT_GAP, rect.top - DROPDOWN_EST_HEIGHT - VIEWPORT_GAP)
+        : Math.min(window.innerHeight - DROPDOWN_EST_HEIGHT - VIEWPORT_GAP, rect.bottom + VIEWPORT_GAP),
+      left: Math.max(VIEWPORT_GAP, left),
+    });
+  }, []);
+
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       const target = e.target as Node;
@@ -31,6 +57,20 @@ const AssignDropdown: React.FC<AssignDropdownProps> = ({ value, options, onChang
     return () => document.removeEventListener('mousedown', handleClick);
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+
+    updatePosition();
+
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [open, updatePosition]);
+
   // compute placement (top or bottom) when opening based on viewport space
   const handleToggle = () => {
     if (open) {
@@ -38,23 +78,7 @@ const AssignDropdown: React.FC<AssignDropdownProps> = ({ value, options, onChang
       return;
     }
 
-    const el = ref.current;
-    if (!el) return;
-
-    const rect = el.getBoundingClientRect();
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const spaceAbove = rect.top;
-    const DROPDOWN_EST_HEIGHT = 220; // estimate dropdown height
-
-    // prefer top if not enough space below but there is space above
-    const newPlacement = spaceBelow < DROPDOWN_EST_HEIGHT && spaceAbove > spaceBelow ? 'top' : 'bottom';
-
-    // Calculate fixed positioning
-    setPosition({
-      top: newPlacement === 'bottom' ? rect.bottom + window.scrollY + 8 : rect.top + window.scrollY - DROPDOWN_EST_HEIGHT - 8,
-      left: rect.left + window.scrollX,
-    });
-
+    updatePosition();
     setOpen(true);
   };
 
@@ -108,7 +132,7 @@ const AssignDropdown: React.FC<AssignDropdownProps> = ({ value, options, onChang
             top: position.top,
             left: position.left,
             width: 'auto',
-            minWidth: '180px',
+            minWidth: `${DROPDOWN_MIN_WIDTH}px`,
           }}
         >
             <ul

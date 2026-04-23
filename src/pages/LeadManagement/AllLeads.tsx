@@ -152,6 +152,30 @@ const AllLeads: React.FC = () => {
 
   const navigate = useNavigate();
 
+  const syncLeadNotificationCounts = async () => {
+    const [count, notificationsRes, unreadLeadRes] = await Promise.all([
+      getUnreadNotificationCount(),
+      listNotifications(1, 10, 'lead-management', ['Lead Created', 'Assignment Updated']),
+      listNotifications(1, 1, 'unread', ['Lead Created', 'Assignment Updated']),
+    ]);
+
+    const leadUnreadCount =
+      unreadLeadRes.meta?.pagination?.total ??
+      unreadLeadRes.meta?.total ??
+      unreadLeadRes.data?.length ??
+      0;
+
+    dispatch(setUnreadCount({ module: 'all', count }));
+    dispatch(setUnreadCount({ module: 'leadManagement', count: leadUnreadCount }));
+    dispatch(
+      setNotifications({
+        module: 'leadManagement',
+        notifications: notificationsRes.data || [],
+        total: notificationsRes.meta?.pagination?.total || 0,
+      })
+    );
+  };
+
   const handleCreateLead = () => navigate(ROUTES.LEAD.CREATE);
   const handleEdit = (id: string) => {
     // Remove the '#' from the ID before using it in the URL
@@ -189,13 +213,7 @@ const AllLeads: React.FC = () => {
         
         // Refresh notifications in Redux after lead update
         try {
-          const [count, notificationsRes] = await Promise.all([
-            getUnreadNotificationCount(),
-            listNotifications(1, 10, 'lead-management', ['Lead Created', 'Assignment Updated'])
-          ]);
-          dispatch(setUnreadCount({ module: 'all', count }));
-          dispatch(setUnreadCount({ module: 'leadManagement', count: notificationsRes.data?.filter((n: any) => !n.read).length || 0 }));
-          dispatch(setNotifications({ module: 'leadManagement', notifications: notificationsRes.data || [], total: notificationsRes.meta?.pagination?.total || 0 }));
+          await syncLeadNotificationCounts();
         } catch (notifErr) {
           console.error('Failed to refresh notifications:', notifErr);
         }
@@ -239,13 +257,7 @@ const AllLeads: React.FC = () => {
       
       // Refresh notifications in Redux after lead delete
       try {
-        const [count, notificationsRes] = await Promise.all([
-          getUnreadNotificationCount(),
-          listNotifications(1, 10, 'lead-management', ['Lead Created', 'Assignment Updated'])
-        ]);
-        dispatch(setUnreadCount({ module: 'all', count }));
-        dispatch(setUnreadCount({ module: 'leadManagement', count: notificationsRes.data?.filter((n: any) => !n.read).length || 0 }));
-        dispatch(setNotifications({ module: 'leadManagement', notifications: notificationsRes.data || [], total: notificationsRes.meta?.pagination?.total || 0 }));
+        await syncLeadNotificationCounts();
       } catch (notifErr) {
         console.error('Failed to refresh notifications:', notifErr);
       }
