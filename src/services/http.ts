@@ -3,6 +3,7 @@ import type { AxiosResponse, AxiosInstance } from 'axios';
 import { API_BASE_URL, API_ENDPOINTS } from '../constants';
 import { getCookie, setCookie, deleteCookie } from '../utils/cookies';
 import { useAuthStore } from '../store/auth';
+import sessionManager from '../services/sessionManager';
 
 // Single axios instance used across the app. Interceptors attach the latest token
 // from cookies and will attempt a refresh when a 401 is encountered.
@@ -20,6 +21,7 @@ class Http {
 
   private clearClientAuthState() {
     this.notifyUnauthorizedSession();
+    sessionManager.clearSession(); // ✅ add this
     useAuthStore.setState({
       user: null,
       token: null,
@@ -94,8 +96,6 @@ class Http {
         if (status === 401 && isRefreshRequest) {
           this.requestQueue.forEach((cb) => cb(null));
           this.requestQueue = [];
-
-          this.clearSessionAndRedirect();
           return Promise.reject(error);
         }
 
