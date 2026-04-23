@@ -46,7 +46,7 @@ const Header: React.FC<HeaderProps> = ({
       setUser(u ?? null);
     }
     getUser();
-  }, []);
+  }, [dispatch]);
 
   React.useEffect(() => {
     let active = true;
@@ -179,7 +179,7 @@ const Header: React.FC<HeaderProps> = ({
       try {
         await markNotificationRead(notification.id);
         // Immediately refresh after marking as read
-        loadRecentNotifications(activeDropdownTab, showUnreadOnly);
+        await loadRecentNotifications(activeDropdownTab, showUnreadOnly);
         const unread = await getUnreadNotificationCount();
         dispatch(setUnreadCount({ module: 'all', count: unread }));
       } catch (error) {
@@ -211,7 +211,7 @@ const Header: React.FC<HeaderProps> = ({
       document.documentElement.classList.add("dark");
       setDark(true);
     }
-  }, []);
+  }, [dispatch]);
 
   const toggleTheme = () => {
     if (dark) {
@@ -369,8 +369,16 @@ const Header: React.FC<HeaderProps> = ({
                         <div
                           key={notification.id}
                           className="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
+                          role="button"
+                          tabIndex={0}
                           onClick={() => {
                             handleNotificationItemClick(notification);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              handleNotificationItemClick(notification);
+                            }
                           }}
                         >
                           <div className="flex items-start gap-3">
