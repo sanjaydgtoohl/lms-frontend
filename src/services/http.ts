@@ -3,6 +3,7 @@ import type { AxiosResponse, AxiosInstance } from 'axios';
 import { API_BASE_URL, API_ENDPOINTS } from '../constants';
 import { getCookie, setCookie, deleteCookie } from '../utils/cookies';
 import { useAuthStore } from '../store/auth';
+import sessionManager from '../services/sessionManager';
 
 // Single axios instance used across the app. Interceptors attach the latest token
 // from cookies and will attempt a refresh when a 401 is encountered.
@@ -11,6 +12,30 @@ class Http {
   isRefreshing = false;
   refreshPromise: Promise<any> | null = null;
   requestQueue: Array<(token: string | null) => void> = [];
+
+  private notifyUnauthorizedSession() {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('auth:force-logout'));
+    }
+  }
+
+  private clearClientAuthState() {
+    this.notifyUnauthorizedSession();
+    sessionManager.clearSession(); // ✅ add this
+    useAuthStore.setState({
+      user: null,
+      token: null,
+      refreshTokenValue: null,
+      isAuthenticated: false,
+      isLoading: false,
+    });
+
+    try {
+      localStorage.removeItem('auth-storage');
+    } catch (error) {
+      console.error('Error clearing auth storage:', error);
+    }
+  }
 
   constructor() {
     this.instance = axios.create({
@@ -46,14 +71,14 @@ class Http {
     // use any here to avoid strict axios internal types mismatch in interceptor callbacks
     this.instance.interceptors.request.use((config: any) => {
       const token = getCookie('auth_token');
-      
+
       // Check if token is missing but user is authenticated
       if (!token && useAuthStore.getState().isAuthenticated) {
         console.warn('[http] Token missing from cookies - triggering auto logout');
         this.autoLogoutDueToMissingToken();
         return Promise.reject(new Error('Token missing - auto logout triggered'));
       }
-      
+
       if (token && config.headers) {
         config.headers['Authorization'] = `Bearer ${token}`;
       }
@@ -65,6 +90,14 @@ class Http {
       async (error: any) => {
         const originalRequest = (error.config as any) as { _retry?: boolean } & Record<string, any>;
         const status = error?.response?.status;
+        const requestUrl = String(originalRequest?.url || '');
+        const isRefreshRequest = requestUrl.includes(API_ENDPOINTS.AUTH.REFRESH);
+     
+        if (status === 401 && isRefreshRequest) {
+          this.requestQueue.forEach((cb) => cb(null));
+          this.requestQueue = [];
+          return Promise.reject(error);
+        }
 
         if (status === 401 && !originalRequest._retry) {
           originalRequest._retry = true;
@@ -159,8 +192,7 @@ class Http {
     deleteCookie('refresh_token');
     deleteCookie('auth_token_expires');
     deleteCookie('refresh_token_expires');
-    // force navigation
-    window.location.href = '/login';
+    this.clearClientAuthState();
   }
 
   autoLogoutDueToMissingToken() {
@@ -169,15 +201,7 @@ class Http {
     deleteCookie('refresh_token');
     deleteCookie('auth_token_expires');
     deleteCookie('refresh_token_expires');
-    
-    // Clear auth store and local storage
-    const authStore = useAuthStore.getState();
-    authStore.logout().catch((err) => {
-      console.error('Error during auto logout:', err);
-    });
-    
-    // Redirect to login
-    window.location.href = '/login';
+    this.clearClientAuthState();
   }
 }
 

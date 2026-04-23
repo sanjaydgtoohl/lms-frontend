@@ -26,7 +26,12 @@ const authSlice = createSlice({
     isAuthenticated: apiClient.isAuthenticated(), // check cookie/token
     loading: false,
   },
-  reducers: {},
+  reducers: {
+    forceLogout: (state) => {
+      state.isAuthenticated = false;
+      state.loading = false;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(logoutUser.pending, (state) => {
@@ -42,4 +47,5 @@ const authSlice = createSlice({
   },
 });
 
+export const { forceLogout } = authSlice.actions;
 export default authSlice.reducer;
