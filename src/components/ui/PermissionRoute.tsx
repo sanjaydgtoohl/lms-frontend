@@ -74,7 +74,9 @@ const PermissionRoute: React.FC<PermissionRouteProps> = ({ children }) => {
   if (!hasPermission && allPermittedPaths.length !== 0) {
     // Redirect to first static permitted path instead of flashing Access Denied.
     const safePath = allPermittedPaths.find(p => !p.includes(':'));
-    return <Navigate to={safePath || '/'} replace />;
+    if (safePath) {
+      return <Navigate to={safePath} replace />;
+    }
   }
 
   if (hasPermission) {
