@@ -8,14 +8,14 @@ interface PermissionRouteProps {
 }
 
 const PermissionRoute: React.FC<PermissionRouteProps> = ({ children }) => {
-  const { allPermittedPaths, loading, permissionsLoaded } = useSidebarMenu();
+  const { allPermittedPaths, loading } = useSidebarMenu();
   const location = useLocation();
   const path = location.pathname;
 
   // Always allow login route
   if (path === 'login' || path === '/login') return <>{children}</>;
-  if (loading || !permissionsLoaded) return null; // Wait until permissions hydrate
-  
+  if (loading) return null; // Wait until permissions fetch completes (success or fail)
+
   // Helper to normalize paths
   function normalizePath(p: string): string {
     // Always start with a single slash, remove trailing slash (except root)
@@ -28,19 +28,19 @@ const PermissionRoute: React.FC<PermissionRouteProps> = ({ children }) => {
   function matchPath(permittedPath: string, currentPath: string): boolean {
     const normPermitted = normalizePath(permittedPath);
     const normCurrent = normalizePath(currentPath);
-    
+
     // Exact match first
     if (normPermitted === normCurrent) return true;
-    
+
     // Split paths into segments for smarter matching
     const permittedSegments = normPermitted.split('/').filter(Boolean);
     const currentSegments = normCurrent.split('/').filter(Boolean);
-    
+
     // Only match if same number of segments
     if (permittedSegments.length !== currentSegments.length) {
       return false;
     }
-    
+
     // Known route keywords that should NOT match dynamic segments
     const routeKeywords = new Set([
       'create', 'edit', 'view', 'delete', 'remove', 'update',
@@ -48,12 +48,12 @@ const PermissionRoute: React.FC<PermissionRouteProps> = ({ children }) => {
       'meeting-scheduled', 'meeting-done', 'brief-status',
       'Brief_Pipeline', 'view'
     ]);
-    
+
     // Check each segment
     for (let i = 0; i < permittedSegments.length; i++) {
       const permSegment = permittedSegments[i];
       const currSegment = currentSegments[i];
-      
+
       if (permSegment.startsWith(':')) {
         // Dynamic segment - match anything EXCEPT known route keywords
         if (routeKeywords.has(currSegment.toLowerCase())) {
@@ -65,7 +65,7 @@ const PermissionRoute: React.FC<PermissionRouteProps> = ({ children }) => {
         return false;
       }
     }
-    
+
     return true;
   }
 
@@ -76,7 +76,7 @@ const PermissionRoute: React.FC<PermissionRouteProps> = ({ children }) => {
     const safePath = allPermittedPaths.find(p => !p.includes(':'));
     return <Navigate to={safePath || '/'} replace />;
   }
-  
+
   if (hasPermission) {
     return <>{children}</>;
   }
