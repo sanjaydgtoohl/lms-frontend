@@ -58,11 +58,10 @@ const Pagination: React.FC<PaginationProps> = ({
           <button
             key={i}
             onClick={() => onPageChange(i)}
-            className={`pagination-btn no ${
-              i === currentPage
-                ? 'text-black font-semibold'
-                : 'text-gray-800 hover:text-black'
-            }`}
+            className={`pagination-btn no ${Number(i) === Number(currentPage)
+              ? '!bg-black !text-white font-semibold'
+              : 'text-gray-800 hover:text-black'
+              }`}
           >
             {i}
           </button>
