@@ -65,6 +65,10 @@ export default function LoginCard() {
       setLoginError(null);
       navigate(ROUTES.DASHBOARD, { replace: true });
     } catch (error: any) {
+      if (typeof error === 'string') {
+        setLoginError(error);
+        return;
+      }
       // Try to extract API error message if present
       let apiErrorMsg = '';
       if (error?.response?.data?.errors) {

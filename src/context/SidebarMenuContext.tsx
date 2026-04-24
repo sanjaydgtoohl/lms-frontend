@@ -34,7 +34,10 @@ export const SidebarMenuProvider: React.FC<{ children: ReactNode }> = ({ childre
       return;
     }
 
-    dispatch(fetchSidebarPermissions());
+    const promise = dispatch(fetchSidebarPermissions());
+    return () => {
+      promise.abort();
+    };
   }, [dispatch, isAuthenticated]);
 
   return (

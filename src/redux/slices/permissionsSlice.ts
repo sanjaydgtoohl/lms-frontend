@@ -61,10 +61,10 @@ const permissionsSlice = createSlice({
         state.sidebarMenu = action.payload.sidebarMenu;
         state.allPermittedPaths = action.payload.allPermittedPaths;
         state.allPermittedSlugs = action.payload.allPermittedSlugs;
-      })
-      .addCase(fetchSidebarPermissions.rejected, (state) => {
+        })
+        .addCase(fetchSidebarPermissions.rejected, (state) => {
         state.loading = false;
-        state.permissionsLoaded = true;
+        state.permissionsLoaded = false;
         state.sidebarMenu = [];
         state.allPermittedPaths = [];
         state.allPermittedSlugs = [];

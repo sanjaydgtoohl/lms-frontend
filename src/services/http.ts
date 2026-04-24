@@ -61,9 +61,10 @@ class Http {
         const status = error?.response?.status;
         const requestUrl = String(originalRequest?.url || '');
         const isRefreshRequest = requestUrl.includes(API_ENDPOINTS.AUTH.REFRESH);
-
+     
         if (status === 401 && isRefreshRequest) {
-          this.clearSessionAndRedirect();
+          this.requestQueue.forEach((cb) => cb(null));
+          this.requestQueue = [];
           return Promise.reject(error);
         }
 
