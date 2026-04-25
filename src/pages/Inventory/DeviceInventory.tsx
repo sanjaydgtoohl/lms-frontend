@@ -6,6 +6,7 @@ import SearchBar from '../../components/ui/SearchBar';
 import FilterPopup from '../../components/ui/FilterPopup';
 import ExportCsvButton from '../../components/ui/ExportCsvButton';
 import MasterHeader from '../../components/ui/MasterHeader';
+import PPTExport from '../../components/ui/PPTExport';
 import { useNavigate } from 'react-router-dom';
 import {
   fetchAllDeviceInventoryRows,
@@ -20,13 +21,33 @@ const DeviceInventory: React.FC = () => {
   const [data, setData] = useState<DeviceData[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
-  const [appliedLocation, setAppliedLocation] = useState({ state: '', city: '' });
+  const [appliedLocation, setAppliedLocation] = useState({
+    state: '',
+    city: '',
+    zoneArea: '',
+    subZoneArea: '',
+    pincode: '',
+    arterialRoute: '',
+    modeOfMedia: '',
+    publisher: '',
+    mainCategory: '',
+    categorySub: '',
+    category: '',
+    locationType: '',
+    orientation: '',
+    resolution: '',
+    screenLocation: '',
+    stretch: '',
+    property: '',
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  const hasActiveLocationFilter = Boolean(appliedLocation.state.trim() || appliedLocation.city.trim());
+  const hasActiveLocationFilter = Boolean(
+    Object.values(appliedLocation).some((value) => value.trim())
+  );
 
   const exportFetchRows = useCallback(
     () =>
@@ -34,8 +55,42 @@ const DeviceInventory: React.FC = () => {
         search: searchQuery?.trim() ? searchQuery.trim() : undefined,
         state: appliedLocation.state.trim() || undefined,
         city: appliedLocation.city.trim() || undefined,
+        zone: appliedLocation.zoneArea.trim() || undefined,
+        subZoneArea: appliedLocation.subZoneArea.trim() || undefined,
+        pincode: appliedLocation.pincode.trim() || undefined,
+        arterialRoute: appliedLocation.arterialRoute.trim() || undefined,
+        modeOfMedia: appliedLocation.modeOfMedia.trim() || undefined,
+        publisher: appliedLocation.publisher.trim() || undefined,
+        mainCategory: appliedLocation.mainCategory.trim() || undefined,
+        categorySub: appliedLocation.categorySub.trim() || undefined,
+        category: appliedLocation.category.trim() || undefined,
+        locationType: appliedLocation.locationType.trim() || undefined,
+        orientation: appliedLocation.orientation.trim() || undefined,
+        resolution: appliedLocation.resolution.trim() || undefined,
+        screenLocation: appliedLocation.screenLocation.trim() || undefined,
+        stretch: appliedLocation.stretch.trim() || undefined,
+        property: appliedLocation.property.trim() || undefined,
       }),
-    [searchQuery, appliedLocation.state, appliedLocation.city]
+    [
+      searchQuery,
+      appliedLocation.state,
+      appliedLocation.city,
+      appliedLocation.zoneArea,
+      appliedLocation.subZoneArea,
+      appliedLocation.pincode,
+      appliedLocation.arterialRoute,
+      appliedLocation.modeOfMedia,
+      appliedLocation.publisher,
+      appliedLocation.mainCategory,
+      appliedLocation.categorySub,
+      appliedLocation.category,
+      appliedLocation.locationType,
+      appliedLocation.orientation,
+      appliedLocation.resolution,
+      appliedLocation.screenLocation,
+      appliedLocation.stretch,
+      appliedLocation.property,
+    ]
   );
 
   const totalPages = useMemo(() => {
@@ -63,6 +118,21 @@ const DeviceInventory: React.FC = () => {
           search: searchQuery?.trim() ? searchQuery.trim() : undefined,
           state: appliedLocation.state.trim() || undefined,
           city: appliedLocation.city.trim() || undefined,
+          zone: appliedLocation.zoneArea.trim() || undefined,
+          subZoneArea: appliedLocation.subZoneArea.trim() || undefined,
+          pincode: appliedLocation.pincode.trim() || undefined,
+          arterialRoute: appliedLocation.arterialRoute.trim() || undefined,
+          modeOfMedia: appliedLocation.modeOfMedia.trim() || undefined,
+          publisher: appliedLocation.publisher.trim() || undefined,
+          mainCategory: appliedLocation.mainCategory.trim() || undefined,
+          categorySub: appliedLocation.categorySub.trim() || undefined,
+          category: appliedLocation.category.trim() || undefined,
+          locationType: appliedLocation.locationType.trim() || undefined,
+          orientation: appliedLocation.orientation.trim() || undefined,
+          resolution: appliedLocation.resolution.trim() || undefined,
+          screenLocation: appliedLocation.screenLocation.trim() || undefined,
+          stretch: appliedLocation.stretch.trim() || undefined,
+          property: appliedLocation.property.trim() || undefined,
         });
         if (!alive) return;
         setData(Array.isArray(res.data) ? res.data : []);
@@ -72,14 +142,36 @@ const DeviceInventory: React.FC = () => {
         setData([]);
         setTotalItems(0);
       } finally {
-        if (!alive) return;
-        setLoading(false);
+        if (alive) {
+          setLoading(false);
+        }
       }
     })();
     return () => {
       alive = false;
     };
-  }, [currentPage, itemsPerPage, searchQuery, appliedLocation.state, appliedLocation.city]);
+  }, [
+    currentPage,
+    itemsPerPage,
+    searchQuery,
+    appliedLocation.state,
+    appliedLocation.city,
+    appliedLocation.zoneArea,
+    appliedLocation.subZoneArea,
+    appliedLocation.pincode,
+    appliedLocation.arterialRoute,
+    appliedLocation.modeOfMedia,
+    appliedLocation.publisher,
+    appliedLocation.mainCategory,
+    appliedLocation.categorySub,
+    appliedLocation.category,
+    appliedLocation.locationType,
+    appliedLocation.orientation,
+    appliedLocation.resolution,
+    appliedLocation.screenLocation,
+    appliedLocation.stretch,
+    appliedLocation.property,
+  ]);
 
   return (
     <div className="flex-1 w-full max-w-full overflow-x-hidden">
@@ -95,6 +187,7 @@ const DeviceInventory: React.FC = () => {
         <div className="bg-gray-50 px-3 md:px-6 py-3 md:py-4 flex flex-row items-center justify-between gap-3 flex-wrap md:flex-nowrap border-b border-gray-200">
           <h2 className="text-sm md:text-base font-semibold text-gray-900 flex-shrink-0">Device Inventory</h2>
           <div className="flex w-full min-w-0 items-center justify-end gap-2 sm:w-auto">
+           <PPTExport fetchRows={exportFetchRows} />
             <ExportCsvButton<DeviceData>
               fetchRows={exportFetchRows}
               columns={DEVICE_INVENTORY_CSV_COLUMNS.filter(col => col.key !== 'user_password')}
@@ -136,7 +229,25 @@ const DeviceInventory: React.FC = () => {
                 setCurrentPage(1);
               }}
               onReset={() => {
-                setAppliedLocation({ state: '', city: '' });
+                setAppliedLocation({
+                  state: '',
+                  city: '',
+                  zoneArea: '',
+                  subZoneArea: '',
+                  pincode: '',
+                  arterialRoute: '',
+                  modeOfMedia: '',
+                  publisher: '',
+                  mainCategory: '',
+                  categorySub: '',
+                  category: '',
+                  locationType: '',
+                  orientation: '',
+                  resolution: '',
+                  screenLocation: '',
+                  stretch: '',
+                  property: '',
+                });
                 setCurrentPage(1);
               }}
               anchorRef={filterAnchorRef}

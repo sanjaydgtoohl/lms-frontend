@@ -45,6 +45,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
     // Campaign window
     campaignStartDate: '', // DD-MM-YYYY
     campaignEndDate: '', // DD-MM-YYYY
+    attachmentFile: null as File | null,
     // store backend-friendly values: 'programmatic' | 'non_programmatic'
     programmatic: 'programmatic',
     type: '',
@@ -53,6 +54,8 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
   // State for calendar pickers
   const [calendarDate, setCalendarDate] = useState<Date | null>(null); // For date only
   const [calendarTime, setCalendarTime] = useState<Date | null>(null); // For time only
+  const [calendarCampaignStartDate, setCalendarCampaignStartDate] = useState<Date | null>(null);
+  const [calendarCampaignEndDate, setCalendarCampaignEndDate] = useState<Date | null>(null);
 
   // Contact person dropdown state (loaded from API - leads list)
   const [contactPersons, setContactPersons] = useState<Array<string | { value: string; label: string }>>([]);
@@ -90,6 +93,17 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
 
   // Track which field was manually changed to prevent both auto-fill conditions from running
   const lastChangedFieldRef = useRef<'brand' | 'agency' | 'status' | 'priority' | null>(null);
+  const briefDetailRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const resizeBriefDetailTextarea = (textarea: HTMLTextAreaElement | null) => {
+    if (!textarea) return;
+    textarea.style.height = 'auto';
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 400)}px`;
+  };
+
+  useEffect(() => {
+    resizeBriefDetailTextarea(briefDetailRef.current);
+  }, [form.briefDetail]);
 
   useEffect(() => {
     if (initialData) {
@@ -183,10 +197,24 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
       }
       // Also update campaign calendar pickers when provided
       if (patched.campaignStartDate) {
-        // calendarStartDate state removed; no action needed
+        const dateParts = patched.campaignStartDate.split('-');
+        if (dateParts.length === 3) {
+          const [dd, mm, yyyy] = dateParts;
+          const dateObj = new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+          if (!isNaN(dateObj.getTime())) {
+            setCalendarCampaignStartDate(dateObj);
+          }
+        }
       }
       if (patched.campaignEndDate) {
-        // calendarEndDate state removed; no action needed
+        const dateParts2 = patched.campaignEndDate.split('-');
+        if (dateParts2.length === 3) {
+          const [dd, mm, yyyy] = dateParts2;
+          const dateObj2 = new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+          if (!isNaN(dateObj2.getTime())) {
+            setCalendarCampaignEndDate(dateObj2);
+          }
+        }
       }
     }
   }, [initialData]);
@@ -813,6 +841,8 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
     if (!form.contactPerson || String(form.contactPerson).trim() === '') next.contactPerson = 'Please Select Contact Person';
     if (!form.submissionDate || String(form.submissionDate).trim() === '') next.submissionDate = 'Please Select Submission Date';
     if (!form.submissionTime || String(form.submissionTime).trim() === '') next.submissionTime = 'Please Select Submission Time';
+    if (!form.campaignStartDate || String(form.campaignStartDate).trim() === '') next.campaignStartDate = 'The campaign start date field is required.';
+    if (!form.campaignEndDate || String(form.campaignEndDate).trim() === '') next.campaignEndDate = 'The campaign end date field is required.';
 
     setErrors(next);
     if (Object.keys(next).length > 0) return;
@@ -862,7 +892,10 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
       if (form.programmatic) payload.mode_of_campaign = String(form.programmatic);
       // Use `type` field from UI as media type (Select name="type")
       if (form.type) payload.media_type = String(form.type).toLowerCase();
-      if (form.budget) payload.budget = form.budget;
+      if (form.budget !== undefined && form.budget !== null && String(form.budget).trim() !== '') {
+        const budgetValue = Number(String(form.budget).trim().replace(/,/g, ''));
+        if (!Number.isNaN(budgetValue)) payload.budget = budgetValue;
+      }
       if (form.briefDetail) payload.comment = form.briefDetail;
 
       // submission date/time - normalize to `YYYY-MM-DD HH:mm:ss` when possible
@@ -898,6 +931,10 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
         const dmyc2 = s2.match(/^(\d{2})-(\d{2})-(\d{4})$/);
         if (dmyc2) s2 = `${dmyc2[3]}-${dmyc2[2]}-${dmyc2[1]}`;
         payload.campaign_end_date = s2;
+      }
+
+      if (form.attachmentFile) {
+        payload.attachment_file = form.attachmentFile;
       }
 
       // Priority: value is already priority_id from API
@@ -1060,30 +1097,38 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     inputClassName="border border-[var(--border-color)] focus:ring-blue-500"
                   />
                 </div>
-
                 <div>
-  <label className="block text-sm text-[var(--text-secondary)] mb-1">Priority</label>
-  <SelectField
-    name="priority"
-    placeholder={priorityLoading ? 'Loading priorities...' : 'Select Priority'}
-    options={priorityOptions}
-    value={form.priority}
-    onChange={(v: any) => {
-      const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v;
-      lastChangedFieldRef.current = 'priority';
-      setForm(prev => ({ ...prev, priority: val }));
-      setTimeout(() => {
-        if (lastChangedFieldRef.current === 'priority')
-          lastChangedFieldRef.current = null;
-      }, 500);
-    }}
-    inputClassName={priorityLoading
-      ? 'border border-gray-300 bg-gray-50'
-      : 'border border-[var(--border-color)] focus:ring-blue-500'}
-    disabled={priorityLoading}
-  />
-  {priorityError && <div className="text-xs text-red-600 mt-1">{priorityError}</div>}
-</div>
+                  <label className="block text-sm text-gray-800 mb-1">Attach File</label>
+                  <div className="border border-gray-200 rounded-lg bg-white p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-medium text-gray-900">
+                          {form.attachmentFile ? form.attachmentFile.name : 'No file selected'}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-0.5">
+                          {form.attachmentFile ? `${Math.round((form.attachmentFile.size / 1024) * 10) / 10} KB` : 'PDF, JPG, PNG, DOCX'}
+                        </div>
+                      </div>
+                      <label
+                        htmlFor="attachmentFile"
+                        className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 cursor-pointer"
+                      >
+                        Choose file
+                      </label>
+                    </div>
+                    <input
+                      id="attachmentFile"
+                      type="file"
+                      name="attachmentFile"
+                      onChange={e => {
+                        const file = e.target.files?.[0] ?? null;
+                        setForm(prev => ({ ...prev, attachmentFile: file }));
+                      }}
+                      className="hidden"
+                    />
+                  </div>
+                </div>
+
               </div>
               {/* Right column */}
               <div className="space-y-4">
@@ -1125,9 +1170,16 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                 </div>
                 <div>
                   <label className="block text-sm text-gray-800 mb-1">Brief Budget</label>
-                  <input name="budget" value={form.budget} onChange={handleChange}
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    name="budget"
+                    value={form.budget}
+                    onChange={handleChange}
                     placeholder="Please Enter Est. Budget"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white" />
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white"
+                  />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="w-full">
@@ -1199,6 +1251,66 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     )}
                   </div>
                 </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="w-full">
+                    <label className="block text-sm text-gray-800 mb-1">Campaign Start Date <span className="text-[#FF0000]">*</span></label>
+                    <DatePicker
+                      selected={calendarCampaignStartDate}
+                      onChange={date => {
+                        setCalendarCampaignStartDate(date);
+                        if (date) {
+                          const d = date;
+                          const dd = String(d.getDate()).padStart(2, '0');
+                          const mm = String(d.getMonth() + 1).padStart(2, '0');
+                          const yyyy = d.getFullYear();
+                          setForm(prev => ({ ...prev, campaignStartDate: `${dd}-${mm}-${yyyy}` }));
+                        }
+                      }}
+                      minDate={new Date()}
+                      dateFormat="dd-MM-yyyy"
+                      placeholderText="DD-MM-YYYY"
+                      className={`w-full px-3 py-2 rounded-lg bg-white transition-colors ${errors.campaignStartDate ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-gray-200'}`}
+                      popperClassName="!duration-0 !transition-none"
+                    />
+                    {errors.campaignStartDate && (
+                      <div id="campaignStartDate-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                        <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                        {errors.campaignStartDate}
+                      </div>
+                    )}
+                  </div>
+                  <div className="w-full">
+                    <label className="block text-sm text-gray-800 mb-1">Campaign End Date <span className="text-[#FF0000]">*</span></label>
+                    <DatePicker
+                      selected={calendarCampaignEndDate}
+                      onChange={date => {
+                        setCalendarCampaignEndDate(date);
+                        if (date) {
+                          const d = date;
+                          const dd = String(d.getDate()).padStart(2, '0');
+                          const mm = String(d.getMonth() + 1).padStart(2, '0');
+                          const yyyy = d.getFullYear();
+                          setForm(prev => ({ ...prev, campaignEndDate: `${dd}-${mm}-${yyyy}` }));
+                        }
+                      }}
+                      minDate={new Date()}
+                      dateFormat="dd-MM-yyyy"
+                      placeholderText="DD-MM-YYYY"
+                      className={`w-full px-3 py-2 rounded-lg bg-white transition-colors ${errors.campaignEndDate ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-gray-200'}`}
+                      popperClassName="!duration-0 !transition-none"
+                    />
+                    {errors.campaignEndDate && (
+                      <div id="campaignEndDate-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                        <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                        {errors.campaignEndDate}
+                      </div>
+                    )}
+                  </div>
+                </div>
                 <div>
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">Priority</label>
                   <SelectField
@@ -1220,12 +1332,14 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                 <div>
                   <label className="block text-sm text-gray-800 mb-1">Brief Detail</label>
                   <textarea
+                    ref={briefDetailRef}
                     name="briefDetail"
                     value={form.briefDetail}
                     onChange={handleChange}
                     rows={4}
                     placeholder="Show all data regarding to Brief"
                     className="w-full px-3 py-2 border border-gray-200 text-gray-800 rounded-lg bg-white resize-none"
+                    style={{ overflow: 'hidden' }}
                   />
                 </div>
 
