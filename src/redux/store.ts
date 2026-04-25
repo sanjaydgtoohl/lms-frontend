@@ -2,6 +2,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import sidebarReducer from "./slices/sidebarSlice";
 import authReducer from "./slices/authSlice";
 import notificationReducer from "./slices/notificationSlice";
+import permissionsReducer from "./slices/permissionsSlice";
 import { forceLogout } from "./slices/authSlice";
 
 
@@ -10,6 +11,7 @@ export const store = configureStore({
     sidebar: sidebarReducer,
     auth: authReducer,
     notifications: notificationReducer,
+    permissions: permissionsReducer,
   },
 });
 

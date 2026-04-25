@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { useAuthStore } from './store/auth';
-import { handleTokenExpiration } from './utils/auth';
+import { useDispatch, useSelector } from 'react-redux';
+import type { AppDispatch, RootState } from './redux/store';
+import { forceLogout, setAuthenticated } from './redux/slices/authSlice';
 import authService from './services/authService';
 import LoginCard from './pages/Auth/LoginCard';
 import Dashboard from './pages/Dashboard';
@@ -36,36 +37,31 @@ import SendEmail from './components/Gmail/SendEmail';
 import ReceiveEmail from './components/Gmail/ReceiveEmail';
 import DeviceInventory from './pages/Inventory/DeviceInventory';
 import Notifications from './pages/Notifications';
-import { useDispatch } from 'react-redux';
-import { forceLogout } from './redux/slices/authSlice'
 
 const AuthSessionHandler: React.FC = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
 
   useEffect(() => {
     const redirectToLogin = () => {
-      useAuthStore.setState({
-        user: null,
-        token: null,
-        refreshTokenValue: null,
-        isAuthenticated: false,
-        isLoading: false,
-      });
-
       dispatch(forceLogout());
       navigate(ROUTES.LOGIN, { replace: true });
     };
 
-    if (!authService.getAccessToken()) {
+    const hasAccessToken = Boolean(authService.getAccessToken());
+    dispatch(setAuthenticated(hasAccessToken));
+
+    if (!hasAccessToken) {
       redirectToLogin();
+      return;
     }
 
     authService.startSessionFromCookies();
 
     const handleForceLogout = () => {
       redirectToLogin();
-    };
+    };  
 
     window.addEventListener('auth:force-logout', handleForceLogout);
 
@@ -81,24 +77,16 @@ const AuthSessionHandler: React.FC = () => {
       window.removeEventListener('auth:force-logout', handleForceLogout);
       clearInterval(tokenCheckInterval);
     };
-  }, [navigate, dispatch]);
+  }, [dispatch, navigate, isAuthenticated]);
+  
 
   return null;
 };
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated, token } = useAuthStore();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (isAuthenticated && token) {
-      handleTokenExpiration().catch(() => {
-        navigate(ROUTES.LOGIN, { replace: true });
-      });
-    }
-  }, [token, isAuthenticated, navigate]);
-
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+  
   if (!isAuthenticated) {
     return <Navigate to={ROUTES.LOGIN} replace />;
   }
@@ -108,8 +96,8 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
 // Public Route Component (redirect if authenticated)
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated } = useAuthStore();
-
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+  
   if (isAuthenticated) {
     return <Navigate to={ROUTES.DASHBOARD} replace />;
   }

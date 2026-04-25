@@ -5,7 +5,6 @@
 import { API_BASE_URL, API_ENDPOINTS } from '../constants';
 // keep api error helpers available if needed in the future
 // import { handleApiError, extractErrorMessage } from './apiErrorHandler';
-import { useAuthStore } from '../store/auth';
 import { getCookie } from '../utils/cookies';
 import http from '../services/http';
 
@@ -82,14 +81,6 @@ class EnhancedApiClient {
     document.cookie = 'auth_token_expires=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT';
     document.cookie = 'refresh_token_expires=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT';
 
-    useAuthStore.setState({
-      user: null,
-      token: null,
-      refreshTokenValue: null,
-      isAuthenticated: false,
-      isLoading: false,
-    });
-
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new Event('auth:force-logout'));
     }
@@ -100,10 +91,8 @@ class EnhancedApiClient {
    */
   private async handleTokenRefresh(): Promise<boolean> {
     try {
-      const authStore = useAuthStore.getState();
-      const { refreshTokenValue } = authStore;
-      // fallback: try to get from cookies if not in store
-      const refreshToken = refreshTokenValue || getCookie('refresh_token');
+      // Get refresh token from cookies
+      const refreshToken = getCookie('refresh_token');
       if (!refreshToken) {
         return false;
       }

@@ -1,11 +1,18 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { useAuthStore } from '../../store/auth';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import type { AppDispatch, RootState } from '../../redux/store';
+import { logoutUser } from '../../redux/slices/authSlice';
 import { ROUTES } from '../../constants';
 
 const Navigation: React.FC = () => {
-  const { user, logout } = useAuthStore();
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const location = useLocation();
+  
+  // Get user from Redux auth state
+  const user = useSelector((state: RootState) => state.auth.user);
+  const loading = useSelector((state: RootState) => state.auth.loading);
 
   const navigationItems = [
     { name: 'Dashboard', path: ROUTES.DASHBOARD, icon: '📊' },
@@ -15,7 +22,8 @@ const Navigation: React.FC = () => {
 
   const handleLogout = async () => {
     try {
-      await logout();
+      await dispatch(logoutUser()).unwrap();
+      navigate('/login');
     } catch (error) {
       console.error('Logout failed:', error);
     }
@@ -62,9 +70,10 @@ const Navigation: React.FC = () => {
               </div>
               <button
                 onClick={handleLogout}
-                className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                disabled={loading}
+                className="text-sm text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50"
               >
-                Logout
+                {loading ? 'Logging out...' : 'Logout'}
               </button>
             </div>
           </div>

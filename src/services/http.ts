@@ -2,8 +2,6 @@ import axios from 'axios';
 import type { AxiosResponse, AxiosInstance } from 'axios';
 import { API_BASE_URL, API_ENDPOINTS } from '../constants';
 import { getCookie, setCookie, deleteCookie } from '../utils/cookies';
-import { useAuthStore } from '../store/auth';
-import sessionManager from '../services/sessionManager';
 
 // Single axios instance used across the app. Interceptors attach the latest token
 // from cookies and will attempt a refresh when a 401 is encountered.
@@ -21,14 +19,7 @@ class Http {
 
   private clearClientAuthState() {
     this.notifyUnauthorizedSession();
-    sessionManager.clearSession(); // ✅ add this
-    useAuthStore.setState({
-      user: null,
-      token: null,
-      refreshTokenValue: null,
-      isAuthenticated: false,
-      isLoading: false,
-    });
+    // Zustand state clearing is now handled by Redux listening to auth:force-logout event
 
     try {
       localStorage.removeItem('auth-storage');
@@ -46,11 +37,6 @@ class Http {
     // Interceptor to set Content-Type only for non-FormData requests
     this.instance.interceptors.request.use((config: any) => {
       const token = getCookie('auth_token');
-      if (!token && useAuthStore.getState().isAuthenticated) {
-        console.warn('[http] Token missing from cookies - triggering auto logout');
-        this.autoLogoutDueToMissingToken();
-        return Promise.reject(new Error('Token missing - auto logout triggered'));
-      }
       if (token && config.headers) {
         config.headers['Authorization'] = `Bearer ${token}`;
       }
@@ -64,23 +50,6 @@ class Http {
         if (config.headers && !config.headers['Content-Type']) {
           config.headers['Content-Type'] = 'application/json';
         }
-      }
-      return config;
-    });
-
-    // use any here to avoid strict axios internal types mismatch in interceptor callbacks
-    this.instance.interceptors.request.use((config: any) => {
-      const token = getCookie('auth_token');
-
-      // Check if token is missing but user is authenticated
-      if (!token && useAuthStore.getState().isAuthenticated) {
-        console.warn('[http] Token missing from cookies - triggering auto logout');
-        this.autoLogoutDueToMissingToken();
-        return Promise.reject(new Error('Token missing - auto logout triggered'));
-      }
-
-      if (token && config.headers) {
-        config.headers['Authorization'] = `Bearer ${token}`;
       }
       return config;
     });
