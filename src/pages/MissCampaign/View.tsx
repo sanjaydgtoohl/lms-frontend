@@ -7,8 +7,10 @@ import MasterHeader from '../../components/ui/MasterHeader';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import SearchBar from '../../components/ui/SearchBar';
 import Breadcrumb from '../../components/ui/Breadcrumb';
+import AssignDropdown from '../../components/ui/AssignDropdown';
 import SweetAlert from '../../utils/SweetAlert';
 import Create from './Create';
+import { updateMissCampaignWithForm } from '../../services/Create';
 import {
   listMissCampaigns,
   deleteMissCampaign,
@@ -39,6 +41,8 @@ const View: React.FC = () => {
   const [industryOptions, setIndustryOptions] = useState<{ value: string; label: string }[]>([]);
   const [mediaTypeOptions, setMediaTypeOptions] = useState<{ value: string; label: string }[]>([]);
   const [sourceOptions, setSourceOptions] = useState<{ value: string; label: string }[]>([]);
+  const [assignToOptions, setAssignToOptions] = useState<{ id: string | number; name: string }[]>([]);
+  const [userMap, setUserMap] = useState<Record<string, string>>({});
   const [showCreate, setShowCreate] = useState(false);
   const [viewItem, setViewItem] = useState<MissCampaign | null>(null);
   const [editItem, setEditItem] = useState<MissCampaign | null>(null);
@@ -220,6 +224,38 @@ const View: React.FC = () => {
     fetchMediaTypes();
   }, []);
 
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await apiClient.get('/users/list');
+        const users = Array.isArray((response as any).data) ? (response as any).data : [];
+        const map: Record<string, string> = {};
+        users.forEach((user: any) => {
+          if (user.id && user.name) {
+            map[String(user.id)] = user.name;
+          }
+        });
+        setUserMap(map);
+      } catch (error) {
+        console.error('Failed to fetch users:', error);
+      }
+    };
+    fetchUsers();
+  }, []);
+
+  useEffect(() => {
+    const fetchAssignToOptions = async () => {
+      try {
+        const res = await apiClient.get('/profile/child-users?per_page=1000');
+        const users = Array.isArray(res.data) ? res.data : [];
+        setAssignToOptions(users.map((u: any) => ({ id: u.id, name: u.name })));
+      } catch (err) {
+        console.error('Failed to fetch assign to users:', err);
+      }
+    };
+    fetchAssignToOptions();
+  }, []);
+
   const handleEdit = (id: string) => navigate(`/pre-lead/view/${encodeURIComponent(id)}/edit`);
   const handleView = (id: string) => navigate(`/pre-lead/view/${encodeURIComponent(id)}`);
   // open confirmation modal instead of immediate delete
@@ -237,6 +273,37 @@ const View: React.FC = () => {
   // };
 
   const handleCreate = () => navigate('/pre-lead/create');
+
+  const handleAssignToChange = (campaignId: string, newSalesMan: string) => {
+    setCampaigns((prev) =>
+      prev.map((c) =>
+        c.id === campaignId ? { ...c, assignTo: newSalesMan } : c
+      )
+    );
+    (async () => {
+      try {
+        const numericId = String(campaignId).replace(/\D/g, '');
+        const found = assignToOptions.find(u => u.name === newSalesMan);
+        if (found && found.id != null) {
+          await updateMissCampaignWithForm(numericId, { assign_to: String(found.id) });
+          SweetAlert.showUpdateSuccess();
+        } else {
+          try { SweetAlert.showError('User ID not found'); } catch {
+            // no need to action
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to persist assign_to change', err);
+        try { SweetAlert.showError('Failed to update assignment'); } catch {
+          // no need to action
+        }
+      }
+    })();
+  };
+
+  const handleAssignConfirm = async (_newSalesMan: string) => {
+    void _newSalesMan;
+  };
 
   const handleSave = async () => {
     try {
@@ -510,11 +577,11 @@ const View: React.FC = () => {
                   </div>
                   <div className='flex bg-gray-100 p-3 rounded-lg mb-3'>
                     <div className="text-sm text-gray-800 font-semibold min-w-[100px]">Assign By : </div>
-                    <div className="text-sm text-gray-600">{viewItem.assignBy || '-'}</div>
+                    <div className="text-sm text-gray-600">{userMap[String(viewItem.assignBy).replace(/^#USR0*/, '')] || viewItem.assignBy || '-'}</div>
                   </div>
                   <div className='flex bg-gray-100 p-3 rounded-lg mb-3'>
                     <div className="text-sm text-gray-800 font-semibold min-w-[100px]">Assign To : </div>
-                    <div className="text-sm text-gray-600">{viewItem.assignTo || '-'}</div>
+                    <div className="text-sm text-gray-600">{userMap[String(viewItem.assignTo).replace(/^#USR0*/, '')] || viewItem.assignTo || '-'}</div>
                   </div>
                   <div className='flex bg-gray-100 p-3 rounded-lg mb-3'>
                     <div className="text-sm text-gray-800 font-semibold min-w-[100px]">Media Type : </div>
@@ -586,8 +653,23 @@ const View: React.FC = () => {
                   { key: 'city', header: 'City', render: (it: MissCampaign) => it.city },
                   { key: 'state', header: 'State', render: (it: MissCampaign) => it.state },
                   { key: 'country', header: 'Country', render: (it: MissCampaign) => it.country },
-                  { key: 'assignBy', header: 'Assign By', render: (it: MissCampaign) => it.assignBy || '-' },
-                  { key: 'assignTo', header: 'Assign To', render: (it: MissCampaign) => it.assignTo || '-' },
+                  { key: 'assignBy', header: 'Assign By', render: (it: MissCampaign) => {
+                    const cleanId = it.assignBy ? String(it.assignBy).replace(/^#USR0*/, '') : '';
+                    return userMap[cleanId] || it.assignBy || '-';
+                  } },
+                  { key: 'assignTo', header: 'Assign To', render: (it: MissCampaign) => {
+                    const cleanId = it.assignTo ? String(it.assignTo).replace(/^#USR0*/, '') : '';
+                    const displayedName = userMap[cleanId] || it.assignTo || '';
+                    return (
+                      <AssignDropdown
+                        value={displayedName}
+                        options={assignToOptions.map(opt => opt.name)}
+                        onChange={(newSalesMan) => handleAssignToChange(it.id, newSalesMan)}
+                        onConfirm={handleAssignConfirm}
+                        context="lead"
+                      />
+                    );
+                  } },
                   { key: 'mediaType', header: 'Media Type', render: (it: MissCampaign) => it.mediaType || '-' },
                   {
                     key: 'proof',

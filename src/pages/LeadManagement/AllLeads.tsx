@@ -81,19 +81,19 @@ const AllLeads: React.FC = () => {
     loadCallStatuses();
   }, []);
 
-    // Fetch assign to (user) options from API
-    useEffect(() => {
-      const loadUsers = async () => {
-        try {
-          const res = await apiClient.get('/users/list');
-          const users = Array.isArray(res.data) ? res.data : [];
-          setAssignToOptions(users.map((u: any) => ({ id: u.id, name: u.name })));
-        } catch {
-          setAssignToOptions([]);
-        }
-      };
-      loadUsers();
-    }, []);
+  // Fetch assign to (user) options from API
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const res = await apiClient.get('/profile/child-users?per_page=1000');
+        const users = Array.isArray(res.data) ? res.data : [];
+        setAssignToOptions(users.map((u: any) => ({ id: u.id, name: u.name })));
+      } catch {
+        setAssignToOptions([]);
+      }
+    };
+    loadUsers();
+  }, []);
   const [loading, setLoading] = useState(false);
   const [totalItems, setTotalItems] = useState(0);
 
@@ -210,7 +210,7 @@ const AllLeads: React.FC = () => {
           await updateLead(numericId, { current_assign_user: newSalesMan });
         }
         SweetAlert.showUpdateSuccess();
-        
+
         // Refresh notifications in Redux after lead update
         try {
           await syncLeadNotificationCounts();
@@ -254,7 +254,7 @@ const AllLeads: React.FC = () => {
 
       const isLastOnPage = currentData.length === 1;
       if (isLastOnPage && currentPage > 1) setCurrentPage((p) => p - 1);
-      
+
       // Refresh notifications in Redux after lead delete
       try {
         await syncLeadNotificationCounts();

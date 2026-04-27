@@ -225,10 +225,10 @@ const EditSubmittedPlan: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Brief Submission Date & Time: </span>
-                  <span className="text-gray-600"> {  briefDetails.submission_date || '-'}</span>
+                  <span className="text-gray-600"> {briefDetails.submission_date || '-'}</span>
                 </div>
               </div>
-              
+
               <div className="space-y-3">
                 <div>
                   <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Brand Name:</span>
@@ -262,16 +262,16 @@ const EditSubmittedPlan: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Upload Plan Section */}
             <div className="mb-8">
-              <h3 className="text-base font-medium text-gray-900">Upload Plan</h3>
+              <h3 className="text-base font-medium text-gray-900 mb-2">Upload Plan</h3>
               {/* Show existing submitted_plan files from plannerData using FileCard style, with delete */}
-              <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="mb-4 grid grid-cols-2 xl:grid-cols-3 gap-4">
                 {plannerData?.submitted_plan?.map((file: any, idx: number) => {
                   const ext = getFileExtension(file.name);
                   const colorClass = getFileTypeColor(ext);
                   return (
                     <div key={idx} className="relative inline-flex flex-col items-center p-4 border border-gray-200 rounded-lg bg-white hover:shadow-sm transition-shadow">
                       <div className="relative mb-3">
-                        <div className="w-24 h-32 border-2 border-gray-200 rounded bg-gray-50 flex items-center justify-center">
+                        <div className="w-24 h-24 border-2 border-gray-200 rounded bg-gray-50 flex items-center justify-center">
                           <div className="text-center">
                             <div className={`inline-block px-2 py-1 rounded text-xs font-bold mb-2 ${colorClass}`}>
                               {ext}
@@ -283,26 +283,26 @@ const EditSubmittedPlan: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
-                          className="p-1.5 hover:bg-gray-100 rounded transition-colors"
+                          className="!p-1.5 !bg-orange-600 hover:!bg-orange-700 !rounded transition-colors"
                           title="View"
                           onClick={() => {
                             setPreviewSource({ kind: 'remote', url: file.url, name: file.name });
                             setPreviewOpen(true);
                           }}
                         >
-                          <Eye className="w-4 h-4 text-gray-600" />
+                          <Eye className="w-4 h-4 text-white" />
                         </button>
                         <a
                           href={file.url}
                           download
-                          className="p-1.5 hover:bg-gray-100 rounded transition-colors"
+                          className="!p-1.5 !bg-gray-700 !hover:bg-gray-800 !rounded transition-colors"
                           title="Download"
                         >
-                          <Download className="w-4 h-4 text-gray-600" />
+                          <Download className="w-4 h-4 text-white" />
                         </a>
                         <button
                           type="button"
-                          className="p-1.5 hover:bg-red-50 rounded transition-colors"
+                          className="!p-1.5 !bg-red-600 hover:!bg-red-800 !rounded transition-colors"
                           title="Delete"
                           onClick={() => {
                             const updated = [...(plannerData.submitted_plan || [])];
@@ -310,7 +310,7 @@ const EditSubmittedPlan: React.FC = () => {
                             setPlannerData((prev: any) => ({ ...prev, submitted_plan: updated }));
                           }}
                         >
-                          <Trash2 className="w-4 h-4 text-red-600" />
+                          <Trash2 className="w-4 h-4 text-white" />
                         </button>
                       </div>
                     </div>
@@ -334,19 +334,19 @@ const EditSubmittedPlan: React.FC = () => {
                   files={planFiles}
                   onChange={(files: File[]) => setPlanFiles(files.slice(0, 2 - (plannerData?.submitted_plan?.length || 0)))}
                   accept=".xls,.xlsx,.xlsm,.csv,.doc,.docx,.ppt,.pptx"
-                  supported="Excel, Word, PPT"
+                  supported="Excel, PPT"
                 />
               )}
             </div>
 
             {/* Upload Back-Up Plan Section */}
             <div className="mb-8">
-              <h3 className="text-base font-medium text-gray-900">Upload Back-Up Plan</h3>
-              <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+              <h3 className="text-base font-medium text-gray-900 mb-2">Upload Back-Up Plan</h3>
+              <div className="mb-4 grid grid-cols-2 xl:grid-cols-3 gap-4">
                 {plannerData?.backup_plan_url && (
                   <div className="relative inline-flex flex-col items-center p-4 border border-gray-200 rounded-lg bg-white hover:shadow-sm transition-shadow">
                     <div className="relative mb-3">
-                      <div className="w-24 h-32 border-2 border-gray-200 rounded bg-gray-50 flex items-center justify-center">
+                      <div className="w-24 h-24 border-2 border-gray-200 rounded bg-gray-50 flex items-center justify-center">
                         <div className="text-center">
                           <div className={`inline-block px-2 py-1 rounded text-xs font-bold mb-2 ${getFileTypeColor(getFileExtension(plannerData.backup_plan?.split('/').pop() || 'FILE'))}`}>
                             {getFileExtension(plannerData.backup_plan?.split('/').pop() || 'FILE')}
@@ -360,28 +360,28 @@ const EditSubmittedPlan: React.FC = () => {
                         href={plannerData.backup_plan_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-1.5 hover:bg-gray-100 rounded transition-colors"
+                        className="p-1.5 bg-orange-600 hover:bg-orange-700 !rounded transition-colors"
                         title="View"
                       >
-                        <Eye className="w-4 h-4 text-gray-600" />
+                        <Eye className="w-4 h-4 text-white" />
                       </a>
                       <a
                         href={plannerData.backup_plan_url}
                         download
-                        className="p-1.5 hover:bg-gray-100 rounded transition-colors"
+                        className="p-1.5 bg-gray-700 hover:bg-gray-800 !rounded transition-colors"
                         title="Download"
                       >
-                        <Download className="w-4 h-4 text-gray-600" />
+                        <Download className="w-4 h-4 text-white" />
                       </a>
                       <button
                         type="button"
-                        className="p-1.5 hover:bg-red-50 rounded transition-colors"
+                        className="!p-1.5 !bg-red-700 hover:!bg-red-800 !rounded transition-colors"
                         title="Delete"
                         onClick={() => {
                           setPlannerData((prev: any) => ({ ...prev, backup_plan: null, backup_plan_url: null }));
                         }}
                       >
-                        <Trash2 className="w-4 h-4 text-red-600" />
+                        <Trash2 className="w-4 h-4 text-white" />
                       </button>
                     </div>
                   </div>
@@ -404,7 +404,7 @@ const EditSubmittedPlan: React.FC = () => {
                   files={backupFiles}
                   onChange={(files: File[]) => setBackupFiles(files.slice(0, 1))}
                   accept=".xls,.xlsx,.xlsm,.csv,.doc,.docx,.ppt,.pptx"
-                  supported="Excel, Word, PPT"
+                  supported="Excel"
                 />
               )}
             </div>

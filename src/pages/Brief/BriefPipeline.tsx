@@ -536,6 +536,7 @@ const BriefPipeline: React.FC = () => {
                     </span>
                   ),
                 },
+                { key: 'campaignDuration', header: 'Campaign Duration', render: (it: Brief) => it.campaignDuration !== undefined && it.campaignDuration !== null ? String(it.campaignDuration) : 'N/A', className: 'whitespace-nowrap overflow-hidden truncate' },
                 { key: 'submissionDate', header: 'Submission Date & Time', render: (it: Brief) => it.submissionDate, className: 'whitespace-nowrap overflow-hidden truncate' },
               ] as Column<Brief>[])}
                 onEdit={(it: Brief) => handleEdit(it.id)}

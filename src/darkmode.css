@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+
 .dark .bg-white {
     @apply bg-gray-800 hover:!bg-none ;
 }

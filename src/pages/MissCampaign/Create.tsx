@@ -515,8 +515,8 @@ const Create: React.FC<CreateProps> = ({
       lead_source_id: formData.source,
       lead_sub_source_id: formData.subSource,
       industry_id: formData.industry,
-      assign_by: currentUser?.id || '',
-      assign_to: formData.assignTo,
+      assign_by: currentUser?.id ? Number(String(currentUser.id).replace(/\D/g, '')) : '',
+      assign_to: formData.assignTo ? Number(String(formData.assignTo).replace(/\D/g, '')) : '',
       country_id: formData.country,
       state_id: formData.state,
       city_id: formData.city,
@@ -581,7 +581,7 @@ const Create: React.FC<CreateProps> = ({
           <div className="flex flex-wrap gap-3">
             {/* Brand Name */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
-              <label className="block text-sm font-medium mb-2">
+              <label className="block text-sm font-medium mb-2 text-gray-800">
                 Brand Name <span className="text-[#FF0000]">*</span>
               </label>
               <div className='w-full'>
@@ -607,7 +607,7 @@ const Create: React.FC<CreateProps> = ({
 
             {/* Source */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
-              <label className="block text-sm font-medium mb-2">
+              <label className="block text-sm font-medium mb-2 text-gray-800">
                 Source <span className="text-[#FF0000]">*</span>
               </label>
               <div>
@@ -633,7 +633,7 @@ const Create: React.FC<CreateProps> = ({
 
             {/* Sub Source (dropdown) */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
-              <label className="flex text-sm font-medium mb-2 items-center gap-2">
+              <label className="flex text-sm font-medium mb-2 items-center gap-2 text-gray-800">
                 Sub Source <span className="text-[#FF0000]">*</span>
                 {subSourceLoading && <Loader className="w-4 h-4 animate-spin text-blue-500" />}
               </label>
@@ -661,7 +661,7 @@ const Create: React.FC<CreateProps> = ({
 
             {/* Assign By (read-only) */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
-              <label className="block text-sm font-medium mb-2">
+              <label className="block text-sm font-medium mb-2 text-gray-800">
                 Assign By
               </label>
               <input
@@ -675,7 +675,7 @@ const Create: React.FC<CreateProps> = ({
 
             {/* Assign To */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
-              <label className="block text-sm font-medium mb-2">
+              <label className="block text-sm font-medium mb-2 text-gray-800">
                 Assign To
               </label>
               <div>
@@ -693,7 +693,7 @@ const Create: React.FC<CreateProps> = ({
 
             {/* Industry */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
-              <label className="block text-sm font-medium mb-2">
+              <label className="block text-sm font-medium mb-2 text-gray-800">
                 Industry <span className="text-[#FF0000]">*</span>
               </label>
               <div>
@@ -719,7 +719,7 @@ const Create: React.FC<CreateProps> = ({
 
             {/* Product Name */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-sm font-medium text-gray-700 mb-1.5 text-gray-800">
                 Product Name <span className="text-red-500">*</span>
               </label>
               <input
@@ -745,7 +745,7 @@ const Create: React.FC<CreateProps> = ({
 
             {/* Country */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
-              <label className="block text-sm font-medium mb-2">
+              <label className="block text-sm font-medium mb-2 text-gray-800">
                 Country <span className="text-[#FF0000]">*</span>
               </label>
               <div className='w-full'>
@@ -785,7 +785,7 @@ const Create: React.FC<CreateProps> = ({
 
             {/* State */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
-              <label className="block text-sm font-medium mb-2">
+              <label className="block text-sm font-medium mb-2 text-gray-800">
                 State <span className="text-[#FF0000]">*</span>
               </label>
               <div className='w-full'>
@@ -823,7 +823,7 @@ const Create: React.FC<CreateProps> = ({
 
             {/* City */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
-              <label className="block text-sm font-medium mb-2">
+              <label className="block text-sm font-medium mb-2 text-gray-800">
                 City <span className="text-[#FF0000]">*</span>
               </label>
               <div className='w-full'>
@@ -849,7 +849,7 @@ const Create: React.FC<CreateProps> = ({
 
             {/* Media Type */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
-              <label className="block text-sm font-medium mb-2">
+              <label className="block text-sm font-medium mb-2 text-gray-800">
                 Media Type <span className="text-[#FF0000]">*</span>
               </label>
               <div>

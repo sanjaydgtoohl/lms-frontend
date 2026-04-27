@@ -125,7 +125,8 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [callFeedback, priority, assignTo, onChange]); // ✅ Added all missing dependencies
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [callFeedback]); // Only fetch when callFeedback changes
 
   return (
     <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-200">

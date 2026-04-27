@@ -45,6 +45,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
     // Campaign window
     campaignStartDate: '', // DD-MM-YYYY
     campaignEndDate: '', // DD-MM-YYYY
+    campaignDuration: '', // read-only from backend
     attachmentFile: null as File | null,
     // store backend-friendly values: 'programmatic' | 'non_programmatic'
     programmatic: 'programmatic',
@@ -176,6 +177,9 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
         const isoMatch2 = s2.match(/^(\d{4})-(\d{2})-(\d{2})/);
         if (isoMatch2) patched.campaignEndDate = `${isoMatch2[3]}-${isoMatch2[2]}-${isoMatch2[1]}`;
         else if (/^\d{2}-\d{2}-\d{4}$/.test(s2)) patched.campaignEndDate = s2;
+      }
+      if (initialData.campaign_duration !== undefined) {
+        patched.campaignDuration = String(initialData.campaign_duration);
       }
 
       setForm(prev => ({ ...prev, ...patched }));
@@ -659,163 +663,163 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
   }, [initialData]);
 
   // When Priority changes, fetch brief statuses filtered by priority
-  useEffect(() => {
-    let mounted = true;
+  // useEffect(() => {
+  //   let mounted = true;
 
-    const fetchByPriority = async () => {
-      const raw = form.priority;
-      if (!raw) return;
+  //   const fetchByPriority = async () => {
+  //     const raw = form.priority;
+  //     if (!raw) return;
 
-      // If status was manually changed last, skip auto-fill
-      if (lastChangedFieldRef.current === 'status') return;
+  //     // If status was manually changed last, skip auto-fill
+  //     if (lastChangedFieldRef.current === 'status') return;
 
-      const priorityId = String(raw);
-      if (!priorityId) return;
+  //     const priorityId = String(raw);
+  //     if (!priorityId) return;
 
-      try {
-        setBriefStatusesLoading(true);
-        setBriefStatusesError(null);
+  //     try {
+  //       setBriefStatusesLoading(true);
+  //       setBriefStatusesError(null);
 
-        const res = await apiClient.get<any>(
-          `/brief-statuses/by-priority?priority_id=${encodeURIComponent(priorityId)}`
-        );
+  //       const res = await apiClient.get<any>(
+  //         `/brief-statuses/by-priority?priority_id=${encodeURIComponent(priorityId)}`
+  //       );
 
-        const body = res && res.data ? res.data : res;
+  //       const body = res && res.data ? res.data : res;
 
-        let items: any[] = [];
-        if (Array.isArray(body)) items = body;
-        else if (body && Array.isArray(body.data)) items = body.data;
-        else if (body && Array.isArray(body.brief_statuses)) items = body.brief_statuses;
+  //       let items: any[] = [];
+  //       if (Array.isArray(body)) items = body;
+  //       else if (body && Array.isArray(body.data)) items = body.data;
+  //       else if (body && Array.isArray(body.brief_statuses)) items = body.brief_statuses;
 
-        const opts = (items || [])
-          .map((s: any) => ({
-            value: String(s.id ?? s.status_id ?? s.uuid ?? ''),
-            label: String(s.name ?? s.status ?? s.brief_status ?? s.label ?? '')
-          }))
-          .filter(o => o.value && o.label);
+  //       const opts = (items || [])
+  //         .map((s: any) => ({
+  //           value: String(s.id ?? s.status_id ?? s.uuid ?? ''),
+  //           label: String(s.name ?? s.status ?? s.brief_status ?? s.label ?? '')
+  //         }))
+  //         .filter(o => o.value && o.label);
 
-        if (!mounted) return;
+  //       if (!mounted) return;
 
-        setBriefStatuses(opts);
+  //       setBriefStatuses(opts);
 
-        if (!form.status && opts.length) {
-          setForm(prev => ({ ...prev, status: opts[0].value }));
-          lastChangedFieldRef.current = 'priority';
+  //       if (!form.status && opts.length) {
+  //         setForm(prev => ({ ...prev, status: opts[0].value }));
+  //         lastChangedFieldRef.current = 'priority';
 
-          setTimeout(() => {
-            if (lastChangedFieldRef.current === 'priority')
-              lastChangedFieldRef.current = null;
-          }, 500);
+  //         setTimeout(() => {
+  //           if (lastChangedFieldRef.current === 'priority')
+  //             lastChangedFieldRef.current = null;
+  //         }, 500);
 
-        } else if (form.status) {
-          const found = opts.find(o => o.value === String(form.status));
-          if (!found) setForm(prev => ({ ...prev, status: '' }));
-        }
+  //       } else if (form.status) {
+  //         const found = opts.find(o => o.value === String(form.status));
+  //         if (!found) setForm(prev => ({ ...prev, status: '' }));
+  //       }
 
-      } catch (err: any) {
-        if (!mounted) return;
-        console.error('Failed to fetch brief statuses:', err);
-        setBriefStatusesError(err?.message || 'Failed to load brief statuses');
-      } finally {
-        if (mounted) setBriefStatusesLoading(false);
-      }
-    };
+  //     } catch (err: any) {
+  //       if (!mounted) return;
+  //       console.error('Failed to fetch brief statuses:', err);
+  //       setBriefStatusesError(err?.message || 'Failed to load brief statuses');
+  //     } finally {
+  //       if (mounted) setBriefStatusesLoading(false);
+  //     }
+  //   };
 
-    fetchByPriority();
+  //   fetchByPriority();
 
-    return () => {
-      mounted = false;
-    };
+  //   return () => {
+  //     mounted = false;
+  //   };
 
-  }, [form.priority, form.status]);
+  // }, [form.priority, form.status]);
 
-  // When Brief Status changes, fetch Priority options related to that status
-  useEffect(() => {
-    let mounted = true;
-    const fetchPrioritiesForStatus = async () => {
-      const raw = form.status;
-      if (!raw) return;
-      // If priority was manually changed last, skip auto-fill to avoid reciprocal update
-      if (lastChangedFieldRef.current === 'priority') return;
-      // try to determine brief_status_id
-      let statusId: string | undefined;
-      if (/^\d+$/.test(String(raw))) statusId = String(raw);
-      else {
-        const found = (briefStatuses || []).find((b: any) => String((b as any).value ?? b) === String(raw) || String((b as any).label ?? b).toLowerCase() === String(raw).toLowerCase());
-        if (found) statusId = typeof found === 'string' ? String(found) : String((found as any).value ?? found);
-      }
-      if (!statusId) return;
+  // // When Brief Status changes, fetch Priority options related to that status
+  // useEffect(() => {
+  //   let mounted = true;
+  //   const fetchPrioritiesForStatus = async () => {
+  //     const raw = form.status;
+  //     if (!raw) return;
+  //     // If priority was manually changed last, skip auto-fill to avoid reciprocal update
+  //     if (lastChangedFieldRef.current === 'priority') return;
+  //     // try to determine brief_status_id
+  //     let statusId: string | undefined;
+  //     if (/^\d+$/.test(String(raw))) statusId = String(raw);
+  //     else {
+  //       const found = (briefStatuses || []).find((b: any) => String((b as any).value ?? b) === String(raw) || String((b as any).label ?? b).toLowerCase() === String(raw).toLowerCase());
+  //       if (found) statusId = typeof found === 'string' ? String(found) : String((found as any).value ?? found);
+  //     }
+  //     if (!statusId) return;
 
-      try {
-        setPriorityLoading(true);
-        setPriorityError(null);
-        const res = await apiClient.get<any>(`/brief-statuses/priorities?brief_status_id=${encodeURIComponent(statusId)}`);
-        console.log('Raw API response for priorities:', res);
+  //     try {
+  //       setPriorityLoading(true);
+  //       setPriorityError(null);
+  //       const res = await apiClient.get<any>(`/brief-statuses/priorities?brief_status_id=${encodeURIComponent(statusId)}`);
+  //       console.log('Raw API response for priorities:', res);
 
-        // API response structure: { success, message, meta, data: {id, name} OR [...] }
-        let items: any[] = [];
-        const responseData = res?.data || res;
-        console.log('Response data:', responseData);
+  //       // API response structure: { success, message, meta, data: {id, name} OR [...] }
+  //       let items: any[] = [];
+  //       const responseData = res?.data || res;
+  //       console.log('Response data:', responseData);
 
-        // Check what type of data we have
-        if (Array.isArray(responseData)) {
-          // Data is already an array of priorities
-          items = responseData;
-        } else if (responseData && typeof responseData === 'object') {
-          // Check if it's a single priority object (has id and name)
-          if (responseData.id && responseData.name) {
-            // Single priority object
-            items = [responseData];
-          } else if (Array.isArray(responseData.data)) {
-            // Wrapped in .data array
-            items = responseData.data;
-          } else if (responseData.data && typeof responseData.data === 'object' && responseData.data.id) {
-            // Single object wrapped in .data
-            items = [responseData.data];
-          }
-        }
+  //       // Check what type of data we have
+  //       if (Array.isArray(responseData)) {
+  //         // Data is already an array of priorities
+  //         items = responseData;
+  //       } else if (responseData && typeof responseData === 'object') {
+  //         // Check if it's a single priority object (has id and name)
+  //         if (responseData.id && responseData.name) {
+  //           // Single priority object
+  //           items = [responseData];
+  //         } else if (Array.isArray(responseData.data)) {
+  //           // Wrapped in .data array
+  //           items = responseData.data;
+  //         } else if (responseData.data && typeof responseData.data === 'object' && responseData.data.id) {
+  //           // Single object wrapped in .data
+  //           items = [responseData.data];
+  //         }
+  //       }
 
-        console.log('Extracted priority items:', items);
-        const opts = (items || []).map((p: any) => {
-          const id = String(p.id ?? '').trim();
-          const label = String(p.name ?? '').trim();
-          console.log('Mapping priority:', { id, label, source: p });
-          return { value: id, label };
-        }).filter(o => o.value && o.label);
+  //       console.log('Extracted priority items:', items);
+  //       const opts = (items || []).map((p: any) => {
+  //         const id = String(p.id ?? '').trim();
+  //         const label = String(p.name ?? '').trim();
+  //         console.log('Mapping priority:', { id, label, source: p });
+  //         return { value: id, label };
+  //       }).filter(o => o.value && o.label);
 
-        console.log('Final filtered priority options:', opts);
+  //       console.log('Final filtered priority options:', opts);
 
-        if (!mounted) return;
-        setPriorityOptions(opts);
+  //       if (!mounted) return;
+  //       setPriorityOptions(opts);
 
-        if (opts.length) {
-          // Auto-select first priority if none selected
-          if (!form.priority) {
-            console.log('Auto-selecting first priority:', opts[0]);
-            setForm(prev => ({ ...prev, priority: opts[0].value }));
-            // mark that status auto-filled the priority to prevent immediate reciprocal fetch
-            lastChangedFieldRef.current = 'status';
-            setTimeout(() => { if (lastChangedFieldRef.current === 'status') lastChangedFieldRef.current = null; }, 500);
-          } else {
-            const found = opts.find(o => o.value === String(form.priority));
-            if (!found) setForm(prev => ({ ...prev, priority: '' }));
-          }
-        } else {
-          console.warn('No priority options found for status:', statusId, 'responseData:', responseData);
-          setForm(prev => ({ ...prev, priority: '' }));
-        }
-      } catch (err: any) {
-        if (!mounted) return;
-        console.error('Failed to fetch priorities:', err);
-        setPriorityError(err?.message || 'Failed to load priorities');
-      } finally {
-        if (mounted) setPriorityLoading(false);
-      }
-    };
+  //       if (opts.length) {
+  //         // Auto-select first priority if none selected
+  //         if (!form.priority) {
+  //           console.log('Auto-selecting first priority:', opts[0]);
+  //           setForm(prev => ({ ...prev, priority: opts[0].value }));
+  //           // mark that status auto-filled the priority to prevent immediate reciprocal fetch
+  //           lastChangedFieldRef.current = 'status';
+  //           setTimeout(() => { if (lastChangedFieldRef.current === 'status') lastChangedFieldRef.current = null; }, 500);
+  //         } else {
+  //           const found = opts.find(o => o.value === String(form.priority));
+  //           if (!found) setForm(prev => ({ ...prev, priority: '' }));
+  //         }
+  //       } else {
+  //         console.warn('No priority options found for status:', statusId, 'responseData:', responseData);
+  //         setForm(prev => ({ ...prev, priority: '' }));
+  //       }
+  //     } catch (err: any) {
+  //       if (!mounted) return;
+  //       console.error('Failed to fetch priorities:', err);
+  //       setPriorityError(err?.message || 'Failed to load priorities');
+  //     } finally {
+  //       if (mounted) setPriorityLoading(false);
+  //     }
+  //   };
 
-    fetchPrioritiesForStatus();
-    return () => { mounted = false; };
-  }, [form.status, briefStatuses, form.priority]);
+  //   fetchPrioritiesForStatus();
+  //   return () => { mounted = false; };
+  // }, [form.status, briefStatuses, form.priority]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -972,6 +976,24 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
     } finally {
       setSaving(false);
     }
+  };
+
+  // Calculate Campaign Duration dynamically
+  const getCalculatedDuration = () => {
+    if (form.campaignStartDate && form.campaignEndDate) {
+      const parseDate = (dStr: string) => {
+        const [dd, mm, yyyy] = dStr.split('-');
+        return new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+      };
+      const start = parseDate(form.campaignStartDate);
+      const end = parseDate(form.campaignEndDate);
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+        const diffTime = end.getTime() - start.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        return diffDays > 0 ? diffDays : 0;
+      }
+    }
+    return form.campaignDuration ? Number(form.campaignDuration) : 0;
   };
 
   return (
@@ -1311,6 +1333,16 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     )}
                   </div>
                 </div>
+                <div className="w-full">
+                  <label className="block text-sm text-gray-800 mb-1">Campaign Duration</label>
+                  <input
+                    type="number"
+                    value={getCalculatedDuration()}
+                    disabled
+                    placeholder="0"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                  />
+                </div>
                 <div>
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">Priority</label>
                   <SelectField
@@ -1343,7 +1375,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                   />
                 </div>
 
-                
+
                 {/* Brief Detail moved to pair with Select Type for aligned row */}
               </div>
             </div>

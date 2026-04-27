@@ -61,7 +61,7 @@ const Header: React.FC<HeaderProps> = ({
       }
     }
     loadNotificationCount();
-    
+
     return () => {
       active = false;
     };
@@ -292,7 +292,7 @@ const Header: React.FC<HeaderProps> = ({
               <div className="" ref={notificationDropdownRef}>
                 {/* <div className="absolute left-0 top-full -mt-2 w-4 h-4 bg-white transform rotate-45 border-l border-t border-gray-400 z-60 -mb-2" aria-hidden="true" /> */}
 
-               <div className="fixed left-1/2 -translate-x-1/2 top-full sm:absolute sm:left-auto sm:translate-x-0 sm:right-0 sm:top-full w-80 max-w-[90vw] bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-50 ring-opacity-5 transition duration-300 ease-in-out">
+                <div className="fixed left-1/2 -translate-x-1/2 top-full sm:absolute sm:left-auto sm:translate-x-0 sm:right-0 sm:top-full w-80 max-w-[90vw] bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-50 ring-opacity-5 transition duration-300 ease-in-out">
                   <div className="px-4 py-3 border-b border-gray-100 bg-white">
                     <div className="flex items-center justify-between mb-6">
                       <h3 className="text-sm font-semibold text-gray-900 flex gap-2 items-center">Notifications
@@ -312,7 +312,7 @@ const Header: React.FC<HeaderProps> = ({
                             type="checkbox"
                             checked={showUnreadOnly}
                             onChange={handleUnreadFilterChange}
-                          className="text-gray-800 p-0! bg-white border border-gray-300 rounded cursor-pointer"
+                            className="text-gray-800 p-0! bg-white border border-gray-300 rounded cursor-pointer"
                           />
                           <span className="text-xs font-medium text-gray-800">Unread</span>
                         </label>
@@ -360,7 +360,7 @@ const Header: React.FC<HeaderProps> = ({
                     )} */}
                   </div>
                   <div className="min-h-30 max-h-100 overflow-y-auto flex flex-col items-center">
-                    {recentNotifications.length === 0 ? ( 
+                    {recentNotifications.length === 0 ? (
                       <div className="px-4 py-6 text-center text-sm text-gray-500">
                         No notifications yet
                       </div>
@@ -368,7 +368,7 @@ const Header: React.FC<HeaderProps> = ({
                       recentNotifications.map((notification) => (
                         <div
                           key={notification.id}
-                          className="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
+                          className="px-4 py-3 border-b border-gray-100 cursor-pointer"
                           role="button"
                           tabIndex={0}
                           onClick={() => {
