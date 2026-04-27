@@ -851,6 +851,18 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
     if (!form.campaignStartDate || String(form.campaignStartDate).trim() === '') next.campaignStartDate = 'The campaign start date field is required.';
     if (!form.campaignEndDate || String(form.campaignEndDate).trim() === '') next.campaignEndDate = 'The campaign end date field is required.';
 
+    if (form.campaignStartDate && form.campaignEndDate) {
+      const parseDate = (dStr: string) => {
+        const [dd, mm, yyyy] = String(dStr).split('-');
+        return new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+      };
+      const start = parseDate(form.campaignStartDate);
+      const end = parseDate(form.campaignEndDate);
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end.getTime() < start.getTime()) {
+        next.campaignEndDate = 'End date cannot be before start date.';
+      }
+    }
+
     setErrors(next);
     if (Object.keys(next).length > 0) return;
 
@@ -1321,7 +1333,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                           setForm(prev => ({ ...prev, campaignEndDate: `${dd}-${mm}-${yyyy}` }));
                         }
                       }}
-                      minDate={new Date()}
+                      minDate={calendarCampaignStartDate || new Date()}
                       dateFormat="dd-MM-yyyy"
                       placeholderText="DD-MM-YYYY"
                       className={`w-full px-3 py-2 rounded-lg bg-white transition-colors ${errors.campaignEndDate ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-gray-200'}`}

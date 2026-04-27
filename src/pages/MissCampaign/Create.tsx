@@ -724,7 +724,7 @@ const Create: React.FC<CreateProps> = ({
 
             {/* Product Name */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5 text-gray-800">
+              <label className="block text-sm font-medium mb-1.5 text-gray-800">
                 Product Name <span className="text-red-500">*</span>
               </label>
               <input
