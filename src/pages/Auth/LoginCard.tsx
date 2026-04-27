@@ -3,7 +3,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button, Input } from '../../components/ui';
 import { useEffect, useState } from 'react';
-import { useAuthStore } from '../../store/auth';
+import { useDispatch, useSelector } from 'react-redux';
+import type { AppDispatch, RootState } from '../../redux/store';
+import { loginUser, setAuthenticated } from '../../redux/slices/authSlice';
+import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants';
 
 const loginSchema = z.object({
@@ -20,8 +23,12 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginCard() {
-  const { login, isLoading } = useAuthStore();
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const [loginError, setLoginError] = useState<string | null>(null);
+  
+  // Get loading state from Redux
+  const loading = useSelector((state: RootState) => state.auth.loading);
 
   const {
     register,
@@ -52,10 +59,16 @@ export default function LoginCard() {
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      await login(data.email, data.password);
+      // Dispatch Redux loginUser thunk
+      await dispatch(loginUser({ email: data.email, password: data.password })).unwrap();
+      dispatch(setAuthenticated(true));
       setLoginError(null);
-      window.location.href = ROUTES.DASHBOARD;
+      navigate(ROUTES.DASHBOARD, { replace: true });
     } catch (error: any) {
+      if (typeof error === 'string') {
+        setLoginError(error);
+        return;
+      }
       // Try to extract API error message if present
       let apiErrorMsg = '';
       if (error?.response?.data?.errors) {
@@ -100,7 +113,7 @@ export default function LoginCard() {
           )}
 
           {/* Form - Clean & Simple */}
-          <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-sm sm:max-w-md space-y-4 sm:space-y-5">
+          <form onSubmit={handleSubmit(onSubmit)} autoComplete="on" className="w-full max-w-sm sm:max-w-md space-y-4 sm:space-y-5">
             {/* Email */}
             <div>
               <Input
@@ -132,7 +145,7 @@ export default function LoginCard() {
               type="submit"
               variant="primary"
               size="lg"
-              loading={isLoading}
+              loading={loading}
               className="login-btn
               "
             >

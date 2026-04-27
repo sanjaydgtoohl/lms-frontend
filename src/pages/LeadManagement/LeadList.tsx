@@ -12,6 +12,10 @@ import { ROUTES } from '../../constants';
 import { listLeads, listLeadsByStatus, updateLead, deleteLead } from '../../services/AllLeads';
 import { assignUserToLead } from '../../services/leadAssignTo';
 import { usePermissions } from '../../hooks/SidebarMenuHooks';
+import { useDispatch } from 'react-redux';
+import type { AppDispatch } from '../../redux/store';
+import { setUnreadCount, setNotifications, incrementUnreadCount } from '../../redux/slices/notificationSlice';
+import { getUnreadNotificationCount, listNotifications } from '../../services/notifications';
 
 interface Lead {
   id: string;
@@ -122,6 +126,7 @@ interface Props {
 }
 
 const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
+  const dispatch = useDispatch<AppDispatch>();
   // Assign To options state and effect (must be inside component)
   const [assignToOptions, setAssignToOptions] = useState<UserOption[]>([]);
   const { hasPermission } = usePermissions();
@@ -316,6 +321,30 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
     navigate(ROUTES.LEAD.DETAIL(cleanId));
   };
 
+  const syncLeadNotificationCounts = useCallback(async () => {
+    const [count, notificationsRes, unreadLeadRes] = await Promise.all([
+      getUnreadNotificationCount(),
+      listNotifications(1, 10, 'lead-management', ['Lead Created', 'Assignment Updated']),
+      listNotifications(1, 1, 'unread', ['Lead Created', 'Assignment Updated']),
+    ]);
+
+    const leadUnreadCount =
+      unreadLeadRes.meta?.pagination?.total ??
+      unreadLeadRes.meta?.total ??
+      unreadLeadRes.data?.length ??
+      0;
+
+    dispatch(setUnreadCount({ module: 'all', count }));
+    dispatch(setUnreadCount({ module: 'leadManagement', count: leadUnreadCount }));
+    dispatch(
+      setNotifications({
+        module: 'leadManagement',
+        notifications: notificationsRes.data || [],
+        total: notificationsRes.meta?.pagination?.total || 0,
+      })
+    );
+  }, [dispatch]);
+
   const handleAssignToChange = (leadId: string, newSalesMan: string) => {
     setLeads((prev) =>
       prev.map((lead) =>
@@ -332,6 +361,17 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
           await updateLead(numericId, { current_assign_user: newSalesMan });
         }
         SweetAlert.showUpdateSuccess();
+        
+        // Immediately increment badge in Redux, then sync with server
+        dispatch(incrementUnreadCount({ module: 'all' }));
+        dispatch(incrementUnreadCount({ module: 'leadManagement' }));
+        
+        // Sync with server count
+        try {
+          await syncLeadNotificationCounts();
+        } catch (notifErr) {
+          console.error('Failed to refresh notifications:', notifErr);
+        }
       } catch (err) {
         console.warn('Failed to persist assignTo change', err);
         try { SweetAlert.showError('Failed to update assignment'); } catch {
@@ -358,6 +398,14 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
     try {
       await deleteLead(numericId);
       setLeads((prev) => prev.filter((l) => l.id !== confirmDeleteId));
+      SweetAlert.showDeleteSuccess();
+
+      // Sync with server count
+      try {
+        await syncLeadNotificationCounts();
+      } catch (notifErr) {
+        console.error('Failed to refresh notifications:', notifErr);
+      }
     } catch (err: any) {
       console.error('Failed to delete lead', err);
       SweetAlert.showError(err?.message || 'Failed to delete lead');
@@ -440,7 +488,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
           onConfirm={handleAssignConfirm}
           context="lead"
         />
-      ),
+      ), 
       className: 'min-w-[140px]',
     } as Column<Lead>] : []),
     { key: 'dateTime', header: 'Date & Time', render: (it: Lead) => it.dateTime || '-', className: 'whitespace-nowrap' },

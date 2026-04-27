@@ -16,6 +16,10 @@ import { apiClient } from '../../utils/apiClient';
 import { getCallStatuses, updateCallStatus } from '../../services/CallStatus';
 import { usePermissions } from '../../hooks/SidebarMenuHooks';
 import TableHeader from '../../components/ui/TableHeader';
+import { useDispatch } from 'react-redux';
+import type { AppDispatch } from '../../redux/store';
+import { setUnreadCount, setNotifications } from '../../redux/slices/notificationSlice';
+import { getUnreadNotificationCount, listNotifications } from '../../services/notifications';
 
 interface Lead {
   id: string;
@@ -52,6 +56,7 @@ interface UserOption {
 
 
 const AllLeads: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const itemsPerPage = 15;
@@ -147,6 +152,30 @@ const AllLeads: React.FC = () => {
 
   const navigate = useNavigate();
 
+  const syncLeadNotificationCounts = async () => {
+    const [count, notificationsRes, unreadLeadRes] = await Promise.all([
+      getUnreadNotificationCount(),
+      listNotifications(1, 10, 'lead-management', ['Lead Created', 'Assignment Updated']),
+      listNotifications(1, 1, 'unread', ['Lead Created', 'Assignment Updated']),
+    ]);
+
+    const leadUnreadCount =
+      unreadLeadRes.meta?.pagination?.total ??
+      unreadLeadRes.meta?.total ??
+      unreadLeadRes.data?.length ??
+      0;
+
+    dispatch(setUnreadCount({ module: 'all', count }));
+    dispatch(setUnreadCount({ module: 'leadManagement', count: leadUnreadCount }));
+    dispatch(
+      setNotifications({
+        module: 'leadManagement',
+        notifications: notificationsRes.data || [],
+        total: notificationsRes.meta?.pagination?.total || 0,
+      })
+    );
+  };
+
   const handleCreateLead = () => navigate(ROUTES.LEAD.CREATE);
   const handleEdit = (id: string) => {
     // Remove the '#' from the ID before using it in the URL
@@ -181,6 +210,13 @@ const AllLeads: React.FC = () => {
           await updateLead(numericId, { current_assign_user: newSalesMan });
         }
         SweetAlert.showUpdateSuccess();
+        
+        // Refresh notifications in Redux after lead update
+        try {
+          await syncLeadNotificationCounts();
+        } catch (notifErr) {
+          console.error('Failed to refresh notifications:', notifErr);
+        }
       } catch (err) {
         console.warn('Failed to persist assignTo change', err);
         try { SweetAlert.showError('Failed to update assignment'); } catch {
@@ -218,6 +254,13 @@ const AllLeads: React.FC = () => {
 
       const isLastOnPage = currentData.length === 1;
       if (isLastOnPage && currentPage > 1) setCurrentPage((p) => p - 1);
+      
+      // Refresh notifications in Redux after lead delete
+      try {
+        await syncLeadNotificationCounts();
+      } catch (notifErr) {
+        console.error('Failed to refresh notifications:', notifErr);
+      }
     } catch (err: any) {
       console.error('Failed to delete lead', err);
       try { SweetAlert.showError(err?.message || 'Failed to delete lead'); } catch {

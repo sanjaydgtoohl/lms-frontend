@@ -170,10 +170,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
       )
       .map((item) => item.name.toLowerCase().replace(/\s+/g, "-"));
 
-    // Always expand Miss Campaign on /miss-campaign/create
-    if (location.pathname === "/miss-campaign/create") {
+    // Always expand Pre Lead on /pre-lead/create
+    if (location.pathname === "/pre-lead/create") {
       const missCampaignSlug = navigationItems
-        .find(item => item.name === "Miss Campaign")
+        .find(item => item.name === "Pre Lead")
         ?.name.toLowerCase()
         .replace(/\s+/g, "-");
 
@@ -192,9 +192,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
     const isItemActive = isParentActive(item);
     const IconComponent = item.icon;
 
-    // Custom highlight for Miss Campaign, Live Campaign, Brief, and Brief Request
-    const isMissCampaignRoute = location.pathname === "/miss-campaign/create";
-    const isMissCampaign = item.name === "Miss Campaign";
+    // Custom highlight for Pre Lead, Live Campaign, Brief, and Brief Request
+    const isMissCampaignRoute = location.pathname === "/pre-lead/create";
+    const isMissCampaign = item.name === "Pre Lead";
     const isLiveCampaign = item.name === "Live Campaign";
     const isBriefCreateRoute = location.pathname === "/brief/create";
     const isBriefRoute = location.pathname.startsWith("/brief");

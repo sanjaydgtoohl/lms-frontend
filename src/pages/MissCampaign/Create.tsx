@@ -4,11 +4,13 @@ import { MasterCreateHeader } from '../../components/ui/MasterCreateHeader';
 import { Upload, Loader, Trash2 } from 'lucide-react';
 import { SelectField } from '../../components/ui';
 import { apiClient } from '../../utils/apiClient';
-import { createMissCampaign } from '../../services/Create';
-import { updateMissCampaign } from '../../services/View';
+import { createMissCampaign, updateMissCampaignWithForm } from '../../services/Create';
 import { listBrands } from '../../services/BrandMaster';
-// Removed LeadSource import as per request
+import { listCountries, listStates, listCities } from '../../services/CreateBrandForm';
+import { listAttendees } from '../../services/AllUsers';
+import { fetchCurrentUser } from '../../services/Header';
 import SweetAlert from '../../utils/SweetAlert';
+
 
 interface CreateProps {
   inline?: boolean;
@@ -17,6 +19,8 @@ interface CreateProps {
   onClose?: () => void;
   onSave?: (data: Record<string, any>) => void;
 }
+
+
 
 const Create: React.FC<CreateProps> = ({
   inline = false,
@@ -30,7 +34,14 @@ const Create: React.FC<CreateProps> = ({
     brandName: '',
     source: '',
     subSource: '',
+    industry: '',
+    assignBy: '',
+    assignTo: '',
     productName: '',
+    country: '',
+    state: '',
+    city: '',
+    mediaType: '',
     image: null as File | null,
     image_url: '', // for preview
     remove_image: false, // for delete flag
@@ -44,9 +55,28 @@ const Create: React.FC<CreateProps> = ({
   const [sourceLoading, setSourceLoading] = useState(false);
   const [subSourceOptions, setSubSourceOptions] = useState<{ id: string; label: string }[]>([]);
   const [subSourceLoading, setSubSourceLoading] = useState(false);
+  const [industryOptions, setIndustryOptions] = useState<{ id: string; name: string }[]>([]);
+  const [industryLoading, setIndustryLoading] = useState(false);
+  const [countryOptions, setCountryOptions] = useState<{ id: string; name: string }[]>([]);
+  const [countryLoading, setCountryLoading] = useState(false);
+  const [stateOptions, setStateOptions] = useState<{ id: string; name: string }[]>([]);
+  const [stateLoading, setStateLoading] = useState(false);
+  const [cityOptions, setCityOptions] = useState<{ id: string; name: string }[]>([]);
+  const [cityLoading, setCityLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string>(''); // for newly selected image preview
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [modalImageUrl, setModalImageUrl] = useState<string | null>(null);
+
+  // Assign To users dropdown state
+  const [assignToOptions, setAssignToOptions] = useState<{ value: string; label: string }[]>([]);
+  const [assignToLoading, setAssignToLoading] = useState(false);
+
+  // Media Type dropdown state
+  const [mediaTypeOptions, setMediaTypeOptions] = useState<{ id: string; name: string }[]>([]);
+  const [mediaTypeLoading, setMediaTypeLoading] = useState(false);
+
+  // Current user state
+  const [currentUser, setCurrentUser] = useState<{ id: string; name: string } | null>(null);
 
   const openImageModal = (url: string) => {
     setModalImageUrl(url);
@@ -94,12 +124,12 @@ const Create: React.FC<CreateProps> = ({
       try {
         setSourceLoading(true);
         // API call for lead sources
-          const response = await apiClient.get('/lead-sources');
-          const data = Array.isArray(response.data) ? response.data : [];
-          const options = data.map((source: { id: string; name: string }) => ({
-            id: source.id,
-            source: source.name,
-          }));
+        const response = await apiClient.get('/lead-sources');
+        const data = Array.isArray(response.data) ? response.data : [];
+        const options = data.map((source: { id: string; name: string }) => ({
+          id: source.id,
+          source: source.name,
+        }));
         setSourceOptions(options);
       } catch (err) {
         console.error('Failed to fetch lead sources:', err);
@@ -110,6 +140,159 @@ const Create: React.FC<CreateProps> = ({
     };
     fetchSources();
   }, []);
+
+  useEffect(() => {
+    const fetchIndustries = async () => {
+      try {
+        setIndustryLoading(true);
+        const response = await apiClient.get<any[]>('/industries/list');
+        const industries = Array.isArray(response.data) ? response.data : [];
+        const options = industries.map((industry) => ({
+          id: String(industry.id ?? industry.value ?? industry),
+          name: String(industry.name ?? industry.label ?? industry),
+        }));
+        setIndustryOptions(options);
+      } catch (err) {
+        console.error('Failed to fetch industries:', err);
+        setIndustryOptions([]);
+      } finally {
+        setIndustryLoading(false);
+      }
+    };
+    fetchIndustries();
+  }, []);
+
+  useEffect(() => {
+    const fetchAssignToUsers = async () => {
+      try {
+        setAssignToLoading(true);
+        const response = await listAttendees(1, 200);
+        const options = (response.data || []).map((user: any) => ({
+          value: String(user.id),
+          label: String(user.name),
+        }));
+        setAssignToOptions(options);
+      } catch (err) {
+        console.error('Failed to fetch assign to users:', err);
+        setAssignToOptions([]);
+      } finally {
+        setAssignToLoading(false);
+      }
+    };
+    fetchAssignToUsers();
+  }, []);
+
+  // Fetch media types on component mount
+  useEffect(() => {
+    const fetchMediaTypes = async () => {
+      try {
+        setMediaTypeLoading(true);
+        const response = await apiClient.get('/media-types');
+        const data = Array.isArray(response.data) ? response.data : [];
+        const options = data.map((item: any) => {
+          const rawId = item.id ?? item.value;
+          const id = rawId !== undefined && rawId !== null ? String(rawId) : '';
+          const name = String(item.name ?? item.label ?? item.type ?? '');
+          return { id: id || name, name };
+        });
+        setMediaTypeOptions(options);
+      } catch (err) {
+        console.error('Failed to fetch media types:', err);
+        setMediaTypeOptions([]);
+      } finally {
+        setMediaTypeLoading(false);
+      }
+    };
+    fetchMediaTypes();
+  }, []);
+
+  // Fetch current user for assignBy
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const user = await fetchCurrentUser();
+        if (user && user.name) {
+          setCurrentUser({ id: String(user.id), name: user.name });
+        }
+      } catch (err) {
+        console.error('Failed to fetch current user:', err);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        setCountryLoading(true);
+        const response = await listCountries();
+        const options = (response || []).map((country) => ({
+          id: String(country.id),
+          name: country.name,
+        }));
+        setCountryOptions(options);
+      } catch (err) {
+        console.error('Failed to fetch countries:', err);
+        setCountryOptions([]);
+      } finally {
+        setCountryLoading(false);
+      }
+    };
+    fetchCountries();
+  }, []);
+
+  useEffect(() => {
+    if (!formData.country) {
+      setStateOptions([]);
+      setCityOptions([]);
+      setFormData(prev => ({ ...prev, state: '', city: '' }));
+      return;
+    }
+
+    const fetchStates = async () => {
+      try {
+        setStateLoading(true);
+        const response = await listStates({ country_id: formData.country });
+        const options = (response || []).map((state) => ({
+          id: String(state.id),
+          name: state.name,
+        }));
+        setStateOptions(options);
+      } catch (err) {
+        console.error('Failed to fetch states:', err);
+        setStateOptions([]);
+      } finally {
+        setStateLoading(false);
+      }
+    };
+    fetchStates();
+  }, [formData.country]);
+
+  useEffect(() => {
+    if (!formData.state) {
+      setCityOptions([]);
+      setFormData(prev => ({ ...prev, city: '' }));
+      return;
+    }
+
+    const fetchCities = async () => {
+      try {
+        setCityLoading(true);
+        const response = await listCities({ state_id: formData.state });
+        const options = (response || []).map((city) => ({
+          id: String(city.id),
+          name: city.name,
+        }));
+        setCityOptions(options);
+      } catch (err) {
+        console.error('Failed to fetch cities:', err);
+        setCityOptions([]);
+      } finally {
+        setCityLoading(false);
+      }
+    };
+    fetchCities();
+  }, [formData.state]);
 
   // Store initial nested sub-source for reference during fetch cycles
   const initialSubSourceRef = useRef<{ id: string; label: string } | null>(null);
@@ -159,39 +342,118 @@ const Create: React.FC<CreateProps> = ({
   }, [formData.source]);
 
   useEffect(() => {
-    if (mode === 'edit' && initialData) {
-      // Extract the actual IDs from the raw API response
-      const brandId = initialData.brand_id || initialData.brand?.id || initialData.brandId || initialData.brandName;
-      const sourceId = initialData.lead_source_id || initialData.lead_source?.id || initialData.source_id || initialData.source;
-      const subSourceId = initialData.lead_sub_source_id || initialData.lead_sub_source?.id || initialData.sub_source_id || initialData.subSource;
+    const resolveLocationIds = async () => {
+      if (mode === 'edit' && initialData) {
+        const brandId = initialData.brand_id || initialData.brand?.id || initialData.brandId || initialData.brandName;
+        const sourceId = initialData.lead_source_id || initialData.lead_source?.id || initialData.source_id || initialData.source;
+        const subSourceId = initialData.lead_sub_source_id || initialData.lead_sub_source?.id || initialData.sub_source_id || initialData.subSource;
+        const industryId = initialData.industry?.id || initialData.industry_id || initialData.industry;
 
-      setFormData(prev => ({
-        ...prev,
-        brandName: String(brandId ?? prev.brandName ?? ''),
-        source: String(sourceId ?? prev.source ?? ''),
-        subSource: String(subSourceId ?? prev.subSource ?? ''),
-        productName: String(initialData.name ?? initialData.productName ?? prev.productName ?? ''),
-        image: null, // image is not prefilled
-        image_url: initialData.image_url || initialData.image_path || '',
-        remove_image: false,
-      }));
+        let resolvedIndustryId = industryId;
+        if (industryOptions.length > 0 && industryId && typeof industryId === 'string') {
+          const found = industryOptions.find(opt => opt.name.toLowerCase() === industryId.toLowerCase() || opt.id === industryId);
+          if (found) resolvedIndustryId = found.id;
+        }
 
-      // If API returned a nested `lead_sub_source` object, inject it immediately
-      const nestedSub = initialData.lead_sub_source ?? initialData.sub_source ?? initialData.subSource;
-      if (nestedSub && typeof nestedSub === 'object') {
-        const nid = String(nestedSub.id ?? nestedSub.lead_sub_source_id ?? nestedSub.sub_source_id ?? '');
-        const nlabel = String(nestedSub.name ?? nestedSub.subSource ?? nestedSub.label ?? '');
-        if (nid && nlabel) {
-          // Inject the initial sub-source option
-          setSubSourceOptions(prev => {
-            const exists = prev.find(p => String(p.id) === nid);
-            if (exists) return prev;
-            return [{ id: nid, label: nlabel }, ...prev];
-          });
+        const countryId: any = initialData.country?.id || initialData.country_id || initialData.country;
+        let stateId: any = initialData.state?.id || initialData.state_id || initialData.state;
+        let cityId: any = initialData.city?.id || initialData.city_id || initialData.city;
+
+        const isNumeric = (val: any) => !isNaN(Number(val));
+
+        try {
+          // ✅ Resolve State (if name)
+          if (countryId && stateId && !isNumeric(stateId)) {
+            const states = await listStates({ country_id: countryId });
+
+            const foundState = states?.find(
+              (s: any) =>
+                String(s.name).toLowerCase() === String(stateId).toLowerCase()
+            );
+
+            if (foundState) {
+              stateId = String(foundState.id);
+            }
+          }
+
+          // ✅ Resolve City (if name)
+          if (stateId && cityId && !isNumeric(cityId)) {
+            const cities = await listCities({ state_id: stateId });
+
+            const foundCity = cities?.find(
+              (c: any) =>
+                String(c.name).toLowerCase() === String(cityId).toLowerCase()
+            );
+
+            if (foundCity) {
+              cityId = String(foundCity.id);
+            }
+          }
+        } catch (err) {
+          console.error("Location resolve error:", err);
+        }
+
+        // ✅ FINAL setFormData (only after resolving IDs)
+        const assignToValue = initialData.assign_to_name ?? initialData.current_assign_user_name ?? initialData.assigned_user?.name ?? (initialData.current_assign_user && typeof initialData.current_assign_user === 'object' ? initialData.current_assign_user.name : '') ?? (initialData.assigned_user && typeof initialData.assigned_user === 'object' ? initialData.assigned_user.name : '') ?? initialData.assignTo ?? initialData.assign_to ?? '';
+
+        // Resolve media type robustly
+        const rawMediaType = initialData.media_type ?? initialData.media_type_id ?? initialData.mediaType ?? initialData.media_type ?? '';
+        const mediaTypeId =
+          rawMediaType && typeof rawMediaType === 'object'
+            ? String((rawMediaType as any).id ?? (rawMediaType as any).value ?? (rawMediaType as any).name ?? (rawMediaType as any).type ?? '')
+            : String(rawMediaType ?? '');
+
+        setFormData(prev => ({
+          ...prev,
+          brandName: String(brandId ?? prev.brandName ?? ''),
+          source: String(sourceId ?? prev.source ?? ''),
+          subSource: String(subSourceId ?? prev.subSource ?? ''),
+          industry: String(resolvedIndustryId ?? prev.industry ?? ''),
+          assignBy: mode === 'edit' ? (initialData.assign_by_name ?? initialData.created_by_user?.name ?? initialData.created_by ?? '') : (currentUser?.name ?? ''),
+          assignTo: String(assignToValue ?? prev.assignTo ?? ''),
+          productName: String(initialData.name ?? initialData.productName ?? prev.productName ?? ''),
+          country: String(countryId ?? prev.country ?? ''),
+          state: String(stateId ?? prev.state ?? ''),
+          city: String(cityId ?? prev.city ?? ''),
+          mediaType: mediaTypeId || prev.mediaType || '',
+          image: null,
+          image_url: initialData.image_url || initialData.image_path || '',
+          remove_image: false,
+        }));
+
+        // ✅ Sub-source injection (same as your code)
+        const nestedSub =
+          initialData.lead_sub_source ??
+          initialData.sub_source ??
+          initialData.subSource;
+
+        if (nestedSub && typeof nestedSub === 'object') {
+          const nid = String(
+            nestedSub.id ??
+            nestedSub.lead_sub_source_id ??
+            nestedSub.sub_source_id ??
+            ''
+          );
+          const nlabel = String(
+            nestedSub.name ??
+            nestedSub.subSource ??
+            nestedSub.label ??
+            ''
+          );
+
+          if (nid && nlabel) {
+            setSubSourceOptions(prev => {
+              const exists = prev.find(p => String(p.id) === nid);
+              if (exists) return prev;
+              return [{ id: nid, label: nlabel }, ...prev];
+            });
+          }
         }
       }
-    }
-  }, [mode, initialData]);
+    };
+
+    resolveLocationIds();
+  }, [mode, initialData, industryOptions, currentUser]);
 
   useEffect(() => {
     // Do not blindly merge raw API `initialData` into form state.
@@ -228,14 +490,19 @@ const Create: React.FC<CreateProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validation
     const next: Record<string, string> = {};
     if (!formData.brandName) next.brandName = 'Please select a brand';
     if (!formData.source) next.source = 'Please select a source';
     if (!formData.subSource) next.subSource = 'Please select a sub source';
+    if (!formData.industry) next.industry = 'Please select an industry';
     if (!formData.productName || formData.productName.trim() === '') next.productName = 'Please enter product name';
-    
+    if (!formData.country) next.country = 'Please select a country';
+    if (!formData.state) next.state = 'Please select a state';
+    if (!formData.city) next.city = 'Please select a city';
+    if (!formData.mediaType) next.mediaType = 'Please select a media type';
+
     setErrors(next);
     if (Object.keys(next).length > 0) return;
 
@@ -244,10 +511,16 @@ const Create: React.FC<CreateProps> = ({
 
     const payload: Record<string, any> = {
       name: formData.productName,
-      productName: formData.productName,
       brand_id: formData.brandName,
       lead_source_id: formData.source,
       lead_sub_source_id: formData.subSource,
+      industry_id: formData.industry,
+      assign_by: currentUser?.id || '',
+      assign_to: formData.assignTo,
+      country_id: formData.country,
+      state_id: formData.state,
+      city_id: formData.city,
+      media_type: formData.mediaType,
       remove_image: formData.remove_image,
     };
     // Only include image if a new file is selected
@@ -259,7 +532,7 @@ const Create: React.FC<CreateProps> = ({
       let result: any;
       if (mode === 'edit' && initialData && (initialData.id || initialData.uuid)) {
         const id = String(initialData.id ?? initialData.uuid);
-        result = await updateMissCampaign(id, payload);
+        result = await updateMissCampaignWithForm(id, payload);
         SweetAlert.showUpdateSuccess();
       } else {
         result = await createMissCampaign(payload);
@@ -281,7 +554,7 @@ const Create: React.FC<CreateProps> = ({
       } else {
         // Navigate to view page after a short delay to show success message
         setTimeout(() => {
-          navigate('/miss-campaign/view', { state: { refreshedAt: Date.now() } });
+          navigate('/pre-lead/view', { state: { refreshedAt: Date.now() } });
         }, 1800);
       }
     } catch (err: any) {
@@ -360,7 +633,7 @@ const Create: React.FC<CreateProps> = ({
 
             {/* Sub Source (dropdown) */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
-              <label className="block text-sm font-medium mb-2 flex items-center gap-2">
+              <label className="flex text-sm font-medium mb-2 items-center gap-2">
                 Sub Source <span className="text-[#FF0000]">*</span>
                 {subSourceLoading && <Loader className="w-4 h-4 animate-spin text-blue-500" />}
               </label>
@@ -385,6 +658,65 @@ const Create: React.FC<CreateProps> = ({
               )}
             </div>
 
+
+            {/* Assign By (read-only) */}
+            <div className='w-full sm:w-[calc(50%-12px)]'>
+              <label className="block text-sm font-medium mb-2">
+                Assign By
+              </label>
+              <input
+                type="text"
+                value={currentUser?.name || ''}
+                readOnly
+                className="w-full px-3 py-2 border rounded-lg bg-gray-100 text-gray-900 focus:outline-none"
+                tabIndex={-1}
+              />
+            </div>
+
+            {/* Assign To */}
+            <div className='w-full sm:w-[calc(50%-12px)]'>
+              <label className="block text-sm font-medium mb-2">
+                Assign To
+              </label>
+              <div>
+                <SelectField
+                  name="assignTo"
+                  value={formData.assignTo || ''}
+                  onChange={(v) => { setFormData(prev => ({ ...prev, assignTo: typeof v === 'string' ? v : v[0] ?? '' })); }}
+                  options={assignToOptions}
+                  placeholder={assignToLoading ? 'Loading users...' : 'Select Assign To'}
+                  inputClassName="border-gray-200 focus:ring-blue-500"
+                  disabled={assignToLoading}
+                />
+              </div>
+            </div>
+
+            {/* Industry */}
+            <div className='w-full sm:w-[calc(50%-12px)]'>
+              <label className="block text-sm font-medium mb-2">
+                Industry <span className="text-[#FF0000]">*</span>
+              </label>
+              <div>
+                <SelectField
+                  name="industry"
+                  value={formData.industry}
+                  onChange={(v) => { setFormData(prev => ({ ...prev, industry: typeof v === 'string' ? v : v[0] ?? '' })); setErrors(prev => ({ ...prev, industry: '' })); }}
+                  options={industryOptions.map(i => ({ value: String(i.id), label: i.name }))}
+                  placeholder={industryLoading ? 'Loading industries...' : 'Search or select industry'}
+                  inputClassName={errors.industry ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}
+                  disabled={industryLoading}
+                />
+              </div>
+              {errors.industry && (
+                <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.industry}
+                </div>
+              )}
+            </div>
+
             {/* Product Name */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -396,9 +728,8 @@ const Create: React.FC<CreateProps> = ({
                 value={formData.productName}
                 onChange={(e) => { handleChange(e); setErrors(prev => ({ ...prev, productName: '' })); }}
                 placeholder="Please Enter Product Name"
-                className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 transition-colors ${
-                  errors.productName ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 transition-colors ${errors.productName ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'
+                  }`}
                 aria-invalid={errors.productName ? 'true' : 'false'}
                 aria-describedby={errors.productName ? 'productName-error' : undefined}
               />
@@ -412,11 +743,142 @@ const Create: React.FC<CreateProps> = ({
               )}
             </div>
 
+            {/* Country */}
+            <div className='w-full sm:w-[calc(50%-12px)]'>
+              <label className="block text-sm font-medium mb-2">
+                Country <span className="text-[#FF0000]">*</span>
+              </label>
+              <div className='w-full'>
+                <SelectField
+                  name="country"
+                  value={formData.country}
+                  onChange={(v) => {
+                    const country = typeof v === 'string' ? v : v[0] ?? '';
+                    setFormData(prev => ({
+                      ...prev,
+                      country,
+                      state: '',
+                      city: ''
+                    }));
+                    setErrors(prev => ({
+                      ...prev,
+                      country: '',
+                      state: '',
+                      city: ''
+                    }));
+                  }}
+                  options={countryOptions.map(c => ({ value: String(c.id), label: c.name }))}
+                  placeholder={countryLoading ? 'Loading countries...' : 'Search or select country'}
+                  inputClassName={errors.country ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}
+                  disabled={countryLoading}
+                />
+              </div>
+              {errors.country && (
+                <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.country}
+                </div>
+              )}
+            </div>
+
+            {/* State */}
+            <div className='w-full sm:w-[calc(50%-12px)]'>
+              <label className="block text-sm font-medium mb-2">
+                State <span className="text-[#FF0000]">*</span>
+              </label>
+              <div className='w-full'>
+                <SelectField
+                  name="state"
+                  value={formData.state}
+                  onChange={(v) => {
+                    const state = typeof v === 'string' ? v : v[0] ?? '';
+                    setFormData(prev => ({
+                      ...prev,
+                      state,
+                      city: ''
+                    }));
+                    setErrors(prev => ({
+                      ...prev,
+                      state: '',
+                      city: ''
+                    }));
+                  }}
+                  options={stateOptions.map(s => ({ value: String(s.id), label: s.name }))}
+                  placeholder={stateLoading ? 'Loading states...' : (formData.country ? 'Search or select state' : 'Select a country first')}
+                  inputClassName={errors.state ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}
+                  disabled={stateLoading || !formData.country}
+                />
+              </div>
+              {errors.state && (
+                <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.state}
+                </div>
+              )}
+            </div>
+
+            {/* City */}
+            <div className='w-full sm:w-[calc(50%-12px)]'>
+              <label className="block text-sm font-medium mb-2">
+                City <span className="text-[#FF0000]">*</span>
+              </label>
+              <div className='w-full'>
+                <SelectField
+                  name="city"
+                  value={formData.city}
+                  onChange={(v) => { setFormData(prev => ({ ...prev, city: typeof v === 'string' ? v : v[0] ?? '' })); setErrors(prev => ({ ...prev, city: '' })); }}
+                  options={cityOptions.map(c => ({ value: String(c.id), label: c.name }))}
+                  placeholder={cityLoading ? 'Loading cities...' : (formData.state ? 'Search or select city' : 'Select a state first')}
+                  inputClassName={errors.city ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}
+                  disabled={cityLoading || !formData.state}
+                />
+              </div>
+              {errors.city && (
+                <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.city}
+                </div>
+              )}
+            </div>
+
+            {/* Media Type */}
+            <div className='w-full sm:w-[calc(50%-12px)]'>
+              <label className="block text-sm font-medium mb-2">
+                Media Type <span className="text-[#FF0000]">*</span>
+              </label>
+              <div>
+                <SelectField
+                  name="mediaType"
+                  value={formData.mediaType}
+                  onChange={(v) => { setFormData(prev => ({ ...prev, mediaType: typeof v === 'string' ? v : v[0] ?? '' })); setErrors(prev => ({ ...prev, mediaType: '' })); }}
+                  options={mediaTypeOptions.map(m => ({ value: String(m.id), label: m.name }))}
+                  placeholder={mediaTypeLoading ? 'Loading media types...' : 'Search or select media type'}
+                  inputClassName={errors.mediaType ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}
+                  disabled={mediaTypeLoading}
+                />
+              </div>
+              {errors.mediaType && (
+                <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.mediaType}
+                </div>
+              )}
+            </div>
+
             {/* Image Upload & Preview */}
             <div className="w-full">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 {(formData.image_url && !formData.remove_image) || imagePreview ? 'Uploaded Image' : 'Upload Image'}
               </label>
+
               <div>
                 {/* Uploaded image card (existing image_url preview) */}
                 {formData.image_url && !formData.remove_image && !imagePreview && (
@@ -442,7 +904,7 @@ const Create: React.FC<CreateProps> = ({
                             title="Delete"
                             onClick={() => setFormData(prev => ({ ...prev, image_url: '', remove_image: true, image: null }))}
                           >
-                              <Trash2 className="w-5 h-5 text-red-600" />
+                            <Trash2 className="w-5 h-5 text-red-600" />
                           </div>
                         </div>
                         {initialData?.image_path && (
@@ -483,7 +945,7 @@ const Create: React.FC<CreateProps> = ({
                               setImagePreview('');
                             }}
                           >
-                              <Trash2 className="w-5 h-5 text-red-600" />
+                            <Trash2 className="w-5 h-5 text-red-600" />
                           </div>
                         </div>
                       </div>

@@ -5,7 +5,6 @@
 import { API_BASE_URL, API_ENDPOINTS } from '../constants';
 // keep api error helpers available if needed in the future
 // import { handleApiError, extractErrorMessage } from './apiErrorHandler';
-import { useAuthStore } from '../store/auth';
 import { getCookie } from '../utils/cookies';
 import http from '../services/http';
 
@@ -76,15 +75,24 @@ class EnhancedApiClient {
     );
   }
 
+  private forceLogoutAndRedirect(): void {
+    document.cookie = 'auth_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = 'refresh_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = 'auth_token_expires=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = 'refresh_token_expires=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT';
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('auth:force-logout'));
+    }
+  }
+
   /**
    * Handle token refresh
    */
   private async handleTokenRefresh(): Promise<boolean> {
     try {
-      const authStore = useAuthStore.getState();
-      const { refreshTokenValue } = authStore;
-      // fallback: try to get from cookies if not in store
-      const refreshToken = refreshTokenValue || getCookie('refresh_token');
+      // Get refresh token from cookies
+      const refreshToken = getCookie('refresh_token');
       if (!refreshToken) {
         return false;
       }
@@ -176,7 +184,7 @@ class EnhancedApiClient {
             // Recreate controller for retried request
             continue;
           } else {
-            // Refresh failed, but do not auto-logout or redirect
+            this.forceLogoutAndRedirect();
             throw new Error('Session expired. Unable to refresh token.');
           }
         }

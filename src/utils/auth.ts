@@ -1,5 +1,4 @@
 import { jwtDecode } from "jwt-decode";
-import { useAuthStore } from '../store/auth';
 import sessionManager from '../services/sessionManager';
 
 interface JWTPayload {
@@ -30,28 +29,14 @@ export const isTokenExpired = (token: string | null | undefined): boolean => {
 };
 
 export const handleTokenExpiration = async () => {
-  const authStore = useAuthStore.getState();
-  const { token, refreshTokenValue, refreshToken } = authStore;
-
-  if (isTokenExpired(token)) {
-    try {
-      if (refreshTokenValue && !isTokenExpired(refreshTokenValue)) {
-        await refreshToken();
-      } else {
-        // If refresh token is also expired or doesn't exist, logout (user-initiated only)
-        // Optionally, set a flag or notify the user, but do not auto-logout or redirect
-      }
-    } catch (error) {
-      console.error('Token refresh failed:', error);
-      // Optionally, set a flag or notify the user, but do not auto-logout or redirect
-    }
-  }
+  // Token expiration is now handled by Redux via sessionManager
+  // This function is kept for backward compatibility
 };
 
 export const setupTokenExpirationCheck = () => {
-  // Check token every minute
-  const interval = setInterval(handleTokenExpiration, 60000);
-  return () => clearInterval(interval);
+  // Token expiration check is now handled by Redux sessionManager
+  // This function is kept for backward compatibility
+  return () => {};
 };
 
 /**

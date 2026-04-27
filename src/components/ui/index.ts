@@ -13,3 +13,4 @@ export { default as MasterEdit } from './MasterEdit';
 export { default as SelectField } from './SelectField';
 export { default as StatusPill } from './StatusPill';
 export { default as MultiSelectDropdown } from './MultiSelectDropdown';
+export { default as LoadingModal } from './LoadingModal';

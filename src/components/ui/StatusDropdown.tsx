@@ -1,7 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import Badge from './Badge';
 import ConfirmDialog from './ConfirmDialog';
+
+const DROPDOWN_WIDTH = 176;
+const DROPDOWN_EST_HEIGHT = 220;
+const VIEWPORT_GAP = 8;
 
 interface StatusDropdownProps {
   value: string;
@@ -19,6 +23,28 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({ value, options, onChang
   const portalRef = useRef<HTMLDivElement>(null);
   const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
 
+  const updatePosition = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const rect = el.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const openAbove = spaceBelow < DROPDOWN_EST_HEIGHT && spaceAbove > spaceBelow;
+
+    let left = rect.left;
+    if (left + DROPDOWN_WIDTH > window.innerWidth - VIEWPORT_GAP) {
+      left = Math.max(VIEWPORT_GAP, rect.right - DROPDOWN_WIDTH);
+    }
+
+    setDropdownPos({
+      top: openAbove
+        ? Math.max(VIEWPORT_GAP, rect.top - DROPDOWN_EST_HEIGHT - VIEWPORT_GAP)
+        : Math.min(window.innerHeight - DROPDOWN_EST_HEIGHT - VIEWPORT_GAP, rect.bottom + VIEWPORT_GAP),
+      left: Math.max(VIEWPORT_GAP, left),
+    });
+  }, []);
+
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       const target = e.target as Node;
@@ -30,13 +56,23 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({ value, options, onChang
     return () => document.removeEventListener('mousedown', handleClick);
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+
+    updatePosition();
+
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [open, updatePosition]);
+
   const handleToggle = () => {
-    if (!open && ref.current) {
-      const rect = ref.current.getBoundingClientRect();
-      setDropdownPos({
-        top: rect.bottom + window.scrollY,
-        left: rect.left + window.scrollX,
-      });
+    if (!open) {
+      updatePosition();
     }
     setOpen((o) => !o);
   };
@@ -88,9 +124,9 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({ value, options, onChang
           ref={portalRef}
           className="fixed z-50 bg-white shadow-lg rounded-xl border border-gray-200"
           style={{
-            top: `${dropdownPos.top + 8}px`,
+            top: `${dropdownPos.top}px`,
             left: `${dropdownPos.left}px`,
-            width: '176px',
+            width: `${DROPDOWN_WIDTH}px`,
           }}
         >
           <ul

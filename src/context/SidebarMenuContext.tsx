@@ -1,16 +1,17 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { mapMenu, extractAllPaths, extractAllSlugs } from '../services/Side';
-import type { NavigationItem, ApiSidebarItem } from '../services/Side';
-import { apiClient } from '../utils/apiClient';
-import { useAuthStore } from '../store/auth';
+import type { NavigationItem } from '../services/Side';
+import { useDispatch, useSelector } from 'react-redux';
+import type { AppDispatch, RootState } from '../redux/store';
+import { clearPermissions, fetchSidebarPermissions } from '../redux/slices/permissionsSlice';
 
 interface SidebarMenuContextType {
   sidebarMenu: NavigationItem[];
   allPermittedPaths: string[];
   allPermittedSlugs: string[];
   loading: boolean;
+  permissionsLoaded: boolean;
 }
 
 export const SidebarMenuContext = createContext<SidebarMenuContextType>({
@@ -18,47 +19,30 @@ export const SidebarMenuContext = createContext<SidebarMenuContextType>({
   allPermittedPaths: [],
   allPermittedSlugs: [],
   loading: true,
+  permissionsLoaded: false,
 });
 
 export const SidebarMenuProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [sidebarMenu, setSidebarMenu] = useState<NavigationItem[]>([]);
-  const [allPermittedPaths, setAllPermittedPaths] = useState<string[]>([]);
-  const [allPermittedSlugs, setAllPermittedSlugs] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { isAuthenticated } = useAuthStore();
+  const dispatch = useDispatch<AppDispatch>();
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const { sidebarMenu, allPermittedPaths, allPermittedSlugs, loading, permissionsLoaded } =
+    useSelector((state: RootState) => state.permissions);
 
   useEffect(() => {
-    async function fetchSidebar() {
-      if (!isAuthenticated) {
-        setLoading(false);
-        return;
-      }
-      setLoading(true);
-      try {
-        const res = await apiClient.get<any>('/permissions/sidebar');
-        if (res && res.data && Array.isArray(res.data)) {
-          setSidebarMenu(mapMenu(res.data));
-          setAllPermittedPaths(extractAllPaths(res.data as ApiSidebarItem[]));
-          setAllPermittedSlugs(extractAllSlugs(res.data as ApiSidebarItem[]));
-        } else {
-          setSidebarMenu([]);
-          setAllPermittedPaths([]);
-          setAllPermittedSlugs([]);
-        }
-      } catch {
-        setSidebarMenu([]);
-        setAllPermittedPaths([]);
-        setAllPermittedSlugs([]);
-      } finally {
-        setLoading(false);
-      }
+    if (!isAuthenticated) {
+      dispatch(clearPermissions());
+      return;
     }
-    fetchSidebar();
-  }, [isAuthenticated]);
+
+    const promise = dispatch(fetchSidebarPermissions());
+    return () => {
+      promise.abort();
+    };
+  }, [dispatch, isAuthenticated]);
 
   return (
     <SidebarMenuContext.Provider
-      value={{ sidebarMenu, allPermittedPaths, allPermittedSlugs, loading }}
+      value={{ sidebarMenu, allPermittedPaths, allPermittedSlugs, loading, permissionsLoaded }}
     >
       {children}
     </SidebarMenuContext.Provider>

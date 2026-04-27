@@ -17,7 +17,6 @@ if (import.meta.env.DEV) {
     (window as any).stopProactiveTokenRefresh = mod.stopProactiveTokenRefresh;
     (window as any).refreshTokenProactive = mod.refreshTokenProactive;
     (window as any).getTimeUntilNextRefresh = mod.getTimeUntilNextRefresh;
-    console.log('Auth debug helpers exposed on window: setupProactiveTokenRefresh, stopProactiveTokenRefresh, refreshTokenProactive, getTimeUntilNextRefresh');
   }).catch(() => {});
 }
 

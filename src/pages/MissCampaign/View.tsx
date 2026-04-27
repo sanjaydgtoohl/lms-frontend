@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Pagination from '../../components/ui/Pagination';
@@ -11,18 +11,22 @@ import SweetAlert from '../../utils/SweetAlert';
 import Create from './Create';
 import {
   listMissCampaigns,
-  createMissCampaign,
   deleteMissCampaign,
   getMissCampaign,
-  updateMissCampaign,
   type MissCampaign
 } from '../../services/View';
+import { apiClient } from '../../utils/apiClient';
 import { usePermissions } from '../../hooks/SidebarMenuHooks';
 import { IoIosArrowBack } from 'react-icons/io';
 import TableHeader from '../../components/ui/TableHeader';
+import { useDispatch } from 'react-redux';
+import type { AppDispatch } from '../../redux/store';
+import { setUnreadCount, setNotifications } from '../../redux/slices/notificationSlice';
+import { getUnreadNotificationCount, listNotifications } from '../../services/notifications';
 
 const View: React.FC = () => {
   const { hasPermission } = usePermissions();
+  const dispatch = useDispatch<AppDispatch>();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -31,6 +35,10 @@ const View: React.FC = () => {
   const [totalItems, setTotalItems] = useState(0);
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
+  const [industryOptions, setIndustryOptions] = useState<{ value: string; label: string }[]>([]);
+  const [mediaTypeOptions, setMediaTypeOptions] = useState<{ value: string; label: string }[]>([]);
+  const [sourceOptions, setSourceOptions] = useState<{ value: string; label: string }[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [viewItem, setViewItem] = useState<MissCampaign | null>(null);
   const [editItem, setEditItem] = useState<MissCampaign | null>(null);
@@ -60,57 +68,196 @@ const View: React.FC = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, [imageModalOpen]);
 
-  const filteredCampaigns = campaigns.filter(c => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase().trim();
-    return c.brandName.toLowerCase().startsWith(q);
-  });
-
-  // When searching, recalculate pagination based on filtered results
-  const totalFilteredItems = searchQuery ? filteredCampaigns.length : totalItems;
+  const totalFilteredItems = totalItems;
+  const shouldFetchAll = Boolean(searchQuery.trim()) || Object.keys(activeFilters).length > 0;
 
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentData = filteredCampaigns.slice(startIndex, startIndex + itemsPerPage);
+  const currentData = shouldFetchAll ? campaigns.slice(startIndex, startIndex + itemsPerPage) : campaigns;
 
   const navigate = useNavigate();
   const params = useParams();
   const location = useLocation();
 
-  // Fetch campaigns from API (without search - we do client-side filtering)
-  const fetchCampaigns = async (page: number) => {
+  const normalizeString = (value?: string | null): string => String(value ?? '').trim().toLowerCase();
+
+  const matchesFilters = useCallback((item: MissCampaign, filters?: Record<string, string>) => {
+    if (!filters) return true;
+
+    if (filters.industry_id) {
+      const selected = normalizeString(filters.industry_id);
+      const itemIndustry = normalizeString(item.industry);
+      const itemIndustryId = normalizeString((item as any).industryId);
+      if (itemIndustry !== selected && itemIndustryId !== selected) return false;
+    }
+
+    if (filters.lead_source_id) {
+      const selected = normalizeString(filters.lead_source_id);
+      const itemSource = normalizeString(item.source);
+      const itemSourceId = normalizeString((item as any).sourceId);
+      if (itemSource !== selected && itemSourceId !== selected) return false;
+    }
+
+    if (filters.media_type) {
+      const selected = normalizeString(filters.media_type);
+      const itemMediaType = normalizeString(item.mediaType);
+      const itemMediaTypeId = normalizeString((item as any).mediaTypeId);
+      if (itemMediaType !== selected && itemMediaTypeId !== selected) return false;
+    }
+
+    return true;
+  }, []);
+
+  // Fetch campaigns from API with search and filters
+  const fetchCampaigns = useCallback(async (pageNum: number, search?: string, filters?: Record<string, string>) => {
     try {
       setLoading(true);
-      const response = await listMissCampaigns(page, itemsPerPage);
-      setCampaigns(response.data || []);
-      setTotalItems(response.meta?.pagination?.total || 0);
+      const shouldFetchAll = Boolean(search?.trim()) || Boolean(filters && Object.keys(filters).length > 0);
+      const fetchPerPage = shouldFetchAll ? 100 : itemsPerPage;
+      const pageToFetch = shouldFetchAll ? 1 : pageNum;
+
+      const firstResponse = await listMissCampaigns(pageToFetch, fetchPerPage, search, filters);
+      let allItems = firstResponse.data || [];
+
+      if (shouldFetchAll) {
+        const lastPage = firstResponse.meta?.pagination?.last_page ?? 1;
+        if (lastPage > 1) {
+          const fetchPromises = [];
+          for (let p = 2; p <= lastPage; p += 1) {
+            fetchPromises.push(listMissCampaigns(p, fetchPerPage, search, filters));
+          }
+          const responses = await Promise.all(fetchPromises);
+          responses.forEach((resp) => {
+            allItems = allItems.concat(resp.data || []);
+          });
+        }
+
+        if (filters && Object.keys(filters).length > 0) {
+          allItems = allItems.filter((item) => matchesFilters(item, filters));
+        }
+
+        setCampaigns(allItems);
+        setTotalItems(allItems.length);
+      } else {
+        setCampaigns(allItems);
+        const totalCount = Number(firstResponse.meta?.pagination?.total ?? firstResponse.meta?.total ?? allItems.length ?? 0);
+        setTotalItems(totalCount);
+      }
     } catch (error) {
       console.error('Failed to fetch campaigns:', error);
       setCampaigns([]);
+      setTotalItems(0);
     } finally {
       setLoading(false);
     }
-  };
+  }, [matchesFilters]);
 
-  const handleEdit = (id: string) => navigate(`/miss-campaign/view/${encodeURIComponent(id)}/edit`);
-  const handleView = (id: string) => navigate(`/miss-campaign/view/${encodeURIComponent(id)}`);
+  useEffect(() => {
+    const fetchIndustries = async () => {
+      try {
+        const response = await apiClient.get<any[]>('/industries/list');
+        const industries = Array.isArray(response.data) ? response.data : [];
+        const options = industries.map((industry: any) => {
+          const rawId = industry.id ?? industry.value ?? industry.industry_id;
+          const id = rawId !== undefined && rawId !== null ? String(rawId) : '';
+          const name = String(industry.name ?? industry.label ?? industry.value ?? industry.industry ?? industry);
+          return {
+            value: id || name,
+            label: name,
+          };
+        });
+        setIndustryOptions(options);
+      } catch (error) {
+        console.error('Failed to fetch industries:', error);
+        setIndustryOptions([]);
+      }
+    };
+    fetchIndustries();
+  }, []);
+
+  useEffect(() => {
+    const fetchSources = async () => {
+      try {
+        const response = await apiClient.get<any[]>('/lead-sources');
+        const sources = Array.isArray(response.data) ? response.data : [];
+        const options = sources.map((source: any) => {
+          const rawId = source.id ?? source.value ?? source.source_id ?? source.lead_source_id;
+          const id = rawId !== undefined && rawId !== null ? String(rawId) : '';
+          const name = String(source.name ?? source.label ?? source.source ?? source.value ?? '');
+          return {
+            value: id || name,
+            label: name,
+          };
+        });
+        setSourceOptions(options);
+      } catch (error) {
+        console.error('Failed to fetch lead sources:', error);
+        setSourceOptions([]);
+      }
+    };
+    fetchSources();
+  }, []);
+
+  useEffect(() => {
+    const fetchMediaTypes = async () => {
+      try {
+        const response = await apiClient.get<any[]>('/media-types');
+        const mediaTypes = Array.isArray(response.data) ? response.data : [];
+        const options = mediaTypes.map((item: any) => {
+          const rawId = item.id ?? item.value;
+          const id = rawId !== undefined && rawId !== null ? String(rawId) : '';
+          const name = String(item.name ?? item.label ?? item.type ?? '');
+          return {
+            value: id || name,
+            label: name,
+          };
+        });
+        setMediaTypeOptions(options);
+      } catch (error) {
+        console.error('Failed to fetch media types:', error);
+        setMediaTypeOptions([]);
+      }
+    };
+    fetchMediaTypes();
+  }, []);
+
+  const handleEdit = (id: string) => navigate(`/pre-lead/view/${encodeURIComponent(id)}/edit`);
+  const handleView = (id: string) => navigate(`/pre-lead/view/${encodeURIComponent(id)}`);
   // open confirmation modal instead of immediate delete
   const handleDelete = (id: string, label?: string) => {
     setConfirmDeleteId(id);
     setConfirmDeleteLabel(label || id);
   };
 
-  const handleCreate = () => navigate('/miss-campaign/create');
+  // const handleChat = (item: MissCampaign) => {
+  //   // TODO: Implement chat functionality
+  //   console.log('Chat clicked for item:', item);
+  //   // You can navigate to a chat page or open a chat modal here
+  //   // For now, just showing an alert
+  //   SweetAlert.showInfo(`Chat with ${item.assignTo || 'user'}`, { title: 'Chat feature coming soon!' });
+  // };
 
-  const handleSave = async (data: any) => {
+  const handleCreate = () => navigate('/pre-lead/create');
+
+  const handleSave = async () => {
     try {
-      const newCampaign = await createMissCampaign(data);
-      setCampaigns(prev => [newCampaign, ...prev]);
       setCurrentPage(1);
+      await fetchCampaigns(1, searchQuery, activeFilters);
       try { SweetAlert.showCreateSuccess(); } catch {
         //no need to action
       }
+      // Refresh notifications in Redux after campaign create
+      try {
+        const [count, notificationsRes] = await Promise.all([
+          getUnreadNotificationCount(),
+          listNotifications(1, 10, 'all', [])
+        ]);
+        dispatch(setUnreadCount({ module: 'all', count }));
+        dispatch(setNotifications({ module: 'all', notifications: notificationsRes.data || [], total: notificationsRes.meta?.pagination?.total || 0 }));
+      } catch (notifErr) {
+        console.error('Failed to refresh notifications:', notifErr);
+      }
     } catch (error) {
-      console.error('Failed to create campaign:', error);
+      console.error('Failed to refresh campaigns:', error);
     }
   };
 
@@ -122,7 +269,18 @@ const View: React.FC = () => {
       try { SweetAlert.showDeleteSuccess(); } catch {
         //no need to action
       }
-      await fetchCampaigns(currentPage); // Refresh table from server
+      await fetchCampaigns(currentPage, searchQuery, activeFilters); // Refresh table from server
+      // Refresh notifications in Redux after campaign delete
+      try {
+        const [count, notificationsRes] = await Promise.all([
+          getUnreadNotificationCount(),
+          listNotifications(1, 10, 'all', [])
+        ]);
+        dispatch(setUnreadCount({ module: 'all', count }));
+        dispatch(setNotifications({ module: 'all', notifications: notificationsRes.data || [], total: notificationsRes.meta?.pagination?.total || 0 }));
+      } catch (notifErr) {
+        console.error('Failed to refresh notifications:', notifErr);
+      }
     } catch (error) {
       console.error('Failed to delete campaign:', error);
       try { SweetAlert.showError((error as any)?.message || 'Failed to delete campaign'); } catch {
@@ -180,41 +338,83 @@ const View: React.FC = () => {
 
   // Tooltip helpers removed - tooltip functionality not currently in use
 
-  const handleSaveEdited = async (updated: Record<string, any>) => {
+  const handleSaveEdited = async () => {
     try {
-      await updateMissCampaign(updated.id, updated);
-      await fetchCampaigns(currentPage); // Refresh table from server
+      await fetchCampaigns(1, searchQuery, activeFilters);
       try { SweetAlert.showUpdateSuccess(); } catch {
         // no need to action
       }
+      // Refresh notifications in Redux after campaign update
+      try {
+        const [count, notificationsRes] = await Promise.all([
+          getUnreadNotificationCount(),
+          listNotifications(1, 10, 'all', [])
+        ]);
+        dispatch(setUnreadCount({ module: 'all', count }));
+        dispatch(setNotifications({ module: 'all', notifications: notificationsRes.data || [], total: notificationsRes.meta?.pagination?.total || 0 }));
+      } catch (notifErr) {
+        console.error('Failed to refresh notifications:', notifErr);
+      }
     } catch (error) {
-      console.error('Failed to update campaign:', error);
+      console.error('Failed to refresh campaigns:', error);
     }
   };
 
-  // Fetch campaigns on mount and when page changes
+  // Fetch campaigns on mount and when search/filter changes in all-data mode
   useEffect(() => {
-    fetchCampaigns(currentPage);
-  }, [currentPage]);
+    if (shouldFetchAll) {
+      fetchCampaigns(1, searchQuery, activeFilters);
+    }
+  }, [shouldFetchAll, searchQuery, activeFilters, fetchCampaigns]);
+
+  // Fetch only non-filtered paginated pages when page changes
+  useEffect(() => {
+    if (!shouldFetchAll) {
+      fetchCampaigns(currentPage, searchQuery, activeFilters);
+    }
+  }, [currentPage, shouldFetchAll, fetchCampaigns, searchQuery, activeFilters]);
 
   // Listen for external updates (create/edit from other routes) and refresh list
   useEffect(() => {
     const onExternalUpdate = () => {
       // go to first page and refresh from server
       setCurrentPage(1);
-      fetchCampaigns(1);
+      fetchCampaigns(1, searchQuery, activeFilters);
     };
 
     window.addEventListener('missCampaigns:update', onExternalUpdate);
     return () => window.removeEventListener('missCampaigns:update', onExternalUpdate);
-  }, []);
+  }, [searchQuery, activeFilters, fetchCampaigns]);
+
+  const handleFilterChange = (filters: Record<string, string>) => {
+    setActiveFilters(filters);
+    setCurrentPage(1); // Reset to first page when filtering
+  };
+
+  const filterOptions = [
+    {
+      key: 'industry_id',
+      label: 'Industry',
+      options: industryOptions
+    },
+    {
+      key: 'lead_source_id',
+      label: 'Source',
+      options: sourceOptions
+    },
+    {
+      key: 'media_type',
+      label: 'Media Type',
+      options: mediaTypeOptions
+    }
+  ].filter(option => option.options.length > 0); // Only show filters that have options
 
   // If navigated back with a refresh flag in location.state, refresh and clear state
   useEffect(() => {
     const s = (location.state as any) || {};
     if (s.refreshedAt) {
       setCurrentPage(1);
-      fetchCampaigns(1);
+      fetchCampaigns(1, searchQuery, activeFilters);
       // clear the navigation state so this runs only once
       try {
         navigate(location.pathname, { replace: true, state: {} });
@@ -222,12 +422,12 @@ const View: React.FC = () => {
         // no need to action
       }
     }
-  }, [location.state, location.pathname, navigate]); // ✅ added location.pathname
+  }, [location.state, location.pathname, navigate, searchQuery, activeFilters, fetchCampaigns]);
 
   const handlePageChange = (page: number) => setCurrentPage(page);
 
   return (
-    <div className="flex-1 w-full max-w-full overflow-x-hidden">
+    <div className="flex-1 w-full max-w-full overflow-x-hidden h-full">
       {/* SweetAlert is used for inline success/error notifications */}
       <ConfirmDialog
         isOpen={!!confirmDeleteId}
@@ -240,14 +440,14 @@ const View: React.FC = () => {
         onConfirm={confirmDelete}
       />
       {showCreate ? (
-        <Create inline onClose={() => navigate('/miss-campaign/view')} onSave={handleSave} />
+        <Create inline onClose={() => navigate('/pre-lead/view')} onSave={handleSave} />
       ) : viewItem ? (
         <>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div className="flex flex-col">
               <Breadcrumb />
             </div>
-            <button onClick={() => navigate('/miss-campaign/view')} className="flex items-center space-x-2 btn-primary text-white px-3 py-1 rounded-lg">
+            <button onClick={() => navigate('/pre-lead/view')} className="flex items-center space-x-2 btn-primary text-white px-3 py-1 rounded-lg">
               <IoIosArrowBack className="w-5 h-5" />
               <span className="text-sm">Go Back</span>
             </button>
@@ -261,10 +461,10 @@ const View: React.FC = () => {
             className="w-full bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden"
           >
             <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-800">Miss Campaign Details</h3>
+              <h3 className="text-lg font-semibold text-gray-800">Pre Lead Details</h3>
             </div>
 
-            <div className="p-6">
+            <div className="px-3 py-5 md:p-6">
               {/* Header Section */}
               <div className="mb-6">
                 <h2 className="text-4xl font-bold text-gray-800 mb-2">{viewItem.brandName}</h2>
@@ -290,7 +490,7 @@ const View: React.FC = () => {
 
 
                 {/* Details Grid */}
-                <div className="">
+                <div className="xl:grid xl:grid-cols-2 gap-4">
                   <div className='flex bg-gray-100 p-4 rounded-lg mb-3'>
                     <div className="text-sm text-gray-800 font-semibold min-w-[100px]">ID : </div>
                     <div className="text-sm text-gray-600">{viewItem.id}</div>
@@ -304,8 +504,35 @@ const View: React.FC = () => {
                     <div className="text-sm text-gray-800 font-semibold min-w-[100px]">Sub Source : </div>
                     <div className="text-sm text-gray-600">{viewItem.subSource || '-'}</div>
                   </div>
-
                   <div className='flex bg-gray-100 p-3 rounded-lg mb-3'>
+                    <div className="text-sm text-gray-800 font-semibold min-w-[100px]">Industry : </div>
+                    <div className="text-sm text-gray-600">{viewItem.industry || '-'}</div>
+                  </div>
+                  <div className='flex bg-gray-100 p-3 rounded-lg mb-3'>
+                    <div className="text-sm text-gray-800 font-semibold min-w-[100px]">Assign By : </div>
+                    <div className="text-sm text-gray-600">{viewItem.assignBy || '-'}</div>
+                  </div>
+                  <div className='flex bg-gray-100 p-3 rounded-lg mb-3'>
+                    <div className="text-sm text-gray-800 font-semibold min-w-[100px]">Assign To : </div>
+                    <div className="text-sm text-gray-600">{viewItem.assignTo || '-'}</div>
+                  </div>
+                  <div className='flex bg-gray-100 p-3 rounded-lg mb-3'>
+                    <div className="text-sm text-gray-800 font-semibold min-w-[100px]">Media Type : </div>
+                    <div className="text-sm text-gray-600">{viewItem.mediaType || '-'}</div>
+                  </div>
+                  <div className='flex bg-gray-100 p-3 rounded-lg mb-3'>
+                    <div className="text-sm text-gray-800 font-semibold min-w-[100px]">City : </div>
+                    <div className="text-sm text-gray-600">{viewItem.city || '-'}</div>
+                  </div>
+                  <div className='flex bg-gray-100 p-3 rounded-lg mb-3'>
+                    <div className="text-sm text-gray-800 font-semibold min-w-[100px]">State : </div>
+                    <div className="text-sm text-gray-600">{viewItem.state || '-'}</div>
+                  </div>
+                  <div className='flex bg-gray-100 p-3 rounded-lg mb-3'>
+                    <div className="text-sm text-gray-800 font-semibold min-w-[100px]">Country : </div>
+                    <div className="text-sm text-gray-600">{viewItem.country || '-'}</div>
+                  </div>
+                  <div className='flex bg-gray-100 p-3 rounded-lg mb-3 col-span-2'>
                     <div className="text-sm text-gray-800 font-semibold min-w-[100px]">Date & Time : </div>
                     <div className="text-sm text-gray-600">{viewItem.dateTime || '-'}</div>
                   </div>
@@ -321,20 +548,26 @@ const View: React.FC = () => {
           inline
           mode="edit"
           initialData={editItem}
-          onClose={() => navigate('/miss-campaign/view')}
-          onSave={(data: any) => handleSaveEdited({ ...(data as Record<string, any>) })}
+          onClose={() => navigate('/pre-lead/view')}
+          onSave={handleSaveEdited}
         />
       ) : (
         <>
           {hasPermission('miss-campaign.create') && (
-            <MasterHeader onCreateClick={handleCreate} createButtonLabel="Create Miss Campaign" />
+            <MasterHeader onCreateClick={handleCreate} createButtonLabel="Create Pre Lead" />
           )}
 
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-           {/* Table Header */}
-            <TableHeader title="Miss Campaign">
-              <SearchBar delay={0} placeholder="Search Miss Campaign" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
+            {/* Table Header */}
+            <TableHeader
+              title="Pre Lead"
+              filterOptions={filterOptions}
+              onFilterChange={handleFilterChange}
+              appliedFilters={activeFilters}
+            >
+              <SearchBar delay={0} placeholder="Search Pre Lead" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
             </TableHeader>
+
 
             <div className="pt-0 overflow-visible">
               <Table
@@ -346,9 +579,16 @@ const View: React.FC = () => {
                 columns={([
                   { key: 'sr', header: 'Id', render: (it: MissCampaign) => `#${it.id}` },
                   { key: 'brandName', header: 'Brand Name', render: (it: MissCampaign) => it.brandName },
-                  { key: 'productName', header: 'Product Name', render: (it: MissCampaign) => it.productName },
+                  { key: 'industry', header: 'Industry', render: (it: MissCampaign) => it.industry || '-' },
+                  { key: 'productName', header: 'Product Name ', render: (it: MissCampaign) => it.productName },
                   { key: 'source', header: 'Source', render: (it: MissCampaign) => it.source },
                   { key: 'subSource', header: 'Sub Source', render: (it: MissCampaign) => it.subSource },
+                  { key: 'city', header: 'City', render: (it: MissCampaign) => it.city },
+                  { key: 'state', header: 'State', render: (it: MissCampaign) => it.state },
+                  { key: 'country', header: 'Country', render: (it: MissCampaign) => it.country },
+                  { key: 'assignBy', header: 'Assign By', render: (it: MissCampaign) => it.assignBy || '-' },
+                  { key: 'assignTo', header: 'Assign To', render: (it: MissCampaign) => it.assignTo || '-' },
+                  { key: 'mediaType', header: 'Media Type', render: (it: MissCampaign) => it.mediaType || '-' },
                   {
                     key: 'proof',
                     header: 'Proof',
