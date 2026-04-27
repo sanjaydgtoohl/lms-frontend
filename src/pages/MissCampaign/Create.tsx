@@ -526,10 +526,8 @@ const Create: React.FC<CreateProps> = ({
     };
 
     if (assignByVal !== undefined) payload.assign_by = assignByVal;
-    else if (mode === 'edit') payload.assign_by = null;
 
     if (assignToVal !== undefined) payload.assign_to = assignToVal;
-    else if (mode === 'edit') payload.assign_to = null;
     // Only include image if a new file is selected
     if (formData.image) {
       payload.image_path = formData.image;

@@ -181,7 +181,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
       
       const duration = initialData.campaignDuration ?? initialData.campaign_duration;
 
-      if (duration !== undefined) {
+      if (duration !== undefined && duration !== null) {
         patched.campaignDuration = String(duration);
       }
 
@@ -996,7 +996,8 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
         return diffDays > 0 ? diffDays : 0;
       }
     }
-    return form.campaignDuration ? Number(form.campaignDuration) : 0;
+    const durVal = Number(form.campaignDuration);
+    return form.campaignDuration && !isNaN(durVal) ? durVal : 0;
   };
 
   return (
