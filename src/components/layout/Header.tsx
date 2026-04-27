@@ -292,7 +292,7 @@ const Header: React.FC<HeaderProps> = ({
               <div className="" ref={notificationDropdownRef}>
                 {/* <div className="absolute left-0 top-full -mt-2 w-4 h-4 bg-white transform rotate-45 border-l border-t border-gray-400 z-60 -mb-2" aria-hidden="true" /> */}
 
-                <div className="fixed left-1/2 -translate-x-1/2 top-full sm:absolute sm:left-auto sm:translate-x-0 sm:right-0 sm:top-full w-80 max-w-[90vw] bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-50 ring-opacity-5 transition duration-300 ease-in-out">
+                 <div className="fixed left-1/2 -translate-x-1/2 top-full sm:absolute sm:left-auto sm:translate-x-0 sm:right-0 sm:top-full w-80 max-w-[90vw] bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-50 ring-opacity-5 transition duration-300 ease-in-out">
                   <div className="px-4 py-3 border-b border-gray-100 bg-white">
                     <div className="flex items-center justify-between mb-6">
                       <h3 className="text-sm font-semibold text-gray-900 flex gap-2 items-center">Notifications

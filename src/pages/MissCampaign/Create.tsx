@@ -509,20 +509,27 @@ const Create: React.FC<CreateProps> = ({
     setError(null);
     setSaving(true);
 
+    const assignByVal = currentUser?.id && String(currentUser.id).replace(/\D/g, '') !== '' ? Number(String(currentUser.id).replace(/\D/g, '')) : undefined;
+    const assignToVal = formData.assignTo && String(formData.assignTo).replace(/\D/g, '') !== '' ? Number(String(formData.assignTo).replace(/\D/g, '')) : undefined;
+
     const payload: Record<string, any> = {
       name: formData.productName,
       brand_id: formData.brandName,
       lead_source_id: formData.source,
       lead_sub_source_id: formData.subSource,
       industry_id: formData.industry,
-      assign_by: currentUser?.id ? Number(String(currentUser.id).replace(/\D/g, '')) : '',
-      assign_to: formData.assignTo ? Number(String(formData.assignTo).replace(/\D/g, '')) : '',
       country_id: formData.country,
       state_id: formData.state,
       city_id: formData.city,
       media_type: formData.mediaType,
       remove_image: formData.remove_image,
     };
+
+    if (assignByVal !== undefined) payload.assign_by = assignByVal;
+    else if (mode === 'edit') payload.assign_by = null;
+
+    if (assignToVal !== undefined) payload.assign_to = assignToVal;
+    else if (mode === 'edit') payload.assign_to = null;
     // Only include image if a new file is selected
     if (formData.image) {
       payload.image_path = formData.image;

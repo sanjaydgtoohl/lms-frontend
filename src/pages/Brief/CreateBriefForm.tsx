@@ -178,8 +178,11 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
         if (isoMatch2) patched.campaignEndDate = `${isoMatch2[3]}-${isoMatch2[2]}-${isoMatch2[1]}`;
         else if (/^\d{2}-\d{2}-\d{4}$/.test(s2)) patched.campaignEndDate = s2;
       }
-      if (initialData.campaign_duration !== undefined) {
-        patched.campaignDuration = String(initialData.campaign_duration);
+      
+      const duration = initialData.campaignDuration ?? initialData.campaign_duration;
+
+      if (duration !== undefined) {
+        patched.campaignDuration = String(duration);
       }
 
       setForm(prev => ({ ...prev, ...patched }));

@@ -275,6 +275,7 @@ const View: React.FC = () => {
   const handleCreate = () => navigate('/pre-lead/create');
 
   const handleAssignToChange = (campaignId: string, newSalesMan: string) => {
+    const previousCampaigns = [...campaigns];
     setCampaigns((prev) =>
       prev.map((c) =>
         c.id === campaignId ? { ...c, assignTo: newSalesMan } : c
@@ -291,12 +292,14 @@ const View: React.FC = () => {
           try { SweetAlert.showError('User ID not found'); } catch {
             // no need to action
           }
+          setCampaigns(previousCampaigns);
         }
       } catch (err) {
         console.warn('Failed to persist assign_to change', err);
         try { SweetAlert.showError('Failed to update assignment'); } catch {
           // no need to action
         }
+        setCampaigns(previousCampaigns);
       }
     })();
   };
@@ -653,23 +656,27 @@ const View: React.FC = () => {
                   { key: 'city', header: 'City', render: (it: MissCampaign) => it.city },
                   { key: 'state', header: 'State', render: (it: MissCampaign) => it.state },
                   { key: 'country', header: 'Country', render: (it: MissCampaign) => it.country },
-                  { key: 'assignBy', header: 'Assign By', render: (it: MissCampaign) => {
-                    const cleanId = it.assignBy ? String(it.assignBy).replace(/^#USR0*/, '') : '';
-                    return userMap[cleanId] || it.assignBy || '-';
-                  } },
-                  { key: 'assignTo', header: 'Assign To', render: (it: MissCampaign) => {
-                    const cleanId = it.assignTo ? String(it.assignTo).replace(/^#USR0*/, '') : '';
-                    const displayedName = userMap[cleanId] || it.assignTo || '';
-                    return (
-                      <AssignDropdown
-                        value={displayedName}
-                        options={assignToOptions.map(opt => opt.name)}
-                        onChange={(newSalesMan) => handleAssignToChange(it.id, newSalesMan)}
-                        onConfirm={handleAssignConfirm}
-                        context="lead"
-                      />
-                    );
-                  } },
+                  {
+                    key: 'assignBy', header: 'Assign By', render: (it: MissCampaign) => {
+                      const cleanId = it.assignBy ? String(it.assignBy).replace(/^#USR0*/, '') : '';
+                      return userMap[cleanId] || it.assignBy || '-';
+                    }
+                  },
+                  {
+                    key: 'assignTo', header: 'Assign To', render: (it: MissCampaign) => {
+                      const cleanId = it.assignTo ? String(it.assignTo).replace(/^#USR0*/, '') : '';
+                      const displayedName = userMap[cleanId] || it.assignTo || '';
+                      return (
+                        <AssignDropdown
+                          value={displayedName}
+                          options={assignToOptions.map(opt => opt.name)}
+                          onChange={(newSalesMan) => handleAssignToChange(it.id, newSalesMan)}
+                          onConfirm={handleAssignConfirm}
+                          context="lead"
+                        />
+                      );
+                    }
+                  },
                   { key: 'mediaType', header: 'Media Type', render: (it: MissCampaign) => it.mediaType || '-' },
                   {
                     key: 'proof',

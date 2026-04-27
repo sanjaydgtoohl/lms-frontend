@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import SelectField from '../../ui/SelectField';
 import { getUsers } from '../../../services/CreateLead';
 import { getPriorities, getPrioritiesByCallStatus } from '../../../services/Priority';
@@ -20,6 +20,16 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
   callFeedback,
   onChange
 }) => {
+  const priorityRef = useRef(priority);
+  const assignToRef = useRef(assignTo);
+  const onChangeRef = useRef(onChange);
+
+  useEffect(() => {
+    priorityRef.current = priority;
+    assignToRef.current = assignTo;
+    onChangeRef.current = onChange;
+  }, [priority, assignTo, onChange]);
+
   // Assign To dropdown state
   const [userOptions, setUserOptions] = useState<{ value: string; label: string }[]>([]);
   const [userLoading, setUserLoading] = useState(false);
@@ -103,14 +113,14 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
         setPriorityOptions(fetched);
 
         // Check if current priority is still valid, if not, clear it
-        const isCurrentPriorityValid = priority && fetched.some(option => option.value === priority);
-        if (priority && !isCurrentPriorityValid) {
-          onChange?.({ assignTo, priority: undefined, callFeedback });
+        const isCurrentPriorityValid = priorityRef.current && fetched.some((option: any) => option.value === priorityRef.current);
+        if (priorityRef.current && !isCurrentPriorityValid) {
+          onChangeRef.current?.({ assignTo: assignToRef.current, priority: undefined, callFeedback });
         }
 
         // Auto-select if only one priority and no priority is currently selected
-        if (fetched.length === 1 && !priority) {
-          onChange?.({ assignTo, priority: fetched[0].value, callFeedback });
+        if (fetched.length === 1 && !priorityRef.current) {
+          onChangeRef.current?.({ assignTo: assignToRef.current, priority: fetched[0].value, callFeedback });
         }
 
         setPriorityLoading(false);
@@ -125,7 +135,6 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
     return () => {
       isMounted = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [callFeedback]); // Only fetch when callFeedback changes
 
   return (

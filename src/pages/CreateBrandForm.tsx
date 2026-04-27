@@ -585,8 +585,10 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-black"
             placeholder="https://"
           />
-          {errors.website && !form.website.trim() && (
-            <div className="text-xs text-red-500 mt-1">{errors.website}</div>
+          {errors.website && (
+            <div className="text-xs text-red-500 mt-1">
+              {errors.website}
+            </div>
           )}
         </div>
 

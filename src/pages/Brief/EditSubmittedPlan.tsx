@@ -295,7 +295,7 @@ const EditSubmittedPlan: React.FC = () => {
                         <a
                           href={file.url}
                           download
-                          className="!p-1.5 !bg-gray-700 !hover:bg-gray-800 !rounded transition-colors"
+                          className="!p-1.5 !bg-gray-700 hover:!bg-gray-800 !rounded transition-colors"
                           title="Download"
                         >
                           <Download className="w-4 h-4 text-white" />
