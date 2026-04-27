@@ -178,7 +178,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
         if (isoMatch2) patched.campaignEndDate = `${isoMatch2[3]}-${isoMatch2[2]}-${isoMatch2[1]}`;
         else if (/^\d{2}-\d{2}-\d{4}$/.test(s2)) patched.campaignEndDate = s2;
       }
-      
+
       const duration = initialData.campaignDuration ?? initialData.campaign_duration;
 
       if (duration !== undefined && duration !== null) {
@@ -850,6 +850,8 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
     if (!form.submissionTime || String(form.submissionTime).trim() === '') next.submissionTime = 'Please Select Submission Time';
     if (!form.campaignStartDate || String(form.campaignStartDate).trim() === '') next.campaignStartDate = 'The campaign start date field is required.';
     if (!form.campaignEndDate || String(form.campaignEndDate).trim() === '') next.campaignEndDate = 'The campaign end date field is required.';
+    if (!form.productName || String(form.productName).trim() === '') next.productName = 'Please Enter Product Name';
+    if (!form.budget || String(form.budget).trim() === '') next.budget = 'Please Enter Brief Budget';
 
     if (form.campaignStartDate && form.campaignEndDate) {
       const parseDate = (dStr: string) => {
@@ -996,15 +998,15 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
   // Calculate Campaign Duration dynamically
   const getCalculatedDuration = () => {
     if (form.campaignStartDate && form.campaignEndDate) {
-      const parseDate = (dStr: string) => {
+      const parseDateUTC = (dStr: string) => {
         const [dd, mm, yyyy] = dStr.split('-');
-        return new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+        return Date.UTC(Number(yyyy), Number(mm) - 1, Number(dd));
       };
-      const start = parseDate(form.campaignStartDate);
-      const end = parseDate(form.campaignEndDate);
-      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
-        const diffTime = end.getTime() - start.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      const start = parseDateUTC(form.campaignStartDate);
+      const end = parseDateUTC(form.campaignEndDate);
+      if (!isNaN(start) && !isNaN(end)) {
+        const diffTime = end - start;
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
         return diffDays > 0 ? diffDays : 0;
       }
     }
@@ -1060,10 +1062,21 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                   {brandsError && <div className="text-xs text-red-600 mt-1">{brandsError}</div>}
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-800 mb-1">Product Name</label>
-                  <input name="productName" value={form.productName} onChange={handleChange}
+                  <label className="block text-sm text-gray-800 mb-1">Product Name <span className="text-[#FF0000]">*</span></label>
+                  <input name="productName" value={form.productName} onChange={(e) => { handleChange(e); setErrors(prev => ({ ...prev, productName: '' })); }}
                     placeholder="Please enter product name"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white" />
+                    className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors ${errors.productName ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-gray-200 focus:ring-blue-500'}`}
+                    aria-invalid={errors.productName ? 'true' : 'false'}
+                    aria-describedby={errors.productName ? 'productName-error' : undefined}
+                  />
+                  {errors.productName && (
+                    <div id="productName-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                      <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      {errors.productName}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm text-gray-800 mb-1">Assign To</label>
@@ -1207,17 +1220,27 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                   {agenciesError && <div className="text-xs text-red-600 mt-1">{agenciesError}</div>}
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-800 mb-1">Brief Budget</label>
+                  <label className="block text-sm text-gray-800 mb-1">Brief Budget <span className="text-[#FF0000]">*</span></label>
                   <input
                     type="number"
                     min="0"
                     step="0.01"
                     name="budget"
                     value={form.budget}
-                    onChange={handleChange}
+                    onChange={(e) => { handleChange(e); setErrors(prev => ({ ...prev, budget: '' })); }}
                     placeholder="Please Enter Est. Budget"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white"
+                    className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors ${errors.budget ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-gray-200 focus:ring-blue-500'}`}
+                    aria-invalid={errors.budget ? 'true' : 'false'}
+                    aria-describedby={errors.budget ? 'budget-error' : undefined}
                   />
+                  {errors.budget && (
+                    <div id="budget-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                      <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      {errors.budget}
+                    </div>
+                  )}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="w-full">
