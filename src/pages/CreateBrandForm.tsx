@@ -79,18 +79,18 @@ const CitySelect: React.FC<CitySelectProps> = ({ state, value, onChange, presele
   // Find the label for the selected value (id)
   // ...existing code...
 
-    return (
-      <div>
-        <SelectField
-          name="city"
-          value={value}
-          onChange={(v) => onChange(typeof v === 'string' ? v : v[0] ?? '')}
-          options={cities.map(c => ({ value: String(c.id), label: c.name }))}
-          placeholder={loading ? 'Loading cities...' : (cities.length ? 'Select City' : 'Select State first')}
-          disabled={loading}
-        />
-      </div>
-    );
+  return (
+    <div>
+      <SelectField
+        name="city"
+        value={value}
+        onChange={(v) => onChange(typeof v === 'string' ? v : v[0] ?? '')}
+        options={cities.map(c => ({ value: String(c.id), label: c.name }))}
+        placeholder={loading ? 'Loading cities...' : (cities.length ? 'Select City' : 'Select State first')}
+        disabled={loading}
+      />
+    </div>
+  );
 };
 
 const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create' }) => {
@@ -133,9 +133,9 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
   const [brandTypes, setBrandTypes] = useState<BrandType[]>([]);
   const [agencies, setAgencies] = useState<Agency[]>([]);
   const [industries, setIndustries] = useState<Industry[]>([]);
-  const [postalLoading, setPostalLoading] = useState(false);
-  const [postalError, setPostalError] = useState<string>('');
-  const [postalFieldError, setPostalFieldError] = useState<string>('');
+  // const [postalLoading, setPostalLoading] = useState(false);
+  // const [postalError, setPostalError] = useState<string>('');
+  // const [postalFieldError, setPostalFieldError] = useState<string>('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -143,14 +143,14 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
     setErrors(prev => ({ ...prev, [name]: '' }));
 
     // Postal code validation
-    if (name === 'postalCode') {
-      const raw = String(value || '').trim();
-      if (!/^[0-9]{6}$/.test(raw)) {
-        setPostalFieldError('Postal code is invalid');
-      } else {
-        setPostalFieldError('');
-      }
-    }
+    // if (name === 'postalCode') {
+    //   const raw = String(value || '').trim();
+    //   if (!/^[0-9]{6}$/.test(raw)) {
+    //     setPostalFieldError('Postal code is invalid');
+    //   } else {
+    //     setPostalFieldError('');
+    //   }
+    // }
   };
 
   const validate = () => {
@@ -163,9 +163,9 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
     if (!form.city) next.city = 'Please Select A City';
     if (!form.zone) next.zone = 'Please Select A Zone';
     // Postal code: required and must be 6 numeric digits
-    if (!/^[0-9]{6}$/.test(String(form.postalCode || '').trim())) {
-      next.postalCode = 'Please enter a valid 6-digit postal code';
-    }
+    // if (!/^[0-9]{6}$/.test(String(form.postalCode || '').trim())) {
+    //   next.postalCode = 'Please enter a valid 6-digit postal code';
+    // }
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -262,16 +262,17 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
           !newErrors.website &&
           !(newErrors.city && newErrors.city.toLowerCase().includes('must be an integer'))
         ) {
-            SweetAlert.showError(firstError);
+          SweetAlert.showError(firstError);
         }
       } else {
         // Show general error if not a validation error
-          SweetAlert.showError(err?.message || `Failed to ${mode === 'edit' ? 'update' : 'save'} brand`);
+        SweetAlert.showError(err?.message || `Failed to ${mode === 'edit' ? 'update' : 'save'} brand`);
       }
     }
   };
 
   // Lookup postal pincode and auto-fill country/state/city when possible
+  /*
   const lookupPostalCode = async (pincode: string) => {
     const code = String(pincode || '').trim();
     if (!/^[0-9]{6}$/.test(code)) {
@@ -361,10 +362,12 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
       setPostalLoading(false);
     }
   };
+  */
 
+  const hasInitializedForm = React.useRef(false);
   useEffect(() => {
-    // If initialData provided (edit mode) prefill the form
-    if (initialData) {
+    // If initialData provided (edit mode) prefill the form only once
+    if (initialData && !hasInitializedForm.current) {
       setForm(prev => ({
         ...prev,
         brandName: initialData.name ?? initialData.brandName ?? prev.brandName,
@@ -378,7 +381,14 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
         city: String(initialData.city?.id ?? initialData.city_id ?? initialData.city ?? ''),
         zone: String(initialData.zone?.id ?? initialData.zone_id ?? initialData.zone ?? ''),
       }));
+      hasInitializedForm.current = true;
     }
+  }, [initialData]);
+
+  const hasFetchedData = React.useRef(false);
+  useEffect(() => {
+    if (hasFetchedData.current) return;
+    hasFetchedData.current = true;
 
     let mounted = true;
     Promise.all([
@@ -402,7 +412,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
           const rawAgency = initialData.agency_id ?? initialData.agency ?? initialData.agencies ?? initialData.agencyName ?? null;
           if (rawAgency) {
             const agencyIds: string[] = [];
-            
+
             if (Array.isArray(rawAgency)) {
               rawAgency.forEach(a => {
                 const rawVal = String(typeof a === 'object' ? (a.id ?? a.name ?? '') : a);
@@ -435,7 +445,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
                 else agencyIds.push(rawVal);
               }
             }
-            
+
             if (agencyIds.length > 0) {
               setForm(prev => ({ ...prev, agency: agencyIds }));
             }
@@ -459,16 +469,16 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
           const items = raw && raw.data ? raw.data : [];
           if (items && items.length) {
             const normalized = (items || []).map((it: any) => ({ id: it.id ?? it._id ?? String(it.name || ''), name: it.name ?? it.title ?? it.label ?? '' }));
-            setBrandTypes(normalized);
-             
+            setBrandTypes(prev => prev.length ? prev : normalized);
+
             console.warn('Brand types loaded via fallback apiClient.get', normalized);
           } else {
-             
+
             console.warn('Brand types: no items returned from fallback');
           }
         }
       } catch (e) {
-         
+
         console.error('Brand types fallback fetch failed', e);
       }
     })();
@@ -483,16 +493,16 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
           const items = raw && raw.data ? raw.data : [];
           if (items && items.length) {
             const normalized = (items || []).map((it: any) => ({ id: it.id ?? it._id ?? String(it.slug || ''), name: it.name ?? it.title ?? it.label ?? '' }));
-            setAgencies(normalized as Agency[]);
-             
+            setAgencies(prev => prev.length ? prev : (normalized as Agency[]));
+
             console.warn('Agencies loaded via fallback apiClient.get', normalized);
           } else {
-             
+
             console.warn('Agencies: no items returned from fallback');
           }
         }
       } catch (e) {
-         
+
         console.error('Agencies fallback fetch failed', e);
       }
     })();
@@ -507,16 +517,16 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
           const items = raw && raw.data ? raw.data : [];
           if (items && items.length) {
             const normalized = (items || []).map((it: any) => ({ id: it.id ?? it._id ?? String(it.slug || ''), name: it.name ?? it.title ?? it.label ?? '' }));
-            setCountries(normalized);
-             
+            setCountries(prev => prev.length ? prev : normalized);
+
             console.warn('Countries loaded via fallback apiClient.get', normalized);
           } else {
-             
+
             console.warn('Countries: no items returned from fallback');
           }
         }
       } catch (e) {
-         
+
         console.error('Countries fallback fetch failed', e);
       }
     })();
@@ -530,7 +540,8 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
     });
 
     return () => { mounted = false; };
-  }, [agencies, brandTypes, countries, initialData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialData]);
 
   const formContent = (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -555,14 +566,14 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             <SelectField
               name="brandType"
               value={form.brandType}
-              onChange={(v) => setForm(prev => ({ ...prev, brandType: typeof v === 'string' ? v : v[0] ?? '' }))}     
+              onChange={(v) => setForm(prev => ({ ...prev, brandType: typeof v === 'string' ? v : v[0] ?? '' }))}
               options={brandTypes.map(t => ({ value: String(t.id), label: t.name }))}
               placeholder="Search or select option"
             />
           </div>
-            {errors.brandType && !form.brandType && (
-              <div className="text-xs text-red-500 mt-1">{errors.brandType}</div>
-            )}
+          {errors.brandType && !form.brandType && (
+            <div className="text-xs text-red-500 mt-1">{errors.brandType}</div>
+          )}
         </div>
 
         <div>
@@ -574,9 +585,11 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-black"
             placeholder="https://"
           />
-            {errors.website && !form.website.trim() && (
-              <div className="text-xs text-red-500 mt-1">{errors.website}</div>
-            )}
+          {errors.website && (
+            <div className="text-xs text-red-500 mt-1">
+              {errors.website}
+            </div>
+          )}
         </div>
 
         <div>
@@ -598,14 +611,14 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             <SelectField
               name="industry"
               value={form.industry}
-              onChange={(v) => setForm(prev => ({ ...prev, industry: typeof v === 'string' ? v : v[0] ?? '' }))}      
+              onChange={(v) => setForm(prev => ({ ...prev, industry: typeof v === 'string' ? v : v[0] ?? '' }))}
               options={industries.length ? industries.map(it => ({ value: String(it.id), label: it.name })) : []}
               placeholder={industries.length ? 'Search or select option' : 'No industries available'}
             />
           </div>
-            {errors.industry && !form.industry && (
-              <div className="text-xs text-red-500 mt-1">{errors.industry}</div>
-            )}
+          {errors.industry && !form.industry && (
+            <div className="text-xs text-red-500 mt-1">{errors.industry}</div>
+          )}
         </div>
 
         <div>
@@ -622,39 +635,39 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
               placeholder="Search or select option"
             />
           </div>
-            {errors.country && (!form.country || form.country === 'Please Select Country') && (
-              <div className="text-xs text-red-500 mt-1">{errors.country}</div>
-            )}
+          {errors.country && (!form.country || form.country === 'Please Select Country') && (
+            <div className="text-xs text-red-500 mt-1">{errors.country}</div>
+          )}
         </div>
 
         <div>
-          <label className="block text-sm text-gray-800 mb-1">Postal Code <span className="text-[#FF0000]">*</span></label>
+          <label className="block text-sm text-gray-800 mb-1">Postal Code</label>
           <input
             name="postalCode"
             value={form.postalCode}
             onChange={(e) => {
               handleChange(e as any);
-              const raw = String(e.target.value || '').trim();
-              if (/^[0-9]{6}$/.test(raw)) {
-                setPostalFieldError('');
-                lookupPostalCode(raw);
-              }
+              // const raw = String(e.target.value || '').trim();
+              // if (/^[0-9]{6}$/.test(raw)) {
+              //   setPostalFieldError('');
+              //   lookupPostalCode(raw);
+              // }
             }}
-            onBlur={() => {
-              const raw = String(form.postalCode || '').trim();
-              if (/^[0-9]{6}$/.test(raw)) {
-                setPostalFieldError('');
-                lookupPostalCode(raw);
-              } else {
-                setPostalFieldError('Postal code is invalid');
-              }
-            }}
+            // onBlur={() => {
+            //   // const raw = String(form.postalCode || '').trim();
+            //   // if (/^[0-9]{6}$/.test(raw)) {
+            //   //   setPostalFieldError('');
+            //   //   lookupPostalCode(raw);
+            //   // } else {
+            //   //   setPostalFieldError('Postal code is invalid');
+            //   // }
+            // }}
             className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-black"
             placeholder="Please Enter Postal Code"
           />
-          {(errors.postalCode || postalFieldError) && <div className="text-xs text-red-500 mt-1">{errors.postalCode || postalFieldError}</div>}
-          {postalLoading && <div className="text-xs text-gray-500 mt-1">Looking up pincode...</div>}
-          {!postalLoading && postalError && <div className="text-xs text-red-500 mt-1">{postalError}</div>}
+          {errors.postalCode && <div className="text-xs text-red-500 mt-1">{errors.postalCode}</div>}
+          {/* {postalLoading && <div className="text-xs text-gray-500 mt-1">Looking up pincode...</div>} */}
+          {/* {!postalLoading && postalError && <div className="text-xs text-red-500 mt-1">{postalError}</div>} */}
         </div>
 
         <div>
@@ -668,9 +681,9 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
               placeholder="Search or select option"
             />
           </div>
-            {errors.state && !form.state && (
-              <div className="text-xs text-red-500 mt-1">{errors.state}</div>
-            )}
+          {errors.state && !form.state && (
+            <div className="text-xs text-red-500 mt-1">{errors.state}</div>
+          )}
         </div>
 
         <div>
@@ -681,9 +694,9 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             preselectedCityName={form.city}
             onChange={(val) => setForm(prev => ({ ...prev, city: val }))}
           />
-            {(errors.city && (!form.city || (errors.city.toLowerCase().includes('must be an integer') && isNaN(Number(form.city))))) && (
-              <div className="text-xs text-red-500 mt-1">{errors.city}</div>
-            )}
+          {(errors.city && (!form.city || (errors.city.toLowerCase().includes('must be an integer') && isNaN(Number(form.city))))) && (
+            <div className="text-xs text-red-500 mt-1">{errors.city}</div>
+          )}
         </div>
 
         <div>
@@ -697,9 +710,9 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
               placeholder="Search or select option"
             />
           </div>
-            {errors.zone && !form.zone && (
-              <div className="text-xs text-red-500 mt-1">{errors.zone}</div>
-            )}
+          {errors.zone && !form.zone && (
+            <div className="text-xs text-red-500 mt-1">{errors.zone}</div>
+          )}
         </div>
       </div>
 

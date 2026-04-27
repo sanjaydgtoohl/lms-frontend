@@ -47,6 +47,7 @@ export interface BriefItem {
   briefDetail?: string;
   comment?: string;
   submissionDate?: string;
+  campaignDuration?: string | number;
   dateTime?: string;
   _raw?: Record<string, unknown>;
   [key: string]: unknown;
@@ -129,6 +130,7 @@ export async function listBriefs(page = 1, perPage = 10, search?: string): Promi
     const detailVal = raw['brief_detail'] ?? raw['detail'] ?? '';
     const commentVal = raw['comment'] ?? '';
     const submissionVal = raw['submission_date'] ?? raw['submission'] ?? raw['submitted_at'] ?? raw['dateTime'] ?? '';
+    const campaignDurationVal = raw['campaign_duration'] ?? '';
 
     return {
       id: String(idVal),
@@ -148,6 +150,7 @@ export async function listBriefs(page = 1, perPage = 10, search?: string): Promi
       briefDetail: String(detailVal ?? ''),
       comment: String(commentVal ?? ''),
       submissionDate: String(submissionVal ?? ''),
+      campaignDuration: campaignDurationVal !== '' ? campaignDurationVal : undefined,
       dateTime: String(raw['created_at'] ?? raw['date_time'] ?? raw['dateTime'] ?? ''),
       _raw: raw,
     } as BriefItem;
@@ -228,6 +231,7 @@ export async function getBrief(id: string): Promise<BriefItem> {
   const detailVal = raw['brief_detail'] ?? raw['detail'] ?? '';
   const commentVal = raw['comment'] ?? '';
   const submissionVal = raw['submission_date'] ?? raw['submission'] ?? raw['submitted_at'] ?? raw['dateTime'] ?? '';
+  const campaignDurationVal = raw['campaign_duration'] ?? '';
 
   return {
     id: String(idVal),
@@ -247,6 +251,7 @@ export async function getBrief(id: string): Promise<BriefItem> {
     briefDetail: String(detailVal ?? ''),
     comment: String(commentVal ?? ''),
     submissionDate: String(submissionVal ?? ''),
+    campaignDuration: campaignDurationVal !== '' ? campaignDurationVal : undefined,
     dateTime: String(raw['created_at'] ?? raw['date_time'] ?? raw['dateTime'] ?? ''),
     _raw: raw,
   } as BriefItem;

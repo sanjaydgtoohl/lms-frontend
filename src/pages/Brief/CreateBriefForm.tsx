@@ -45,6 +45,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
     // Campaign window
     campaignStartDate: '', // DD-MM-YYYY
     campaignEndDate: '', // DD-MM-YYYY
+    campaignDuration: '', // read-only from backend
     attachmentFile: null as File | null,
     // store backend-friendly values: 'programmatic' | 'non_programmatic'
     programmatic: 'programmatic',
@@ -176,6 +177,12 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
         const isoMatch2 = s2.match(/^(\d{4})-(\d{2})-(\d{2})/);
         if (isoMatch2) patched.campaignEndDate = `${isoMatch2[3]}-${isoMatch2[2]}-${isoMatch2[1]}`;
         else if (/^\d{2}-\d{2}-\d{4}$/.test(s2)) patched.campaignEndDate = s2;
+      }
+
+      const duration = initialData.campaignDuration ?? initialData.campaign_duration;
+
+      if (duration !== undefined && duration !== null) {
+        patched.campaignDuration = String(duration);
       }
 
       setForm(prev => ({ ...prev, ...patched }));
@@ -659,163 +666,163 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
   }, [initialData]);
 
   // When Priority changes, fetch brief statuses filtered by priority
-  useEffect(() => {
-    let mounted = true;
+  // useEffect(() => {
+  //   let mounted = true;
 
-    const fetchByPriority = async () => {
-      const raw = form.priority;
-      if (!raw) return;
+  //   const fetchByPriority = async () => {
+  //     const raw = form.priority;
+  //     if (!raw) return;
 
-      // If status was manually changed last, skip auto-fill
-      if (lastChangedFieldRef.current === 'status') return;
+  //     // If status was manually changed last, skip auto-fill
+  //     if (lastChangedFieldRef.current === 'status') return;
 
-      const priorityId = String(raw);
-      if (!priorityId) return;
+  //     const priorityId = String(raw);
+  //     if (!priorityId) return;
 
-      try {
-        setBriefStatusesLoading(true);
-        setBriefStatusesError(null);
+  //     try {
+  //       setBriefStatusesLoading(true);
+  //       setBriefStatusesError(null);
 
-        const res = await apiClient.get<any>(
-          `/brief-statuses/by-priority?priority_id=${encodeURIComponent(priorityId)}`
-        );
+  //       const res = await apiClient.get<any>(
+  //         `/brief-statuses/by-priority?priority_id=${encodeURIComponent(priorityId)}`
+  //       );
 
-        const body = res && res.data ? res.data : res;
+  //       const body = res && res.data ? res.data : res;
 
-        let items: any[] = [];
-        if (Array.isArray(body)) items = body;
-        else if (body && Array.isArray(body.data)) items = body.data;
-        else if (body && Array.isArray(body.brief_statuses)) items = body.brief_statuses;
+  //       let items: any[] = [];
+  //       if (Array.isArray(body)) items = body;
+  //       else if (body && Array.isArray(body.data)) items = body.data;
+  //       else if (body && Array.isArray(body.brief_statuses)) items = body.brief_statuses;
 
-        const opts = (items || [])
-          .map((s: any) => ({
-            value: String(s.id ?? s.status_id ?? s.uuid ?? ''),
-            label: String(s.name ?? s.status ?? s.brief_status ?? s.label ?? '')
-          }))
-          .filter(o => o.value && o.label);
+  //       const opts = (items || [])
+  //         .map((s: any) => ({
+  //           value: String(s.id ?? s.status_id ?? s.uuid ?? ''),
+  //           label: String(s.name ?? s.status ?? s.brief_status ?? s.label ?? '')
+  //         }))
+  //         .filter(o => o.value && o.label);
 
-        if (!mounted) return;
+  //       if (!mounted) return;
 
-        setBriefStatuses(opts);
+  //       setBriefStatuses(opts);
 
-        if (!form.status && opts.length) {
-          setForm(prev => ({ ...prev, status: opts[0].value }));
-          lastChangedFieldRef.current = 'priority';
+  //       if (!form.status && opts.length) {
+  //         setForm(prev => ({ ...prev, status: opts[0].value }));
+  //         lastChangedFieldRef.current = 'priority';
 
-          setTimeout(() => {
-            if (lastChangedFieldRef.current === 'priority')
-              lastChangedFieldRef.current = null;
-          }, 500);
+  //         setTimeout(() => {
+  //           if (lastChangedFieldRef.current === 'priority')
+  //             lastChangedFieldRef.current = null;
+  //         }, 500);
 
-        } else if (form.status) {
-          const found = opts.find(o => o.value === String(form.status));
-          if (!found) setForm(prev => ({ ...prev, status: '' }));
-        }
+  //       } else if (form.status) {
+  //         const found = opts.find(o => o.value === String(form.status));
+  //         if (!found) setForm(prev => ({ ...prev, status: '' }));
+  //       }
 
-      } catch (err: any) {
-        if (!mounted) return;
-        console.error('Failed to fetch brief statuses:', err);
-        setBriefStatusesError(err?.message || 'Failed to load brief statuses');
-      } finally {
-        if (mounted) setBriefStatusesLoading(false);
-      }
-    };
+  //     } catch (err: any) {
+  //       if (!mounted) return;
+  //       console.error('Failed to fetch brief statuses:', err);
+  //       setBriefStatusesError(err?.message || 'Failed to load brief statuses');
+  //     } finally {
+  //       if (mounted) setBriefStatusesLoading(false);
+  //     }
+  //   };
 
-    fetchByPriority();
+  //   fetchByPriority();
 
-    return () => {
-      mounted = false;
-    };
+  //   return () => {
+  //     mounted = false;
+  //   };
 
-  }, [form.priority, form.status]);
+  // }, [form.priority, form.status]);
 
-  // When Brief Status changes, fetch Priority options related to that status
-  useEffect(() => {
-    let mounted = true;
-    const fetchPrioritiesForStatus = async () => {
-      const raw = form.status;
-      if (!raw) return;
-      // If priority was manually changed last, skip auto-fill to avoid reciprocal update
-      if (lastChangedFieldRef.current === 'priority') return;
-      // try to determine brief_status_id
-      let statusId: string | undefined;
-      if (/^\d+$/.test(String(raw))) statusId = String(raw);
-      else {
-        const found = (briefStatuses || []).find((b: any) => String((b as any).value ?? b) === String(raw) || String((b as any).label ?? b).toLowerCase() === String(raw).toLowerCase());
-        if (found) statusId = typeof found === 'string' ? String(found) : String((found as any).value ?? found);
-      }
-      if (!statusId) return;
+  // // When Brief Status changes, fetch Priority options related to that status
+  // useEffect(() => {
+  //   let mounted = true;
+  //   const fetchPrioritiesForStatus = async () => {
+  //     const raw = form.status;
+  //     if (!raw) return;
+  //     // If priority was manually changed last, skip auto-fill to avoid reciprocal update
+  //     if (lastChangedFieldRef.current === 'priority') return;
+  //     // try to determine brief_status_id
+  //     let statusId: string | undefined;
+  //     if (/^\d+$/.test(String(raw))) statusId = String(raw);
+  //     else {
+  //       const found = (briefStatuses || []).find((b: any) => String((b as any).value ?? b) === String(raw) || String((b as any).label ?? b).toLowerCase() === String(raw).toLowerCase());
+  //       if (found) statusId = typeof found === 'string' ? String(found) : String((found as any).value ?? found);
+  //     }
+  //     if (!statusId) return;
 
-      try {
-        setPriorityLoading(true);
-        setPriorityError(null);
-        const res = await apiClient.get<any>(`/brief-statuses/priorities?brief_status_id=${encodeURIComponent(statusId)}`);
-        console.log('Raw API response for priorities:', res);
+  //     try {
+  //       setPriorityLoading(true);
+  //       setPriorityError(null);
+  //       const res = await apiClient.get<any>(`/brief-statuses/priorities?brief_status_id=${encodeURIComponent(statusId)}`);
+  //       console.log('Raw API response for priorities:', res);
 
-        // API response structure: { success, message, meta, data: {id, name} OR [...] }
-        let items: any[] = [];
-        const responseData = res?.data || res;
-        console.log('Response data:', responseData);
+  //       // API response structure: { success, message, meta, data: {id, name} OR [...] }
+  //       let items: any[] = [];
+  //       const responseData = res?.data || res;
+  //       console.log('Response data:', responseData);
 
-        // Check what type of data we have
-        if (Array.isArray(responseData)) {
-          // Data is already an array of priorities
-          items = responseData;
-        } else if (responseData && typeof responseData === 'object') {
-          // Check if it's a single priority object (has id and name)
-          if (responseData.id && responseData.name) {
-            // Single priority object
-            items = [responseData];
-          } else if (Array.isArray(responseData.data)) {
-            // Wrapped in .data array
-            items = responseData.data;
-          } else if (responseData.data && typeof responseData.data === 'object' && responseData.data.id) {
-            // Single object wrapped in .data
-            items = [responseData.data];
-          }
-        }
+  //       // Check what type of data we have
+  //       if (Array.isArray(responseData)) {
+  //         // Data is already an array of priorities
+  //         items = responseData;
+  //       } else if (responseData && typeof responseData === 'object') {
+  //         // Check if it's a single priority object (has id and name)
+  //         if (responseData.id && responseData.name) {
+  //           // Single priority object
+  //           items = [responseData];
+  //         } else if (Array.isArray(responseData.data)) {
+  //           // Wrapped in .data array
+  //           items = responseData.data;
+  //         } else if (responseData.data && typeof responseData.data === 'object' && responseData.data.id) {
+  //           // Single object wrapped in .data
+  //           items = [responseData.data];
+  //         }
+  //       }
 
-        console.log('Extracted priority items:', items);
-        const opts = (items || []).map((p: any) => {
-          const id = String(p.id ?? '').trim();
-          const label = String(p.name ?? '').trim();
-          console.log('Mapping priority:', { id, label, source: p });
-          return { value: id, label };
-        }).filter(o => o.value && o.label);
+  //       console.log('Extracted priority items:', items);
+  //       const opts = (items || []).map((p: any) => {
+  //         const id = String(p.id ?? '').trim();
+  //         const label = String(p.name ?? '').trim();
+  //         console.log('Mapping priority:', { id, label, source: p });
+  //         return { value: id, label };
+  //       }).filter(o => o.value && o.label);
 
-        console.log('Final filtered priority options:', opts);
+  //       console.log('Final filtered priority options:', opts);
 
-        if (!mounted) return;
-        setPriorityOptions(opts);
+  //       if (!mounted) return;
+  //       setPriorityOptions(opts);
 
-        if (opts.length) {
-          // Auto-select first priority if none selected
-          if (!form.priority) {
-            console.log('Auto-selecting first priority:', opts[0]);
-            setForm(prev => ({ ...prev, priority: opts[0].value }));
-            // mark that status auto-filled the priority to prevent immediate reciprocal fetch
-            lastChangedFieldRef.current = 'status';
-            setTimeout(() => { if (lastChangedFieldRef.current === 'status') lastChangedFieldRef.current = null; }, 500);
-          } else {
-            const found = opts.find(o => o.value === String(form.priority));
-            if (!found) setForm(prev => ({ ...prev, priority: '' }));
-          }
-        } else {
-          console.warn('No priority options found for status:', statusId, 'responseData:', responseData);
-          setForm(prev => ({ ...prev, priority: '' }));
-        }
-      } catch (err: any) {
-        if (!mounted) return;
-        console.error('Failed to fetch priorities:', err);
-        setPriorityError(err?.message || 'Failed to load priorities');
-      } finally {
-        if (mounted) setPriorityLoading(false);
-      }
-    };
+  //       if (opts.length) {
+  //         // Auto-select first priority if none selected
+  //         if (!form.priority) {
+  //           console.log('Auto-selecting first priority:', opts[0]);
+  //           setForm(prev => ({ ...prev, priority: opts[0].value }));
+  //           // mark that status auto-filled the priority to prevent immediate reciprocal fetch
+  //           lastChangedFieldRef.current = 'status';
+  //           setTimeout(() => { if (lastChangedFieldRef.current === 'status') lastChangedFieldRef.current = null; }, 500);
+  //         } else {
+  //           const found = opts.find(o => o.value === String(form.priority));
+  //           if (!found) setForm(prev => ({ ...prev, priority: '' }));
+  //         }
+  //       } else {
+  //         console.warn('No priority options found for status:', statusId, 'responseData:', responseData);
+  //         setForm(prev => ({ ...prev, priority: '' }));
+  //       }
+  //     } catch (err: any) {
+  //       if (!mounted) return;
+  //       console.error('Failed to fetch priorities:', err);
+  //       setPriorityError(err?.message || 'Failed to load priorities');
+  //     } finally {
+  //       if (mounted) setPriorityLoading(false);
+  //     }
+  //   };
 
-    fetchPrioritiesForStatus();
-    return () => { mounted = false; };
-  }, [form.status, briefStatuses, form.priority]);
+  //   fetchPrioritiesForStatus();
+  //   return () => { mounted = false; };
+  // }, [form.status, briefStatuses, form.priority]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -843,6 +850,20 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
     if (!form.submissionTime || String(form.submissionTime).trim() === '') next.submissionTime = 'Please Select Submission Time';
     if (!form.campaignStartDate || String(form.campaignStartDate).trim() === '') next.campaignStartDate = 'The campaign start date field is required.';
     if (!form.campaignEndDate || String(form.campaignEndDate).trim() === '') next.campaignEndDate = 'The campaign end date field is required.';
+    if (!form.productName || String(form.productName).trim() === '') next.productName = 'Please Enter Product Name';
+    if (!form.budget || String(form.budget).trim() === '') next.budget = 'Please Enter Brief Budget';
+
+    if (form.campaignStartDate && form.campaignEndDate) {
+      const parseDate = (dStr: string) => {
+        const [dd, mm, yyyy] = String(dStr).split('-');
+        return new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+      };
+      const start = parseDate(form.campaignStartDate);
+      const end = parseDate(form.campaignEndDate);
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end.getTime() < start.getTime()) {
+        next.campaignEndDate = 'End date cannot be before start date.';
+      }
+    }
 
     setErrors(next);
     if (Object.keys(next).length > 0) return;
@@ -974,6 +995,25 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
     }
   };
 
+  // Calculate Campaign Duration dynamically
+  const getCalculatedDuration = () => {
+    if (form.campaignStartDate && form.campaignEndDate) {
+      const parseDateUTC = (dStr: string) => {
+        const [dd, mm, yyyy] = dStr.split('-');
+        return Date.UTC(Number(yyyy), Number(mm) - 1, Number(dd));
+      };
+      const start = parseDateUTC(form.campaignStartDate);
+      const end = parseDateUTC(form.campaignEndDate);
+      if (!isNaN(start) && !isNaN(end)) {
+        const diffTime = end - start;
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        return diffDays > 0 ? diffDays : 0;
+      }
+    }
+    const durVal = Number(form.campaignDuration);
+    return form.campaignDuration && !isNaN(durVal) ? durVal : 0;
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -1022,10 +1062,21 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                   {brandsError && <div className="text-xs text-red-600 mt-1">{brandsError}</div>}
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-800 mb-1">Product Name</label>
-                  <input name="productName" value={form.productName} onChange={handleChange}
+                  <label className="block text-sm text-gray-800 mb-1">Product Name <span className="text-[#FF0000]">*</span></label>
+                  <input name="productName" value={form.productName} onChange={(e) => { handleChange(e); setErrors(prev => ({ ...prev, productName: '' })); }}
                     placeholder="Please enter product name"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white" />
+                    className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors ${errors.productName ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-gray-200 focus:ring-blue-500'}`}
+                    aria-invalid={errors.productName ? 'true' : 'false'}
+                    aria-describedby={errors.productName ? 'productName-error' : undefined}
+                  />
+                  {errors.productName && (
+                    <div id="productName-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                      <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      {errors.productName}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm text-gray-800 mb-1">Assign To</label>
@@ -1169,17 +1220,27 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                   {agenciesError && <div className="text-xs text-red-600 mt-1">{agenciesError}</div>}
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-800 mb-1">Brief Budget</label>
+                  <label className="block text-sm text-gray-800 mb-1">Brief Budget <span className="text-[#FF0000]">*</span></label>
                   <input
                     type="number"
                     min="0"
                     step="0.01"
                     name="budget"
                     value={form.budget}
-                    onChange={handleChange}
+                    onChange={(e) => { handleChange(e); setErrors(prev => ({ ...prev, budget: '' })); }}
                     placeholder="Please Enter Est. Budget"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white"
+                    className={`w-full px-3 py-2 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 transition-colors ${errors.budget ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-gray-200 focus:ring-blue-500'}`}
+                    aria-invalid={errors.budget ? 'true' : 'false'}
+                    aria-describedby={errors.budget ? 'budget-error' : undefined}
                   />
+                  {errors.budget && (
+                    <div id="budget-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                      <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      {errors.budget}
+                    </div>
+                  )}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="w-full">
@@ -1295,7 +1356,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                           setForm(prev => ({ ...prev, campaignEndDate: `${dd}-${mm}-${yyyy}` }));
                         }
                       }}
-                      minDate={new Date()}
+                      minDate={calendarCampaignStartDate || new Date()}
                       dateFormat="dd-MM-yyyy"
                       placeholderText="DD-MM-YYYY"
                       className={`w-full px-3 py-2 rounded-lg bg-white transition-colors ${errors.campaignEndDate ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-gray-200'}`}
@@ -1310,6 +1371,16 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                       </div>
                     )}
                   </div>
+                </div>
+                <div className="w-full">
+                  <label className="block text-sm text-gray-800 mb-1">Campaign Duration</label>
+                  <input
+                    type="number"
+                    value={getCalculatedDuration()}
+                    disabled
+                    placeholder="0"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">Priority</label>
@@ -1343,7 +1414,7 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                   />
                 </div>
 
-                
+
                 {/* Brief Detail moved to pair with Select Type for aligned row */}
               </div>
             </div>

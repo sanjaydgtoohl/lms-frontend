@@ -114,8 +114,6 @@ export async function listMissCampaigns(page = 1, perPage = 10, search?: string,
     const city = it.city?.name ?? it.city ?? '';
     const state = it.state?.name ?? it.state ?? '';
     const country = it.country?.name ?? it.country ?? '';
-    const assignTo = it.assign_to_name ?? it.current_assign_user_name ?? it.assigned_user?.name ?? (it.current_assign_user && typeof it.current_assign_user === 'object' ? it.current_assign_user.name : '') ?? '';
-    const assignBy = it.assign_by_name ?? it.created_by_user?.name ?? it.created_by ?? '';
     const normalizeNestedValue = (raw: any): string => {
       if (typeof raw === 'string') return raw;
       if (typeof raw === 'number') return String(raw);
@@ -123,7 +121,6 @@ export async function listMissCampaigns(page = 1, perPage = 10, search?: string,
         const candidate = raw.name ?? raw.label ?? raw.type ?? raw.value ?? raw.title ?? raw.media_type ?? raw.mediaType ?? raw.media;
         if (typeof candidate === 'string' && candidate.trim() !== '') return candidate;
         if (typeof candidate === 'number') return String(candidate);
-        // Try any string value in the object if common keys not found
         const firstString = Object.values(raw).find((v) => typeof v === 'string');
         if (typeof firstString === 'string' && firstString.trim() !== '') return firstString;
         const firstNumber = Object.values(raw).find((v) => typeof v === 'number');
@@ -131,6 +128,11 @@ export async function listMissCampaigns(page = 1, perPage = 10, search?: string,
       }
       return '';
     };
+
+    const rawAssignTo = it.assign_to_name ?? it.current_assign_user_name ?? it.assigned_user?.name ?? (it.current_assign_user && typeof it.current_assign_user === 'object' ? it.current_assign_user.name : '') ?? '';
+    const assignTo = rawAssignTo || (it.assign_to ? normalizeNestedValue(it.assign_to) : '') || '';
+    const rawAssignBy = it.assign_by_name ?? it.created_by_user?.name ?? '';
+    const assignBy = rawAssignBy || (it.assign_by ? normalizeNestedValue(it.assign_by) : '') || (it.created_by ? normalizeNestedValue(it.created_by) : '') || '';
 
     const sourceId = it.lead_source?.id ?? it.lead_source_id ?? it.source_id ?? it.sourceId ?? it.lead_source?.value ?? '';
     const mediaTypeId = it.media?.id ?? it.media_type_id ?? it.mediaTypeId ?? it.media_type?.id ?? '';

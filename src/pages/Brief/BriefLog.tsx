@@ -82,17 +82,17 @@ const BriefLog: React.FC = () => {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter((log) =>
-        (log.brief_name || '').toString().toLowerCase().includes(query) ||
+        (log.brief_name || log.name || `Brief #${log.brief_id ?? log.id}` || '').toString().toLowerCase().includes(query) ||
         (log.action || '').toString().toLowerCase().includes(query) ||
-        (log.description || '').toString().toLowerCase().includes(query) ||
+        (log.comment || log.description || '').toString().toLowerCase().includes(query) ||
         (log.budget || '').toString().toLowerCase().includes(query) ||
-        (log.brand_name || '').toString().toLowerCase().includes(query) ||
+        (log.brand_name || log.brand?.name || '').toString().toLowerCase().includes(query) ||
         (log.product_name || '').toString().toLowerCase().includes(query) ||
-        ((log.contact_person && (log.contact_person as any).name) || '').toString().toLowerCase().includes(query) ||
+        (typeof log.contact_person === 'string' ? log.contact_person || '' : (log.contact_person as any)?.name || '').toString().toLowerCase().includes(query) ||
         (log.mode_of_campaign || '').toString().toLowerCase().includes(query) ||
         (log.media_type || '').toString().toLowerCase().includes(query) ||
         (log.priority || '').toString().toLowerCase().includes(query) ||
-        (log.status || '').toString().toLowerCase().includes(query)
+        (log.status || (log.planner_status as any)?.name || log.planner_status || '').toString().toLowerCase().includes(query)
       );
     }
 
@@ -195,6 +195,11 @@ const BriefLog: React.FC = () => {
         const dateTime = parts.slice(0, 2).join(' ');
         return new Date(dateTime).toLocaleString();
       },
+    },
+    {
+      key: 'campaign_duration',
+      header: 'Campaign Duration',
+      render: (item) => item.campaign_duration !== undefined && item.campaign_duration !== null ? `${item.campaign_duration}` : 'N/A',
     },
     {
       key: 'action',
