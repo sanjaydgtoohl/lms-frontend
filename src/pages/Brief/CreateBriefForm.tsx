@@ -12,6 +12,8 @@ import { motion } from 'framer-motion';
 import { MasterFormHeader, SelectField } from '../../components/ui';
 import SweetAlert from '../../utils/SweetAlert';
 import { apiClient } from '../../utils/apiClient';
+import FilePreviewModal from '../../components/ui/FilePreviewModal';
+import { Eye } from 'lucide-react';
 // Dropdown UI uses SelectField component
 
 type Props = {
@@ -91,6 +93,23 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
   const [historiesLoading, setHistoriesLoading] = useState(false);
   const [, setHistoriesError] = useState<string | null>(null);
   const [, setBrandAgencyLoading] = useState(false);
+  const [isAttachmentModalOpen, setIsAttachmentModalOpen] = useState(false);
+  const [attachmentModalSource, setAttachmentModalSource] = useState<{ kind: 'remote'; url: string; name?: string } | null>(null);
+
+  const existingAttachmentUrl = String(
+    initialData?.attachmentUrl ||
+      initialData?.attachment_url ||
+      initialData?.attachment ||
+      initialData?.attachment_path ||
+      initialData?.attachment_file_url ||
+      initialData?.file_url ||
+      initialData?.file_path ||
+      initialData?.document_url ||
+      ''
+  ).trim();
+  const existingAttachmentName =
+    String(initialData?.attachmentName || initialData?.attachment_name || '').trim() ||
+    (existingAttachmentUrl ? existingAttachmentUrl.split('/').pop() : '');
 
   // Track which field was manually changed to prevent both auto-fill conditions from running
   const lastChangedFieldRef = useRef<'brand' | 'agency' | 'status' | 'priority' | null>(null);
@@ -1154,18 +1173,42 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
                         <div className="truncate text-sm font-medium text-gray-900">
-                          {form.attachmentFile ? form.attachmentFile.name : 'No file selected'}
+                          {form.attachmentFile
+                            ? form.attachmentFile.name
+                            : existingAttachmentName
+                              ? existingAttachmentName
+                              : 'No file selected'}
                         </div>
                         <div className="text-xs text-gray-500 mt-0.5">
-                          {form.attachmentFile ? `${Math.round((form.attachmentFile.size / 1024) * 10) / 10} KB` : 'PDF, JPG, PNG, DOCX'}
+                          {form.attachmentFile
+                            ? `${Math.round((form.attachmentFile.size / 1024) * 10) / 10} KB`
+                            : existingAttachmentUrl
+                              ? 'Current file attached'
+                              : 'PDF, JPG, PNG, DOCX'}
                         </div>
                       </div>
-                      <label
-                        htmlFor="attachmentFile"
-                        className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 cursor-pointer"
-                      >
-                        Choose file
-                      </label>
+                      <div className="flex items-center gap-2">
+                        {existingAttachmentUrl && !form.attachmentFile && (
+                          <button
+                            type="button"
+                            className="inline-flex items-center justify-center w-10 h-10 rounded-md border border-gray-300 bg-white text-blue-700 hover:bg-gray-50"
+                            onClick={() => {
+                              setAttachmentModalSource({ kind: 'remote', url: existingAttachmentUrl, name: existingAttachmentName || undefined });
+                              setIsAttachmentModalOpen(true);
+                            }}
+                            aria-label="View current attachment"
+                            title="View current attachment"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                        )}
+                        <label
+                          htmlFor="attachmentFile"
+                          className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 cursor-pointer"
+                        >
+                          {existingAttachmentUrl ? 'Replace' : 'Choose file'}
+                        </label>
+                      </div>
                     </div>
                     <input
                       id="attachmentFile"
@@ -1427,6 +1470,15 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
           </form>
         </div>
       </div>
+
+      <FilePreviewModal
+        isOpen={isAttachmentModalOpen}
+        source={attachmentModalSource}
+        onClose={() => {
+          setIsAttachmentModalOpen(false);
+          setAttachmentModalSource(null);
+        }}
+      />
       {/* When editing a brief, show call history / pipeline table similar to design */}
       {mode === 'edit' && (
         <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mt-6">

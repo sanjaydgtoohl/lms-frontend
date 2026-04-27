@@ -12,6 +12,8 @@ import { listBriefLogs } from '../../services/BriefLog';
 import type { BriefLogItem } from '../../services/BriefLog';
 import { getPlannerStatuses } from '../../services/BriefLog';
 import SweetAlert from '../../utils/SweetAlert';
+import FilePreviewModal from '../../components/ui/FilePreviewModal';
+import { Eye } from 'lucide-react';
 
 // Data is fetched from API via `listBriefLogs` service
 
@@ -28,6 +30,8 @@ const BriefLog: React.FC = () => {
   const [plannerStatusOptions, setPlannerStatusOptions] = useState<{ id: number; name: string }[]>([]);
   const [statusUpdatingId, setStatusUpdatingId] = useState<number | null>(null);
   // removed unused pendingStatusChange state
+  const [isAttachmentModalOpen, setIsAttachmentModalOpen] = useState(false);
+  const [attachmentModalSource, setAttachmentModalSource] = useState<{ kind: 'remote'; url: string; name?: string } | null>(null);
 
   // Status options for the dropdown (from API)
   const statusOptions = useMemo(() => plannerStatusOptions, [plannerStatusOptions]);
@@ -179,6 +183,42 @@ const BriefLog: React.FC = () => {
       },
     },
     {
+      key: 'attachment',
+      header: 'Attachment',
+      render: (item) => {
+        const url = String(
+          (item as any).attachmentUrl ||
+            (item as any).attachment_url ||
+            (item as any).attachment ||
+            (item as any).attachment_path ||
+            (item as any).attachment_file_url ||
+            (item as any).file_url ||
+            (item as any).file_path ||
+            (item as any).document_url ||
+            ''
+        ).trim();
+        if (!url) return <span className="text-xs text-gray-400">—</span>;
+        const name =
+          String((item as any).attachmentName || (item as any).attachment_name || '').trim() ||
+          url.split('/').pop();
+        return (
+          <button
+            type="button"
+            className="inline-flex items-center justify-center w-9 h-9 rounded-md border border-gray-200 bg-white hover:bg-gray-50 text-blue-700 hover:text-blue-900"
+            onClick={() => {
+              setAttachmentModalSource({ kind: 'remote', url, name: name || undefined });
+              setIsAttachmentModalOpen(true);
+            }}
+            aria-label="View attachment"
+            title="View attachment"
+          >
+            <Eye className="w-4 h-4" />
+          </button>
+        );
+      },
+      className: 'whitespace-nowrap',
+    },
+    {
       key: 'description',
       header: 'Brief Detail',
       render: (item) => item.comment || item.description,
@@ -328,6 +368,15 @@ const BriefLog: React.FC = () => {
           onPageChange={setCurrentPage}
         />
       </div>
+
+      <FilePreviewModal
+        isOpen={isAttachmentModalOpen}
+        source={attachmentModalSource}
+        onClose={() => {
+          setIsAttachmentModalOpen(false);
+          setAttachmentModalSource(null);
+        }}
+      />
     </div>
   );
 };

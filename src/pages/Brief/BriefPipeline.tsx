@@ -21,6 +21,8 @@ import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '../../redux/store';
 import { setUnreadCount, setNotifications } from '../../redux/slices/notificationSlice';
 import { getUnreadNotificationCount, listNotifications } from '../../services/notifications';
+import FilePreviewModal from '../../components/ui/FilePreviewModal';
+import { Eye } from 'lucide-react';
 
 type Brief = ServiceBriefItem;
 
@@ -54,6 +56,8 @@ const BriefPipeline: React.FC = () => {
   const [editItem, setEditItem] = useState<Brief | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
+  const [isAttachmentModalOpen, setIsAttachmentModalOpen] = useState(false);
+  const [attachmentModalSource, setAttachmentModalSource] = useState<{ kind: 'remote'; url: string; name?: string } | null>(null);
 
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentData = briefs;
@@ -271,6 +275,17 @@ const BriefPipeline: React.FC = () => {
 
   const handlePageChange = (page: number) => setCurrentPage(page);
 
+  const openAttachment = (it: Brief) => {
+    const url =
+      String((it as any).attachmentUrl || (it as any)._raw?.attachment_url || (it as any)._raw?.file_url || (it as any)._raw?.document_url || '').trim();
+    if (!url) return;
+    const name =
+      String((it as any).attachmentName || (it as any)._raw?.attachment_name || '').trim() ||
+      url.split('/').pop();
+    setAttachmentModalSource({ kind: 'remote', url, name });
+    setIsAttachmentModalOpen(true);
+  };
+
   // Tooltip state for Brief Detail full text on hover
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const [tooltipContent, setTooltipContent] = useState('');
@@ -458,6 +473,26 @@ const BriefPipeline: React.FC = () => {
                   return String(priorityVal ?? '');
                 }, className: 'whitespace-nowrap overflow-hidden truncate' },
                 { key: 'budget', header: 'Budget', render: (it: Brief) => String(it.budget ?? ''), className: 'whitespace-nowrap overflow-hidden truncate' },
+                {
+                  key: 'attachment',
+                  header: 'Attachment',
+                  render: (it: Brief) => {
+                    const url = String((it as any).attachmentUrl || (it as any)._raw?.attachment_url || (it as any)._raw?.file_url || (it as any)._raw?.document_url || '').trim();
+                    if (!url) return <span className="text-xs text-gray-400">—</span>;
+                    return (
+                      <button
+                        type="button"
+                        className="inline-flex items-center justify-center w-9 h-9 rounded-md border border-gray-200 bg-white hover:bg-gray-50 text-blue-700 hover:text-blue-900"
+                        onClick={() => openAttachment(it)}
+                        aria-label="View attachment"
+                        title="View attachment"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    );
+                  },
+                  className: 'whitespace-nowrap',
+                },
                 { key: 'createdBy', header: 'Created By', render: (it: Brief) => {
                   const createdByVal = it.createdBy;
                   if (typeof createdByVal === 'object' && createdByVal !== null && 'name' in createdByVal) {
@@ -581,6 +616,15 @@ const BriefPipeline: React.FC = () => {
             loading={confirmLoading}
             onCancel={() => setConfirmDeleteId(null)}
             onConfirm={confirmDelete}
+          />
+
+          <FilePreviewModal
+            isOpen={isAttachmentModalOpen}
+            source={attachmentModalSource}
+            onClose={() => {
+              setIsAttachmentModalOpen(false);
+              setAttachmentModalSource(null);
+            }}
           />
         </>
       )}
