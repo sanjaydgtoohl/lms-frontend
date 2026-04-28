@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MasterCreateHeader } from '../../components/ui/MasterCreateHeader';
 import Table, { type Column } from '../../components/ui/Table';
-import { Mail, Eye, Bold, Italic, List, ListOrdered, X } from 'lucide-react';
+// import { Mail, Eye, Bold, Italic, List, ListOrdered, X } from 'lucide-react';
 import LeadManagementSection from '../../components/forms/CreateLead/LeadManagementSection';
 import ContactPersonsCard from '../../components/forms/CreateLead/ContactPersonsCard';
 import AssignPriorityCard from '../../components/forms/CreateLead/AssignPriorityCard';
@@ -62,14 +62,14 @@ const EditLead: React.FC = () => {
   const [emailTo, setEmailTo] = useState('');
   const [emailSubject, setEmailSubject] = useState('');
   const [emailBody, setEmailBody] = useState('');
-  const [sendingEmail, setSendingEmail] = useState(false);
+  // const [sendingEmail, setSendingEmail] = useState(false);
   const [templateName, setTemplateName] = useState('');
   const [isCodeView, setIsCodeView] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [templateNameError, setTemplateNameError] = useState('');
-  const [subjectError, setSubjectError] = useState('');
-  const [emailToError, setEmailToError] = useState('');
-  const [emailBodyError, setEmailBodyError] = useState('');
+  // const [isFullscreen, setIsFullscreen] = useState(false);
+  // const [templateNameError, setTemplateNameError] = useState('');
+  // const [subjectError, setSubjectError] = useState('');
+  // const [emailToError, setEmailToError] = useState('');
+  // const [emailBodyError, setEmailBodyError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const editorRef = useRef<HTMLDivElement>(null);
 
@@ -297,97 +297,97 @@ const EditLead: React.FC = () => {
     }
   };
 
-  const handleSave = async () => {
-    setTemplateNameError('');
-    setSubjectError('');
-    setEmailToError('');
-    setEmailBodyError('');
-    setSuccessMessage('');
-    if (!emailTo.trim() || !emailTo.includes('@')) {
-      setEmailToError('Valid email address is required.');
-      return;
-    }
-    if (!templateName.trim()) {
-      setTemplateNameError('Template Name is required.');
-      return;
-    }
-    if (!emailSubject.trim()) {
-      setSubjectError('Subject is required.');
-      return;
-    }
-    const body = isCodeView ? emailBody : (editorRef.current?.innerHTML || '');
-    if (!body.trim()) {
-      setEmailBodyError('Email body is required.');
-      return;
-    }
-    setSendingEmail(true);
-    try {
-      let t = gmailService.getAccessToken();
-      if (!t) {
-        t = await gmailService.requestAccessToken('consent');
-      }
-      const body = isCodeView ? emailBody : (editorRef.current?.innerHTML || '');
-      await gmailService.sendEmail(emailTo, emailSubject, body);
-      setSuccessMessage('Email sent successfully.');
-      setTimeout(() => {
-        setShowEmailComposer(false);
-        handleClear();
-      }, 2000);
-    } catch (err: any) {
-      setTemplateNameError('Failed to send email: ' + String(err));
-    } finally {
-      setSendingEmail(false);
-    }
-  };
+  // const handleSave = async () => {
+  //   setTemplateNameError('');
+  //   setSubjectError('');
+  //   setEmailToError('');
+  //   setEmailBodyError('');
+  //   setSuccessMessage('');
+  //   if (!emailTo.trim() || !emailTo.includes('@')) {
+  //     setEmailToError('Valid email address is required.');
+  //     return;
+  //   }
+  //   if (!templateName.trim()) {
+  //     setTemplateNameError('Template Name is required.');
+  //     return;
+  //   }
+  //   if (!emailSubject.trim()) {
+  //     setSubjectError('Subject is required.');
+  //     return;
+  //   }
+  //   const body = isCodeView ? emailBody : (editorRef.current?.innerHTML || '');
+  //   if (!body.trim()) {
+  //     setEmailBodyError('Email body is required.');
+  //     return;
+  //   }
+  //   setSendingEmail(true);
+  //   try {
+  //     let t = gmailService.getAccessToken();
+  //     if (!t) {
+  //       t = await gmailService.requestAccessToken('consent');
+  //     }
+  //     const body = isCodeView ? emailBody : (editorRef.current?.innerHTML || '');
+  //     await gmailService.sendEmail(emailTo, emailSubject, body);
+  //     setSuccessMessage('Email sent successfully.');
+  //     setTimeout(() => {
+  //       setShowEmailComposer(false);
+  //       handleClear();
+  //     }, 2000);
+  //   } catch (err: any) {
+  //     setTemplateNameError('Failed to send email: ' + String(err));
+  //   } finally {
+  //     setSendingEmail(false);
+  //   }
+  // };
 
-  const handleFormat = (command: string, value?: string) => {
-    if (editorRef.current) {
-      editorRef.current.focus();
-      document.execCommand(command, false, value);
-    }
-  };
+  // const handleFormat = (command: string, value?: string) => {
+  //   if (editorRef.current) {
+  //     editorRef.current.focus();
+  //     document.execCommand(command, false, value);
+  //   }
+  // };
 
-  const handleInsertLink = () => {
-    const url = prompt('Enter URL:');
-    if (url) handleFormat('createLink', url);
-  };
+  // const handleInsertLink = () => {
+  //   const url = prompt('Enter URL:');
+  //   if (url) handleFormat('createLink', url);
+  // };
 
-  const handleInsertImage = () => {
-    const url = prompt('Enter Image URL:');
-    if (url) handleFormat('insertImage', url);
-  };
+  // const handleInsertImage = () => {
+  //   const url = prompt('Enter Image URL:');
+  //   if (url) handleFormat('insertImage', url);
+  // };
 
-  const handleFontSize = (size: string) => {
-    handleFormat('fontSize', size);
-  };
+  // const handleFontSize = (size: string) => {
+  //   handleFormat('fontSize', size);
+  // };
 
-  const handleCodeViewToggle = () => {
-    if (isCodeView) {
-      // Switch to WYSIWYG
-      if (editorRef.current) {
-        editorRef.current.innerHTML = emailBody;
-      }
-    } else {
-      // Switch to code view
-      if (editorRef.current) {
-        setEmailBody(editorRef.current.innerHTML);
-      }
-    }
-    setIsCodeView(!isCodeView);
-  };
+  // const handleCodeViewToggle = () => {
+  //   if (isCodeView) {
+  //     // Switch to WYSIWYG
+  //     if (editorRef.current) {
+  //       editorRef.current.innerHTML = emailBody;
+  //     }
+  //   } else {
+  //     // Switch to code view
+  //     if (editorRef.current) {
+  //       setEmailBody(editorRef.current.innerHTML);
+  //     }
+  //   }
+  //   setIsCodeView(!isCodeView);
+  // };
 
-  const handleClear = () => {
-    setTemplateName('');
-    setEmailSubject('');
-    setEmailBody('');
-    setEmailTo('');
-    setTemplateNameError('');
-    setSubjectError('');
-    setEmailToError('');
-    setEmailBodyError('');
-    setSuccessMessage('');
-    if (editorRef.current) editorRef.current.innerHTML = '';
-  };
+  // const handleClear = () => {
+  //   setTemplateName('');
+  //   setEmailSubject('');
+  //   setEmailBody('');
+  //   setEmailTo('');
+  //   setTemplateNameError('');
+  //   setSubjectError('');
+  //   setEmailToError('');
+  //   setEmailBodyError('');
+  //   setSuccessMessage('');
+  //   if (editorRef.current) editorRef.current.innerHTML = '';
+  // };
 
   if (isLoading) {
     return (
