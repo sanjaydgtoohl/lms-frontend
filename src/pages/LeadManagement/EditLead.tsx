@@ -71,7 +71,7 @@ const EditLead: React.FC = () => {
   // const [emailToError, setEmailToError] = useState('');
   // const [emailBodyError, setEmailBodyError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const editorRef = useRef<HTMLDivElement>(null);
+  // const editorRef = useRef<HTMLDivElement>(null);
 
   const handlePriorityChange = useCallback(({ assignTo, priority, callFeedback }: { assignTo?: string; priority?: string; callFeedback?: string }) => {
     setLead(prev => prev ? { ...prev, assignTo, priority, ...(callFeedback !== undefined ? { callFeedback } : {}) } : null);
