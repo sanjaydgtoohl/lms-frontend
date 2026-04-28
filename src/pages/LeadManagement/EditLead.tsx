@@ -468,7 +468,7 @@ const EditLead: React.FC = () => {
         </div>
 
         {/* Email Activity Section */}
-        <div className="bg-gray-50 rounded-2xl shadow-sm border border-gray-200 p-4">
+        {/* <div className="bg-gray-50 rounded-2xl shadow-sm border border-gray-200 p-4">
           <div className="flex justify-between items-center mb-3">
             <h3 className="text-sm text-gray-800 font-medium">Email Activity</h3>
             <Button onClick={() => { setShowEmailComposer(true); setEmailTo(lead.contacts[0]?.email || ''); }}>Send Email</Button>
@@ -610,7 +610,7 @@ const EditLead: React.FC = () => {
               </div>
             ))}
           </div>
-        </div>
+        </div> */}
 
         {/* Call Details Table Section */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
@@ -685,8 +685,6 @@ const EditLead: React.FC = () => {
             </div>
           </div>
         </div>
-
-
       </div>
     </div>
   );
