@@ -184,15 +184,15 @@ const EditLead: React.FC = () => {
     }
   }, [successMessage]);
 
-  useEffect(() => {
-    if (showEmailComposer && editorRef.current) {
-      // Ensure editor is properly initialized
-      editorRef.current.focus();
-      if (!editorRef.current.innerHTML) {
-        editorRef.current.innerHTML = emailBody;
-      }
-    }
-  }, [showEmailComposer, emailBody]);
+  // useEffect(() => {
+  //   if (showEmailComposer && editorRef.current) {
+  //     // Ensure editor is properly initialized
+  //     editorRef.current.focus();
+  //     if (!editorRef.current.innerHTML) {
+  //       editorRef.current.innerHTML = emailBody;
+  //     }
+  //   }
+  // }, [showEmailComposer, emailBody]);
 
   // Fetch brand/agency options when selectedOption changes
   useEffect(() => {
