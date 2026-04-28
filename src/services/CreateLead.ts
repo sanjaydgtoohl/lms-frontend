@@ -71,10 +71,36 @@ export async function getBrands(): Promise<Brand[]> {
   }
 }
 
+export async function getBrandLists(): Promise<Brand[]> {
+  try {
+    const res = await apiClient.get<Brand[]>('/brands/list');
+    if (!res || !res.success) {
+      throw new Error(res?.message || 'Failed to fetch brands');
+    }
+    return res.data;
+  } catch (error) {
+    handleApiError(error);
+    throw error;
+  }
+}
+
 // --- Fetch agencies for dropdown ---
 export async function getAgencies(): Promise<Agency[]> {
   try {
     const res = await apiClient.get<Agency[]>('/agencies');
+    if (!res || !res.success) {
+      throw new Error(res?.message || 'Failed to fetch agencies');
+    }
+    return res.data;
+  } catch (error) {
+    handleApiError(error);
+    throw error;
+  }
+}
+
+export async function getAgenciesLists(): Promise<Agency[]> {
+  try {
+    const res = await apiClient.get<Agency[]>('/agencies/list');
     if (!res || !res.success) {
       throw new Error(res?.message || 'Failed to fetch agencies');
     }
