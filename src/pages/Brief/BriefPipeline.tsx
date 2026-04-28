@@ -482,12 +482,12 @@ const BriefPipeline: React.FC = () => {
                     return (
                       <button
                         type="button"
-                        className="inline-flex items-center justify-center w-9 h-9 rounded-md border border-gray-200 bg-white hover:bg-gray-50 text-blue-700 hover:text-blue-900"
+                        className="inline-flex items-center justify-center w-10 h-10 !p-0 rounded-md border border-gray-200 !bg-gray-100 hover:!bg-gray-200"
                         onClick={() => openAttachment(it)}
                         aria-label="View attachment"
                         title="View attachment"
                       >
-                        <Eye className="w-4 h-4" />
+                        <Eye className="w-4 h-4 !text-black" />
                       </button>
                     );
                   },
@@ -625,6 +625,9 @@ const BriefPipeline: React.FC = () => {
               setIsAttachmentModalOpen(false);
               setAttachmentModalSource(null);
             }}
+            panelClassName="!w-[95%] md:!w-[600px]"
+            bodyClassName="attatchment-file-img"
+            closeButtonClassName="btn-secondary"
           />
         </>
       )}

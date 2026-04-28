@@ -974,6 +974,9 @@ const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode =
       }
 
       if (form.attachmentFile) {
+        // Backend typically expects `attachment` (and some endpoints accept `attachment_file`).
+        // Send both keys to keep compatibility across environments.
+        payload.attachment = form.attachmentFile;
         payload.attachment_file = form.attachmentFile;
       }
 

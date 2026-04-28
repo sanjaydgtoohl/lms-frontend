@@ -313,6 +313,10 @@ const payloadToFormData = (payload: Record<string, any>) => {
     if (k === '_raw') return;
     if (v instanceof File) {
       fd.append(k, v);
+      // Compatibility alias: some backends use `attachment` instead of `attachment_file`
+      if (k === 'attachment_file' && !fd.has('attachment')) {
+        fd.append('attachment', v);
+      }
       return;
     }
     // handle arrays (e.g. mobile_number etc)
@@ -349,7 +353,13 @@ export async function createBrief(payload: Partial<BriefItem> & Record<string, a
 export async function updateBrief(id: string, payload: Partial<BriefItem> & Record<string, any>): Promise<BriefItem> {
   const hasFile = Object.values(payload || {}).some(v => v instanceof File);
   const body = hasFile ? payloadToFormData(payload as Record<string, any>) : payload;
-  const res = await apiClient.put<any>(ENDPOINTS.UPDATE(id), body);
+  // Many Laravel-style backends don't accept PUT multipart; they expect POST + _method=PUT
+  const res = hasFile
+    ? await ((): Promise<any> => {
+        (body as FormData).set('_method', 'PUT');
+        return apiClient.post<any>(ENDPOINTS.UPDATE(id), body);
+      })()
+    : await apiClient.put<any>(ENDPOINTS.UPDATE(id), body);
   const json = res;
   if (!json || !json.success) {
     const message = (json && (json.message || 'Update failed')) || 'Update failed';
