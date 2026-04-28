@@ -1,13 +1,13 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MasterCreateHeader } from '../../components/ui/MasterCreateHeader';
 import Table, { type Column } from '../../components/ui/Table';
-import { Mail, Eye, Bold, Italic, List, ListOrdered, X } from 'lucide-react';
+// import { Mail, Eye, Bold, Italic, List, ListOrdered, X } from 'lucide-react';
 import LeadManagementSection from '../../components/forms/CreateLead/LeadManagementSection';
 import ContactPersonsCard from '../../components/forms/CreateLead/ContactPersonsCard';
 import AssignPriorityCard from '../../components/forms/CreateLead/AssignPriorityCard';
 import { fetchLeadById, fetchLeadHistory } from '../../services/ViewLead';
-import { getBrands, getAgencies } from '../../services/CreateLead';
+import { getBrandLists, getAgenciesLists } from '../../services/CreateLead';
 
 import { Button } from '../../components/ui';
 import { updateLead } from '../../services/AllLeads';
@@ -58,20 +58,20 @@ const EditLead: React.FC = () => {
   const [optionsError, setOptionsError] = useState<string | null>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
-  const [showEmailComposer, setShowEmailComposer] = useState(false);
-  const [emailTo, setEmailTo] = useState('');
-  const [emailSubject, setEmailSubject] = useState('');
-  const [emailBody, setEmailBody] = useState('');
-  const [sendingEmail, setSendingEmail] = useState(false);
-  const [templateName, setTemplateName] = useState('');
-  const [isCodeView, setIsCodeView] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [templateNameError, setTemplateNameError] = useState('');
-  const [subjectError, setSubjectError] = useState('');
-  const [emailToError, setEmailToError] = useState('');
-  const [emailBodyError, setEmailBodyError] = useState('');
+  // const [showEmailComposer, setShowEmailComposer] = useState(false);
+  // const [emailTo, setEmailTo] = useState('');
+  // const [emailSubject, setEmailSubject] = useState('');
+  // const [emailBody, setEmailBody] = useState('');
+  // const [sendingEmail, setSendingEmail] = useState(false);
+  // const [templateName, setTemplateName] = useState('');
+  // const [isCodeView, setIsCodeView] = useState(false);
+  // const [isFullscreen, setIsFullscreen] = useState(false);
+  // const [templateNameError, setTemplateNameError] = useState('');
+  // const [subjectError, setSubjectError] = useState('');
+  // const [emailToError, setEmailToError] = useState('');
+  // const [emailBodyError, setEmailBodyError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const editorRef = useRef<HTMLDivElement>(null);
+  // const editorRef = useRef<HTMLDivElement>(null);
 
   const handlePriorityChange = useCallback(({ assignTo, priority, callFeedback }: { assignTo?: string; priority?: string; callFeedback?: string }) => {
     setLead(prev => prev ? { ...prev, assignTo, priority, ...(callFeedback !== undefined ? { callFeedback } : {}) } : null);
@@ -184,15 +184,15 @@ const EditLead: React.FC = () => {
     }
   }, [successMessage]);
 
-  useEffect(() => {
-    if (showEmailComposer && editorRef.current) {
-      // Ensure editor is properly initialized
-      editorRef.current.focus();
-      if (!editorRef.current.innerHTML) {
-        editorRef.current.innerHTML = emailBody;
-      }
-    }
-  }, [showEmailComposer, emailBody]);
+  // useEffect(() => {
+  //   if (showEmailComposer && editorRef.current) {
+  //     // Ensure editor is properly initialized
+  //     editorRef.current.focus();
+  //     if (!editorRef.current.innerHTML) {
+  //       editorRef.current.innerHTML = emailBody;
+  //     }
+  //   }
+  // }, [showEmailComposer, emailBody]);
 
   // Fetch brand/agency options when selectedOption changes
   useEffect(() => {
@@ -202,7 +202,7 @@ const EditLead: React.FC = () => {
     setOptions([]);
 
     const fetchData = async () => {
-      const fetchFn = selectedOption === 'brand' ? getBrands : getAgencies;
+      const fetchFn = selectedOption === 'brand' ? getBrandLists : getAgenciesLists;
       try {
         const data = await fetchFn();
         if (!isMounted) return;
@@ -297,97 +297,97 @@ const EditLead: React.FC = () => {
     }
   };
 
-  const handleSave = async () => {
-    setTemplateNameError('');
-    setSubjectError('');
-    setEmailToError('');
-    setEmailBodyError('');
-    setSuccessMessage('');
-    if (!emailTo.trim() || !emailTo.includes('@')) {
-      setEmailToError('Valid email address is required.');
-      return;
-    }
-    if (!templateName.trim()) {
-      setTemplateNameError('Template Name is required.');
-      return;
-    }
-    if (!emailSubject.trim()) {
-      setSubjectError('Subject is required.');
-      return;
-    }
-    const body = isCodeView ? emailBody : (editorRef.current?.innerHTML || '');
-    if (!body.trim()) {
-      setEmailBodyError('Email body is required.');
-      return;
-    }
-    setSendingEmail(true);
-    try {
-      let t = gmailService.getAccessToken();
-      if (!t) {
-        t = await gmailService.requestAccessToken('consent');
-      }
-      const body = isCodeView ? emailBody : (editorRef.current?.innerHTML || '');
-      await gmailService.sendEmail(emailTo, emailSubject, body);
-      setSuccessMessage('Email sent successfully.');
-      setTimeout(() => {
-        setShowEmailComposer(false);
-        handleClear();
-      }, 2000);
-    } catch (err: any) {
-      setTemplateNameError('Failed to send email: ' + String(err));
-    } finally {
-      setSendingEmail(false);
-    }
-  };
+  // const handleSave = async () => {
+  //   setTemplateNameError('');
+  //   setSubjectError('');
+  //   setEmailToError('');
+  //   setEmailBodyError('');
+  //   setSuccessMessage('');
+  //   if (!emailTo.trim() || !emailTo.includes('@')) {
+  //     setEmailToError('Valid email address is required.');
+  //     return;
+  //   }
+  //   if (!templateName.trim()) {
+  //     setTemplateNameError('Template Name is required.');
+  //     return;
+  //   }
+  //   if (!emailSubject.trim()) {
+  //     setSubjectError('Subject is required.');
+  //     return;
+  //   }
+  //   const body = isCodeView ? emailBody : (editorRef.current?.innerHTML || '');
+  //   if (!body.trim()) {
+  //     setEmailBodyError('Email body is required.');
+  //     return;
+  //   }
+  //   setSendingEmail(true);
+  //   try {
+  //     let t = gmailService.getAccessToken();
+  //     if (!t) {
+  //       t = await gmailService.requestAccessToken('consent');
+  //     }
+  //     const body = isCodeView ? emailBody : (editorRef.current?.innerHTML || '');
+  //     await gmailService.sendEmail(emailTo, emailSubject, body);
+  //     setSuccessMessage('Email sent successfully.');
+  //     setTimeout(() => {
+  //       setShowEmailComposer(false);
+  //       handleClear();
+  //     }, 2000);
+  //   } catch (err: any) {
+  //     setTemplateNameError('Failed to send email: ' + String(err));
+  //   } finally {
+  //     setSendingEmail(false);
+  //   }
+  // };
 
-  const handleFormat = (command: string, value?: string) => {
-    if (editorRef.current) {
-      editorRef.current.focus();
-      document.execCommand(command, false, value);
-    }
-  };
+  // const handleFormat = (command: string, value?: string) => {
+  //   if (editorRef.current) {
+  //     editorRef.current.focus();
+  //     document.execCommand(command, false, value);
+  //   }
+  // };
 
-  const handleInsertLink = () => {
-    const url = prompt('Enter URL:');
-    if (url) handleFormat('createLink', url);
-  };
+  // const handleInsertLink = () => {
+  //   const url = prompt('Enter URL:');
+  //   if (url) handleFormat('createLink', url);
+  // };
 
-  const handleInsertImage = () => {
-    const url = prompt('Enter Image URL:');
-    if (url) handleFormat('insertImage', url);
-  };
+  // const handleInsertImage = () => {
+  //   const url = prompt('Enter Image URL:');
+  //   if (url) handleFormat('insertImage', url);
+  // };
 
-  const handleFontSize = (size: string) => {
-    handleFormat('fontSize', size);
-  };
+  // const handleFontSize = (size: string) => {
+  //   handleFormat('fontSize', size);
+  // };
 
-  const handleCodeViewToggle = () => {
-    if (isCodeView) {
-      // Switch to WYSIWYG
-      if (editorRef.current) {
-        editorRef.current.innerHTML = emailBody;
-      }
-    } else {
-      // Switch to code view
-      if (editorRef.current) {
-        setEmailBody(editorRef.current.innerHTML);
-      }
-    }
-    setIsCodeView(!isCodeView);
-  };
+  // const handleCodeViewToggle = () => {
+  //   if (isCodeView) {
+  //     // Switch to WYSIWYG
+  //     if (editorRef.current) {
+  //       editorRef.current.innerHTML = emailBody;
+  //     }
+  //   } else {
+  //     // Switch to code view
+  //     if (editorRef.current) {
+  //       setEmailBody(editorRef.current.innerHTML);
+  //     }
+  //   }
+  //   setIsCodeView(!isCodeView);
+  // };
 
-  const handleClear = () => {
-    setTemplateName('');
-    setEmailSubject('');
-    setEmailBody('');
-    setEmailTo('');
-    setTemplateNameError('');
-    setSubjectError('');
-    setEmailToError('');
-    setEmailBodyError('');
-    setSuccessMessage('');
-    if (editorRef.current) editorRef.current.innerHTML = '';
-  };
+  // const handleClear = () => {
+  //   setTemplateName('');
+  //   setEmailSubject('');
+  //   setEmailBody('');
+  //   setEmailTo('');
+  //   setTemplateNameError('');
+  //   setSubjectError('');
+  //   setEmailToError('');
+  //   setEmailBodyError('');
+  //   setSuccessMessage('');
+  //   if (editorRef.current) editorRef.current.innerHTML = '';
+  // };
 
   if (isLoading) {
     return (
@@ -468,7 +468,7 @@ const EditLead: React.FC = () => {
         </div>
 
         {/* Email Activity Section */}
-        <div className="bg-gray-50 rounded-2xl shadow-sm border border-gray-200 p-4">
+        {/* <div className="bg-gray-50 rounded-2xl shadow-sm border border-gray-200 p-4">
           <div className="flex justify-between items-center mb-3">
             <h3 className="text-sm text-gray-800 font-medium">Email Activity</h3>
             <Button onClick={() => { setShowEmailComposer(true); setEmailTo(lead.contacts[0]?.email || ''); }}>Send Email</Button>
@@ -610,7 +610,7 @@ const EditLead: React.FC = () => {
               </div>
             ))}
           </div>
-        </div>
+        </div> */}
 
         {/* Call Details Table Section */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
@@ -685,8 +685,6 @@ const EditLead: React.FC = () => {
             </div>
           </div>
         </div>
-
-
       </div>
     </div>
   );

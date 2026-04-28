@@ -5,14 +5,14 @@ import AssignPriorityCard from '../../components/forms/CreateLead/AssignPriority
 import CommentSection from '../../components/forms/CreateLead/CommentSection';
 import { MasterFormHeader, Button } from '../../components/ui';
 import { useNavigate } from 'react-router-dom';
-import { getBrands, getAgencies, createLead } from '../../services/CreateLead';
+import { createLead, getBrandLists, getAgenciesLists } from '../../services/CreateLead';
 import SweetAlert from '../../utils/SweetAlert';
 
 
 const CreateLead: React.FC = () => {
   const [selectedOption, setSelectedOption] = useState<'brand' | 'agency'>('brand');
   const [dropdownValue, setDropdownValue] = useState<string>('');
-  const [options, setOptions] = useState<{ value: string; label: string }[]>([]);
+  const [brandOptions, setBrandOptions] = useState<{ value: string; label: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Helper to clear error for dropdownValue (brand/agency)
@@ -62,14 +62,14 @@ const CreateLead: React.FC = () => {
     let isMounted = true;
     setLoading(true);
     setError(null);
-    setOptions([]);
+    setBrandOptions([]);
     setDropdownValue('');
     const fetchData = async () => {
       try {
-        const fetchFn = selectedOption === 'brand' ? getBrands : getAgencies;
+        const fetchFn = selectedOption === 'brand' ? getBrandLists : getAgenciesLists;
         const data = await fetchFn();
         if (!isMounted) return;
-        setOptions(
+        setBrandOptions(
           Array.isArray(data)
             ? data.map((item: any) => ({ value: String(item.id), label: item.name }))
             : []
@@ -77,7 +77,7 @@ const CreateLead: React.FC = () => {
       } catch (err: any) {
         if (isMounted) {
           setError(err?.message || 'Failed to load options');
-          setOptions([]);
+          setBrandOptions([]);
         }
       }
       setLoading(false);
@@ -241,7 +241,7 @@ const CreateLead: React.FC = () => {
             setDropdownValue(val);
             clearDropdownError(val);
           }}
-          options={options}
+          options={brandOptions}
           loading={loading}
           error={error}
         />
