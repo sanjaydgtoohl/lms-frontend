@@ -7,7 +7,7 @@ import LeadManagementSection from '../../components/forms/CreateLead/LeadManagem
 import ContactPersonsCard from '../../components/forms/CreateLead/ContactPersonsCard';
 import AssignPriorityCard from '../../components/forms/CreateLead/AssignPriorityCard';
 import { fetchLeadById, fetchLeadHistory } from '../../services/ViewLead';
-import { getBrands, getAgencies } from '../../services/CreateLead';
+import { getBrandLists, getAgenciesLists } from '../../services/CreateLead';
 
 import { Button } from '../../components/ui';
 import { updateLead } from '../../services/AllLeads';
@@ -202,7 +202,7 @@ const EditLead: React.FC = () => {
     setOptions([]);
 
     const fetchData = async () => {
-      const fetchFn = selectedOption === 'brand' ? getBrands : getAgencies;
+      const fetchFn = selectedOption === 'brand' ? getBrandLists : getAgenciesLists;
       try {
         const data = await fetchFn();
         if (!isMounted) return;
