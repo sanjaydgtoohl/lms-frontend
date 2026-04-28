@@ -188,14 +188,14 @@ const BriefLog: React.FC = () => {
       render: (item) => {
         const url = String(
           (item as any).attachmentUrl ||
-            (item as any).attachment_url ||
-            (item as any).attachment ||
-            (item as any).attachment_path ||
-            (item as any).attachment_file_url ||
-            (item as any).file_url ||
-            (item as any).file_path ||
-            (item as any).document_url ||
-            ''
+          (item as any).attachment_url ||
+          (item as any).attachment ||
+          (item as any).attachment_path ||
+          (item as any).attachment_file_url ||
+          (item as any).file_url ||
+          (item as any).file_path ||
+          (item as any).document_url ||
+          ''
         ).trim();
         if (!url) return <span className="text-xs text-gray-400">—</span>;
         const name =
@@ -204,7 +204,7 @@ const BriefLog: React.FC = () => {
         return (
           <button
             type="button"
-            className="inline-flex items-center justify-center w-9 h-9 rounded-md border border-gray-200 bg-white hover:bg-gray-50 text-blue-700 hover:text-blue-900"
+            className="inline-flex items-center justify-center w-10 h-10 !p-0 rounded-md border border-gray-200 !bg-gray-100 hover:!bg-gray-200"
             onClick={() => {
               setAttachmentModalSource({ kind: 'remote', url, name: name || undefined });
               setIsAttachmentModalOpen(true);
@@ -212,7 +212,7 @@ const BriefLog: React.FC = () => {
             aria-label="View attachment"
             title="View attachment"
           >
-            <Eye className="w-4 h-4" />
+            <Eye className="w-4 h-4 !text-black" />
           </button>
         );
       },
@@ -376,6 +376,9 @@ const BriefLog: React.FC = () => {
           setIsAttachmentModalOpen(false);
           setAttachmentModalSource(null);
         }}
+        panelClassName="!w-[95%] md:!w-[600px]"
+        bodyClassName="attatchment-file-img"
+        closeButtonClassName="btn-secondary"
       />
     </div>
   );
