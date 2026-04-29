@@ -12,12 +12,27 @@ import { listBriefLogs } from '../../services/BriefLog';
 import type { BriefLogItem } from '../../services/BriefLog';
 import { getPlannerStatuses } from '../../services/BriefLog';
 import SweetAlert from '../../utils/SweetAlert';
+import FilePreviewModal from '../../components/ui/FilePreviewModal';
+import { Eye } from 'lucide-react';
 
 // Data is fetched from API via `listBriefLogs` service
 
 const BriefLog: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+
+  // Validate URL to only allow safe protocols (http, https, blob)
+  const isValidAttachmentUrl = (url: string): boolean => {
+    if (!url || typeof url !== 'string') return false;
+    try {
+      const urlObj = new URL(url, window.location.origin);
+      const protocol = urlObj.protocol.toLowerCase();
+      return ['http:', 'https:', 'blob:'].includes(protocol);
+    } catch {
+      // If URL is relative, allow it (will be treated as http/https relative URL)
+      return url.startsWith('/') || url.startsWith('./') || url.startsWith('../');
+    }
+  };
 
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
@@ -28,6 +43,8 @@ const BriefLog: React.FC = () => {
   const [plannerStatusOptions, setPlannerStatusOptions] = useState<{ id: number; name: string }[]>([]);
   const [statusUpdatingId, setStatusUpdatingId] = useState<number | null>(null);
   // removed unused pendingStatusChange state
+  const [isAttachmentModalOpen, setIsAttachmentModalOpen] = useState(false);
+  const [attachmentModalSource, setAttachmentModalSource] = useState<{ kind: 'remote'; url: string; name?: string } | null>(null);
 
   // Status options for the dropdown (from API)
   const statusOptions = useMemo(() => plannerStatusOptions, [plannerStatusOptions]);
@@ -179,6 +196,70 @@ const BriefLog: React.FC = () => {
       },
     },
     {
+      key: 'attachment',
+      header: 'Attachment',
+      render: (item) => {
+        // Extract URL from various possible formats (string or object)
+        // Check all possible attachment keys in order of preference
+        let url = '';
+        const attachmentVal = (item as any).attachmentUrl ||
+          (item as any).attachment_url ||
+          (item as any).attachment ||
+          (item as any).attachment_path ||
+          (item as any).attachment_file_url ||
+          (item as any).file_url ||
+          (item as any).file_path ||
+          (item as any).document_url ||
+          (item as any).brief_attachment ||
+          (item as any).brief_file ||
+          (item as any).attachment_file ||
+          '';
+        if (typeof attachmentVal === 'object' && attachmentVal !== null && 'url' in attachmentVal) {
+          url = String((attachmentVal as any).url || '').trim();
+        } else if (typeof attachmentVal === 'string') {
+          url = String(attachmentVal).trim();
+        }
+        if (!url) return <span className="text-xs text-gray-400">—</span>;
+        
+        // Extract name from various possible formats
+        let name = '';
+        const attachmentNameVal = (item as any).attachmentName || (item as any).attachment_name || '';
+        if (typeof attachmentNameVal === 'object' && attachmentNameVal !== null && 'name' in attachmentNameVal) {
+          name = String((attachmentNameVal as any).name || '').trim();
+        } else if (typeof attachmentNameVal === 'string') {
+          name = String(attachmentNameVal).trim();
+        }
+        
+        // Fallback to filename from URL if no name provided
+        if (!name) {
+          name = url.split('/').pop() || 'attachment';
+        }
+        
+        // Validate URL protocol to prevent XSS attacks
+        const isUrlValid = isValidAttachmentUrl(url);
+        if (!isUrlValid) {
+          console.warn('Invalid attachment URL protocol:', url);
+          return <span className="text-xs text-gray-400">—</span>;
+        }
+        
+        return (
+          <button
+            type="button"
+            className="inline-flex items-center justify-center w-10 h-10 !p-0 rounded-md border border-gray-200 !bg-gray-100 hover:!bg-gray-200"
+            onClick={() => {
+              setAttachmentModalSource({ kind: 'remote', url, name: name || undefined });
+              setIsAttachmentModalOpen(true);
+            }}
+            aria-label="View attachment"
+            title="View attachment"
+          >
+            <Eye className="w-4 h-4 !text-black" />
+          </button>
+        );
+      },
+      className: 'whitespace-nowrap',
+    },
+    {
       key: 'description',
       header: 'Brief Detail',
       render: (item) => item.comment || item.description,
@@ -328,6 +409,18 @@ const BriefLog: React.FC = () => {
           onPageChange={setCurrentPage}
         />
       </div>
+
+      <FilePreviewModal
+        isOpen={isAttachmentModalOpen}
+        source={attachmentModalSource}
+        onClose={() => {
+          setIsAttachmentModalOpen(false);
+          setAttachmentModalSource(null);
+        }}
+        panelClassName="!w-[95%] md:!w-[600px]"
+        bodyClassName="attatchment-file-img"
+        closeButtonClassName="btn-secondary"
+      />
     </div>
   );
 };

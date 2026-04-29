@@ -21,6 +21,8 @@ import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '../../redux/store';
 import { setUnreadCount, setNotifications } from '../../redux/slices/notificationSlice';
 import { getUnreadNotificationCount, listNotifications } from '../../services/notifications';
+import FilePreviewModal from '../../components/ui/FilePreviewModal';
+import { Eye } from 'lucide-react';
 
 type Brief = ServiceBriefItem;
 
@@ -54,6 +56,8 @@ const BriefPipeline: React.FC = () => {
   const [editItem, setEditItem] = useState<Brief | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
+  const [isAttachmentModalOpen, setIsAttachmentModalOpen] = useState(false);
+  const [attachmentModalSource, setAttachmentModalSource] = useState<{ kind: 'remote'; url: string; name?: string } | null>(null);
 
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentData = briefs;
@@ -271,6 +275,66 @@ const BriefPipeline: React.FC = () => {
 
   const handlePageChange = (page: number) => setCurrentPage(page);
 
+  // Validate URL to only allow safe protocols (http, https, blob)
+  const isValidAttachmentUrl = (url: string): boolean => {
+    if (!url || typeof url !== 'string') return false;
+    try {
+      const urlObj = new URL(url, window.location.origin);
+      const protocol = urlObj.protocol.toLowerCase();
+      return ['http:', 'https:', 'blob:'].includes(protocol);
+    } catch {
+      // If URL is relative, allow it (will be treated as http/https relative URL)
+      return url.startsWith('/') || url.startsWith('./') || url.startsWith('../');
+    }
+  };
+
+  const openAttachment = (it: Brief) => {
+    // Extract URL from various possible formats (string or object)
+    // Check all possible attachment keys in order of preference
+    let url = '';
+    const attachmentVal = (it as any).attachmentUrl || 
+      (it as any)._raw?.attachment_url || 
+      (it as any)._raw?.attachment || 
+      (it as any)._raw?.attachment_path || 
+      (it as any)._raw?.attachment_file_url || 
+      (it as any)._raw?.file_url || 
+      (it as any)._raw?.file_path || 
+      (it as any)._raw?.document_url || 
+      (it as any)._raw?.brief_attachment || 
+      (it as any)._raw?.brief_file || 
+      (it as any)._raw?.attachment_file || 
+      '';
+    if (typeof attachmentVal === 'object' && attachmentVal !== null && 'url' in attachmentVal) {
+      url = String((attachmentVal as any).url || '').trim();
+    } else if (typeof attachmentVal === 'string') {
+      url = String(attachmentVal).trim();
+    }
+    if (!url) return;
+    
+    // Extract name from various possible formats
+    let name = '';
+    const attachmentNameVal = (it as any).attachmentName || (it as any)._raw?.attachment_name || '';
+    if (typeof attachmentNameVal === 'object' && attachmentNameVal !== null && 'name' in attachmentNameVal) {
+      name = String((attachmentNameVal as any).name || '').trim();
+    } else if (typeof attachmentNameVal === 'string') {
+      name = String(attachmentNameVal).trim();
+    }
+    
+    // Fallback to filename from URL if no name provided
+    if (!name) {
+      name = url.split('/').pop() || 'attachment';
+    }
+    
+    // Validate URL protocol to prevent XSS attacks
+    if (!isValidAttachmentUrl(url)) {
+      console.warn('Invalid attachment URL protocol:', url);
+      return;
+    }
+    
+    setAttachmentModalSource({ kind: 'remote', url, name });
+    setIsAttachmentModalOpen(true);
+  };
+
   // Tooltip state for Brief Detail full text on hover
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const [tooltipContent, setTooltipContent] = useState('');
@@ -458,6 +522,33 @@ const BriefPipeline: React.FC = () => {
                   return String(priorityVal ?? '');
                 }, className: 'whitespace-nowrap overflow-hidden truncate' },
                 { key: 'budget', header: 'Budget', render: (it: Brief) => String(it.budget ?? ''), className: 'whitespace-nowrap overflow-hidden truncate' },
+                {
+                  key: 'attachment',
+                  header: 'Attachment',
+                  render: (it: Brief) => {
+                    // Extract URL from various possible formats (string or object)
+                    let url = '';
+                    const attachmentVal = (it as any).attachmentUrl || (it as any)._raw?.attachment_url || (it as any)._raw?.file_url || (it as any)._raw?.document_url || '';
+                    if (typeof attachmentVal === 'object' && attachmentVal !== null && 'url' in attachmentVal) {
+                      url = String((attachmentVal as any).url || '').trim();
+                    } else if (typeof attachmentVal === 'string') {
+                      url = String(attachmentVal).trim();
+                    }
+                    if (!url) return <span className="text-xs text-gray-400">—</span>;
+                    return (
+                      <button
+                        type="button"
+                        className="inline-flex items-center justify-center w-10 h-10 !p-0 rounded-md border border-gray-200 !bg-gray-100 hover:!bg-gray-200"
+                        onClick={() => openAttachment(it)}
+                        aria-label="View attachment"
+                        title="View attachment"
+                      >
+                        <Eye className="w-4 h-4 !text-black" />
+                      </button>
+                    );
+                  },
+                  className: 'whitespace-nowrap',
+                },
                 { key: 'createdBy', header: 'Created By', render: (it: Brief) => {
                   const createdByVal = it.createdBy;
                   if (typeof createdByVal === 'object' && createdByVal !== null && 'name' in createdByVal) {
@@ -581,6 +672,18 @@ const BriefPipeline: React.FC = () => {
             loading={confirmLoading}
             onCancel={() => setConfirmDeleteId(null)}
             onConfirm={confirmDelete}
+          />
+
+          <FilePreviewModal
+            isOpen={isAttachmentModalOpen}
+            source={attachmentModalSource}
+            onClose={() => {
+              setIsAttachmentModalOpen(false);
+              setAttachmentModalSource(null);
+            }}
+            panelClassName="!w-[95%] md:!w-[600px]"
+            bodyClassName="attatchment-file-img"
+            closeButtonClassName="btn-secondary"
           />
         </>
       )}

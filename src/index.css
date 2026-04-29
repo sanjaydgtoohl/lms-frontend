@@ -572,3 +572,8 @@ box-shadow:  5px 5px 10px #131313,
 .react-datepicker-wrapper {
   @apply w-full;
 }
+
+
+.attatchment-file-img img {
+  @apply w-full min-h-[200px] max-w-[400px] object-contain;
+}

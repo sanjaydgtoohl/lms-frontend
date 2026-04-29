@@ -48,6 +48,8 @@ export interface BriefItem {
   comment?: string;
   submissionDate?: string;
   campaignDuration?: string | number;
+  attachmentUrl?: string;
+  attachmentName?: string;
   dateTime?: string;
   _raw?: Record<string, unknown>;
   [key: string]: unknown;
@@ -132,6 +134,28 @@ export async function listBriefs(page = 1, perPage = 10, search?: string): Promi
     const submissionVal = raw['submission_date'] ?? raw['submission'] ?? raw['submitted_at'] ?? raw['dateTime'] ?? '';
     const campaignDurationVal = raw['campaign_duration'] ?? '';
 
+    const attachmentRaw =
+      raw['attachment_url'] ??
+      raw['attachment'] ??
+      raw['attachment_path'] ??
+      raw['attachment_file_url'] ??
+      raw['file_url'] ??
+      raw['file_path'] ??
+      raw['document_url'] ??
+      raw['brief_attachment'] ??
+      raw['brief_file'] ??
+      raw['attachment_file'];
+    const attachmentUrlVal =
+      typeof attachmentRaw === 'string'
+        ? attachmentRaw
+        : (attachmentRaw && typeof attachmentRaw === 'object' && 'url' in (attachmentRaw as any))
+          ? String((attachmentRaw as any).url)
+          : '';
+    const attachmentNameVal =
+      (attachmentRaw && typeof attachmentRaw === 'object' && 'name' in (attachmentRaw as any))
+        ? String((attachmentRaw as any).name)
+        : (attachmentUrlVal ? String(attachmentUrlVal).split('/').pop() : '');
+
     return {
       id: String(idVal),
       briefId: String(briefIdVal ?? ''),
@@ -151,6 +175,8 @@ export async function listBriefs(page = 1, perPage = 10, search?: string): Promi
       comment: String(commentVal ?? ''),
       submissionDate: String(submissionVal ?? ''),
       campaignDuration: campaignDurationVal !== '' ? campaignDurationVal : undefined,
+      attachmentUrl: String(attachmentUrlVal || ''),
+      attachmentName: String(attachmentNameVal || ''),
       dateTime: String(raw['created_at'] ?? raw['date_time'] ?? raw['dateTime'] ?? ''),
       _raw: raw,
     } as BriefItem;
@@ -232,6 +258,27 @@ export async function getBrief(id: string): Promise<BriefItem> {
   const commentVal = raw['comment'] ?? '';
   const submissionVal = raw['submission_date'] ?? raw['submission'] ?? raw['submitted_at'] ?? raw['dateTime'] ?? '';
   const campaignDurationVal = raw['campaign_duration'] ?? '';
+  const attachmentRaw =
+    raw['attachment_url'] ??
+    raw['attachment'] ??
+    raw['attachment_path'] ??
+    raw['attachment_file_url'] ??
+    raw['file_url'] ??
+    raw['file_path'] ??
+    raw['document_url'] ??
+    raw['brief_attachment'] ??
+    raw['brief_file'] ??
+    raw['attachment_file'];
+  const attachmentUrlVal =
+    typeof attachmentRaw === 'string'
+      ? attachmentRaw
+      : (attachmentRaw && typeof attachmentRaw === 'object' && 'url' in (attachmentRaw as any))
+        ? String((attachmentRaw as any).url)
+        : '';
+  const attachmentNameVal =
+    (attachmentRaw && typeof attachmentRaw === 'object' && 'name' in (attachmentRaw as any))
+      ? String((attachmentRaw as any).name)
+      : (attachmentUrlVal ? String(attachmentUrlVal).split('/').pop() : '');
 
   return {
     id: String(idVal),
@@ -252,13 +299,43 @@ export async function getBrief(id: string): Promise<BriefItem> {
     comment: String(commentVal ?? ''),
     submissionDate: String(submissionVal ?? ''),
     campaignDuration: campaignDurationVal !== '' ? campaignDurationVal : undefined,
+    attachmentUrl: String(attachmentUrlVal || ''),
+    attachmentName: String(attachmentNameVal || ''),
     dateTime: String(raw['created_at'] ?? raw['date_time'] ?? raw['dateTime'] ?? ''),
     _raw: raw,
   } as BriefItem;
 }
 
-export async function createBrief(payload: Partial<BriefItem>): Promise<BriefItem> {
-  const res = await apiClient.post<any>(ENDPOINTS.CREATE, payload);
+const payloadToFormData = (payload: Record<string, any>) => {
+  const fd = new FormData();
+  Object.entries(payload || {}).forEach(([k, v]) => {
+    if (v === undefined || v === null) return;
+    if (k === '_raw') return;
+    if (v instanceof File) {
+      fd.append(k, v);
+      // Compatibility alias: some backends use `attachment` instead of `attachment_file`
+      if (k === 'attachment_file' && !fd.has('attachment')) {
+        fd.append('attachment', v);
+      }
+      return;
+    }
+    // handle arrays (e.g. mobile_number etc)
+    if (Array.isArray(v)) {
+      v.forEach((item, idx) => {
+        if (item === undefined || item === null) return;
+        fd.append(`${k}[${idx}]`, item instanceof File ? item : String(item));
+      });
+      return;
+    }
+    fd.append(k, String(v));
+  });
+  return fd;
+};
+
+export async function createBrief(payload: Partial<BriefItem> & Record<string, any>): Promise<BriefItem> {
+  const hasFile = Object.values(payload || {}).some(v => v instanceof File);
+  const body = hasFile ? payloadToFormData(payload as Record<string, any>) : payload;
+  const res = await apiClient.post<any>(ENDPOINTS.CREATE, body);
   const json = res;
   if (!json || !json.success) {
     const message = (json && (json.message || 'Create failed')) || 'Create failed';
@@ -273,8 +350,16 @@ export async function createBrief(payload: Partial<BriefItem>): Promise<BriefIte
   return (first && (await listBriefs(1, 1)).data[0]) ?? ({ id: String(first?.['id'] ?? first?.['_id'] ?? ''), _raw: first } as BriefItem);
 }
 
-export async function updateBrief(id: string, payload: Partial<BriefItem>): Promise<BriefItem> {
-  const res = await apiClient.put<any>(ENDPOINTS.UPDATE(id), payload);
+export async function updateBrief(id: string, payload: Partial<BriefItem> & Record<string, any>): Promise<BriefItem> {
+  const hasFile = Object.values(payload || {}).some(v => v instanceof File);
+  const body = hasFile ? payloadToFormData(payload as Record<string, any>) : payload;
+  // Many Laravel-style backends don't accept PUT multipart; they expect POST + _method=PUT
+  const res = hasFile
+    ? await ((): Promise<any> => {
+        (body as FormData).set('_method', 'PUT');
+        return apiClient.post<any>(ENDPOINTS.UPDATE(id), body);
+      })()
+    : await apiClient.put<any>(ENDPOINTS.UPDATE(id), body);
   const json = res;
   if (!json || !json.success) {
     const message = (json && (json.message || 'Update failed')) || 'Update failed';
