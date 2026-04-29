@@ -21,6 +21,19 @@ const BriefLog: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
+  // Validate URL to only allow safe protocols (http, https, blob)
+  const isValidAttachmentUrl = (url: string): boolean => {
+    if (!url || typeof url !== 'string') return false;
+    try {
+      const urlObj = new URL(url, window.location.origin);
+      const protocol = urlObj.protocol.toLowerCase();
+      return ['http:', 'https:', 'blob:'].includes(protocol);
+    } catch {
+      // If URL is relative, allow it (will be treated as http/https relative URL)
+      return url.startsWith('/') || url.startsWith('./') || url.startsWith('../');
+    }
+  };
+
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const itemsPerPage = 10;
@@ -186,8 +199,10 @@ const BriefLog: React.FC = () => {
       key: 'attachment',
       header: 'Attachment',
       render: (item) => {
-        const url = String(
-          (item as any).attachmentUrl ||
+        // Extract URL from various possible formats (string or object)
+        // Check all possible attachment keys in order of preference
+        let url = '';
+        const attachmentVal = (item as any).attachmentUrl ||
           (item as any).attachment_url ||
           (item as any).attachment ||
           (item as any).attachment_path ||
@@ -195,12 +210,38 @@ const BriefLog: React.FC = () => {
           (item as any).file_url ||
           (item as any).file_path ||
           (item as any).document_url ||
-          ''
-        ).trim();
+          (item as any).brief_attachment ||
+          (item as any).brief_file ||
+          (item as any).attachment_file ||
+          '';
+        if (typeof attachmentVal === 'object' && attachmentVal !== null && 'url' in attachmentVal) {
+          url = String((attachmentVal as any).url || '').trim();
+        } else if (typeof attachmentVal === 'string') {
+          url = String(attachmentVal).trim();
+        }
         if (!url) return <span className="text-xs text-gray-400">—</span>;
-        const name =
-          String((item as any).attachmentName || (item as any).attachment_name || '').trim() ||
-          url.split('/').pop();
+        
+        // Extract name from various possible formats
+        let name = '';
+        const attachmentNameVal = (item as any).attachmentName || (item as any).attachment_name || '';
+        if (typeof attachmentNameVal === 'object' && attachmentNameVal !== null && 'name' in attachmentNameVal) {
+          name = String((attachmentNameVal as any).name || '').trim();
+        } else if (typeof attachmentNameVal === 'string') {
+          name = String(attachmentNameVal).trim();
+        }
+        
+        // Fallback to filename from URL if no name provided
+        if (!name) {
+          name = url.split('/').pop() || 'attachment';
+        }
+        
+        // Validate URL protocol to prevent XSS attacks
+        const isUrlValid = isValidAttachmentUrl(url);
+        if (!isUrlValid) {
+          console.warn('Invalid attachment URL protocol:', url);
+          return <span className="text-xs text-gray-400">—</span>;
+        }
+        
         return (
           <button
             type="button"

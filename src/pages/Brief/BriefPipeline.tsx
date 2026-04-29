@@ -275,13 +275,62 @@ const BriefPipeline: React.FC = () => {
 
   const handlePageChange = (page: number) => setCurrentPage(page);
 
+  // Validate URL to only allow safe protocols (http, https, blob)
+  const isValidAttachmentUrl = (url: string): boolean => {
+    if (!url || typeof url !== 'string') return false;
+    try {
+      const urlObj = new URL(url, window.location.origin);
+      const protocol = urlObj.protocol.toLowerCase();
+      return ['http:', 'https:', 'blob:'].includes(protocol);
+    } catch {
+      // If URL is relative, allow it (will be treated as http/https relative URL)
+      return url.startsWith('/') || url.startsWith('./') || url.startsWith('../');
+    }
+  };
+
   const openAttachment = (it: Brief) => {
-    const url =
-      String((it as any).attachmentUrl || (it as any)._raw?.attachment_url || (it as any)._raw?.file_url || (it as any)._raw?.document_url || '').trim();
+    // Extract URL from various possible formats (string or object)
+    // Check all possible attachment keys in order of preference
+    let url = '';
+    const attachmentVal = (it as any).attachmentUrl || 
+      (it as any)._raw?.attachment_url || 
+      (it as any)._raw?.attachment || 
+      (it as any)._raw?.attachment_path || 
+      (it as any)._raw?.attachment_file_url || 
+      (it as any)._raw?.file_url || 
+      (it as any)._raw?.file_path || 
+      (it as any)._raw?.document_url || 
+      (it as any)._raw?.brief_attachment || 
+      (it as any)._raw?.brief_file || 
+      (it as any)._raw?.attachment_file || 
+      '';
+    if (typeof attachmentVal === 'object' && attachmentVal !== null && 'url' in attachmentVal) {
+      url = String((attachmentVal as any).url || '').trim();
+    } else if (typeof attachmentVal === 'string') {
+      url = String(attachmentVal).trim();
+    }
     if (!url) return;
-    const name =
-      String((it as any).attachmentName || (it as any)._raw?.attachment_name || '').trim() ||
-      url.split('/').pop();
+    
+    // Extract name from various possible formats
+    let name = '';
+    const attachmentNameVal = (it as any).attachmentName || (it as any)._raw?.attachment_name || '';
+    if (typeof attachmentNameVal === 'object' && attachmentNameVal !== null && 'name' in attachmentNameVal) {
+      name = String((attachmentNameVal as any).name || '').trim();
+    } else if (typeof attachmentNameVal === 'string') {
+      name = String(attachmentNameVal).trim();
+    }
+    
+    // Fallback to filename from URL if no name provided
+    if (!name) {
+      name = url.split('/').pop() || 'attachment';
+    }
+    
+    // Validate URL protocol to prevent XSS attacks
+    if (!isValidAttachmentUrl(url)) {
+      console.warn('Invalid attachment URL protocol:', url);
+      return;
+    }
+    
     setAttachmentModalSource({ kind: 'remote', url, name });
     setIsAttachmentModalOpen(true);
   };
@@ -477,7 +526,14 @@ const BriefPipeline: React.FC = () => {
                   key: 'attachment',
                   header: 'Attachment',
                   render: (it: Brief) => {
-                    const url = String((it as any).attachmentUrl || (it as any)._raw?.attachment_url || (it as any)._raw?.file_url || (it as any)._raw?.document_url || '').trim();
+                    // Extract URL from various possible formats (string or object)
+                    let url = '';
+                    const attachmentVal = (it as any).attachmentUrl || (it as any)._raw?.attachment_url || (it as any)._raw?.file_url || (it as any)._raw?.document_url || '';
+                    if (typeof attachmentVal === 'object' && attachmentVal !== null && 'url' in attachmentVal) {
+                      url = String((attachmentVal as any).url || '').trim();
+                    } else if (typeof attachmentVal === 'string') {
+                      url = String(attachmentVal).trim();
+                    }
                     if (!url) return <span className="text-xs text-gray-400">—</span>;
                     return (
                       <button
