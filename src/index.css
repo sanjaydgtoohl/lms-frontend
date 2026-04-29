@@ -575,5 +575,5 @@ box-shadow:  5px 5px 10px #131313,
 
 
 .attatchment-file-img img {
-  @apply w-full min-h-[200px] !max-h-[400px] object-fill;
+  @apply w-full min-h-[200px] max-w-[400px] object-contain;
 }
