@@ -188,10 +188,10 @@ const DeviceInventory: React.FC = () => {
         breadcrumbItems={[{ label: 'Device Inventory', path: '/inventory/device' }]}
       />
 
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm device-inventory-outer-section">
         <div className="bg-gray-50 px-3 md:px-6 py-3 md:py-4 flex flex-row items-center justify-between gap-3 flex-wrap md:flex-nowrap border-b border-gray-200">
           <h2 className="text-sm md:text-base font-semibold text-gray-900 flex-shrink-0">Device Inventory</h2>
-          <div className="flex w-full min-w-0 items-center justify-end gap-2 sm:w-auto">
+          <div className="flex w-full min-w-0 items-center justify-end gap-2 sm:w-auto flex-wrap">
             <PPTExport fetchRows={exportFetchRows} />
             <ExportCsvButton<DeviceData>
               fetchRows={exportFetchRows}
