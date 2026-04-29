@@ -682,7 +682,7 @@ const BriefPipeline: React.FC = () => {
               setAttachmentModalSource(null);
             }}
             panelClassName="!w-[95%] md:!w-[600px]"
-            bodyClassName="attatchment-file-img"
+            bodyClassName="attachment-file-img"
             closeButtonClassName="btn-secondary"
           />
         </>
