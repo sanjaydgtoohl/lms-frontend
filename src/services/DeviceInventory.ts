@@ -9,39 +9,38 @@ import type {
 
 export type { DeviceData };
 
-const INVENTORY_ENDPOINT = '/api/inventory';
-
-
+const INVENTORY_ENDPOINT = '/inventory';
 
 export async function listDeviceInventory(
   params: ListDeviceInventoryParams = {}
 ): Promise<DeviceInventoryResponse> {
   try {
-    const resp = await sspHttp.get(INVENTORY_ENDPOINT, {
-      params: {
-        page: params.page ?? 1,
-        per_page: params.per_page ?? 10,
-        ...(params.search ? { search: params.search } : {}),
-        ...(params.state ? { state: params.state } : {}),
-        ...(params.city ? { city: params.city } : {}),
-        ...(params.country ? { country: params.country } : {}),
-        ...(params.zone ? { zone: params.zone } : {}),
-        ...(params.subZoneArea ? { sub_zone_area: params.subZoneArea } : {}),
-        ...(params.pincode ? { pincode: params.pincode } : {}),
-        ...(params.arterialRoute ? { arterial_route: params.arterialRoute } : {}),
-        ...(params.modeOfMedia ? { mode_of_media: params.modeOfMedia } : {}),
-        ...(params.publisher ? { publisher: params.publisher } : {}),
-        ...(params.mainCategory ? { main_category_name: params.mainCategory } : {}),
-        ...(params.categorySub ? { sub_category_name: params.categorySub } : {}),
-        ...(params.category ? { category_name: params.category } : {}),
-        ...(params.locationType ? { location_type: params.locationType } : {}),
-        ...(params.orientation ? { orientation: params.orientation } : {}),
-        ...(params.resolution ? { resolution: params.resolution } : {}),
-        ...(params.screenLocation ? { screen_location: params.screenLocation } : {}),
-        ...(params.stretch ? { stretch: params.stretch } : {}),
-        ...(params.property ? { property: params.property } : {}),
-      },
-    });
+    // Convert to POST request with body instead of GET with query params
+    const requestBody = {
+      page: params.page ?? 1,
+      per_page: params.per_page ?? 10,
+      ...(params.search ? { search: params.search } : {}),
+      ...(params.state ? { state: params.state } : {}),
+      ...(params.city ? { city: params.city } : {}),
+      ...(params.country ? { country: params.country } : {}),
+      ...(params.zone ? { zone: params.zone } : {}),
+      ...(params.subZoneArea ? { sub_zone_area: params.subZoneArea } : {}),
+      ...(params.pincode ? { pincode: params.pincode } : {}),
+      ...(params.arterialRoute ? { arterial_route: params.arterialRoute } : {}),
+      ...(params.modeOfMedia ? { mode_of_media: params.modeOfMedia } : {}),
+      ...(params.publisher ? { publisher: params.publisher } : {}),
+      ...(params.mainCategory ? { main_category_name: params.mainCategory } : {}),
+      ...(params.categorySub ? { sub_category_name: params.categorySub } : {}),
+      ...(params.category ? { category_name: params.category } : {}),
+      ...(params.locationType ? { location_type: params.locationType } : {}),
+      ...(params.orientation ? { orientation: params.orientation } : {}),
+      ...(params.resolution ? { resolution: params.resolution } : {}),
+      ...(params.screenLocation ? { screen_location: params.screenLocation } : {}),
+      ...(params.stretch ? { stretch: params.stretch } : {}),
+      ...(params.property ? { property: params.property } : {}),
+    };
+
+    const resp = await sspHttp.get(INVENTORY_ENDPOINT, { params: requestBody });
 
     const json = resp.data as DeviceInventoryResponse;
     if (!json || json.status !== true) {
