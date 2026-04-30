@@ -133,9 +133,9 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
   const [brandTypes, setBrandTypes] = useState<BrandType[]>([]);
   const [agencies, setAgencies] = useState<Agency[]>([]);
   const [industries, setIndustries] = useState<Industry[]>([]);
-  // const [postalLoading, setPostalLoading] = useState(false);
-  // const [postalError, setPostalError] = useState<string>('');
-  // const [postalFieldError, setPostalFieldError] = useState<string>('');
+  const [postalLoading, setPostalLoading] = useState(false);
+  const [postalError, setPostalError] = useState<string>('');
+  const [postalFieldError, setPostalFieldError] = useState<string>('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -143,14 +143,14 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
     setErrors(prev => ({ ...prev, [name]: '' }));
 
     // Postal code validation
-    // if (name === 'postalCode') {
-    //   const raw = String(value || '').trim();
-    //   if (!/^[0-9]{6}$/.test(raw)) {
-    //     setPostalFieldError('Postal code is invalid');
-    //   } else {
-    //     setPostalFieldError('');
-    //   }
-    // }
+    if (name === 'postalCode') {
+      const raw = String(value || '').trim();
+      if (!/^[0-9]{6}$/.test(raw)) {
+        setPostalFieldError('Postal code is invalid');
+      } else {
+        setPostalFieldError('');
+      }
+    }
   };
 
   const validate = () => {
@@ -162,10 +162,11 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
     if (!form.state) next.state = 'Please Select A State';
     if (!form.city) next.city = 'Please Select A City';
     if (!form.zone) next.zone = 'Please Select A Zone';
-    // Postal code: required and must be 6 numeric digits
-    // if (!/^[0-9]{6}$/.test(String(form.postalCode || '').trim())) {
-    //   next.postalCode = 'Please enter a valid 6-digit postal code';
-    // }
+    // Postal code: optional, but if provided must be 6 numeric digits
+    const postalCodeTrimmed = String(form.postalCode || '').trim();
+    if (postalCodeTrimmed && !/^[0-9]{6}$/.test(postalCodeTrimmed)) {
+      next.postalCode = 'Postal code must be 6 digits';
+    }
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -272,7 +273,6 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
   };
 
   // Lookup postal pincode and auto-fill country/state/city when possible
-  /*
   const lookupPostalCode = async (pincode: string) => {
     const code = String(pincode || '').trim();
     if (!/^[0-9]{6}$/.test(code)) {
@@ -362,7 +362,6 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
       setPostalLoading(false);
     }
   };
-  */
 
   const hasInitializedForm = React.useRef(false);
   useEffect(() => {
@@ -647,27 +646,27 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
             value={form.postalCode}
             onChange={(e) => {
               handleChange(e as any);
-              // const raw = String(e.target.value || '').trim();
-              // if (/^[0-9]{6}$/.test(raw)) {
-              //   setPostalFieldError('');
-              //   lookupPostalCode(raw);
-              // }
+              const raw = String(e.target.value || '').trim();
+              if (/^[0-9]{6}$/.test(raw)) {
+                setPostalFieldError('');
+                lookupPostalCode(raw);
+              }
             }}
-            // onBlur={() => {
-            //   // const raw = String(form.postalCode || '').trim();
-            //   // if (/^[0-9]{6}$/.test(raw)) {
-            //   //   setPostalFieldError('');
-            //   //   lookupPostalCode(raw);
-            //   // } else {
-            //   //   setPostalFieldError('Postal code is invalid');
-            //   // }
-            // }}
+            onBlur={() => {
+              const raw = String(form.postalCode || '').trim();
+              if (/^[0-9]{6}$/.test(raw)) {
+                setPostalFieldError('');
+                lookupPostalCode(raw);
+              } else {
+                setPostalFieldError('Postal code is invalid');
+              }
+            }}
             className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-black"
             placeholder="Please Enter Postal Code"
           />
           {errors.postalCode && <div className="text-xs text-red-500 mt-1">{errors.postalCode}</div>}
-          {/* {postalLoading && <div className="text-xs text-gray-500 mt-1">Looking up pincode...</div>} */}
-          {/* {!postalLoading && postalError && <div className="text-xs text-red-500 mt-1">{postalError}</div>} */}
+          {postalLoading && <div className="text-xs text-gray-500 mt-1">Looking up pincode...</div>}
+          {!postalLoading && postalError && <div className="text-xs text-red-500 mt-1">{postalError}</div>}
         </div>
 
         <div>
