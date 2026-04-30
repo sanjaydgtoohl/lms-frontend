@@ -218,7 +218,7 @@ export const rolePermissionsData: Module[] = [
         },
       },
       {
-        name: 'Meeting Done',
+        name: 'Meeting',
         permissions: {
           read: false,
           create: false,

@@ -2,16 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import SelectField from '../../ui/SelectField';
 import { getUsers } from '../../../services/CreateLead';
 import { getPriorities, getPrioritiesByCallStatus } from '../../../services/Priority';
-
 import { getCallStatuses } from '../../../services/CallStatus';
-
-interface AssignPriorityCardProps {
-  assignTo?: string;
-  assignedLabel?: string;
-  priority?: string;
-  callFeedback?: string;
-  onChange?: (values: { assignTo?: string; priority?: string; callFeedback?: string }) => void;
-}
+import type { AssignPriorityCardProps } from '../../../types/LeadManagentForm';
 
 const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
   assignTo,

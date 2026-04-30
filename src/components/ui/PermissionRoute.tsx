@@ -45,7 +45,7 @@ const PermissionRoute: React.FC<PermissionRouteProps> = ({ children }) => {
     const routeKeywords = new Set([
       'create', 'edit', 'view', 'delete', 'remove', 'update',
       'new', 'all', 'all-leads', 'list', 'pending', 'interested',
-      'meeting-scheduled', 'meeting-done', 'brief-status',
+      'meeting-scheduled', 'meeting-done', 'brief-leads',
       'Brief_Pipeline', 'view'
     ]);
 

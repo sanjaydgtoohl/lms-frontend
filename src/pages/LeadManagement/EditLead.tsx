@@ -13,44 +13,14 @@ import { Button } from '../../components/ui';
 import { updateLead } from '../../services/AllLeads';
 import SweetAlert from '../../utils/SweetAlert';
 import gmailService from '../../services/gmailService';
-
 import CommentSection from '../../components/forms/CreateLead/CommentSection';
+import type { EditLeadtype } from '../../types/AllLeadtype'
 
-interface Lead {
-  id: string;
-  selectedOption: 'brand' | 'agency';
-  brandId?: string;
-  agencyId?: string;
-  contacts: Array<{
-    id: string;
-    fullName: string;
-    profileUrl: string;
-    email: string;
-    mobileNo: string;
-    mobileNo2: string;
-    showSecondMobile: boolean;
-    type: string;
-    designation: string;
-    agencyBrand: string;
-    subSource: string;
-    department: string;
-    country: string;
-    state: string;
-    city: string;
-    zone: string;
-    postalCode: string;
-  }>;
-  assignTo?: string;
-  assignToName?: string;
-  priority?: string;
-  callFeedback?: string;
-  comment?: string;
-}
 const EditLead: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
-  const [lead, setLead] = useState<Lead | null>(null);
+  const [lead, setLead] = useState<EditLeadtype | null>(null);
   const [selectedOption, setSelectedOption] = useState<'brand' | 'agency'>('brand');
   const [dropdownValue, setDropdownValue] = useState<string>('');
   const [options, setOptions] = useState<{ value: string; label: string }[]>([]);

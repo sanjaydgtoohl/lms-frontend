@@ -142,7 +142,7 @@ const TableHeader: React.FC<PageHeaderProps> = ({
                         </div>
                     )}
 
-                    <div className="w-full sm:w-auto">
+                    <div className="w-full sm:w-auto flex items-center gap-3 flex-wrap justify-end">
                         {children}
                     </div>
                 </div>

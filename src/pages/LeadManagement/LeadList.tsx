@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import Table, { type Column } from '../../components/ui/Table';
 import AssignDropdown from '../../components/ui/AssignDropdown';
 import CallStatusDropdown from '../../components/ui/CallStatusDropdown';
@@ -16,33 +16,7 @@ import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '../../redux/store';
 import { setUnreadCount, setNotifications, incrementUnreadCount } from '../../redux/slices/notificationSlice';
 import { getUnreadNotificationCount, listNotifications } from '../../services/notifications';
-
-interface Lead {
-  id: string;
-  agencyName?: string;
-  brandName?: string;
-  brand_name?: string;
-  contactPerson?: string;
-  contact_person?: string;
-  phoneNumber?: string;
-  mobile_number?: string[];
-  source?: string;
-  lead_source?: string;
-  subSource?: string;
-  lead_sub_source?: string;
-  assignBy?: string;
-  assignTo?: string;
-  current_assign_user?: string | number;
-  dateTime?: string;
-  status?: string;
-  callStatus?: string;
-  callAttempt?: number;
-  comment?: string;
-  [key: string]: any;
-}
-
-
-
+import type { Lead } from '../../types/AllLeadtype';
 
 interface UserOption {
   id: number | string;
@@ -123,10 +97,25 @@ const deletePermissionMap: Record<string, string> = {
 interface Props {
   title: string;
   filterStatus?: string; // if not provided, show all
+  extraStatuses?: string[];
+  permissionStatus?: string;
+  headerActions?: React.ReactNode;
 }
 
-const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
+const LeadList: React.FC<Props> = ({
+  title,
+  filterStatus = 'All',
+  extraStatuses = [],
+  permissionStatus,
+  headerActions,
+}) => {
   const dispatch = useDispatch<AppDispatch>();
+  const permissionKey = permissionStatus || filterStatus || 'All';
+  const normalizedExtraStatuses = useMemo(
+    () => extraStatuses.filter((status): status is string => Boolean(status)),
+    [extraStatuses]
+  );
+  const extraStatusesKey = useMemo(() => normalizedExtraStatuses.join('|'), [normalizedExtraStatuses]);
   // Assign To options state and effect (must be inside component)
   const [assignToOptions, setAssignToOptions] = useState<UserOption[]>([]);
   const { hasPermission } = usePermissions();
@@ -172,24 +161,34 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
   const fetchLeads = useCallback(async () => {
     try {
       setLoading(true);
+      const statusIdMap: Record<string, number> = {
+        'Interested': 1,
+        'Pending': 2,
+        'Meeting Done': 3,
+        'Brief Pending': 4,
+        'Brief Recieved': 5,
+        'Brief Received': 5,
+        'Meeting Scheduled': 6,
+        'Meeting Schedule': 6
+      };
+
+      const statusesToFetch = [filterStatus, ...normalizedExtraStatuses].filter(
+        (status) => status && status !== 'All'
+      );
+
       let response;
-      if (filterStatus && filterStatus !== 'All') {
-        const statusIdMap: Record<string, number> = {
-          'Interested': 1,
-          'Pending': 2,
-          'Meeting Done': 3,
-          'Brief Pending': 4,
-          'Brief Recieved': 5,
-          'Brief Received': 5,
-          'Meeting Scheduled': 6,
-          'Meeting Schedule': 6
+      if (statusesToFetch.length > 0) {
+        const responses = await Promise.all(
+          statusesToFetch.map((status) => {
+            const statusId = statusIdMap[status] || undefined;
+            return statusId
+              ? listLeadsByStatus(statusId, currentPage, itemsPerPage)
+              : listLeadsByStatus(status, currentPage, itemsPerPage);
+          })
+        );
+        response = {
+          data: responses.flatMap((res) => res.data || [])
         };
-        const statusId = statusIdMap[filterStatus] || undefined;
-        if (statusId) {
-          response = await listLeadsByStatus(statusId, currentPage, itemsPerPage);
-        } else {
-          response = await listLeadsByStatus(filterStatus, currentPage, itemsPerPage);
-        }
       } else {
         response = await listLeads(currentPage, itemsPerPage);
       }
@@ -218,18 +217,25 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
         comment: item.comment || item.notes || '',
       }));
 
-      setLeads(transformedLeads);
+      const uniqueLeads = transformedLeads.filter(
+        (lead, index, self) => index === self.findIndex((item) => item.id === lead.id)
+      );
+      setLeads(uniqueLeads);
     } catch (error) {
       console.error('Error fetching leads:', error);
       setLeads([]);
     } finally {
       setLoading(false);
     }
-  }, [filterStatus, currentPage, itemsPerPage]); // <- Add all external dependencies here
+  }, [filterStatus, extraStatusesKey, currentPage, itemsPerPage]); // <- Add all external dependencies here
 
   useEffect(() => {
     fetchLeads();
   }, [currentPage, filterStatus, fetchLeads]); // ✅ added fetchLeads
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterStatus, extraStatusesKey]);
 
   // Tooltip state for Comment hover
   const [tooltipVisible, setTooltipVisible] = useState(false);
@@ -281,17 +287,31 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
 
   // Filter leads by search query (local search across a few fields)
   const filteredLeads = leads.filter((l) => {
-    if (filterStatus && filterStatus !== 'All') {
+    const normalizeStatus = (value: string) => value.trim().toLowerCase();
+    const normalizedLeadStatus = normalizeStatus(l.status || '');
+    const allowedStatuses = [filterStatus, ...normalizedExtraStatuses]
+      .filter((status) => status && status !== 'All')
+      .map(normalizeStatus);
+
+    if (allowedStatuses.length > 0) {
       // Special handling for 'Brief' group: include both Received and Pending
-      if (filterStatus === 'Brief') {
-        if (!(l.status === 'Brief Recieved' || l.status === 'Brief Pending')) return false;
+      if (allowedStatuses.includes(normalizeStatus('Brief'))) {
+        if (
+          normalizedLeadStatus !== normalizeStatus('Brief Recieved') &&
+          normalizedLeadStatus !== normalizeStatus('Brief Pending') &&
+          normalizedLeadStatus !== normalizeStatus('Brief Received')
+        ) return false;
       }
       // Special handling for 'Meeting Scheduled' group: only Meeting Schedule (not Meeting Done)
-      else if (filterStatus === 'Meeting Scheduled') {
-        if (l.status !== 'Meeting Schedule') return false;
+      else if (allowedStatuses.includes(normalizeStatus('Meeting Scheduled'))) {
+        if (
+          normalizedLeadStatus !== normalizeStatus('Meeting Schedule') &&
+          normalizedLeadStatus !== normalizeStatus('Meeting Scheduled') &&
+          !allowedStatuses.includes(normalizedLeadStatus)
+        ) return false;
       }
       else {
-        if (l.status !== filterStatus) return false;
+        if (!allowedStatuses.includes(normalizedLeadStatus)) return false;
       }
     }
     const q = searchQuery.trim().toLowerCase();
@@ -477,7 +497,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
     { key: 'phoneNumber', header: 'Phone Number', render: (it: Lead) => it.phoneNumber || '-', className: 'whitespace-nowrap' },
     { key: 'subSource', header: 'Sub-Source', render: (it: Lead) => it.subSource || '-', className: 'whitespace-nowrap' },
     { key: 'assignBy', header: 'Assign By', render: (it: Lead) => it.assignBy || '-', className: 'whitespace-nowrap' },
-    ...(hasPermission(assignPermissionMap[filterStatus || 'All']) ? [{
+    ...(hasPermission(assignPermissionMap[permissionKey] || assignPermissionMap.All) ? [{
       key: 'assignTo',
       header: 'Assign To',
       render: (it: Lead) => (
@@ -508,7 +528,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
       header: 'Call Status',
       render: (it: Lead) => (
         <div className="min-w-[160px]">
-          {hasPermission(callStatusPermissionMap[filterStatus || 'All']) ? (
+          {hasPermission(callStatusPermissionMap[permissionKey] || callStatusPermissionMap.All) ? (
             <CallStatusDropdown
               value={(it.callStatus && it.callStatus !== 'N/A') ? it.callStatus : ''}
               options={callStatusOptions}
@@ -554,7 +574,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
 
   return (
     <div className="flex-1 w-full max-w-full overflow-x-hidden">
-      {hasPermission(createPermissionMap[filterStatus] || 'leads.create') && (
+      {hasPermission(createPermissionMap[permissionKey] || createPermissionMap.All) && (
         <MasterHeader
           onCreateClick={handleCreateLead}
           createButtonLabel="Create Lead"
@@ -567,6 +587,7 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
         {/* Table Header */}
         <TableHeader title={title}>
+         {headerActions}
          <SearchBar
               placeholder="Search leads..."
               delay={250}
@@ -589,9 +610,9 @@ const LeadList: React.FC<Props> = ({ title, filterStatus = 'All' }) => {
             onEdit={(it: Lead) => handleEdit(it.id)}
             onView={(it: Lead) => handleView(it.id)}
             onDelete={(it: Lead) => handleDelete(it.id)}
-            editPermissionSlug={editPermissionMap[filterStatus]}
-            viewPermissionSlug={viewPermissionMap[filterStatus]}
-            deletePermissionSlug={deletePermissionMap[filterStatus]}
+            editPermissionSlug={editPermissionMap[permissionKey] || editPermissionMap.All}
+            viewPermissionSlug={viewPermissionMap[permissionKey] || viewPermissionMap.All}
+            deletePermissionSlug={deletePermissionMap[permissionKey] || deletePermissionMap.All}
           />
         </div>
       </div>
