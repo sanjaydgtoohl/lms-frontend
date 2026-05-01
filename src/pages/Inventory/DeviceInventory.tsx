@@ -22,6 +22,7 @@ const DeviceInventory: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
   const [appliedLocation, setAppliedLocation] = useState({
+    country: '',
     state: '',
     city: '',
     zoneArea: '',
@@ -53,10 +54,11 @@ const DeviceInventory: React.FC = () => {
     () =>
       fetchAllDeviceInventoryRows({
         search: searchQuery?.trim() ? searchQuery.trim() : undefined,
+        country: appliedLocation.country?.trim() || undefined,
         state: appliedLocation.state.trim() || undefined,
         city: appliedLocation.city.trim() || undefined,
-        zone: appliedLocation.zoneArea.trim() || undefined,
-        subZoneArea: appliedLocation.subZoneArea.trim() || undefined,
+        zone: appliedLocation.zoneArea?.trim() || undefined,
+        subZoneArea: appliedLocation.subZoneArea?.trim() || undefined,
         pincode: appliedLocation.pincode.trim() || undefined,
         arterialRoute: appliedLocation.arterialRoute.trim() || undefined,
         modeOfMedia: appliedLocation.modeOfMedia.trim() || undefined,
@@ -73,6 +75,7 @@ const DeviceInventory: React.FC = () => {
       }),
     [
       searchQuery,
+      appliedLocation.country,
       appliedLocation.state,
       appliedLocation.city,
       appliedLocation.zoneArea,
@@ -116,13 +119,14 @@ const DeviceInventory: React.FC = () => {
           page: currentPage,
           per_page: itemsPerPage,
           search: searchQuery?.trim() ? searchQuery.trim() : undefined,
+          country: appliedLocation.country.trim() || undefined,
           state: appliedLocation.state.trim() || undefined,
           city: appliedLocation.city.trim() || undefined,
           zone: appliedLocation.zoneArea.trim() || undefined,
           subZoneArea: appliedLocation.subZoneArea.trim() || undefined,
           pincode: appliedLocation.pincode.trim() || undefined,
           arterialRoute: appliedLocation.arterialRoute.trim() || undefined,
-          modeOfMedia: appliedLocation.modeOfMedia.trim() || undefined,
+          modeOfMedia: appliedLocation.modeOfMedia?.trim() || undefined,
           publisher: appliedLocation.publisher.trim() || undefined,
           mainCategory: appliedLocation.mainCategory.trim() || undefined,
           categorySub: appliedLocation.categorySub.trim() || undefined,
@@ -154,6 +158,7 @@ const DeviceInventory: React.FC = () => {
     currentPage,
     itemsPerPage,
     searchQuery,
+    appliedLocation.country,
     appliedLocation.state,
     appliedLocation.city,
     appliedLocation.zoneArea,
@@ -183,11 +188,11 @@ const DeviceInventory: React.FC = () => {
         breadcrumbItems={[{ label: 'Device Inventory', path: '/inventory/device' }]}
       />
 
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm device-inventory-outer-section">
         <div className="bg-gray-50 px-3 md:px-6 py-3 md:py-4 flex flex-row items-center justify-between gap-3 flex-wrap md:flex-nowrap border-b border-gray-200">
           <h2 className="text-sm md:text-base font-semibold text-gray-900 flex-shrink-0">Device Inventory</h2>
-          <div className="flex w-full min-w-0 items-center justify-end gap-2 sm:w-auto">
-           <PPTExport fetchRows={exportFetchRows} />
+          <div className="flex w-full min-w-0 items-center justify-end gap-2 sm:w-auto flex-wrap">
+            <PPTExport fetchRows={exportFetchRows} />
             <ExportCsvButton<DeviceData>
               fetchRows={exportFetchRows}
               columns={DEVICE_INVENTORY_CSV_COLUMNS.filter(col => col.key !== 'user_password')}
@@ -195,63 +200,62 @@ const DeviceInventory: React.FC = () => {
               aria-label="Export filtered data as CSV"
             />
             <div className="relative w-full min-w-0 sm:w-auto">
-            <SearchBar
-              delay={300}
-              placeholder="Search devices"
-              filterSlot={
-                <button
-                  ref={filterAnchorRef}
-                  type="button"
-                  onClick={() => setFilterOpen((open) => !open)}
-                  aria-expanded={filterOpen}
-                  aria-haspopup="dialog"
-                  aria-label="Filter by state and city"
-                  className={`flex h-full min-h-[2.5rem] items-center justify-center px-3 py-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2 ${
-                    hasActiveLocationFilter
-                      ? 'text-indigo-600'
-                      : 'text-gray-500 hover:text-gray-800'
-                  }`}
-                >
-                  <Filter className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-                </button>
-              }
-              onSearch={(q: string) => {
-                setSearchQuery(q);
-                setCurrentPage(1);
-              }}
-            />
-            <FilterPopup
-              isOpen={filterOpen}
-              onClose={() => setFilterOpen(false)}
-              appliedValues={appliedLocation}
-              onApply={(values) => {
-                setAppliedLocation(values);
-                setCurrentPage(1);
-              }}
-              onReset={() => {
-                setAppliedLocation({
-                  state: '',
-                  city: '',
-                  zoneArea: '',
-                  subZoneArea: '',
-                  pincode: '',
-                  arterialRoute: '',
-                  modeOfMedia: '',
-                  publisher: '',
-                  mainCategory: '',
-                  categorySub: '',
-                  category: '',
-                  locationType: '',
-                  orientation: '',
-                  resolution: '',
-                  screenLocation: '',
-                  stretch: '',
-                  property: '',
-                });
-                setCurrentPage(1);
-              }}
-              anchorRef={filterAnchorRef}
-            />
+              <SearchBar
+                delay={300}
+                placeholder="Search devices"
+                filterSlot={
+                  <button
+                    ref={filterAnchorRef}
+                    type="button"
+                    onClick={() => setFilterOpen((open) => !open)}
+                    aria-expanded={filterOpen}
+                    aria-haspopup="dialog"
+                    aria-label="Filter by state and city"
+                    className={`flex h-full min-h-[2.5rem] items-center justify-center px-3 py-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2 ${hasActiveLocationFilter
+                        ? 'text-indigo-600'
+                        : 'text-gray-500 hover:text-gray-800'
+                      }`}
+                  >
+                    <Filter className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+                  </button>
+                }
+                onSearch={(q: string) => {
+                  setSearchQuery(q);
+                  setCurrentPage(1);
+                }}
+              />
+              <FilterPopup
+                isOpen={filterOpen}
+                onClose={() => setFilterOpen(false)}
+                appliedValues={appliedLocation}
+                onApply={(values) => {
+                  setAppliedLocation(values);
+                  setCurrentPage(1);
+                }}
+                onReset={() => {
+                  setAppliedLocation({
+                    country: '',
+                    state: '',
+                    city: '',
+                    zoneArea: '',
+                    subZoneArea: '',
+                    pincode: '',
+                    arterialRoute: '',
+                    modeOfMedia: '',
+                    publisher: '',
+                    mainCategory: '',
+                    categorySub: '',
+                    category: '',
+                    locationType: '',
+                    orientation: '',
+                    resolution: '',
+                    screenLocation: '',
+                    stretch: '',
+                    property: '',
+                  });
+                  setCurrentPage(1);
+                }}
+              />
             </div>
           </div>
         </div>
@@ -296,35 +300,45 @@ const DeviceInventory: React.FC = () => {
             { key: 'traffic_direction', header: 'traffic_direction', render: (item) => item.traffic_direction || '' },
             { key: 'mode_of_media', header: 'mode_of_media', render: (item) => item.mode_of_media || '' },
             { key: 'illumination', header: 'illumination', render: (item) => item.illumination || '' },
-            { key: 'old_device_image', header: 'Old Device Image', render: (item) => (
-              <img
-                src={item.old_device_image || undefined}
-                alt="Old Device"
-                className="w-16 h-16 object-cover rounded-md border border-gray-200"
-              />
-            ) },
-            { key: 'device_image', header: 'Device Image', render: (item) => (
-              <img
-                src={item.device_image || undefined}
-                alt="Device"
-                className="w-16 h-16 object-cover rounded-md border border-gray-200"
-              />
-            ) },
-            { key: 'aws_device_image', header: 'AWS Device Image', render: (item) => (
-              <a href={item.aws_device_image || undefined} target="_blank" rel="noopener noreferrer">
+            {
+              key: 'old_device_image', header: 'Old Device Image', render: (item) => (
                 <img
-                  src={item.aws_device_image || undefined}
-                  alt="AWS Device"
+                  src={item.old_device_image || undefined}
+                  alt="Old Device"
                   className="w-16 h-16 object-cover rounded-md border border-gray-200"
                 />
-              </a>
-            ) },
-            { key: 'country', header: 'Country', render: (item) => (
-              <span className="text-sm text-gray-700">{item.country || 'N/A'}</span>
-            ) },
-            { key: 'on_field_screen_count', header: 'On Field Screen Count', render: (item) => (
-              <span className="text-sm text-gray-700">{item.on_field_screen_count || 'N/A'}</span>
-            ) },
+              )
+            },
+            {
+              key: 'device_image', header: 'Device Image', render: (item) => (
+                <img
+                  src={item.device_image || undefined}
+                  alt="Device"
+                  className="w-16 h-16 object-cover rounded-md border border-gray-200"
+                />
+              )
+            },
+            {
+              key: 'aws_device_image', header: 'AWS Device Image', render: (item) => (
+                <a href={item.aws_device_image || undefined} target="_blank" rel="noopener noreferrer">
+                  <img
+                    src={item.aws_device_image || undefined}
+                    alt="AWS Device"
+                    className="w-16 h-16 object-cover rounded-md border border-gray-200"
+                  />
+                </a>
+              )
+            },
+            {
+              key: 'country', header: 'Country', render: (item) => (
+                <span className="text-sm text-gray-700">{item.country || 'N/A'}</span>
+              )
+            },
+            {
+              key: 'on_field_screen_count', header: 'On Field Screen Count', render: (item) => (
+                <span className="text-sm text-gray-700">{item.on_field_screen_count || 'N/A'}</span>
+              )
+            },
             { key: 'monday_start_time', header: 'monday_start_time', render: (item) => item.monday_start_time || '' },
             { key: 'monday_end_time', header: 'monday_end_time', render: (item) => item.monday_end_time || '' },
             { key: 'tuesday_start_time', header: 'tuesday_start_time', render: (item) => item.tuesday_start_time || '' },
@@ -383,7 +397,7 @@ const DeviceInventory: React.FC = () => {
             itemsPerPage={itemsPerPage}
             onPageChange={handlePageChange}
           />
-          
+
         </div>
       </div>
     </div>
