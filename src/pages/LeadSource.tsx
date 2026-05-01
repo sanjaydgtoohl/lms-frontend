@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import Pagination from '../components/ui/Pagination';
 import CreateSourceForm from './CreateSourceForm';
@@ -8,7 +8,7 @@ import { MasterHeader } from '../components/ui';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import SearchBar from '../components/ui/SearchBar';
 import Table, { type Column } from '../components/ui/Table';
-import { listLeadSources, deleteLeadSubSource, updateLeadSubSource, type LeadSourceItem } from '../services/LeadSource';
+import { listLeadSources, getLeadSource, deleteLeadSubSource, updateLeadSubSource, type LeadSourceItem } from '../services/LeadSource';
 import { fetchLeadSources } from '../services/CreateSourceForm';
 import { ROUTES } from '../constants';
 import { usePermissions } from '../hooks/SidebarMenuHooks';
@@ -30,6 +30,9 @@ const LeadSource: React.FC = () => {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmDeleteLabel, setConfirmDeleteLabel] = useState<string>('');
   const [confirmLoading, setConfirmLoading] = useState(false);
+
+  const itemsRef = useRef<LeadSourceItem[]>([]);
+  itemsRef.current = items;
 
   const { hasPermission } = usePermissions();
 
@@ -161,8 +164,6 @@ const LeadSource: React.FC = () => {
     })();
   };
 
-  // helper to refresh list is available if needed (removed because unused)
-
   // open confirmation modal instead of browser confirm
   const handleDelete = (item: LeadSourceItem) => {
     setConfirmDeleteId(item.id);
@@ -186,7 +187,6 @@ const LeadSource: React.FC = () => {
     }
   };
 
-  // Sync view/edit/create state from the current URL
   useEffect(() => {
     const rawId = params.id;
     const id = rawId ? decodeURIComponent(rawId) : undefined;
@@ -206,19 +206,41 @@ const LeadSource: React.FC = () => {
       return;
     }
 
-    if (id) {
-      const found = items.find(i => i.id === id) || null;
-      setViewItem(found);
+    if (!id) {
       setShowCreate(false);
+      setViewItem(null);
       setEditItem(null);
       return;
     }
 
-    // default listing state
     setShowCreate(false);
-    setViewItem(null);
     setEditItem(null);
   }, [location.pathname, params.id, items]);
+
+  useEffect(() => {
+    const rawId = params.id;
+    const id = rawId ? decodeURIComponent(rawId) : undefined;
+
+    if (!id || location.pathname.endsWith('/create') || location.pathname.endsWith('/edit')) {
+      return;
+    }
+
+    let cancelled = false;
+    getLeadSource(id)
+      .then(data => {
+        if (cancelled) return;
+        setViewItem(data);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        const found = itemsRef.current.find(i => i.id === id) || null;
+        setViewItem(found);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [location.pathname, params.id]);
 
   return (
     <div className="flex-1 w-full max-w-full overflow-x-hidden">

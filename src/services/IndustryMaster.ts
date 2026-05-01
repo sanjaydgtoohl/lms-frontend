@@ -14,10 +14,10 @@ export type Industry = {
 
 const ENDPOINTS = {
   LIST: '/industries',
-  DETAIL: (id: string | number) => `/industries/${id}`,
+  DETAIL: (id: string | number) => `/industries/${encodeURIComponent(String(id))}`,
   CREATE: '/industries',
-  UPDATE: (id: string | number) => `/industries/${id}`,
-  DELETE: (id: string | number) => `/industries/${id}`,
+  UPDATE: (id: string | number) => `/industries/${encodeURIComponent(String(id))}`,
+  DELETE: (id: string | number) => `/industries/${encodeURIComponent(String(id))}`,
 } as const;
 
 async function handleResponse<T>(res: any): Promise<T> {

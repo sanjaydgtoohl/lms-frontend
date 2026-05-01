@@ -10,13 +10,43 @@ export interface LeadSourceItem {
 
 // Infer a few common API wrappers without hard-coding endpoint constants yet
 const ENDPOINTS = {
-  // Use proxy in vite.config.ts to inject '/v1'
   LIST: '/lead-sub-sources',
-  DETAIL: (id: string) => `/lead-sub-sources/${id}`,
+  DETAIL: (id: string | number) => `/lead-sub-sources/${encodeURIComponent(String(id))}`,
   CREATE: '/lead-sub-sources',
-  UPDATE: (id: string) => `/lead-sub-sources/${id}`,
-  DELETE: (id: string) => `/lead-sub-sources/${id}`,
+  UPDATE: (id: string | number) => `/lead-sub-sources/${encodeURIComponent(String(id))}`,
+  DELETE: (id: string | number) => `/lead-sub-sources/${encodeURIComponent(String(id))}`,
 } as const;
+
+/** Map GET list/detail row to UI shape (same rules for both). */
+function mapLeadSubSourceApiRow(it: any, idx: number): LeadSourceItem {
+  const idVal = it.id ?? `LS${String(idx + 1).padStart(3, '0')}`;
+  const subSource = it.name ?? '';
+  const leadSrc = it.lead_source;
+  const source =
+    leadSrc && typeof leadSrc === 'object' && leadSrc !== null && 'name' in leadSrc
+      ? String((leadSrc as { name?: string }).name ?? '')
+      : String(leadSrc ?? '');
+  const rawCreated = it.created_at ?? '';
+  let dateTime = '';
+  if (rawCreated) {
+    const m = String(rawCreated).match(/^(\d{2})-(\d{2})-(\d{4})\s+(\d{2}:\d{2}:\d{2})$/);
+    if (m) {
+      const [, dd, mm, yyyy, time] = m;
+      const iso = `${yyyy}-${mm}-${dd}T${time}`;
+      const d = new Date(iso);
+      dateTime = isNaN(d.getTime()) ? String(rawCreated) : d.toISOString();
+    } else {
+      const d = new Date(rawCreated);
+      dateTime = isNaN(d.getTime()) ? String(rawCreated) : d.toISOString();
+    }
+  }
+  return {
+    id: String(idVal),
+    source,
+    subSource,
+    dateTime,
+  };
+}
 
 async function handleResponse<T>(res: any): Promise<T> {
   if (!res || !res.success) {
@@ -48,42 +78,17 @@ export type LeadSourceListResponse = {
 
 export async function listLeadSources(page = 1, perPage = 10): Promise<LeadSourceListResponse> {
   const res = await apiClient.get<LeadSourceItem[]>(`${ENDPOINTS.LIST}?page=${page}&per_page=${perPage}`);
-  const items = (res.data || []).map((it: any, idx: number) => {
-    const id = it.id ?? `LS${String(idx + 1).padStart(3, '0')}`;
-    // For sub-sources, 'name' is the sub-source name, 'lead_source' is the parent source name (if available)
-    const subSource = it.name ?? '';
-    const source = it.lead_source ?? '';
-    const rawCreated = it.created_at ?? '';
-    let dateTime = '';
-    if (rawCreated) {
-      // handle common API format like 'DD-MM-YYYY HH:mm:ss' -> convert to ISO
-      const m = String(rawCreated).match(/^(\d{2})-(\d{2})-(\d{4})\s+(\d{2}:\d{2}:\d{2})$/);
-      if (m) {
-        const [, dd, mm, yyyy, time] = m;
-        const iso = `${yyyy}-${mm}-${dd}T${time}`;
-        const d = new Date(iso);
-        dateTime = isNaN(d.getTime()) ? String(rawCreated) : d.toISOString();
-      } else {
-        const d = new Date(rawCreated);
-        dateTime = isNaN(d.getTime()) ? String(rawCreated) : d.toISOString();
-      }
-    }
-    return {
-      id: String(id),
-      source,
-      subSource,
-      dateTime,
-    } as LeadSourceItem;
-  });
+  const items = (res.data || []).map((it: any, idx: number) => mapLeadSubSourceApiRow(it, idx));
   return {
     data: items,
     meta: (res as any).meta || {},
   };
 }
 
-export async function getLeadSource(id: string): Promise<LeadSourceItem> {
+export async function getLeadSource(id: string | number): Promise<LeadSourceItem> {
   const res = await apiClient.get<LeadSourceItem>(ENDPOINTS.DETAIL(id));
-  return handleResponse<LeadSourceItem>(res);
+  const raw = await handleResponse<any>(res);
+  return mapLeadSubSourceApiRow(raw, 0);
 }
 
 export async function createLeadSource(payload: Partial<LeadSourceItem>): Promise<LeadSourceItem> {
@@ -103,7 +108,7 @@ export async function deleteLeadSource(id: string): Promise<void> {
 
 // Alias with clearer name for lead sub-source deletion
 export async function deleteLeadSubSource(id: string | number): Promise<void> {
-  const res = await apiClient.delete<unknown>(ENDPOINTS.DELETE(String(id)));
+  const res = await apiClient.delete<unknown>(ENDPOINTS.DELETE(id));
   await handleResponse<unknown>(res);
 }
 
@@ -118,50 +123,6 @@ export async function updateLeadSubSource(
   id: string | number,
   payload: UpdateLeadSubSourcePayload
 ): Promise<LeadSourceItem> {
-  const res = await apiClient.put<LeadSourceItem>(ENDPOINTS.UPDATE(String(id)), payload);
+  const res = await apiClient.put<LeadSourceItem>(ENDPOINTS.UPDATE(id), payload);
   return handleResponse<LeadSourceItem>(res);
 }
-
-/**
- * Fetch lead sub-sources filtered by lead_source_id
- */
-export async function listLeadSubSourcesBySourceId(
-  sourceId: string | number,
-  page = 1,
-  perPage = 1000
-): Promise<LeadSourceListResponse> {
-  const res = await apiClient.get<LeadSourceItem[]>(
-    `/lead-sub-sources/list?lead_source_id=${sourceId}&page=${page}&per_page=${perPage}`
-  );
-  const items = (res.data || []).map((it: any, idx: number) => {
-    const id = it.id ?? `LSS${String(idx + 1).padStart(3, '0')}`;
-    const source = it.lead_source ?? '';
-    const subSource = it.name ?? '';
-    const rawCreated = it.created_at ?? '';
-    let dateTime = '';
-    if (rawCreated) {
-      const m = String(rawCreated).match(/^(\d{2})-(\d{2})-(\d{4})\s+(\d{2}:\d{2}:\d{2})$/);
-      if (m) {
-        const [, dd, mm, yyyy, time] = m;
-        const iso = `${yyyy}-${mm}-${dd}T${time}`;
-        const d = new Date(iso);
-        dateTime = isNaN(d.getTime()) ? String(rawCreated) : d.toISOString();
-      } else {
-        const d = new Date(rawCreated);
-        dateTime = isNaN(d.getTime()) ? String(rawCreated) : d.toISOString();
-      }
-    }
-    return {
-      id: String(id),
-      source,
-      subSource,
-      dateTime,
-    } as LeadSourceItem;
-  });
-  return {
-    data: items,
-    meta: (res as any).meta || {},
-  };
-}
-
-

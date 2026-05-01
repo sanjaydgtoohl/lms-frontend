@@ -3,7 +3,9 @@ import { apiClient } from '../utils/apiClient';
 
 export type Designation = {
   id: number | string;
-  name: string;
+  /** Some endpoints use `title` instead of or alongside `name`. */
+  name?: string;
+  title?: string | null;
   slug?: string | null;
   description?: string | null;
   status?: string | number;
@@ -14,10 +16,10 @@ export type Designation = {
 
 const ENDPOINTS = {
   LIST: '/designations',
-  DETAIL: (id: string | number) => `/designations/${id}`,
+  DETAIL: (id: string | number) => `/designations/${encodeURIComponent(String(id))}`,
   CREATE: '/designations',
-  UPDATE: (id: string | number) => `/designations/${id}`,
-  DELETE: (id: string | number) => `/designations/${id}`,
+  UPDATE: (id: string | number) => `/designations/${encodeURIComponent(String(id))}`,
+  DELETE: (id: string | number) => `/designations/${encodeURIComponent(String(id))}`,
 } as const;
 async function handleResponse<T>(res: any): Promise<T> {
   if (!res || !res.success) {

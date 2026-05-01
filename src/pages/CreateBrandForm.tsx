@@ -135,22 +135,18 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
   const [industries, setIndustries] = useState<Industry[]>([]);
   const [postalLoading, setPostalLoading] = useState(false);
   const [postalError, setPostalError] = useState<string>('');
-  const [postalFieldError, setPostalFieldError] = useState<string>('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    if (name === 'postalCode') {
+      // Only allow up to 6 digits in postal code input.
+      const sanitized = String(value || '').replace(/\D/g, '').slice(0, 6);
+      setForm(prev => ({ ...prev, [name]: sanitized }));
+      setErrors(prev => ({ ...prev, [name]: '' }));
+      return;
+    }
     setForm(prev => ({ ...prev, [name]: value }));
     setErrors(prev => ({ ...prev, [name]: '' }));
-
-    // Postal code validation
-    if (name === 'postalCode') {
-      const raw = String(value || '').trim();
-      if (!/^[0-9]{6}$/.test(raw)) {
-        setPostalFieldError('Postal code is invalid');
-      } else {
-        setPostalFieldError('');
-      }
-    }
   };
 
   const validate = () => {
@@ -644,21 +640,21 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
           <input
             name="postalCode"
             value={form.postalCode}
+            inputMode="numeric"
+            maxLength={6}
             onChange={(e) => {
               handleChange(e as any);
-              const raw = String(e.target.value || '').trim();
+              const raw = String(e.target.value || '').replace(/\D/g, '').slice(0, 6);
               if (/^[0-9]{6}$/.test(raw)) {
-                setPostalFieldError('');
                 lookupPostalCode(raw);
               }
             }}
             onBlur={() => {
               const raw = String(form.postalCode || '').trim();
               if (/^[0-9]{6}$/.test(raw)) {
-                setPostalFieldError('');
                 lookupPostalCode(raw);
               } else {
-                setPostalFieldError('Postal code is invalid');
+                // Invalid postal is still handled by existing submit-time validation.
               }
             }}
             className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-black"

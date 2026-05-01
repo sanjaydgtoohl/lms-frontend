@@ -16,10 +16,10 @@ export type Agency = {
 
 const ENDPOINTS = {
   LIST: '/agencies',
-  DETAIL: (id: string | number) => `/agencies/${id}`,
+  DETAIL: (id: string | number) => `/agencies/${encodeURIComponent(String(id))}`,
   CREATE: '/agencies',
-  UPDATE: (id: string | number) => `/agencies/${id}`,
-  DELETE: (id: string | number) => `/agencies/${id}`,
+  UPDATE: (id: string | number) => `/agencies/${encodeURIComponent(String(id))}`,
+  DELETE: (id: string | number) => `/agencies/${encodeURIComponent(String(id))}`,
 } as const;
 
 async function handleResponse<T>(res: any): Promise<T> {

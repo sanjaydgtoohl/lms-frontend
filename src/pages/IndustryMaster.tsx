@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Table, { type Column } from '../components/ui/Table';
 import CreateIndustryForm from './CreateIndustryForm';
 import MasterView from '../components/ui/MasterView';
@@ -9,7 +9,7 @@ import { ROUTES } from '../constants';
 import { MasterHeader } from '../components/ui';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import SearchBar from '../components/ui/SearchBar';
-import { listIndustries, deleteIndustry, updateIndustry, type Industry as ApiIndustry } from '../services/IndustryMaster';
+import { listIndustries, getIndustry, deleteIndustry, updateIndustry, type Industry as ApiIndustry } from '../services/IndustryMaster';
 import { usePermissions } from '../hooks/SidebarMenuHooks';
 
 import SweetAlert from '../utils/SweetAlert';
@@ -20,6 +20,23 @@ interface Industry {
   name: string;
   dateTime: string;
 }
+
+/** Normalise API `created_at` for table / MasterView (matches list mapping). */
+const parseCreatedAt = (val?: string | null) => {
+  if (!val) return '';
+  const tryDate = new Date(val);
+  if (!isNaN(tryDate.getTime())) return tryDate.toISOString();
+
+  const m = /^([0-3]\d)-([0-1]\d)-(\d{4})\s+(\d{2}:\d{2}:\d{2})$/.exec(val.trim());
+  if (m) {
+    const [, dd, mm, yyyy, time] = m;
+    const iso = `${yyyy}-${mm}-${dd}T${time}`;
+    const d = new Date(iso);
+    if (!isNaN(d.getTime())) return d.toISOString();
+  }
+
+  return val;
+};
 
 const IndustryMaster: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -99,6 +116,9 @@ const IndustryMaster: React.FC = () => {
   const [viewItem, setViewItem] = useState<Industry | null>(null);
   const [editItem, setEditItem] = useState<Industry | null>(null);
 
+  const industriesRef = useRef<Industry[]>([]);
+  industriesRef.current = industries;
+
   const refresh = async (page = currentPage, search = searchQuery) => {
     setLoading(true);
     setError(null);
@@ -108,26 +128,6 @@ const IndustryMaster: React.FC = () => {
       const perPageToFetch = search ? 1000 : itemsPerPage;
 
       const resp = await listIndustries(pageToFetch, perPageToFetch);
-      // Helper to parse API date strings. API returns 'DD-MM-YYYY HH:mm:ss' currently.
-      const parseCreatedAt = (val?: string | null) => {
-        if (!val) return '';
-        // If it's already an ISO string or parsable by Date, prefer that
-        const tryDate = new Date(val);
-        if (!isNaN(tryDate.getTime())) return tryDate.toISOString();
-
-        // Match DD-MM-YYYY HH:mm:ss (e.g., 18-11-2025 18:34:34)
-        const m = /^([0-3]\d)-([0-1]\d)-(\d{4})\s+(\d{2}:\d{2}:\d{2})$/.exec(val.trim());
-        if (m) {
-          const [, dd, mm, yyyy, time] = m;
-          // Convert to YYYY-MM-DDTHH:MM:SS for reliable parsing
-          const iso = `${yyyy}-${mm}-${dd}T${time}`;
-          const d = new Date(iso);
-          if (!isNaN(d.getTime())) return d.toISOString();
-        }
-
-        // Fallback: return original string so UI can at least show it
-        return val;
-      };
 
       let mapped: Industry[] = (resp.data || []).map((it: ApiIndustry) => ({
         id: String(it.id),
@@ -162,7 +162,6 @@ const IndustryMaster: React.FC = () => {
   }, [currentPage, searchQuery]);
 
 
-  // sync UI with route
   useEffect(() => {
     const rawId = params.id;
     const id = rawId ? decodeURIComponent(rawId) : undefined;
@@ -182,18 +181,45 @@ const IndustryMaster: React.FC = () => {
       return;
     }
 
-    if (id) {
-      const found = industries.find(i => i.id === id) || null;
-      setViewItem(found);
+    if (!id) {
       setShowCreate(false);
+      setViewItem(null);
       setEditItem(null);
       return;
     }
 
     setShowCreate(false);
-    setViewItem(null);
     setEditItem(null);
   }, [location.pathname, params.id, industries]);
+
+  useEffect(() => {
+    const rawId = params.id;
+    const id = rawId ? decodeURIComponent(rawId) : undefined;
+
+    if (!id || location.pathname.endsWith('/create') || location.pathname.endsWith('/edit')) {
+      return;
+    }
+
+    let cancelled = false;
+    getIndustry(id)
+      .then(data => {
+        if (cancelled) return;
+        setViewItem({
+          id: String(data.id),
+          name: String(data.name ?? ''),
+          dateTime: parseCreatedAt(data.created_at),
+        });
+      })
+      .catch(() => {
+        if (cancelled) return;
+        const found = industriesRef.current.find((i: Industry) => i.id === id) || null;
+        setViewItem(found);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [location.pathname, params.id]);
 
   const handleSaveEditedIndustry = async (updated: Record<string, any>) => {
     // Return a promise and allow caller (`MasterEdit`) to catch and display field errors inline.
