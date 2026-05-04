@@ -222,10 +222,6 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
       newParentErrors.type = 'Please select agency type';
       valid = false;
     }
-    if (!parent.client || parent.client.length === 0) {
-      newParentErrors.client = 'Please select agency client';
-      valid = false;
-    }
     children.forEach(c => {
       const childErr: { name?: string; type?: string; client?: string } = {};
       if (!c.name.trim()) {
@@ -234,10 +230,6 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
       }
       if (!c.type.trim()) {
         childErr.type = 'Please select agency type';
-        valid = false;
-      }
-      if (!c.client || c.client.length === 0) {
-        childErr.client = 'Please select agency client';
         valid = false;
       }
       if (Object.keys(childErr).length > 0) {
@@ -401,7 +393,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                   </div>
 
                   <div className="mb-2">
-                    <label className="block text-sm text-gray-800 mb-1">Agency Client <span className="text-red-500">*</span></label>
+                    <label className="block text-sm text-gray-800 mb-1">Agency Client</label>
                     <div className="w-full">
                       <MultiSelectDropdown
                         name="parentClient"
@@ -483,7 +475,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
                         )}
                       </div>
                       <div>
-                        <label className="block text-sm text-gray-800 mb-1">Agency Client <span className="text-red-500">*</span></label>
+                        <label className="block text-sm text-gray-800 mb-1">Agency Client</label>
                         <div className="w-full">
                           <MultiSelectDropdown
                             name={`child-${c.id}-client`}
