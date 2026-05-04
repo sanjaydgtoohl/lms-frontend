@@ -570,13 +570,13 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                 {/* Row 3: Type, Designation, Department */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <div className="flex items-center justify-between gap-1 mb-1">
+                    <div className="flex items-center justify-between gap-1">
                       <label className="block text-sm text-gray-800">Type <span className="text-[#FF0000]">*</span></label>
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="!text-sm !py-1 !px-0 underline whitespace-nowrap hover:!text-orange-500 "
+                        className="!text-sm !py-0 !px-0 underline whitespace-nowrap hover:!text-orange-500 "
                         onClick={() => openQuickCreate('type', c.id)}
                       >
                         Create Type
@@ -613,13 +613,13 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                     )}
                   </div>
                   <div>
-                    <div className="flex items-center justify-between gap-1 mb-1">
+                    <div className="flex items-center justify-between gap-1">
                       <label className="block text-sm text-gray-800">Department <span className="text-[#FF0000]">*</span></label>
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="!text-sm !py-1 !px-0 underline whitespace-nowrap hover:!text-orange-500 "
+                        className="!text-sm !py-0 !px-0 underline whitespace-nowrap hover:!text-orange-500 "
                         onClick={() => openQuickCreate('department', c.id)}
                       >
                         Create Department
