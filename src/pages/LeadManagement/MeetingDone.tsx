@@ -50,7 +50,7 @@ const MeetingDone: React.FC = () => {
 
   return (
     <LeadList
-      title="Meeting"
+      title="Meetings"
       filterStatus={leadListFilters.filterStatus}
       extraStatuses={leadListFilters.extraStatuses}
       permissionStatus="Meeting Done"
