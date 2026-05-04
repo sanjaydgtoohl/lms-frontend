@@ -1,9 +1,37 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getDesignations, getDepartments, getZones, getCities, getStates, getCountries } from '../../../services/CreateLead';
 import { fetchLeadSubSources } from '../../../services/ContactPersonsCard';
 import { Trash2, X as XIcon, Plus } from 'lucide-react';
 import SelectField from '../../ui/SelectField';
+import ModalPopup from '../../ui/ModalPopup';
+import { Button } from '../../ui';
 import type { Contact, ContactPersonsCardProps } from '../../../types/LeadManagentForm';
+
+type QuickCreateKind = 'type' | 'department' | 'subSource';
+
+const QUICK_CREATE_LABELS: Record<
+  QuickCreateKind,
+  { title: string; fieldLabel: string; placeholder: string; cta: string }
+> = {
+  type: {
+    title: 'Create Type',
+    fieldLabel: 'Type name',
+    placeholder: 'Enter type name',
+    cta: 'Create Type',
+  },
+  department: {
+    title: 'Create Department',
+    fieldLabel: 'Department name',
+    placeholder: 'Enter department name',
+    cta: 'Create Department',
+  },
+  subSource: {
+    title: 'Create Sub Source',
+    fieldLabel: 'Sub-source name',
+    placeholder: 'Enter sub-source name',
+    cta: 'Create Sub Source',
+  },
+};
 
 const emptyContact = (id = '1'): Contact => ({
   id,
@@ -32,6 +60,35 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
   , errors
 }) => {
   const [contacts, setContacts] = useState<Contact[]>(initialContacts || [emptyContact('1')]);
+
+  const [quickModalKind, setQuickModalKind] = useState<QuickCreateKind | null>(null);
+  const quickModalContactIdRef = useRef<string | null>(null);
+  const [quickName, setQuickName] = useState('');
+  const [quickError, setQuickError] = useState<string | null>(null);
+
+  const openQuickCreate = (kind: QuickCreateKind, contactId: string) => {
+    setQuickModalKind(kind);
+    quickModalContactIdRef.current = contactId;
+    setQuickName('');
+    setQuickError(null);
+  };
+
+  const closeQuickCreate = () => {
+    setQuickModalKind(null);
+    quickModalContactIdRef.current = null;
+    setQuickName('');
+    setQuickError(null);
+  };
+
+  const handleQuickCreateSubmit = () => {
+    const name = quickName.trim();
+    if (!name) {
+      setQuickError('Please enter a name.');
+      return;
+    }
+    setQuickError(null);
+    // Create API + append options / update contact to be wired later (quickModalKind, quickModalContactIdRef.current, name).
+  };
 
   // Designation dropdown state
   const [designationOptions, setDesignationOptions] = useState<{ value: string; label: string }[]>([]);
@@ -383,303 +440,385 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
   }, [contacts]);
 
   return (
-    <div className="space-y-6 mb-6">
-      {contacts.map((c) => (
-        <div key={c.id} className="w-full bg-white rounded-2xl shadow-sm border border-gray-200">
-          <div className="px-4 py-5 p-5 bg-gray-50">
-            <div className="flex items-center justify-between mb-6">
-              <div className="text-base font-semibold text-gray-800">Contact Person</div>
-              {contacts.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => removeContact(c.id)}
-                  className="text-sm px-4 py-2 rounded-lg bg-[#F5F0F0] text-[#D92D20] font-medium flex items-center justify-center hover:bg-[#FFD7D7] transition-colors duration-200"
-                  style={{ backgroundColor: '#F5F0F0' }}
-                >
-                  <Trash2 strokeWidth={2.5} className="w-4 h-4 mr-1" /> Delete
-                </button>
-              )}
-            </div>
-
-            <div className="space-y-4">
-              {/* Row 1: Full Name, Profile URL */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-800 mb-1">Full Name <span className="text-[#FF0000]">*</span></label>
-                  <input
-                    type="text"
-                    placeholder="Enter full name"
-                    value={c.fullName}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateContact(c.id, 'fullName', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-white text-gray-800 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                  />
-                  {errors?.[c.id]?.fullName && (
-                    <div className="text-xs text-red-500 mt-1">{errors[c.id].fullName}</div>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-800 mb-1">Profile URL</label>
-                  <input
-                    type="text"
-                    placeholder="Enter profile URL"
-                    value={c.profileUrl}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateContact(c.id, 'profileUrl', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-white text-gray-800 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                  />
-                </div>
+    <>
+      <div className="space-y-6 mb-6">
+        {contacts.map((c) => (
+          <div key={c.id} className="w-full bg-white rounded-2xl shadow-sm border border-gray-200">
+            <div className="px-4 py-5 p-5 bg-gray-50">
+              <div className="flex items-center justify-between mb-6">
+                <div className="text-base font-semibold text-gray-800">Contact Person</div>
+                {contacts.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeContact(c.id)}
+                    className="text-sm px-4 py-2 rounded-lg bg-[#F5F0F0] text-[#D92D20] font-medium flex items-center justify-center hover:bg-[#FFD7D7] transition-colors duration-200"
+                    style={{ backgroundColor: '#F5F0F0' }}
+                  >
+                    <Trash2 strokeWidth={2.5} className="w-4 h-4 mr-1" /> Delete
+                  </button>
+                )}
               </div>
 
-              {/* Row 2: Email, Mobile No. */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-800 mb-1">Email</label>
-                  <input
-                    type="email"
-                    placeholder="Enter email address"
-                    value={c.email}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateContact(c.id, 'email', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-white text-gray-800 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                  />
+              <div className="space-y-4">
+                {/* Row 1: Full Name, Profile URL */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-800 mb-1">Full Name <span className="text-[#FF0000]">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="Enter full name"
+                      value={c.fullName}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateContact(c.id, 'fullName', e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-white text-gray-800 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                    />
+                    {errors?.[c.id]?.fullName && (
+                      <div className="text-xs text-red-500 mt-1">{errors[c.id].fullName}</div>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-800 mb-1">Profile URL</label>
+                    <input
+                      type="text"
+                      placeholder="Enter profile URL"
+                      value={c.profileUrl}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateContact(c.id, 'profileUrl', e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-white text-gray-800 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1">
-                        <label className="block text-sm text-gray-800 mb-1">Mobile No. <span className="text-[#FF0000]">*</span></label>
-                        <input
-                          type="tel"
-                          placeholder="Enter mobile number"
-                          value={c.mobileNo}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateContact(c.id, 'mobileNo', e.target.value)}
-                          maxLength={10}
-                          className="w-full px-3 py-2 rounded-lg bg-white text-gray-800 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                        />
-                        {errors?.[c.id]?.mobileNo && (
-                          <div className="text-xs text-red-500 mt-1">{errors[c.id].mobileNo}</div>
-                        )}
-                      </div>
-                      {!c.showSecondMobile && (
-                        <button
-                          type="button"
-                          onClick={() => updateContact(c.id, 'showSecondMobile', true)}
-                          className="px-3 py-2 flex items-center justify-center rounded-lg !text-white font-medium transition-colors mt-6 !bg-gray-800 hover:!bg-orange-600 text-sm gap-1 cursor-pointer"
-                          title="Add another mobile number transaction-all duration-300"
-                        >
-                          <Plus strokeWidth={2.5} className="w-4 h-4" />
 
-                        </button>
-                      )}
-                    </div>
-                    {c.showSecondMobile && (
+                {/* Row 2: Email, Mobile No. */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-800 mb-1">Email</label>
+                    <input
+                      type="email"
+                      placeholder="Enter email address"
+                      value={c.email}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateContact(c.id, 'email', e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-white text-gray-800 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <div className="space-y-3">
                       <div className="flex items-center gap-2">
                         <div className="flex-1">
+                          <label className="block text-sm text-gray-800 mb-1">Mobile No. <span className="text-[#FF0000]">*</span></label>
                           <input
                             type="tel"
-                            placeholder="Enter second mobile number"
-                            value={c.mobileNo2}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateContact(c.id, 'mobileNo2', e.target.value)}
+                            placeholder="Enter mobile number"
+                            value={c.mobileNo}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateContact(c.id, 'mobileNo', e.target.value)}
                             maxLength={10}
                             className="w-full px-3 py-2 rounded-lg bg-white text-gray-800 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                           />
-                          {errors?.[c.id]?.mobileNo2 && (
-                            <div className="text-xs text-red-500 mt-1">{errors[c.id].mobileNo2}</div>
+                          {errors?.[c.id]?.mobileNo && (
+                            <div className="text-xs text-red-500 mt-1">{errors[c.id].mobileNo}</div>
                           )}
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const updatedContact = {
-                              ...c,
-                              showSecondMobile: false,
-                              mobileNo2: ''
-                            };
-                            updateContacts(contacts.map(contact =>
-                              contact.id === c.id ? updatedContact : contact
-                            ));
-                          }}
-                          className="px-3 py-2 flex items-center justify-center rounded-lg text-white font-medium transition-colors duration-200 hover:bg-red-700 text-sm gap-1"
-                          style={{ backgroundColor: '#D92D20' }}
-                        >
-                          <XIcon strokeWidth={2.5} className="w-4 h-4" />
+                        {!c.showSecondMobile && (
+                          <button
+                            type="button"
+                            onClick={() => updateContact(c.id, 'showSecondMobile', true)}
+                            className="px-3 py-2 flex items-center justify-center rounded-lg !text-white font-medium transition-colors mt-6 !bg-orange-500 hover:!bg-orange-600 text-sm gap-1 cursor-pointer"
+                            title="Add another mobile number transaction-all duration-300"
+                          >
+                            <Plus strokeWidth={2.5} className="w-4 h-4" />
 
-                        </button>
+                          </button>
+                        )}
                       </div>
+                      {c.showSecondMobile && (
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1">
+                            <input
+                              type="tel"
+                              placeholder="Enter second mobile number"
+                              value={c.mobileNo2}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateContact(c.id, 'mobileNo2', e.target.value)}
+                              maxLength={10}
+                              className="w-full px-3 py-2 rounded-lg bg-white text-gray-800 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                            />
+                            {errors?.[c.id]?.mobileNo2 && (
+                              <div className="text-xs text-red-500 mt-1">{errors[c.id].mobileNo2}</div>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updatedContact = {
+                                ...c,
+                                showSecondMobile: false,
+                                mobileNo2: ''
+                              };
+                              updateContacts(contacts.map(contact =>
+                                contact.id === c.id ? updatedContact : contact
+                              ));
+                            }}
+                            className="px-3 py-2 flex items-center justify-center rounded-lg text-white font-medium transition-colors duration-200 hover:bg-red-700 text-sm gap-1"
+                            style={{ backgroundColor: '#D92D20' }}
+                          >
+                            <XIcon strokeWidth={2.5} className="w-4 h-4" />
+
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Row 3: Type, Designation, Department */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <div className="flex items-center justify-between gap-1 mb-1">
+                      <label className="block text-sm text-gray-800">Type <span className="text-[#FF0000]">*</span></label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="!text-sm !py-1 !px-0 underline whitespace-nowrap hover:!text-orange-500 "
+                        onClick={() => openQuickCreate('type', c.id)}
+                      >
+                        Create Type
+                      </Button>
+                    </div>
+
+                    <SelectField
+                      name="type"
+                      placeholder="Select type"
+                      options={[{ value: 'Brand', label: 'Brand' }, { value: 'Agency', label: 'Agency' }]}
+                      value={c.type}
+                      onChange={(v) => updateContact(c.id, 'type', typeof v === 'string' ? v : v[0] ?? '')}
+                      inputClassName="border border-gray-200 focus:ring-blue-500"
+                    />
+
+                    {errors?.[c.id]?.type && <div className="text-xs text-red-500 mt-1">{errors[c.id].type}</div>}
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-800 mb-1">Designation <span className="text-[#FF0000]">*</span></label>
+                    <SelectField
+                      name="designation"
+                      placeholder="Select designation"
+                      options={designationOptions}
+                      value={c.designation}
+                      onChange={(v) => updateContact(c.id, 'designation', typeof v === 'string' ? v : v[0] ?? '')}
+                      inputClassName="border border-gray-200 focus:ring-blue-500"
+                      disabled={designationLoading}
+                    />
+                    {errors?.[c.id]?.designation && <div className="text-xs text-red-500 mt-1">{errors[c.id].designation}</div>}
+                    {designationLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
+                    {designationError && <div className="text-xs text-red-500 mt-1">{designationError}</div>}
+                    {!designationLoading && !designationError && designationOptions.length === 0 && (
+                      <div className="text-xs text-gray-400 mt-1">No designations found.</div>
+                    )}
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between gap-1 mb-1">
+                      <label className="block text-sm text-gray-800">Department <span className="text-[#FF0000]">*</span></label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="!text-sm !py-1 !px-0 underline whitespace-nowrap hover:!text-orange-500 "
+                        onClick={() => openQuickCreate('department', c.id)}
+                      >
+                        Create Department
+                      </Button>
+                    </div>
+
+                    <SelectField
+                      name="department"
+                      placeholder="Select department"
+                      options={departmentOptions}
+                      value={c.department}
+                      onChange={(v) => updateContact(c.id, 'department', typeof v === 'string' ? v : v[0] ?? '')}
+                      inputClassName="border border-gray-200 focus:ring-blue-500"
+                      disabled={departmentLoading}
+                    />
+
+                    {errors?.[c.id]?.department && <div className="text-xs text-red-500 mt-1">{errors[c.id].department}</div>}
+                    {departmentLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
+                    {departmentError && <div className="text-xs text-red-500 mt-1">{departmentError}</div>}
+                    {!departmentLoading && !departmentError && departmentOptions.length === 0 && (
+                      <div className="text-xs text-gray-400 mt-1">No departments found.</div>
                     )}
                   </div>
                 </div>
-              </div>
 
-              {/* Row 3: Type, Designation, Department */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-800 mb-1">Type <span className="text-[#FF0000]">*</span></label>
-                  <SelectField
-                    name="type"
-                    placeholder="Select type"
-                    options={[{ value: 'Brand', label: 'Brand' }, { value: 'Agency', label: 'Agency' }]}
-                    value={c.type}
-                    onChange={(v) => updateContact(c.id, 'type', typeof v === 'string' ? v : v[0] ?? '')}
-                    inputClassName="border border-gray-200 focus:ring-blue-500"
-                  />
-                  {errors?.[c.id]?.type && <div className="text-xs text-red-500 mt-1">{errors[c.id].type}</div>}
+                {/* Row 4: Country, State, City */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-800 mb-1">Country <span className="text-[#FF0000]">*</span></label>
+                    <SelectField
+                      name="country"
+                      placeholder="Select country"
+                      options={countryOptions}
+                      value={c.country}
+                      onChange={(v) => updateContact(c.id, 'country', typeof v === 'string' ? v : v[0] ?? '')}
+                      inputClassName="border border-gray-200 focus:ring-blue-500"
+                      disabled={countryLoading}
+                    />
+                    {errors?.[c.id]?.country && <div className="text-xs text-red-500 mt-1">{errors[c.id].country}</div>}
+                    {countryLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
+                    {countryError && <div className="text-xs text-red-500 mt-1">{countryError}</div>}
+                    {!countryLoading && !countryError && countryOptions.length === 0 && (
+                      <div className="text-xs text-gray-400 mt-1">No countries found.</div>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-800 mb-1">State</label>
+                    <SelectField
+                      name="state"
+                      placeholder="Select state"
+                      options={stateOptions}
+                      value={c.state}
+                      onChange={(v) => updateContact(c.id, 'state', typeof v === 'string' ? v : v[0] ?? '')}
+                      inputClassName="border border-gray-200 focus:ring-blue-500"
+                      disabled={stateLoading}
+                    />
+                    {stateLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
+                    {stateError && <div className="text-xs text-red-500 mt-1">{stateError}</div>}
+                    {!stateLoading && !stateError && stateOptions.length === 0 && (
+                      <div className="text-xs text-gray-400 mt-1">No states found.</div>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-800 mb-1">City</label>
+                    <SelectField
+                      name="city"
+                      placeholder="Select city"
+                      options={cityOptions}
+                      value={c.city}
+                      onChange={(v) => updateContact(c.id, 'city', typeof v === 'string' ? v : v[0] ?? '')}
+                      inputClassName="border border-gray-200 focus:ring-blue-500"
+                      disabled={cityLoading}
+                    />
+                    {cityLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
+                    {cityError && <div className="text-xs text-red-500 mt-1">{cityError}</div>}
+                    {!cityLoading && !cityError && cityOptions.length === 0 && (
+                      <div className="text-xs text-gray-400 mt-1">No cities found.</div>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm text-gray-800 mb-1">Designation <span className="text-[#FF0000]">*</span></label>
-                  <SelectField
-                    name="designation"
-                    placeholder="Select designation"
-                    options={designationOptions}
-                    value={c.designation}
-                    onChange={(v) => updateContact(c.id, 'designation', typeof v === 'string' ? v : v[0] ?? '')}
-                    inputClassName="border border-gray-200 focus:ring-blue-500"
-                    disabled={designationLoading}
-                  />
-                  {errors?.[c.id]?.designation && <div className="text-xs text-red-500 mt-1">{errors[c.id].designation}</div>}
-                  {designationLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
-                  {designationError && <div className="text-xs text-red-500 mt-1">{designationError}</div>}
-                  {!designationLoading && !designationError && designationOptions.length === 0 && (
-                    <div className="text-xs text-gray-400 mt-1">No designations found.</div>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-800 mb-1">Department <span className="text-[#FF0000]">*</span></label>
-                  <SelectField
-                    name="department"
-                    placeholder="Select department"
-                    options={departmentOptions}
-                    value={c.department}
-                    onChange={(v) => updateContact(c.id, 'department', typeof v === 'string' ? v : v[0] ?? '')}
-                    inputClassName="border border-gray-200 focus:ring-blue-500"
-                    disabled={departmentLoading}
-                  />
-                  {errors?.[c.id]?.department && <div className="text-xs text-red-500 mt-1">{errors[c.id].department}</div>}
-                  {departmentLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
-                  {departmentError && <div className="text-xs text-red-500 mt-1">{departmentError}</div>}
-                  {!departmentLoading && !departmentError && departmentOptions.length === 0 && (
-                    <div className="text-xs text-gray-400 mt-1">No departments found.</div>
-                  )}
-                </div>
-              </div>
 
-              {/* Row 4: Country, State, City */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-800 mb-1">Country <span className="text-[#FF0000]">*</span></label>
-                  <SelectField
-                    name="country"
-                    placeholder="Select country"
-                    options={countryOptions}
-                    value={c.country}
-                    onChange={(v) => updateContact(c.id, 'country', typeof v === 'string' ? v : v[0] ?? '')}
-                    inputClassName="border border-gray-200 focus:ring-blue-500"
-                    disabled={countryLoading}
-                  />
-                  {errors?.[c.id]?.country && <div className="text-xs text-red-500 mt-1">{errors[c.id].country}</div>}
-                  {countryLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
-                  {countryError && <div className="text-xs text-red-500 mt-1">{countryError}</div>}
-                  {!countryLoading && !countryError && countryOptions.length === 0 && (
-                    <div className="text-xs text-gray-400 mt-1">No countries found.</div>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-800 mb-1">State</label>
-                  <SelectField
-                    name="state"
-                    placeholder="Select state"
-                    options={stateOptions}
-                    value={c.state}
-                    onChange={(v) => updateContact(c.id, 'state', typeof v === 'string' ? v : v[0] ?? '')}
-                    inputClassName="border border-gray-200 focus:ring-blue-500"
-                    disabled={stateLoading}
-                  />
-                  {stateLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
-                  {stateError && <div className="text-xs text-red-500 mt-1">{stateError}</div>}
-                  {!stateLoading && !stateError && stateOptions.length === 0 && (
-                    <div className="text-xs text-gray-400 mt-1">No states found.</div>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-800 mb-1">City</label>
-                  <SelectField
-                    name="city"
-                    placeholder="Select city"
-                    options={cityOptions}
-                    value={c.city}
-                    onChange={(v) => updateContact(c.id, 'city', typeof v === 'string' ? v : v[0] ?? '')}
-                    inputClassName="border border-gray-200 focus:ring-blue-500"
-                    disabled={cityLoading}
-                  />
-                  {cityLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
-                  {cityError && <div className="text-xs text-red-500 mt-1">{cityError}</div>}
-                  {!cityLoading && !cityError && cityOptions.length === 0 && (
-                    <div className="text-xs text-gray-400 mt-1">No cities found.</div>
-                  )}
-                </div>
-              </div>
+                {/* Row 5: Zone, Sub-Source, Postal Code */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-800 mb-1">Zone</label>
+                    <SelectField
+                      name="zone"
+                      placeholder="Select zone"
+                      options={zoneOptions}
+                      value={c.zone}
+                      onChange={(v) => updateContact(c.id, 'zone', typeof v === 'string' ? v : v[0] ?? '')}
+                      inputClassName="border border-gray-200 focus:ring-blue-500"
+                      disabled={zoneLoading}
+                    />
+                    {zoneLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
+                    {zoneError && <div className="text-xs text-red-500 mt-1">{zoneError}</div>}
+                    {!zoneLoading && !zoneError && zoneOptions.length === 0 && (
+                      <div className="text-xs text-gray-400 mt-1">No zones found.</div>
+                    )}
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between gap-1 mb-1">
+                      <label className="block text-sm text-gray-800">Sub-Source <span className="text-[#FF0000]">*</span></label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="!text-sm !py-1 !px-0 underline whitespace-nowrap hover:!text-orange-500 "
+                        onClick={() => openQuickCreate('subSource', c.id)}
+                      >
+                        Create Sub Source
+                      </Button>
+                    </div>
 
-              {/* Row 5: Zone, Sub-Source, Postal Code */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-800 mb-1">Zone</label>
-                  <SelectField
-                    name="zone"
-                    placeholder="Select zone"
-                    options={zoneOptions}
-                    value={c.zone}
-                    onChange={(v) => updateContact(c.id, 'zone', typeof v === 'string' ? v : v[0] ?? '')}
-                    inputClassName="border border-gray-200 focus:ring-blue-500"
-                    disabled={zoneLoading}
-                  />
-                  {zoneLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
-                  {zoneError && <div className="text-xs text-red-500 mt-1">{zoneError}</div>}
-                  {!zoneLoading && !zoneError && zoneOptions.length === 0 && (
-                    <div className="text-xs text-gray-400 mt-1">No zones found.</div>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-800 mb-1">Sub-Source <span className="text-[#FF0000]">*</span></label>
-                  <SelectField
-                    name="subSource"
-                    placeholder={subSourceLoading ? "Loading..." : "Select sub-source"}
-                    options={subSourceOptions}
-                    value={c.subSource}
-                    onChange={(v) => {
-                      // v can be string or string[] depending on SelectField implementation
-                      if (typeof v === 'string') {
-                        updateContact(c.id, 'subSource', v);
-                      } else if (Array.isArray(v) && v.length > 0) {
-                        // Use the first value in the array
-                        updateContact(c.id, 'subSource', v[0]);
-                      } else {
-                        updateContact(c.id, 'subSource', '');
-                      }
-                    }}
-                    inputClassName="border border-gray-200 focus:ring-blue-500"
-                    disabled={subSourceLoading}
-                  />
-                  {errors?.[c.id]?.subSource && <div className="text-xs text-red-500 mt-1">{errors[c.id].subSource}</div>}
-                  {subSourceLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
-                  {subSourceError && <div className="text-xs text-red-500 mt-1">{subSourceError}</div>}
-                  {!subSourceLoading && !subSourceError && subSourceOptions.length === 0 && (
-                    <div className="text-xs text-gray-400 mt-1">No sub-sources found.</div>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-800 mb-1">Postal Code</label>
-                  <input
-                    type="text"
-                    placeholder="Enter postal code"
-                    value={c.postalCode}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateContact(c.id, 'postalCode', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-white text-gray-800 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                  />
+                    <SelectField
+                      name="subSource"
+                      placeholder={subSourceLoading ? "Loading..." : "Select sub-source"}
+                      options={subSourceOptions}
+                      value={c.subSource}
+                      onChange={(v) => {
+                        if (typeof v === 'string') {
+                          updateContact(c.id, 'subSource', v);
+                        } else if (Array.isArray(v) && v.length > 0) {
+                          updateContact(c.id, 'subSource', v[0]);
+                        } else {
+                          updateContact(c.id, 'subSource', '');
+                        }
+                      }}
+                      inputClassName="border border-gray-200 focus:ring-blue-500"
+                      disabled={subSourceLoading}
+                    />
+
+                    {errors?.[c.id]?.subSource && <div className="text-xs text-red-500 mt-1">{errors[c.id].subSource}</div>}
+                    {subSourceLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
+                    {subSourceError && <div className="text-xs text-red-500 mt-1">{subSourceError}</div>}
+                    {!subSourceLoading && !subSourceError && subSourceOptions.length === 0 && (
+                      <div className="text-xs text-gray-400 mt-1">No sub-sources found.</div>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-800 mb-1">Postal Code</label>
+                    <input
+                      type="text"
+                      placeholder="Enter postal code"
+                      value={c.postalCode}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateContact(c.id, 'postalCode', e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-white text-gray-800 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+
+      <ModalPopup
+        show={quickModalKind !== null}
+        onClose={closeQuickCreate}
+        title={quickModalKind ? QUICK_CREATE_LABELS[quickModalKind].title : ''}
+      >
+        {quickModalKind ? (
+          <div className="flex flex-col gap-4">
+            <div>
+              <label htmlFor="quick-create-name" className="mb-1 block text-sm font-medium text-gray-800">
+                {QUICK_CREATE_LABELS[quickModalKind].fieldLabel}
+              </label>
+              <input
+                id="quick-create-name"
+                type="text"
+                value={quickName}
+                onChange={(e) => {
+                  setQuickName(e.target.value);
+                  if (quickError) setQuickError(null);
+                }}
+                placeholder={QUICK_CREATE_LABELS[quickModalKind].placeholder}
+                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-gray-200 focus:ring-1 focus:ring-gray-200"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleQuickCreateSubmit();
+                  }
+                }}
+              />
+              {quickError ? <p className="mt-1.5 text-xs text-red-600">{quickError}</p> : null}
+            </div>
+            <div className="flex flex-wrap justify-end gap-2 border-t border-gray-100 pt-4">
+              <button type="button" className="btn-secondary" onClick={closeQuickCreate}>
+                Cancel
+              </button>
+              <button type="button" className="btn-primary" onClick={handleQuickCreateSubmit}>
+                {QUICK_CREATE_LABELS[quickModalKind].cta}
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </ModalPopup>
+    </>
   );
 };
 
