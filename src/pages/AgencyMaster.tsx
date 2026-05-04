@@ -78,9 +78,32 @@ const parseApiDateToISO = (s?: string): string => {
   return res ?? '';
 };
 
+/** Same mapping as list rows. */
+function mapApiAgencyToUi(a: any): Agency {
+  const parentObj = a.is_parent ?? a.agency_group ?? null;
+  const agencyGroupName = parentObj ? (typeof parentObj === 'object' ? (parentObj.name || String(parentObj?.id || '')) : String(parentObj)) : a.name || '';
+  const rawCount = a.contact_person_count ?? a.contactPersonCount;
+  const contactPersonValue = (typeof rawCount === 'number') ? String(rawCount)
+    : (typeof rawCount === 'string' && rawCount.trim() !== '') ? rawCount
+      : (a.contact_person ?? '');
+  const typeRaw = a.agency_type ?? a.type;
+  const agencyTypeStr =
+    typeRaw && typeof typeRaw === 'object' && typeRaw !== null && 'name' in typeRaw
+      ? String((typeRaw as { name?: string }).name ?? '')
+      : String(typeRaw ?? '');
+  return {
+    id: String(a.id),
+    agencyGroup: agencyGroupName,
+    agencyName: a.name || '',
+    agencyType: agencyTypeStr,
+    contactPerson: contactPersonValue || '',
+    dateTime: parseApiDateToISO(a.created_at || a.updated_at || ''),
+  };
+}
+
 const AgencyMaster: React.FC = () => {
   const [showCreate, setShowCreate] = useState(false);
-  const [viewItem, setViewItem] = useState<Agency | null>(null);
+  const [viewItem, setViewItem] = useState<Record<string, any> | null>(null);
   const [editItem, setEditItem] = useState<Agency | null>(null);
   const [agenciesList, setAgenciesList] = useState<Agency[]>([]);
   const [loadingList, setLoadingList] = useState(false);
@@ -106,26 +129,7 @@ const AgencyMaster: React.FC = () => {
     setLoadingList(true);
     try {
       const res = await fetchAgencies(p, perPage, search);
-      // map service Agency -> MainContent Agency shape
-      const mapped = (res.data || []).map((a: any) => {
-        // API can return parent info either in `is_parent` (object) or `agency_group`.
-        // Prefer `is_parent.name` if available, otherwise fall back to `agency_group.name` or a string.
-        const parentObj = a.is_parent ?? a.agency_group ?? null;
-        const agencyGroupName = parentObj ? (typeof parentObj === 'object' ? (parentObj.name || String(parentObj?.id || '')) : String(parentObj)) : a.name || '';
-        const rawCount = a.contact_person_count ?? a.contactPersonCount;
-        const contactPersonValue = (typeof rawCount === 'number') ? String(rawCount)
-          : (typeof rawCount === 'string' && rawCount.trim() !== '') ? rawCount
-            : (a.contact_person ?? '');
-
-        return {
-          id: String(a.id),
-          agencyGroup: agencyGroupName,
-          agencyName: a.name || '',
-          agencyType: a.agency_type || (a.type || ''),
-          contactPerson: contactPersonValue || '',
-          dateTime: parseApiDateToISO(a.created_at || a.updated_at || ''),
-        };
-      });
+      const mapped = (res.data || []).map((a: any) => mapApiAgencyToUi(a));
       setAgenciesList(mapped);
       // attempt to read pagination meta if present
       const total = res.meta?.pagination?.total;
@@ -217,17 +221,17 @@ const AgencyMaster: React.FC = () => {
 
 
     if (id) {
-      // Try to fetch from API first, fallback to local if fails
       getAgency(id)
         .then(data => {
-          setViewItem(data as any);
+          // Full API payload for MasterView — all fields from GET /agencies/:id (same as before mapping trim)
+          setViewItem(data as Record<string, any>);
           setEditItem(null);
           setShowCreate(false);
         })
         .catch(() => {
           const fetched = getItem('agency', id);
           if (fetched) setViewItem(fetched as Agency);
-          else setViewItem({ id } as Agency);
+          else setViewItem({ id, agencyGroup: '', agencyName: '', agencyType: '', contactPerson: '', dateTime: '' });
           setEditItem(null);
           setShowCreate(false);
         });
@@ -239,12 +243,12 @@ const AgencyMaster: React.FC = () => {
     setEditItem(null);
   }, [location.pathname, params.id]);
 
-  // load list when on list page and when page changes
+  // List route only — not create, edit, or view-by-id (avoids redundant GET /agencies while viewing one row)
   useEffect(() => {
-    if (!location.pathname.endsWith('/create') && !location.pathname.endsWith('/edit')) {
-      loadAgencies(page, searchValue);
-    }
-  }, [page, location.pathname, searchValue]);
+    if (location.pathname.endsWith('/create') || location.pathname.endsWith('/edit')) return;
+    if (params.id) return;
+    loadAgencies(page, searchValue);
+  }, [page, location.pathname, searchValue, params.id]);
 
 
 

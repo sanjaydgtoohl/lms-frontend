@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Pagination from '../components/ui/Pagination';
 import { motion } from 'framer-motion';
 import MasterView from '../components/ui/MasterView';
@@ -11,6 +11,7 @@ import ConfirmDialog from '../components/ui/ConfirmDialog';
 import SearchBar from '../components/ui/SearchBar';
 import {
   listDesignations,
+  getDesignation,
   deleteDesignation,
   updateDesignation,
   createDesignation,
@@ -248,6 +249,9 @@ const DesignationMaster: React.FC = () => {
   const [viewItem, setViewItem] = useState<Designation | null>(null);
   const [editItem, setEditItem] = useState<Designation | null>(null);
 
+  const designationsRef = useRef<Designation[]>([]);
+  designationsRef.current = designations;
+
   const refresh = async (page = currentPage, search = searchQuery) => {
     setLoading(true);
     setError(null);
@@ -259,7 +263,7 @@ const DesignationMaster: React.FC = () => {
       const resp = await listDesignations(pageToFetch, perPageToFetch);
       let mapped: Designation[] = resp.data.map((it: ApiDesignation) => ({
         id: String(it.id),
-        name: it.name,
+        name: String(it.name ?? it.title ?? ''),
         dateTime: it.created_at || '',
       }));
 
@@ -308,18 +312,45 @@ const DesignationMaster: React.FC = () => {
       return;
     }
 
-    if (id) {
-      const found = designations.find(d => d.id === id) || null;
-      setViewItem(found);
+    if (!id) {
       setShowCreate(false);
+      setViewItem(null);
       setEditItem(null);
       return;
     }
 
     setShowCreate(false);
-    setViewItem(null);
     setEditItem(null);
   }, [location.pathname, params.id, designations]);
+
+  useEffect(() => {
+    const rawId = params.id;
+    const id = rawId ? decodeURIComponent(rawId) : undefined;
+
+    if (!id || location.pathname.endsWith('/create') || location.pathname.endsWith('/edit')) {
+      return;
+    }
+
+    let cancelled = false;
+    getDesignation(id)
+      .then(data => {
+        if (cancelled) return;
+        setViewItem({
+          id: String(data.id),
+          name: String(data.name ?? data.title ?? ''),
+          dateTime: data.created_at || '',
+        });
+      })
+      .catch(() => {
+        if (cancelled) return;
+        const found = designationsRef.current.find((d: Designation) => d.id === id) || null;
+        setViewItem(found);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [location.pathname, params.id]);
 
   const handleSaveEditedDesignation = (updated: Record<string, any>) => {
     return (async () => {
