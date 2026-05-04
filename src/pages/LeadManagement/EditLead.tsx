@@ -16,6 +16,40 @@ import gmailService from '../../services/gmailService';
 import CommentSection from '../../components/forms/CreateLead/CommentSection';
 import type { EditLeadtype } from '../../types/AllLeadtype'
 
+<<<<<<< HEAD
+=======
+interface Lead {
+  id: string;
+  selectedOption: 'brand' | 'agency';
+  brandId?: string;
+  agencyId?: string;
+  contacts: Array<{
+    id: string;
+    fullName: string;
+    profileUrl: string;
+    email: string;
+    mobileNo: string;
+    mobileNo2: string;
+    showSecondMobile: boolean;
+    type: string;
+    designation: string;
+    agencyBrand: string;
+    subSource: string;
+    department: string;
+    country: string;
+    state: string;
+    city: string;
+    zone: string;
+    postalCode: string;
+  }>;
+  assignTo?: string;
+  assignToName?: string;
+  priority?: string;
+  callFeedback?: string;
+  comment?: string;
+}
+
+>>>>>>> a32403be5bfb81661941aa86d9101959f7555b07
 const EditLead: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
