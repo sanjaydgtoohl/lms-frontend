@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
-import { MasterFormHeader, MultiSelectDropdown } from '../../../components/ui';
+import { MasterFormHeader, MultiSelectDropdown, SelectField } from '../../../components/ui';
 import { apiClient } from '../../../utils/apiClient';
 import { createUser, updateUser } from '../../../services/CreateUser';
 import SweetAlert from '../../../utils/SweetAlert';
@@ -26,6 +26,8 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
     password_confirmation: '',
     roles: [] as string[],
     managers: [] as string[],
+    zone: '',
+    origination: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [roleOptions, setRoleOptions] = useState<Array<{ label: string; value: string }>>([]);
@@ -545,6 +547,38 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
                   {errors.phone}
                 </div>
               )}
+            </div>
+
+            {/* Zone — UI only (no API / not included in save payload) */}
+            <div className="col-span-2 sm:col-span-1">
+              <label className="block text-sm text-gray-40 mb-1">Zone</label>
+              <SelectField
+                name="zone"
+                value={form.zone}
+                onChange={(v) => {
+                  const val = typeof v === 'string' ? v : v[0] ?? '';
+                  setForm((prev) => ({ ...prev, zone: val }));
+                }}
+                options={[]}
+                placeholder="Select zone"
+                inputClassName="border-gray-200 focus:ring-black"
+              />
+            </div>
+
+            {/* Originations — UI only (no API / not included in save payload) */}
+            <div className="col-span-2 sm:col-span-1">
+              <label className="block text-sm text-gray-40 mb-1">Originations</label>
+              <SelectField
+                name="origination"
+                value={form.origination}
+                onChange={(v) => {
+                  const val = typeof v === 'string' ? v : v[0] ?? '';
+                  setForm((prev) => ({ ...prev, origination: val }));
+                }}
+                options={[]}
+                placeholder="Select origination"
+                inputClassName="border-gray-200 focus:ring-black"
+              />
             </div>
 
             {/* Role */}
