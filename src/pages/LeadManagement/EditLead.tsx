@@ -84,7 +84,7 @@ const EditLead: React.FC = () => {
           postalCode: apiLead.postal_code || '',
         };
 
-        const mappedLead: Lead = {
+        const mappedLead: EditLeadtype = {
           id: String(apiLead.id),
           selectedOption: apiLead.brand ? 'brand' : (apiLead.agency ? 'agency' : 'brand'),
           brandId: apiLead.brand?.id ? String(apiLead.brand.id) : undefined,
