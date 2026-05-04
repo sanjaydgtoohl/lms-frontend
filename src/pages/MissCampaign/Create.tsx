@@ -665,7 +665,7 @@ const Create: React.FC<CreateProps> = ({
 
 
             {/* Assign By (read-only) */}
-            <div className='w-full sm:w-[calc(50%-12px)]'>
+            {/* <div className='w-full sm:w-[calc(50%-12px)]'>
               <label className="block text-sm font-medium mb-2 text-gray-800">
                 Assign By
               </label>
@@ -676,7 +676,7 @@ const Create: React.FC<CreateProps> = ({
                 className="w-full px-3 py-2 border rounded-lg bg-gray-100 text-gray-900 focus:outline-none"
                 tabIndex={-1}
               />
-            </div>
+            </div> */}
 
             {/* Assign To */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
