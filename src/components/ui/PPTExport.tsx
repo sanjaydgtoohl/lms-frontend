@@ -46,11 +46,11 @@ function PPTExport({ fetchRows, className = '' }: PPTExportProps) {
         type="button"
         onClick={handleExport}
         disabled={loading}
-        className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2"
+        className="btn-primary"
         aria-label="Export device inventory to PPT"
         aria-busy={loading}
       >
-        <Download className="text-gray-700 h-4 w-4 shrink-0" aria-hidden />
+        <Download className="text-gray-700 h-4 w-4 mr-2 shrink-0" aria-hidden />
         {loading ? 'Exporting PPT…' : 'PPT Export'}
       </button>
       {error ? (

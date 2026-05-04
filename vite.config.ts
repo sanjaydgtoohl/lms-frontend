@@ -27,6 +27,12 @@ export default defineConfig(({ mode }) => {
           secure: true,
           rewrite: (path) => path.replace(/^\/api/, '/api/v1'),
         },
+        '/ssp-api': {
+          target: 'https://ssp.dgtoohl.com',
+          changeOrigin: true,
+         secure: false, 
+         rewrite: (path) => path.replace(/^\/ssp-api/, '/api'),
+        },
         '/remote-images': {
           target: 'https://d2nljoxssb7y4b.cloudfront.net',
           changeOrigin: true,

@@ -13,6 +13,7 @@ type SelectDropdownProps = {
   inputClassName?: string;
   disabled?: boolean;
   isMulti?: boolean;
+  autoCloseOnSelect?: boolean;
 };
 
 const normalize = (opt: Option): { value: string; label: string } => {
@@ -31,6 +32,7 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
   inputClassName = '',
   disabled = false,
   isMulti = false,
+  autoCloseOnSelect = true,
 }) => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -143,6 +145,7 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
                 className={`px-4 py-2 cursor-pointer hover-input ${active ? 'bg-blue-100 text-blue-700 font-semibold' : 'text-gray-700'} hover:bg-blue-50`}
                 onMouseDown={(e) => {
                   e.preventDefault();
+                  e.stopPropagation();
                   if (isMulti) {
                     let newVals;
                     if (active) {
@@ -153,10 +156,17 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
                     onChange(newVals);
                   } else {
                     onChange(o.value);
-                    setOpen(false);
                   }
-                  if (!isMulti) setOpen(false);
+                  if (autoCloseOnSelect) {
+                    setOpen(false);
+                    if (!isMulti) {
+                      // Prevent immediate reopen caused by retained input focus.
+                      const activeEl = document.activeElement as HTMLElement | null;
+                      activeEl?.blur();
+                    }
+                  }
                 }}
+                onClick={(e) => e.stopPropagation()}
               >
                 {o.label}
                 {isMulti && active && <span className="ml-2 text-xs">✓</span>}

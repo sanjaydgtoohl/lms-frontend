@@ -15,7 +15,23 @@ const FilePreviewModal: React.FC<{
   isOpen: boolean;
   source?: Source | null;
   onClose: () => void;
-}> = ({ isOpen, source, onClose }) => {
+  className?: string;
+  overlayClassName?: string;
+  panelClassName?: string;
+  headerClassName?: string;
+  bodyClassName?: string;
+  closeButtonClassName?: string;
+}> = ({
+  isOpen,
+  source,
+  onClose,
+  className,
+  overlayClassName,
+  panelClassName,
+  headerClassName,
+  bodyClassName,
+  closeButtonClassName,
+}) => {
   const [localUrl, setLocalUrl] = useState<string | null>(null);
   const name = useMemo(() => {
     if (!source) return undefined;
@@ -42,14 +58,25 @@ const FilePreviewModal: React.FC<{
   const src = source.kind === 'file' ? localUrl : source.url;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white w-[90%] md:w-3/4 lg:w-2/3 max-h-[90%] overflow-auto rounded shadow-lg">
-        <div className="flex items-center justify-between p-4 border-b">
+    <div className={`fixed inset-0 z-50 flex items-center justify-center ${className || ''}`.trim()}>
+      <div
+        className={`absolute inset-0 bg-black/50 ${overlayClassName || ''}`.trim()}
+        onClick={onClose}
+      />
+      <div
+        className={`relative bg-white w-[90%] md:w-3/4 lg:w-2/3 max-h-[90%] overflow-auto rounded shadow-lg ${panelClassName || ''}`.trim()}
+      >
+        <div className={`flex items-center justify-between p-4 border-b ${headerClassName || ''}`.trim()}>
           <div className="text-sm font-medium">{name || 'File Preview'}</div>
-          <button type="button" className="text-sm text-gray-600 hover:text-gray-900" onClick={onClose}>Close</button>
+          <button
+            type="button"
+            className={`text-sm text-gray-600 hover:text-gray-900 ${closeButtonClassName || ''}`.trim()}
+            onClick={onClose}
+          >
+            Close
+          </button>
         </div>
-        <div className="p-4">
+        <div className={`p-4 ${bodyClassName || ''}`.trim()}>
           {src && isImage(ext) && (
             <img src={src} alt={name || 'image'} className="mx-auto max-h-[70vh]" />
           )}
