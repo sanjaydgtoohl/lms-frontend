@@ -20,47 +20,17 @@ import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '../../redux/store';
 import { setUnreadCount, setNotifications } from '../../redux/slices/notificationSlice';
 import { getUnreadNotificationCount, listNotifications } from '../../services/notifications';
-
-interface Lead {
-  id: string;
-  agencyName: string;
-  brandName: string;
-  contactPerson: string;
-  phoneNumber: string;
-  source: string;
-  subSource: string;
-  assignBy: string;
-  assignTo: string;
-  dateTime: string;
-  status: string;
-  leadStatus: string;
-  callStatus: string;
-  callAttempt: number;
-  comment: string;
-}
-
-interface CallStatusOption {
-  id: number;
-  name: string;
-}
-
-
-interface UserOption {
-  id: number | string;
-  name: string;
-}
+import type { CallStatusOption, UserOption, AllLeadtype } from '../../types/AllLeadtype';
 
 // Call status options will be fetched from API
-
 // (status mapping removed - not used in this file)
-
 
 const AllLeads: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const itemsPerPage = 15;
-  const [leads, setLeads] = useState<Lead[]>([]);
+  const [leads, setLeads] = useState<AllLeadtype[]>([]);
   const [callStatusOptions, setCallStatusOptions] = useState<CallStatusOption[]>([]);
   const [assignToOptions, setAssignToOptions] = useState<UserOption[]>([]);
   const { hasPermission } = usePermissions();
@@ -187,6 +157,16 @@ const AllLeads: React.FC = () => {
     // Remove the '#' from the ID before using it in the URL
     const cleanId = id.replace('#', '');
     navigate(ROUTES.LEAD.DETAIL(cleanId));
+  };
+
+  const handleCreateMeeting = (_id: string) => {
+    void _id;
+    navigate(ROUTES.LEAD.MEETING_SCHEDULE);
+  };
+
+  const handleBriefCreation = (_id: string) => {
+    void _id;
+    navigate(ROUTES.BRIEF.CREATE);
   };
 
   const handleAssignToChange = (leadId: string, newSalesMan: string) => {
@@ -339,7 +319,7 @@ const AllLeads: React.FC = () => {
         })(),
         callAttempt: Number(it.call_attempt ?? it.callAttempt ?? 0),
         comment: it.comment || it.notes || '',
-      } as Lead));
+      } as AllLeadtype));
 
       setLeads(items);
       // Use total from API pagination
@@ -359,18 +339,18 @@ const AllLeads: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, searchQuery]);
 
-  const columns: Column<Lead>[] = [
-    { key: 'sr', header: 'Id', render: (it: Lead) => it.id, className: 'text-left whitespace-nowrap' },
-    { key: 'agencyName', header: 'Agency Name', render: (it: Lead) => it.agencyName || '-', className: 'max-w-[180px] overflow-hidden text-ellipsis whitespace-nowrap' },
-    { key: 'brandName', header: 'Brand Name', render: (it: Lead) => it.brandName || '-', className: 'max-w-[180px] overflow-hidden text-ellipsis whitespace-nowrap' },
-    { key: 'contactPerson', header: 'Contact Person', render: (it: Lead) => it.contactPerson || '-', className: 'max-w-[160px] overflow-hidden text-ellipsis whitespace-nowrap' },
-    { key: 'phoneNumber', header: 'Phone Number', render: (it: Lead) => it.phoneNumber || '-', className: 'whitespace-nowrap' },
-    { key: 'subSource', header: 'Sub-Source', render: (it: Lead) => it.subSource || '-', className: 'whitespace-nowrap' },
-    { key: 'assignBy', header: 'Assign By', render: (it: Lead) => it.assignBy || '-', className: 'whitespace-nowrap' },
+  const columns: Column<AllLeadtype>[] = [
+    { key: 'sr', header: 'Id', render: (it: AllLeadtype) => it.id, className: 'text-left whitespace-nowrap' },
+    { key: 'agencyName', header: 'Agency Name', render: (it: AllLeadtype) => it.agencyName || '-', className: 'max-w-[180px] overflow-hidden text-ellipsis whitespace-nowrap' },
+    { key: 'brandName', header: 'Brand Name', render: (it: AllLeadtype) => it.brandName || '-', className: 'max-w-[180px] overflow-hidden text-ellipsis whitespace-nowrap' },
+    { key: 'contactPerson', header: 'Contact Person', render: (it: AllLeadtype) => it.contactPerson || '-', className: 'max-w-[160px] overflow-hidden text-ellipsis whitespace-nowrap' },
+    { key: 'phoneNumber', header: 'Phone Number', render: (it: AllLeadtype) => it.phoneNumber || '-', className: 'whitespace-nowrap' },
+    { key: 'subSource', header: 'Sub-Source', render: (it: AllLeadtype) => it.subSource || '-', className: 'whitespace-nowrap' },
+    { key: 'assignBy', header: 'Assign By', render: (it: AllLeadtype) => it.assignBy || '-', className: 'whitespace-nowrap' },
     ...(hasPermission('all-lead.assign') ? [{
       key: 'assignTo',
       header: 'Assign To',
-      render: (it: Lead) => (
+      render: (it: AllLeadtype) => (
         <AssignDropdown
           value={it.assignTo ?? ''}
           options={assignToOptions.map(opt => opt.name)}
@@ -380,12 +360,12 @@ const AllLeads: React.FC = () => {
         />
       ),
       className: 'min-w-[140px]',
-    } as Column<Lead>] : []),
-    { key: 'dateTime', header: 'Date & Time', render: (it: Lead) => it.dateTime || '-', className: 'whitespace-nowrap' },
+    } as Column<AllLeadtype>] : []),
+    { key: 'dateTime', header: 'Date & Time', render: (it: AllLeadtype) => it.dateTime || '-', className: 'whitespace-nowrap' },
     {
       key: 'status',
       header: 'Status',
-      render: (it: Lead) => {
+      render: (it: AllLeadtype) => {
         const statusColors = {
           'Active': '#22c55e',
           'Inactive': '#ef4444',
@@ -412,7 +392,7 @@ const AllLeads: React.FC = () => {
     {
       key: 'callStatus',
       header: 'Call Status',
-      render: (it: Lead) => (
+      render: (it: AllLeadtype) => (
         <div className="min-w-[160px]">
           {hasPermission('all-lead-call-status.update') ? (
             <CallStatusDropdown
@@ -428,11 +408,11 @@ const AllLeads: React.FC = () => {
       ),
       className: 'min-w-[160px]',
     },
-    { key: 'callAttempt', header: 'Call Attempt', render: (it: Lead) => it.callAttempt ? String(it.callAttempt) : '-', className: 'whitespace-nowrap' },
+    { key: 'callAttempt', header: 'Call Attempt', render: (it: AllLeadtype) => it.callAttempt ? String(it.callAttempt) : '-', className: 'whitespace-nowrap' },
     {
       key: 'comment',
       header: 'Comment',
-      render: (it: Lead) => (
+      render: (it: AllLeadtype) => (
         <div
           className="cursor-help max-w-[220px]"
           onMouseEnter={(e) => showTooltip(e, it.comment || '-')}
@@ -498,11 +478,13 @@ const AllLeads: React.FC = () => {
             startIndex={startIndex}
             loading={loading}
             desktopOnMobile={true}
-            keyExtractor={(it: Lead) => it.id}
+            keyExtractor={(it: AllLeadtype) => it.id}
             columns={columns}
-            onEdit={(it: Lead) => handleEdit(it.id)}
-            onView={(it: Lead) => handleView(it.id)}
-            onDelete={(it: Lead) => handleDelete(it.id)}
+            onEdit={(it: AllLeadtype) => handleEdit(it.id)}
+            onView={(it: AllLeadtype) => handleView(it.id)}
+            onDelete={(it: AllLeadtype) => handleDelete(it.id)}
+            onCreateMeeting={(it: AllLeadtype) => handleCreateMeeting(it.id)}
+            onBriefCreation={(it: AllLeadtype) => handleBriefCreation(it.id)}
             editPermissionSlug="leads.edit"
             viewPermissionSlug="leads.view"
             deletePermissionSlug="leads.delete"

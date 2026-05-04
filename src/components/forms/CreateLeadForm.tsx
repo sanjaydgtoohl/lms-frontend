@@ -2,28 +2,7 @@ import React, { useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import Input from '../ui/Input';
 import { SelectField } from '../ui';
-
-interface ContactPerson {
-  id: string;
-  fullName: string;
-  email: string;
-  type: string;
-  department: string;
-  country: string;
-  state: string;
-  zone: string;
-  profileUrl: string;
-  mobileNo: string;
-  designation: string;
-  subSource: string;
-  postalCode: string;
-  city: string;
-}
-
-interface CreateLeadFormProps {
-  onSubmit: (data: any) => void;
-  loading?: boolean;
-}
+import type { ContactPerson, CreateLeadFormProps } from '../../types/LeadManagentForm';
 
 const CreateLeadForm: React.FC<CreateLeadFormProps> = ({ onSubmit, loading = false }) => {
   const [selectedOption, setSelectedOption] = useState<'brand' | 'agency' | 'both'>('brand');

@@ -216,7 +216,7 @@ const EditSubmittedPlan: React.FC = () => {
                   <span className="text-gray-600">{briefDetails.assigned_user?.name || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Brief Status:</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Brief Lead:</span>
                   <span className="text-gray-600">{briefDetails.brief_status?.name || briefDetails.status || '-'}</span>
                 </div>
                 <div>

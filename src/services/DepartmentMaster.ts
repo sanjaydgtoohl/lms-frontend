@@ -15,10 +15,10 @@ export type Department = {
 
 const ENDPOINTS = {
   LIST: '/departments',
-  DETAIL: (id: string | number) => `/departments/${id}`,
+  DETAIL: (id: string | number) => `/departments/${encodeURIComponent(String(id))}`,
   CREATE: '/departments',
-  UPDATE: (id: string | number) => `/departments/${id}`,
-  DELETE: (id: string | number) => `/departments/${id}`,
+  UPDATE: (id: string | number) => `/departments/${encodeURIComponent(String(id))}`,
+  DELETE: (id: string | number) => `/departments/${encodeURIComponent(String(id))}`,
 } as const;
 
 async function handleResponse<T>(res: any, showNotification = true): Promise<T> {

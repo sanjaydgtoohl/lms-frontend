@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { /*Loader2,*/ } from 'lucide-react';
 import { motion } from 'framer-motion';
 import MasterView from '../components/ui/MasterView';
@@ -12,6 +12,7 @@ import ConfirmDialog from '../components/ui/ConfirmDialog';
 import SearchBar from '../components/ui/SearchBar';
 import {
 	listDepartments,
+	getDepartment,
 	createDepartment,
 	updateDepartment,
 	deleteDepartment,
@@ -220,6 +221,9 @@ const DepartmentMaster: React.FC = () => {
 	const [viewItem, setViewItem] = useState<Department | null>(null);
 	const [editItem, setEditItem] = useState<Department | null>(null);
 
+	const departmentsRef = useRef<Department[]>([]);
+	departmentsRef.current = departments;
+
 	const refresh = async (page = currentPage, search = searchQuery) => {
 		setLoading(true);
 		setError(null);
@@ -263,6 +267,7 @@ const DepartmentMaster: React.FC = () => {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [currentPage, searchQuery]);
 
+	// Route shell: create / edit / list — unchanged behaviour for non-view flows.
 	useEffect(() => {
 		const rawId = params.id;
 		const id = rawId ? decodeURIComponent(rawId) : undefined;
@@ -282,18 +287,47 @@ const DepartmentMaster: React.FC = () => {
 			return;
 		}
 
-		if (id) {
-			const found = departments.find(d => d.id === id) || null;
-			setViewItem(found);
+		if (!id) {
 			setShowCreate(false);
+			setViewItem(null);
 			setEditItem(null);
 			return;
 		}
 
+		// View route only — detail fetch runs in separate effect (no refetch on list updates).
 		setShowCreate(false);
-		setViewItem(null);
 		setEditItem(null);
 	}, [location.pathname, params.id, departments]);
+
+	// View by id only: GET /api/v1/departments/:id — does not re-run when `departments` refreshes.
+	useEffect(() => {
+		const rawId = params.id;
+		const id = rawId ? decodeURIComponent(rawId) : undefined;
+
+		if (!id || location.pathname.endsWith('/create') || location.pathname.endsWith('/edit')) {
+			return;
+		}
+
+		let cancelled = false;
+		getDepartment(id)
+			.then(data => {
+				if (cancelled) return;
+				setViewItem({
+					id: String(data.id),
+					name: data.name,
+					dateTime: data.created_at || '',
+				});
+			})
+			.catch(() => {
+				if (cancelled) return;
+				const found = departmentsRef.current.find((d: Department) => d.id === id) || null;
+				setViewItem(found);
+			});
+
+		return () => {
+			cancelled = true;
+		};
+	}, [location.pathname, params.id]);
 
 	const handleSaveEditedDepartment = (updated: Record<string, any>) => {
 		(async () => {
