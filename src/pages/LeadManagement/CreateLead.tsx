@@ -7,9 +7,30 @@ import { MasterFormHeader, Button } from '../../components/ui';
 import { useNavigate } from 'react-router-dom';
 import { createLead, getBrandLists, getAgenciesLists } from '../../services/CreateLead';
 import SweetAlert from '../../utils/SweetAlert';
+import { apiClient } from '../../utils/apiClient';
 
 
 const CreateLead: React.FC = () => {
+  const DUPLICATE_MOBILE_MSG = 'This mobile number already exists in the system. Please enter a different mobile number.';
+  const normalizeMobileNumber = (value: unknown) => String(value || '').replace(/\D/g, '');
+  const hasMobileMatch = (rows: any[], targetMobile: string) => rows.some((leadRow: any) => {
+    const raw = leadRow?.mobile_number;
+    const list = Array.isArray(raw) ? raw : [leadRow?.number || leadRow?.phone || raw];
+    return list.some((entry: any) => normalizeMobileNumber(typeof entry === 'string' ? entry : entry?.number) === targetMobile);
+  });
+  const checkDuplicateMobileInSystem = async (targetMobile: string) => {
+    const direct = await apiClient.get<any>(`/leads?mobile_number=${encodeURIComponent(targetMobile)}&per_page=10`);
+    const directRows = Array.isArray(direct?.data) ? direct.data : [];
+    if (hasMobileMatch(directRows, targetMobile)) return true;
+
+    for (let page = 1; page <= 5; page += 1) {
+      const res = await apiClient.get<any>(`/leads?page=${page}&per_page=50`);
+      const rows = Array.isArray(res?.data) ? res.data : [];
+      if (hasMobileMatch(rows, targetMobile)) return true;
+      if (!rows.length) break;
+    }
+    return false;
+  };
   const [selectedOption, setSelectedOption] = useState<'brand' | 'agency'>('brand');
   const [dropdownValue, setDropdownValue] = useState<string>('');
   const [brandOptions, setBrandOptions] = useState<{ value: string; label: string }[]>([]);
@@ -32,7 +53,7 @@ const CreateLead: React.FC = () => {
     setContactErrors(prev => {
       if (!prev[contactId] || !prev[contactId][field]) return prev;
       let valid = true;
-      if (field === 'mobileNo') {
+      if (field === 'mobileNo' || field === 'mobileNo2') {
         const str = String(value);
         valid = !!str && /^[0-9]+$/.test(str) && str.length === 10;
       } else {
@@ -87,6 +108,81 @@ const CreateLead: React.FC = () => {
       isMounted = false;
     };
   }, [selectedOption]);
+
+  const primaryLead = contacts?.[0];
+  const primaryContactId = primaryLead?.id || '1';
+  const primaryMobileNo = String(primaryLead?.mobileNo || '').trim();
+  const primaryMobileNo2 = String(primaryLead?.mobileNo2 || '').trim();
+  const setMobileDuplicateError = (contactId: string, field: 'mobileNo' | 'mobileNo2', hasDuplicate: boolean) => {
+    setContactErrors(prev => {
+      if (hasDuplicate) {
+        return { ...prev, [contactId]: { ...(prev[contactId] || {}), [field]: DUPLICATE_MOBILE_MSG } };
+      }
+      if (prev?.[contactId]?.[field] !== DUPLICATE_MOBILE_MSG) return prev;
+      const { [field]: omitted, ...restFields } = prev[contactId] || {};
+      void omitted;
+      if (Object.keys(restFields).length === 0) {
+        const { [contactId]: removedId, ...rest } = prev;
+        void removedId;
+        return rest;
+      }
+      return { ...prev, [contactId]: restFields };
+    });
+  };
+
+  useEffect(() => {
+    const contactId = primaryContactId;
+    const mobileNo = primaryMobileNo;
+    const normalized = normalizeMobileNumber(mobileNo);
+
+    if (!normalized || normalized.length !== 10) {
+      setMobileDuplicateError(contactId, 'mobileNo', false);
+      return;
+    }
+
+    let isCancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const exists = await checkDuplicateMobileInSystem(normalized);
+        if (isCancelled) return;
+        setMobileDuplicateError(contactId, 'mobileNo', exists);
+      } catch {
+        if (!isCancelled) setMobileDuplicateError(contactId, 'mobileNo', false);
+      }
+    }, 400);
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(timer);
+    };
+  }, [primaryContactId, primaryMobileNo]);
+
+  useEffect(() => {
+    const contactId = primaryContactId;
+    const mobileNo2 = primaryMobileNo2;
+    const normalized = normalizeMobileNumber(mobileNo2);
+
+    if (!normalized || normalized.length !== 10) {
+      setMobileDuplicateError(contactId, 'mobileNo2', false);
+      return;
+    }
+
+    let isCancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const exists = await checkDuplicateMobileInSystem(normalized);
+        if (isCancelled) return;
+        setMobileDuplicateError(contactId, 'mobileNo2', exists);
+      } catch {
+        if (!isCancelled) setMobileDuplicateError(contactId, 'mobileNo2', false);
+      }
+    }, 400);
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(timer);
+    };
+  }, [primaryContactId, primaryMobileNo2]);
 
   const handleSave = () => {
     // Validate minimal required fields and submit to API
@@ -145,6 +241,36 @@ const CreateLead: React.FC = () => {
       if (Object.keys(newContactErrors).length > 0) {
         setContactErrors(newContactErrors);
         return;
+      }
+      const normalizedMobile = normalizeMobileNumber(lead.mobileNo);
+      if (normalizedMobile.length === 10) {
+        try {
+          const isDuplicateMobile = await checkDuplicateMobileInSystem(normalizedMobile);
+          if (isDuplicateMobile) {
+            setContactErrors(prev => ({
+              ...prev,
+              [firstContactId]: { ...(prev[firstContactId] || {}), mobileNo: DUPLICATE_MOBILE_MSG }
+            }));
+            return;
+          }
+        } catch {
+          // fallback to backend validation on submit
+        }
+      }
+      const normalizedMobile2 = normalizeMobileNumber(lead.mobileNo2);
+      if (normalizedMobile2.length === 10) {
+        try {
+          const isDuplicateMobile2 = await checkDuplicateMobileInSystem(normalizedMobile2);
+          if (isDuplicateMobile2) {
+            setContactErrors(prev => ({
+              ...prev,
+              [firstContactId]: { ...(prev[firstContactId] || {}), mobileNo2: DUPLICATE_MOBILE_MSG }
+            }));
+            return;
+          }
+        } catch {
+          // fallback to backend validation on submit
+        }
       }
 
       const mobile_number = [lead.mobileNo].filter(Boolean);
@@ -256,6 +382,7 @@ const CreateLead: React.FC = () => {
             const id = lead.id || '1';
             clearContactFieldError(id, 'fullName', lead.fullName);
             clearContactFieldError(id, 'mobileNo', lead.mobileNo);
+            clearContactFieldError(id, 'mobileNo2', lead.mobileNo2);
             clearContactFieldError(id, 'type', lead.type);
             clearContactFieldError(id, 'designation', lead.designation);
             clearContactFieldError(id, 'department', lead.department);

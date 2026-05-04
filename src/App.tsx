@@ -183,11 +183,11 @@ function App() {
               <Route path="lead-management">
                 <Route index element={<PermissionRoute><AllLeads /></PermissionRoute>} />
                 <Route path="all-leads" element={<PermissionRoute><AllLeads /></PermissionRoute>} />
-                <Route path="brief-status" element={<PermissionRoute><BriefStatus /></PermissionRoute>} />
+                <Route path="brief-leads" element={<PermissionRoute><BriefStatus /></PermissionRoute>} />
                 <Route path="pending" element={<PermissionRoute><Pending /></PermissionRoute>} />
                 <Route path="interested" element={<PermissionRoute><Interested /></PermissionRoute>} />
                 <Route path="meeting-scheduled" element={<PermissionRoute><MeetingScheduled /></PermissionRoute>} />
-                <Route path="meeting-done" element={<PermissionRoute><MeetingDone /></PermissionRoute>} />
+                <Route path="meeting" element={<PermissionRoute><MeetingDone /></PermissionRoute>} />
                 <Route path="create" element={<PermissionRoute><CreateLead /></PermissionRoute>} />
                 <Route path="edit/:id" element={<PermissionRoute><EditLead /></PermissionRoute>} />
                 <Route path=":id" element={<PermissionRoute><ViewLead /></PermissionRoute>} />

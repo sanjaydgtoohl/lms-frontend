@@ -1,15 +1,6 @@
 import React from 'react';
 import SelectField from '../../ui/SelectField';
-
-interface Props {
-  selectedOption: 'brand' | 'agency';
-  onSelectOption: (v: 'brand' | 'agency') => void;
-  value?: string;
-  onChange?: (value: string) => void;
-  options?: { value: string; label: string }[];
-  loading?: boolean;
-  error?: string | null;
-}
+import type { Props } from '../../../types/LeadManagentForm';
 
 const LeadManagementSection: React.FC<Props> = ({
   selectedOption,

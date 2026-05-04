@@ -26,6 +26,8 @@ interface TableProps<T> {
   onDelete?: (item: T) => void;
   onUpload?: (item: T) => void;
   onChat?: (item: T) => void;
+  onCreateMeeting?: (item: T) => void;
+  onBriefCreation?: (item: T) => void;
   /** Permission slugs for actions */
   editPermissionSlug?: string;
   viewPermissionSlug?: string;
@@ -40,7 +42,7 @@ interface TableProps<T> {
 }
 
 const Table = <T,>(props: TableProps<T>) => {
-  const { data, columns, startIndex = 0, loading = false, onEdit, onView, onDelete, onUpload, onChat, editPermissionSlug, viewPermissionSlug, deletePermissionSlug, uploadPermissionSlug, keyExtractor, compact = false, desktopOnMobile = true } = props;
+  const { data, columns, startIndex = 0, loading = false, onEdit, onView, onDelete, onUpload, onChat, onCreateMeeting, onBriefCreation, editPermissionSlug, viewPermissionSlug, deletePermissionSlug, uploadPermissionSlug, keyExtractor, compact = false, desktopOnMobile = true } = props;
 
   // responsive padding classes used for cells/headers; compact mode reduces padding further
   // small screens get compact padding while larger screens keep desktop spacing
@@ -166,6 +168,8 @@ const Table = <T,>(props: TableProps<T>) => {
                           {...(onDelete && { onDelete: () => onDelete(item) })}
                           {...(onUpload && { onUpload: () => onUpload(item) })}
                           {...(onChat && { onChat: () => onChat(item) })}
+                          {...(onCreateMeeting && { onCreateMeeting: () => onCreateMeeting(item) })}
+                          {...(onBriefCreation && { onBriefCreation: () => onBriefCreation(item) })}
                           editPermissionSlug={editPermissionSlug}
                           viewPermissionSlug={viewPermissionSlug}
                           deletePermissionSlug={deletePermissionSlug}
@@ -230,6 +234,8 @@ const Table = <T,>(props: TableProps<T>) => {
                   {...(onDelete && { onDelete: () => onDelete(item) })}
                   {...(onUpload && { onUpload: () => onUpload(item) })}
                   {...(onChat && { onChat: () => onChat(item) })}
+                  {...(onCreateMeeting && { onCreateMeeting: () => onCreateMeeting(item) })}
+                  {...(onBriefCreation && { onBriefCreation: () => onBriefCreation(item) })}
                   editPermissionSlug={editPermissionSlug}
                   viewPermissionSlug={viewPermissionSlug}
                   deletePermissionSlug={deletePermissionSlug}

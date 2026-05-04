@@ -3,26 +3,7 @@ import { getDesignations, getDepartments, getZones, getCities, getStates, getCou
 import { fetchLeadSubSources } from '../../../services/ContactPersonsCard';
 import { Trash2, X as XIcon, Plus } from 'lucide-react';
 import SelectField from '../../ui/SelectField';
-
-type Contact = {
-  id: string;
-  fullName: string;
-  profileUrl: string;
-  email: string;
-  mobileNo: string;
-  mobileNo2: string;
-  showSecondMobile: boolean;
-  type: string;
-  designation: string;
-  agencyBrand: string;
-  subSource: string;
-  department: string;
-  country: string;
-  state: string;
-  city: string;
-  zone: string;
-  postalCode: string;
-};
+import type { Contact, ContactPersonsCardProps } from '../../../types/LeadManagentForm';
 
 const emptyContact = (id = '1'): Contact => ({
   id,
@@ -44,11 +25,6 @@ const emptyContact = (id = '1'): Contact => ({
   postalCode: '',
 });
 
-interface ContactPersonsCardProps {
-  initialContacts?: Contact[];
-  onChange?: (contacts: Contact[]) => void;
-  errors?: Record<string, Partial<Record<string, string>>>;
-}
 
 const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
   initialContacts,
@@ -486,8 +462,8 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                         <button
                           type="button"
                           onClick={() => updateContact(c.id, 'showSecondMobile', true)}
-                          className="px-3 py-2 flex items-center justify-center rounded-lg text-white font-medium transition-colors mt-6 bg-orange-500 hover:bg-orange-700 text-sm gap-1" 
-                          title="Add another mobile number"
+                          className="px-3 py-2 flex items-center justify-center rounded-lg !text-white font-medium transition-colors mt-6 !bg-gray-800 hover:!bg-orange-600 text-sm gap-1 cursor-pointer"
+                          title="Add another mobile number transaction-all duration-300"
                         >
                           <Plus strokeWidth={2.5} className="w-4 h-4" />
 
@@ -505,6 +481,9 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                             maxLength={10}
                             className="w-full px-3 py-2 rounded-lg bg-white text-gray-800 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                           />
+                          {errors?.[c.id]?.mobileNo2 && (
+                            <div className="text-xs text-red-500 mt-1">{errors[c.id].mobileNo2}</div>
+                          )}
                         </div>
                         <button
                           type="button"
