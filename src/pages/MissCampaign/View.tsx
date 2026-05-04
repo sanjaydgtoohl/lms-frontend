@@ -579,10 +579,6 @@ const View: React.FC = () => {
                     <div className="text-sm text-gray-600">{viewItem.industry || '-'}</div>
                   </div>
                   <div className='flex bg-gray-100 p-3 rounded-lg mb-3'>
-                    <div className="text-sm text-gray-800 font-semibold min-w-[100px]">Assign By : </div>
-                    <div className="text-sm text-gray-600">{userMap[String(viewItem.assignBy).replace(/^#USR0*/, '')] || viewItem.assignBy || '-'}</div>
-                  </div>
-                  <div className='flex bg-gray-100 p-3 rounded-lg mb-3'>
                     <div className="text-sm text-gray-800 font-semibold min-w-[100px]">Assign To : </div>
                     <div className="text-sm text-gray-600">{userMap[String(viewItem.assignTo).replace(/^#USR0*/, '')] || viewItem.assignTo || '-'}</div>
                   </div>
