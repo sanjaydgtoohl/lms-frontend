@@ -496,7 +496,7 @@ const Create: React.FC<CreateProps> = ({
     if (!formData.brandName) next.brandName = 'Please select a brand';
     if (!formData.source) next.source = 'Please select a source';
     if (!formData.subSource) next.subSource = 'Please select a sub source';
-    if (!formData.industry) next.industry = 'Please select an industry';
+    // Industry optional — was mandatory: if (!formData.industry) next.industry = 'Please select an industry';
     if (!formData.productName || formData.productName.trim() === '') next.productName = 'Please enter product name';
     if (!formData.country) next.country = 'Please select a country';
     if (!formData.state) next.state = 'Please select a state';
@@ -699,7 +699,7 @@ const Create: React.FC<CreateProps> = ({
             {/* Industry */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
               <label className="block text-sm font-medium mb-2 text-gray-800">
-                Industry <span className="text-[#FF0000]">*</span>
+                Industry 
               </label>
               <div>
                 <SelectField
