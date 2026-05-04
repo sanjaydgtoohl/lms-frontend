@@ -46,6 +46,7 @@ interface Lead {
   callFeedback?: string;
   comment?: string;
 }
+
 const EditLead: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
