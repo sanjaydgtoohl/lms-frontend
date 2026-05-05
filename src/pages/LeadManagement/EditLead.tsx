@@ -64,6 +64,14 @@ const EditLead: React.FC = () => {
           return;
         }
 
+        const rawLead = apiLead as any;
+        const resolvedLeadTypeValue =
+          rawLead?.lead_type?.id != null
+            ? String(rawLead.lead_type.id)
+            : (rawLead?.lead_type_id != null
+              ? String(rawLead.lead_type_id)
+              : String(apiLead.type || ''));
+
         const contact = {
           id: String(apiLead.id),
           fullName: apiLead.name || '',
@@ -72,7 +80,7 @@ const EditLead: React.FC = () => {
           mobileNo: Array.isArray(apiLead.mobile_number) ? (apiLead.mobile_number[0] ? (typeof apiLead.mobile_number[0] === 'string' ? apiLead.mobile_number[0] : apiLead.mobile_number[0].number) : '') : (apiLead.mobile_number || apiLead.number || apiLead.phone || ''),
           mobileNo2: Array.isArray(apiLead.mobile_number) ? (apiLead.mobile_number[1] ? (typeof apiLead.mobile_number[1] === 'string' ? apiLead.mobile_number[1] : apiLead.mobile_number[1].number) : '') : '',
           showSecondMobile: Array.isArray(apiLead.mobile_number) && apiLead.mobile_number.length > 1,
-          type: apiLead.type || '',
+          type: resolvedLeadTypeValue,
           designation: apiLead.designation?.id ? String(apiLead.designation.id) : '',
           agencyBrand: apiLead.brand?.name || (apiLead.agency ? apiLead.agency.name : ''),
           subSource: apiLead.sub_source?.id ? String(apiLead.sub_source.id) : '',
@@ -239,7 +247,6 @@ const EditLead: React.FC = () => {
         mobile_number: mobile_number.length ? mobile_number : undefined,
         current_assign_user: extractNumericId(lead.assignTo),
         priority_id: lead.priority ? extractNumericId(lead.priority) : undefined,
-        type: contact?.type || undefined,
         designation_id: contact?.designation ? Number(contact.designation) : undefined,
         department_id: contact?.department ? Number(contact.department) : undefined,
         sub_source_id: contact?.subSource ? Number(contact.subSource) : undefined,
@@ -251,6 +258,15 @@ const EditLead: React.FC = () => {
         comment: typeof lead.comment === 'string' ? lead.comment : (lead.comment ? String(lead.comment) : ''),
         call_status_id: callStatusId,
       };
+
+      const typeValue = String(contact?.type || '').trim();
+      if (typeValue) {
+        payload.type = typeValue;
+        const numericTypeId = Number(typeValue);
+        if (!Number.isNaN(numericTypeId) && Number.isFinite(numericTypeId) && numericTypeId > 0) {
+          payload.lead_type_id = numericTypeId;
+        }
+      }
 
       if (selectedOption === 'brand') payload.brand_id = lead.brandId || undefined;
       else payload.agency_id = lead.agencyId || undefined;

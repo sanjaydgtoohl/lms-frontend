@@ -295,7 +295,6 @@ const CreateLead: React.FC = () => {
         // current_assign_user must be numeric id — extract digits from formatted id if needed
         current_assign_user: extractNumericId(assignTo),
         priority_id: priority ? Number(priority) : undefined,
-        type: lead.type || undefined,
         designation_id: lead.designation ? Number(lead.designation) : undefined,
         department_id: lead.department ? Number(lead.department) : undefined,
         sub_source_id: lead.subSource ? Number(lead.subSource) : undefined,
@@ -307,6 +306,16 @@ const CreateLead: React.FC = () => {
         comment: comment || undefined,
         call_status_id: callFeedback ? Number(callFeedback) : undefined,
       };
+
+      const typeValue = String(lead.type || '').trim();
+      if (typeValue) {
+        // Keep backward compatibility: backend still validates "type" as required.
+        payload.type = typeValue;
+        const numericTypeId = Number(typeValue);
+        if (!Number.isNaN(numericTypeId) && Number.isFinite(numericTypeId) && numericTypeId > 0) {
+          payload.lead_type_id = numericTypeId;
+        }
+      }
 
       if (selectedOption === 'brand') payload.brand_id = dropdownValue || undefined;
       else payload.agency_id = dropdownValue || undefined;
@@ -327,6 +336,7 @@ const CreateLead: React.FC = () => {
                 name: 'fullName',
                 mobile_number: 'mobileNo',
                 type: 'type',
+                lead_type_id: 'type',
                 designation_id: 'designation',
                 department_id: 'department',
                 sub_source_id: 'subSource',

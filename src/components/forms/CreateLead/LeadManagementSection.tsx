@@ -3,6 +3,8 @@ import SelectField from '../../ui/SelectField';
 import ModalPopup from '../../ui/ModalPopup';
 import { Button } from '../../ui';
 import type { Props } from '../../../types/LeadManagentForm';
+import { quickCreateApi } from '../../../services/QuickCreate';
+import SweetAlert from '../../../utils/SweetAlert';
 
 const LeadManagementSection: React.FC<Props> = ({
   selectedOption,
@@ -16,6 +18,8 @@ const LeadManagementSection: React.FC<Props> = ({
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createName, setCreateName] = useState('');
   const [createError, setCreateError] = useState<string | null>(null);
+  const [createSaving, setCreateSaving] = useState(false);
+  const [createdOptions, setCreatedOptions] = useState<{ value: string; label: string }[]>([]);
 
   const closeCreateModal = useCallback(() => {
     setShowCreateModal(false);
@@ -29,14 +33,42 @@ const LeadManagementSection: React.FC<Props> = ({
     setShowCreateModal(true);
   };
 
-  const handleCreateClick = () => {
+  const mergedOptions = [...options, ...createdOptions.filter((created) =>
+    !options.some((opt) => opt.value === created.value)
+  )];
+
+  const handleCreateClick = async () => {
     const name = createName.trim();
     if (!name) {
       setCreateError('Please enter a name.');
       return;
     }
     setCreateError(null);
-    // Create brand/agency API will be wired here later (no save yet).
+    try {
+      setCreateSaving(true);
+      const created = selectedOption === 'brand'
+        ? await quickCreateApi.createBrand(name)
+        : await quickCreateApi.createAgency(name);
+      const createdId = String(created?.id || '');
+      const createdName = String(created?.name || name).trim();
+      if (!createdId || !createdName) {
+        setCreateError('Created item data is invalid.');
+        return;
+      }
+
+      setCreatedOptions((prev) => {
+        if (prev.some((opt) => opt.value === createdId)) return prev;
+        return [...prev, { value: createdId, label: createdName }];
+      });
+      onChange(createdId);
+      SweetAlert.showCreateSuccess();
+      closeCreateModal();
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || error?.message || 'Failed to create item.';
+      setCreateError(String(msg));
+    } finally {
+      setCreateSaving(false);
+    }
   };
 
   return (
@@ -100,7 +132,7 @@ const LeadManagementSection: React.FC<Props> = ({
 
             <SelectField
               placeholder={selectedOption === 'brand' ? 'Choose Existing Brand' : 'Choose Existing Agency'}
-              options={options}
+              options={mergedOptions}
               value={value}
               onChange={(v) => onChange(typeof v === 'string' ? v : v[0] ?? '')}
               inputClassName="w-full px-3 py-2 rounded-lg bg-white text-gray-800 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
@@ -109,7 +141,7 @@ const LeadManagementSection: React.FC<Props> = ({
 
             {loading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
             {error && <div className="text-xs text-red-500 mt-1">{error}</div>}
-            {!loading && !error && options.length === 0 && (
+            {!loading && !error && mergedOptions.length === 0 && (
               <div className="text-xs text-gray-400 mt-1">No options found.</div>
             )}
           </div>
@@ -147,11 +179,11 @@ const LeadManagementSection: React.FC<Props> = ({
             {createError ? <p className="mt-1.5 text-xs text-red-600">{createError}</p> : null}
           </div>
           <div className="flex flex-wrap justify-end gap-2 border-t border-gray-100 pt-4">
-            <button type="button" className="btn-secondary" onClick={closeCreateModal}>
+            <button type="button" className="btn-secondary" onClick={closeCreateModal} disabled={createSaving}>
               Cancel
             </button>
-            <button type="button" className="btn-primary" onClick={handleCreateClick}>
-              {selectedOption === 'brand' ? 'Create Brand' : 'Create Agency'}
+            <button type="button" className="btn-primary" onClick={handleCreateClick} disabled={createSaving}>
+              {createSaving ? 'Creating...' : (selectedOption === 'brand' ? 'Create Brand' : 'Create Agency')}
             </button>
           </div>
         </div>

@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getDesignations, getDepartments, getZones, getCities, getStates, getCountries } from '../../../services/CreateLead';
+import { getDesignations, getZones, getCities, getStates, getCountries } from '../../../services/CreateLead';
+import { quickCreateApi } from '../../../services/QuickCreate';
 import { fetchLeadSubSources } from '../../../services/ContactPersonsCard';
 import { Trash2, X as XIcon, Plus } from 'lucide-react';
 import SelectField from '../../ui/SelectField';
 import ModalPopup from '../../ui/ModalPopup';
 import { Button } from '../../ui';
 import type { Contact, ContactPersonsCardProps } from '../../../types/LeadManagentForm';
+import SweetAlert from '../../../utils/SweetAlert';
 
 type QuickCreateKind = 'type' | 'department' | 'subSource';
 
@@ -65,6 +67,13 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
   const quickModalContactIdRef = useRef<string | null>(null);
   const [quickName, setQuickName] = useState('');
   const [quickError, setQuickError] = useState<string | null>(null);
+  const [quickSubmitting, setQuickSubmitting] = useState(false);
+  const [leadTypeOptions, setLeadTypeOptions] = useState<{ value: string; label: string }[]>([
+    { value: 'Brand', label: 'Brand' },
+    { value: 'Agency', label: 'Agency' },
+  ]);
+  const [leadTypeLoading, setLeadTypeLoading] = useState(false);
+  const [leadTypeError, setLeadTypeError] = useState<string | null>(null);
 
   const openQuickCreate = (kind: QuickCreateKind, contactId: string) => {
     setQuickModalKind(kind);
@@ -80,14 +89,106 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
     setQuickError(null);
   };
 
-  const handleQuickCreateSubmit = () => {
+  const handleQuickCreateSubmit = async () => {
     const name = quickName.trim();
     if (!name) {
       setQuickError('Please enter a name.');
       return;
     }
     setQuickError(null);
-    // Create API + append options / update contact to be wired later (quickModalKind, quickModalContactIdRef.current, name).
+
+    if (!quickModalKind) return;
+
+    try {
+      setQuickSubmitting(true);
+      const contactId = quickModalContactIdRef.current;
+
+      if (quickModalKind === 'department') {
+        const createdDepartment = await quickCreateApi.createDepartment(name);
+        const createdValue = String(createdDepartment?.id ?? '');
+
+        if (!createdValue) {
+          setQuickError('Department created but id was not returned.');
+          return;
+        }
+
+        const createdOption = {
+          value: createdValue,
+          label: String(createdDepartment?.name || name),
+        };
+
+        setDepartmentOptions((prev) => {
+          const hasExisting = prev.some((opt) => opt.value === createdOption.value);
+          if (hasExisting) return prev;
+          return [...prev, createdOption].sort((a, b) => a.label.localeCompare(b.label));
+        });
+
+        if (contactId) {
+          updateContact(contactId, 'department', createdValue);
+        }
+      } else if (quickModalKind === 'type') {
+        const createdType = await quickCreateApi.createLeadType(name);
+        const createdTypeValue = String(createdType?.id ?? '');
+        const createdTypeName = String(createdType?.name || name).trim();
+
+        if (!createdTypeValue || !createdTypeName) {
+          setQuickError('Type created but required data was not returned.');
+          return;
+        }
+
+        setLeadTypeOptions((prev) => {
+          const hasExisting = prev.some(
+            (opt) =>
+              opt.value === createdTypeValue ||
+              opt.label.toLowerCase() === createdTypeName.toLowerCase()
+          );
+          if (hasExisting) return prev;
+          return [...prev, { value: createdTypeValue, label: createdTypeName }];
+        });
+
+        if (contactId) {
+          updateContact(contactId, 'type', createdTypeValue);
+        }
+      } else if (quickModalKind === 'subSource') {
+        const createdSubSource = await quickCreateApi.createSubSourceStandalone(name);
+        const createdSubSourceValue = String(createdSubSource?.id ?? '');
+        const createdSubSourceName = String(createdSubSource?.name || name).trim();
+
+        if (!createdSubSourceValue || !createdSubSourceName) {
+          setQuickError('Sub source created but required data was not returned.');
+          return;
+        }
+
+        setSubSourceOptions((prev) => {
+          const hasExisting = prev.some(
+            (opt) =>
+              opt.value === createdSubSourceValue ||
+              opt.label.toLowerCase() === createdSubSourceName.toLowerCase()
+          );
+          if (hasExisting) return prev;
+          return [...prev, { value: createdSubSourceValue, label: createdSubSourceName }];
+        });
+
+        if (contactId) {
+          updateContact(contactId, 'subSource', createdSubSourceValue);
+        }
+      } else {
+        setQuickError('Create is not available for this field right now.');
+        return;
+      }
+
+      SweetAlert.showCreateSuccess();
+      closeQuickCreate();
+    } catch (error: any) {
+      const apiMessage =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        'Failed to create item.';
+      setQuickError(String(apiMessage));
+    } finally {
+      setQuickSubmitting(false);
+    }
   };
 
   // Designation dropdown state
@@ -109,6 +210,35 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
   const [subSourceOptions, setSubSourceOptions] = useState<{ value: string; label: string }[]>([]);
   const [subSourceLoading, setSubSourceLoading] = useState(false);
   const [subSourceError, setSubSourceError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    setLeadTypeLoading(true);
+    setLeadTypeError(null);
+    quickCreateApi.listLeadTypes().then((data: any) => {
+      if (!isMounted) return;
+      try {
+        const mapped = Array.isArray(data)
+          ? data
+            .filter((item: any) => item && item.id !== undefined && item.id !== null && item.name)
+            .map((item: any) => ({ value: String(item.id), label: String(item.name) }))
+          : [];
+
+        if (mapped.length > 0) {
+          setLeadTypeOptions(mapped);
+        }
+      } catch (error: any) {
+        setLeadTypeError(error?.message || 'Failed to load lead types');
+      }
+      setLeadTypeLoading(false);
+    }).catch((error: any) => {
+      if (isMounted) {
+        setLeadTypeError(error?.message || 'Failed to load lead types');
+        setLeadTypeLoading(false);
+      }
+    });
+    return () => { isMounted = false; };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -162,7 +292,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
     let isMounted = true;
     setDepartmentLoading(true);
     setDepartmentError(null);
-    getDepartments().then((data: any) => {
+    quickCreateApi.listDepartments().then((data: any) => {
       if (!isMounted) return;
       try {
         setDepartmentOptions(
@@ -585,14 +715,17 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
 
                     <SelectField
                       name="type"
-                      placeholder="Select type"
-                      options={[{ value: 'Brand', label: 'Brand' }, { value: 'Agency', label: 'Agency' }]}
+                      placeholder={leadTypeLoading ? 'Loading...' : 'Select type'}
+                      options={leadTypeOptions}
                       value={c.type}
                       onChange={(v) => updateContact(c.id, 'type', typeof v === 'string' ? v : v[0] ?? '')}
                       inputClassName="border border-gray-200 focus:ring-blue-500"
+                      disabled={leadTypeLoading}
                     />
 
                     {errors?.[c.id]?.type && <div className="text-xs text-red-500 mt-1">{errors[c.id].type}</div>}
+                    {leadTypeLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
+                    {leadTypeError && <div className="text-xs text-red-500 mt-1">{leadTypeError}</div>}
                   </div>
                   
                   <div>
@@ -809,11 +942,11 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
               {quickError ? <p className="mt-1.5 text-xs text-red-600">{quickError}</p> : null}
             </div>
             <div className="flex flex-wrap justify-end gap-2 border-t border-gray-100 pt-4">
-              <button type="button" className="btn-secondary" onClick={closeQuickCreate}>
+              <button type="button" className="btn-secondary" onClick={closeQuickCreate} disabled={quickSubmitting}>
                 Cancel
               </button>
-              <button type="button" className="btn-primary" onClick={handleQuickCreateSubmit}>
-                {QUICK_CREATE_LABELS[quickModalKind].cta}
+              <button type="button" className="btn-primary" onClick={handleQuickCreateSubmit} disabled={quickSubmitting}>
+                {quickSubmitting ? 'Creating...' : QUICK_CREATE_LABELS[quickModalKind].cta}
               </button>
             </div>
           </div>

@@ -186,3 +186,34 @@ export async function createLead(payload: CreateLeadPayload): Promise<CreateLead
     throw error;
   }
 }
+
+// --- Fetch lead types for dropdown ---
+export async function getLeadTypes(): Promise<Array<{ id: number | string; name: string }>> {
+  try {
+    const res = await apiClient.get<Array<{ id: number | string; name: string }>>('/lead-types/list');
+    if (!res || !res.success) {
+      throw new Error(res?.message || 'Failed to fetch lead types');
+    }
+    const payload: any = res.data;
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.data)) return payload.data;
+    return [];
+  } catch (error) {
+    handleApiError(error, false);
+    throw error;
+  }
+}
+
+// --- Create lead type API ---
+export async function createLeadType(payload: { name: string }): Promise<{ id: number | string; name: string }> {
+  try {
+    const res = await apiClient.post<{ id: number | string; name: string }>('/lead-types', payload);
+    if (!res || !res.success) {
+      throw new Error(res?.message || 'Failed to create lead type');
+    }
+    return res.data;
+  } catch (error) {
+    handleApiError(error, false);
+    throw error;
+  }
+}
