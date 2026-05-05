@@ -19,7 +19,8 @@ const LeadManagementSection: React.FC<Props> = ({
   const [createName, setCreateName] = useState('');
   const [createError, setCreateError] = useState<string | null>(null);
   const [createSaving, setCreateSaving] = useState(false);
-  const [createdOptions, setCreatedOptions] = useState<{ value: string; label: string }[]>([]);
+  const [createdBrandOptions, setCreatedBrandOptions] = useState<{ value: string; label: string }[]>([]);
+  const [createdAgencyOptions, setCreatedAgencyOptions] = useState<{ value: string; label: string }[]>([]);
 
   const closeCreateModal = useCallback(() => {
     setShowCreateModal(false);
@@ -33,7 +34,9 @@ const LeadManagementSection: React.FC<Props> = ({
     setShowCreateModal(true);
   };
 
-  const mergedOptions = [...options, ...createdOptions.filter((created) =>
+  const extraCreated =
+    selectedOption === 'brand' ? createdBrandOptions : createdAgencyOptions;
+  const mergedOptions = [...options, ...extraCreated.filter((created) =>
     !options.some((opt) => opt.value === created.value)
   )];
 
@@ -56,10 +59,17 @@ const LeadManagementSection: React.FC<Props> = ({
         return;
       }
 
-      setCreatedOptions((prev) => {
-        if (prev.some((opt) => opt.value === createdId)) return prev;
-        return [...prev, { value: createdId, label: createdName }];
-      });
+      if (selectedOption === 'brand') {
+        setCreatedBrandOptions((prev) => {
+          if (prev.some((opt) => opt.value === createdId)) return prev;
+          return [...prev, { value: createdId, label: createdName }];
+        });
+      } else {
+        setCreatedAgencyOptions((prev) => {
+          if (prev.some((opt) => opt.value === createdId)) return prev;
+          return [...prev, { value: createdId, label: createdName }];
+        });
+      }
       onChange(createdId);
       SweetAlert.showCreateSuccess();
       closeCreateModal();

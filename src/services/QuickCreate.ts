@@ -73,7 +73,7 @@ async function createItem(endpoint: string, payload: Record<string, any>): Promi
 export const quickCreateApi = {
   listLeadTypes: () => getList('/lead-types/list'),
   createLeadType: (name: string) => createItem('/lead-types', { name }),
-  listDepartments: () => getList('/departments'),
+  listDepartments: () => getList('/departments?page=1&per_page=1000'),
   createDepartment: (name: string) => createItem('/departments', { name }),
   listBrands: () => getList('/brands/list'),
   createBrand: (name: string) => createItem('/brands/name', { name }),
@@ -81,7 +81,7 @@ export const quickCreateApi = {
   createSource: (name: string) => createItem('/lead-sources', { name }),
   listSubSourcesBySource,
   createSubSource: (sourceId: string | number, name: string) =>
-    createItem(`/lead-sub-sources/${encodeURIComponent(String(sourceId))}`, {
+    createItem('/lead-sub-sources', {
       lead_source_id: sourceId,
       name,
       status: 1,

@@ -503,22 +503,36 @@ const Create: React.FC<CreateProps> = ({
       return;
     }
     setQuickBrandError(null);
+    setQuickBrandSaving(true);
     try {
-      setQuickBrandSaving(true);
       const created = await quickCreateApi.createBrand(name);
-      const response = await quickCreateApi.listBrands();
-      const options = (response || []).map((brand) => ({
-        id: String(brand.id),
-        name: brand.name,
-      }));
-      setBrandOptions(options);
       const newId = created?.id != null ? String(created.id) : '';
+      const newLabel = String(created?.name ?? name).trim();
+
+      setBrandOptions((prev) => {
+        if (!newId) return prev;
+        if (prev.some((b) => String(b.id) === newId)) return prev;
+        return [...prev, { id: newId, name: newLabel }];
+      });
+
       if (newId) {
         setFormData(prev => ({ ...prev, brandName: newId }));
         setErrors(prev => ({ ...prev, brandName: '' }));
       }
+
       SweetAlert.showCreateSuccess();
       closeQuickBrandModal();
+
+      try {
+        const response = await quickCreateApi.listBrands();
+        const options = (response || []).map((brand) => ({
+          id: String(brand.id),
+          name: brand.name,
+        }));
+        setBrandOptions(options);
+      } catch {
+        // Create succeeded; refresh list failed — keep optimistic options above
+      }
     } catch (err: any) {
       setQuickBrandError(err?.message || 'Failed to create brand');
     } finally {
@@ -534,22 +548,36 @@ const Create: React.FC<CreateProps> = ({
       return;
     }
     setQuickSourceError(null);
+    setQuickSourceSaving(true);
     try {
-      setQuickSourceSaving(true);
       const created = await quickCreateApi.createSource(name);
       const newId = created?.id != null ? String(created.id) : '';
-      const response = await quickCreateApi.listSources();
-      const opts = response.map((s) => ({
-        id: String(s.id),
-        source: s.name,
-      }));
-      setSourceOptions(opts);
+      const newLabel = String(created?.name ?? name).trim();
+
+      setSourceOptions((prev) => {
+        if (!newId) return prev;
+        if (prev.some((s) => String(s.id) === newId)) return prev;
+        return [...prev, { id: newId, source: newLabel }];
+      });
+
       if (newId) {
         setFormData(prev => ({ ...prev, source: newId, subSource: '' }));
         setErrors(prev => ({ ...prev, source: '', subSource: '' }));
       }
+
       SweetAlert.showCreateSuccess();
       closeQuickSourceModal();
+
+      try {
+        const response = await quickCreateApi.listSources();
+        const opts = response.map((s) => ({
+          id: String(s.id),
+          source: s.name,
+        }));
+        setSourceOptions(opts);
+      } catch {
+        // Create succeeded; refresh list failed — keep optimistic options above
+      }
     } catch (err: any) {
       setQuickSourceError(err?.message || 'Failed to create source');
     } finally {
@@ -570,22 +598,36 @@ const Create: React.FC<CreateProps> = ({
       return;
     }
     setQuickSubSourceError(null);
+    setQuickSubSourceSaving(true);
     try {
-      setQuickSubSourceSaving(true);
       const created = await quickCreateApi.createSubSource(selectedSourceId, name);
       const newId = created?.id != null ? String(created.id) : '';
-      const response = await quickCreateApi.listSubSourcesBySource(selectedSourceId);
-      const options = response.map((sub) => ({
-        id: sub.id,
-        label: sub.name,
-      }));
-      setSubSourceOptions(options);
+      const newLabel = String(created?.name ?? name).trim();
+
+      setSubSourceOptions((prev) => {
+        if (!newId) return prev;
+        if (prev.some((s) => String(s.id) === newId)) return prev;
+        return [...prev, { id: newId, label: newLabel }];
+      });
+
       if (newId) {
         setFormData(prev => ({ ...prev, source: selectedSourceId, subSource: newId }));
         setErrors(prev => ({ ...prev, subSource: '' }));
       }
+
       SweetAlert.showCreateSuccess();
       closeQuickSubSourceModal();
+
+      try {
+        const response = await quickCreateApi.listSubSourcesBySource(selectedSourceId);
+        const options = response.map((sub) => ({
+          id: sub.id,
+          label: sub.name,
+        }));
+        setSubSourceOptions(options);
+      } catch {
+        // Create succeeded; refresh list failed — keep optimistic options above
+      }
     } catch (err: any) {
       setQuickSubSourceError(err?.message || 'Failed to create sub source');
     } finally {

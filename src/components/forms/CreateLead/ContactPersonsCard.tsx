@@ -65,6 +65,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
 
   const [quickModalKind, setQuickModalKind] = useState<QuickCreateKind | null>(null);
   const quickModalContactIdRef = useRef<string | null>(null);
+  const quickCreateSubmitLockRef = useRef(false);
   const [quickName, setQuickName] = useState('');
   const [quickError, setQuickError] = useState<string | null>(null);
   const [quickSubmitting, setQuickSubmitting] = useState(false);
@@ -98,6 +99,8 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
     setQuickError(null);
 
     if (!quickModalKind) return;
+    if (quickSubmitting || quickCreateSubmitLockRef.current) return;
+    quickCreateSubmitLockRef.current = true;
 
     try {
       setQuickSubmitting(true);
@@ -187,6 +190,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
         'Failed to create item.';
       setQuickError(String(apiMessage));
     } finally {
+      quickCreateSubmitLockRef.current = false;
       setQuickSubmitting(false);
     }
   };
