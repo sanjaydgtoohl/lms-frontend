@@ -176,7 +176,7 @@ const AllUsers: React.FC = () => {
         const parents = (it as any).parents ?? ((it as any).parent ? [(it as any).parent] : []);
         return (
           <div
-            className="flex gap-2 justify-center items-center cursor-pointer hover:opacity-80 transition-opacity"
+            className="flex gap-2 justify-start items-center cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => parents && parents.length > 0 && handleParentUserClick(it)}
           >
             {Array.isArray(parents) && parents.length > 0 ? (
@@ -233,7 +233,7 @@ const AllUsers: React.FC = () => {
       header: 'Role',
       render: (it: User) => (
         <div
-          className="flex gap-2 justify-center items-center cursor-pointer hover:opacity-80 transition-opacity"
+          className="flex gap-2 justify-start items-center cursor-pointer hover:opacity-80 transition-opacity"
           onClick={() => Array.isArray(it.roles) && it.roles.length > 0 && handleRolesClick(it)}
         >
           {Array.isArray(it.roles) && it.roles.length > 0 ? (
@@ -260,6 +260,18 @@ const AllUsers: React.FC = () => {
       key: 'email',
       header: 'Email',
       render: (it: User) => it.email,
+      className: 'max-w-[180px] overflow-hidden text-ellipsis whitespace-nowrap',
+    },
+    {
+      key: 'zone',
+      header: 'Zone',
+      render: (it: User) => it.zone || '-',
+      className: 'max-w-[140px] overflow-hidden text-ellipsis whitespace-nowrap',
+    },
+    {
+      key: 'origination',
+      header: 'Organisation',
+      render: (it: User) => it.origination || '-',
       className: 'max-w-[180px] overflow-hidden text-ellipsis whitespace-nowrap',
     },
   ] as Column<User>[]);

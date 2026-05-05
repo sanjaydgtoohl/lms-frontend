@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
-import { MasterFormHeader, MultiSelectDropdown } from '../../../components/ui';
+import { MasterFormHeader, MultiSelectDropdown, SelectField } from '../../../components/ui';
 import { apiClient } from '../../../utils/apiClient';
 import { createUser, updateUser } from '../../../services/CreateUser';
 import SweetAlert from '../../../utils/SweetAlert';
@@ -26,6 +26,8 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
     password_confirmation: '',
     roles: [] as string[],
     managers: [] as string[],
+    zone: '',
+    origination: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [roleOptions, setRoleOptions] = useState<Array<{ label: string; value: string }>>([]);
@@ -37,9 +39,21 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
   const [managerOptions, setManagerOptions] = useState<Array<{ label: string; value: string }>>([]);
   const [managersLoading, setManagersLoading] = useState(false);
   const [managersError, setManagersError] = useState<string | null>(null);
+    const [zoneOptions, setZoneOptions] = useState<Array<{ label: string; value: string }>>([]);
+  const [zoneLoading, setZoneLoading] = useState(false);
+  const [originationOptions, setOriginationOptions] = useState<Array<{ label: string; value: string }>>([]);
+  const [originationLoading, setOriginationLoading] = useState(false);
 
   useEffect(() => {
     if (initialData) {
+      const zoneRaw = initialData.zone;
+      const originationRaw = initialData.origination ?? initialData.orientation;
+      const zoneValue = typeof zoneRaw === 'object' && zoneRaw !== null
+        ? String((zoneRaw as any).id ?? (zoneRaw as any).value ?? (zoneRaw as any).zone ?? (zoneRaw as any).name ?? '')
+        : String(zoneRaw ?? '');
+      const originationValue = typeof originationRaw === 'object' && originationRaw !== null
+        ? String((originationRaw as any).id ?? (originationRaw as any).value ?? (originationRaw as any).organisation_id ?? (originationRaw as any).name ?? '')
+        : String(originationRaw ?? '');
       // Avoid copying sensitive fields like `email`, `password`, and
       // `password_confirmation` from `initialData` so they are not
       // autofilled when opening the edit form.
@@ -55,6 +69,8 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
         managers: initialData.managers && Array.isArray(initialData.managers)
           ? initialData.managers.map((m: any) => String(m.id))
           : prev.managers,
+        zone: zoneValue || prev.zone,
+        origination: originationValue || prev.origination,
         // Ensure password inputs remain empty
         password: '',
         password_confirmation: '',
@@ -108,6 +124,70 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
 
     loadRoles();
 
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadZones = async () => {
+      setZoneLoading(true);
+      try {
+        const resp = await apiClient.get<any>('/zones');
+        let items: any[] = [];
+        if (Array.isArray((resp as any)?.data)) items = (resp as any).data;
+        else if (Array.isArray((resp as any)?.data?.data)) items = (resp as any).data.data;
+        else if (Array.isArray(resp as any)) items = resp as any;
+
+        const opts = items.map((it: any) => ({
+          label: String(it.name ?? it.zone ?? it.label ?? ''),
+          value: String(it.id ?? it.value ?? it.zone ?? ''),
+        })).filter((it) => it.label && it.value);
+
+        if (mounted) setZoneOptions(opts);
+      } catch (err) {
+        console.error('Failed to load zones', err);
+        if (mounted) setZoneOptions([]);
+      } finally {
+        if (mounted) setZoneLoading(false);
+      }
+    };
+
+    loadZones();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadOrganisations = async () => {
+      setOriginationLoading(true);
+      try {
+        const resp = await apiClient.get<any>('/organisations/list');
+        let items: any[] = [];
+        if (Array.isArray((resp as any)?.data)) items = (resp as any).data;
+        else if (Array.isArray((resp as any)?.data?.data)) items = (resp as any).data.data;
+        else if (Array.isArray(resp as any)) items = resp as any;
+
+        const opts = items.map((it: any) => ({
+          label: String(it.name ?? it.organisation_name ?? it.label ?? ''),
+          value: String(it.id ?? it.value ?? it.organisation_id ?? ''),
+        })).filter((it) => it.label && it.value);
+
+        if (mounted) setOriginationOptions(opts);
+      } catch (err) {
+        console.error('Failed to load organisations', err);
+        if (mounted) setOriginationOptions([]);
+      } finally {
+        if (mounted) setOriginationLoading(false);
+      }
+    };
+
+    loadOrganisations();
     return () => {
       mounted = false;
     };
@@ -211,11 +291,23 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
     try {
       setSaving(true);
       const base = { ...form } as Record<string, any>;
+      const selectedZone = zoneOptions.find((opt) => opt.value === String(base.zone));
+      const selectedOrganisation = originationOptions.find((opt) => opt.value === String(base.origination));
+      const zoneId = base.zone ? String(base.zone) : null;
+      const organisationId = base.origination ? String(base.origination) : null;
+      const zoneName = selectedZone?.label || null;
+      const organisationName = selectedOrganisation?.label || null;
       // Build payload expected by backend
       const payload: Record<string, any> = {
         name: String(base.name || ''),
         email: base.email || '',
         phone: base.phone || null,
+        zone: zoneId,
+        zone_id: zoneId,
+        zone_name: zoneName,
+        origination: organisationId,
+        organisation_id: organisationId,
+        organisation_name: organisationName,
       };
 
       // roles is array of role ids -> send as role_ids (array)
@@ -545,6 +637,40 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
                   {errors.phone}
                 </div>
               )}
+            </div>
+
+            {/* Zone */}
+            <div className="col-span-2 sm:col-span-1">
+              <label className="block text-sm text-gray-40 mb-1">Zone</label>
+              <SelectField
+                name="zone"
+                value={form.zone}
+                onChange={(v) => {
+                  const val = typeof v === 'string' ? v : v[0] ?? '';
+                  setForm((prev) => ({ ...prev, zone: val }));
+                }}
+                options={zoneOptions}
+                placeholder={zoneLoading ? 'Loading zones...' : 'Select zone'}
+                inputClassName="border-gray-200 focus:ring-black"
+                disabled={zoneLoading}
+              />
+            </div>
+
+            {/* Organisations */}
+            <div className="col-span-2 sm:col-span-1">
+              <label className="block text-sm text-gray-40 mb-1">Organisations</label>
+              <SelectField
+                name="origination"
+                value={form.origination}
+                onChange={(v) => {
+                  const val = typeof v === 'string' ? v : v[0] ?? '';
+                  setForm((prev) => ({ ...prev, origination: val }));
+                }}
+                options={originationOptions}
+                placeholder={originationLoading ? 'Loading organisations...' : 'Select organisation'}
+                inputClassName="border-gray-200 focus:ring-black"
+                disabled={originationLoading}
+              />
             </div>
 
             {/* Role */}

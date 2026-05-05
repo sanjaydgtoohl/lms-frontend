@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import LeadManagementSection from '../../components/forms/CreateLead/LeadManagementSection';
 import ContactPersonsCard from '../../components/forms/CreateLead/ContactPersonsCard';
 import AssignPriorityCard from '../../components/forms/CreateLead/AssignPriorityCard';
@@ -12,13 +12,16 @@ import { apiClient } from '../../utils/apiClient';
 
 const CreateLead: React.FC = () => {
   const DUPLICATE_MOBILE_MSG = 'This mobile number already exists in the system. Please enter a different mobile number.';
-  const normalizeMobileNumber = (value: unknown) => String(value || '').replace(/\D/g, '');
-  const hasMobileMatch = (rows: any[], targetMobile: string) => rows.some((leadRow: any) => {
+  const normalizeMobileNumber = useCallback(
+    (value: unknown) => String(value || '').replace(/\D/g, ''),
+    []
+  );
+  const hasMobileMatch = useCallback((rows: any[], targetMobile: string) => rows.some((leadRow: any) => {
     const raw = leadRow?.mobile_number;
     const list = Array.isArray(raw) ? raw : [leadRow?.number || leadRow?.phone || raw];
     return list.some((entry: any) => normalizeMobileNumber(typeof entry === 'string' ? entry : entry?.number) === targetMobile);
-  });
-  const checkDuplicateMobileInSystem = async (targetMobile: string) => {
+  }), [normalizeMobileNumber]);
+  const checkDuplicateMobileInSystem = useCallback(async (targetMobile: string) => {
     const direct = await apiClient.get<any>(`/leads?mobile_number=${encodeURIComponent(targetMobile)}&per_page=10`);
     const directRows = Array.isArray(direct?.data) ? direct.data : [];
     if (hasMobileMatch(directRows, targetMobile)) return true;
@@ -30,7 +33,7 @@ const CreateLead: React.FC = () => {
       if (!rows.length) break;
     }
     return false;
-  };
+  }, [hasMobileMatch]);
   const [selectedOption, setSelectedOption] = useState<'brand' | 'agency'>('brand');
   const [dropdownValue, setDropdownValue] = useState<string>('');
   const [brandOptions, setBrandOptions] = useState<{ value: string; label: string }[]>([]);
@@ -155,7 +158,7 @@ const CreateLead: React.FC = () => {
       isCancelled = true;
       clearTimeout(timer);
     };
-  }, [primaryContactId, primaryMobileNo]);
+  }, [primaryContactId, primaryMobileNo, normalizeMobileNumber, checkDuplicateMobileInSystem]);
 
   useEffect(() => {
     const contactId = primaryContactId;
@@ -182,7 +185,7 @@ const CreateLead: React.FC = () => {
       isCancelled = true;
       clearTimeout(timer);
     };
-  }, [primaryContactId, primaryMobileNo2]);
+  }, [primaryContactId, primaryMobileNo2, normalizeMobileNumber, checkDuplicateMobileInSystem]);
 
   const handleSave = () => {
     // Validate minimal required fields and submit to API

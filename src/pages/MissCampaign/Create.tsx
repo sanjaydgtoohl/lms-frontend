@@ -2,10 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MasterCreateHeader } from '../../components/ui/MasterCreateHeader';
 import { Upload, Loader, Trash2 } from 'lucide-react';
-import { SelectField } from '../../components/ui';
+import { SelectField, Button, Input } from '../../components/ui';
+import ModalPopup from '../../components/ui/ModalPopup';
 import { apiClient } from '../../utils/apiClient';
+import { createLeadSubSource } from '../../services/CreateSourceForm';
 import { createMissCampaign, updateMissCampaignWithForm } from '../../services/Create';
-import { listBrands } from '../../services/BrandMaster';
+import { listBrands, createBrand } from '../../services/BrandMaster';
 import { listCountries, listStates, listCities } from '../../services/CreateBrandForm';
 import { listAttendees } from '../../services/AllUsers';
 import { fetchCurrentUser } from '../../services/Header';
@@ -66,6 +68,17 @@ const Create: React.FC<CreateProps> = ({
   const [imagePreview, setImagePreview] = useState<string>(''); // for newly selected image preview
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [modalImageUrl, setModalImageUrl] = useState<string | null>(null);
+
+  const [quickModal, setQuickModal] = useState<null | 'brand' | 'source' | 'subSource'>(null);
+  const [quickBrandName, setQuickBrandName] = useState('');
+  const [quickBrandError, setQuickBrandError] = useState<string | null>(null);
+  const [quickBrandSaving, setQuickBrandSaving] = useState(false);
+  const [quickSourceName, setQuickSourceName] = useState('');
+  const [quickSourceError, setQuickSourceError] = useState<string | null>(null);
+  const [quickSourceSaving, setQuickSourceSaving] = useState(false);
+  const [quickSubSourceName, setQuickSubSourceName] = useState('');
+  const [quickSubSourceError, setQuickSubSourceError] = useState<string | null>(null);
+  const [quickSubSourceSaving, setQuickSubSourceSaving] = useState(false);
 
   // Assign To users dropdown state
   const [assignToOptions, setAssignToOptions] = useState<{ value: string; label: string }[]>([]);
@@ -469,6 +482,131 @@ const Create: React.FC<CreateProps> = ({
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const closeQuickBrandModal = () => {
+    setQuickModal(null);
+    setQuickBrandName('');
+    setQuickBrandError(null);
+  };
+
+  const closeQuickSourceModal = () => {
+    setQuickModal(null);
+    setQuickSourceName('');
+    setQuickSourceError(null);
+  };
+
+  const closeQuickSubSourceModal = () => {
+    setQuickModal(null);
+    setQuickSubSourceName('');
+    setQuickSubSourceError(null);
+  };
+
+  const handleQuickBrandSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = quickBrandName.trim();
+    if (!name) {
+      setQuickBrandError('Please enter brand name');
+      return;
+    }
+    setQuickBrandError(null);
+    try {
+      setQuickBrandSaving(true);
+      const created = await createBrand({ name });
+      const response = await listBrands(1, 1000);
+      const options = (response.data || []).map(brand => ({
+        id: String(brand.id),
+        name: brand.name,
+      }));
+      setBrandOptions(options);
+      const newId = created?.id != null ? String(created.id) : '';
+      if (newId) {
+        setFormData(prev => ({ ...prev, brandName: newId }));
+        setErrors(prev => ({ ...prev, brandName: '' }));
+      }
+      SweetAlert.showCreateSuccess();
+      closeQuickBrandModal();
+    } catch (err: any) {
+      setQuickBrandError(err?.message || 'Failed to create brand');
+    } finally {
+      setQuickBrandSaving(false);
+    }
+  };
+
+  const handleQuickSourceSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = quickSourceName.trim();
+    if (!name) {
+      setQuickSourceError('Please enter source name');
+      return;
+    }
+    setQuickSourceError(null);
+    try {
+      setQuickSourceSaving(true);
+      const res = await apiClient.post<Record<string, unknown>>('/lead-sources', { name });
+      if (!res.success) {
+        throw new Error(res.message || 'Failed to create source');
+      }
+      const created = res.data as { id?: string | number };
+      const newId = created?.id != null ? String(created.id) : '';
+      const response = await apiClient.get('/lead-sources');
+      const raw = Array.isArray(response.data) ? response.data : [];
+      const opts = raw.map((s: { id: string; name: string }) => ({
+        id: String(s.id),
+        source: s.name,
+      }));
+      setSourceOptions(opts);
+      if (newId) {
+        setFormData(prev => ({ ...prev, source: newId, subSource: '' }));
+        setErrors(prev => ({ ...prev, source: '', subSource: '' }));
+      }
+      SweetAlert.showCreateSuccess();
+      closeQuickSourceModal();
+    } catch (err: any) {
+      setQuickSourceError(err?.message || 'Failed to create source');
+    } finally {
+      setQuickSourceSaving(false);
+    }
+  };
+
+  const handleQuickSubSourceSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = quickSubSourceName.trim();
+    if (!name) {
+      setQuickSubSourceError('Please enter sub source name');
+      return;
+    }
+    if (!formData.source) {
+      setQuickSubSourceError('Please select a source first');
+      return;
+    }
+    setQuickSubSourceError(null);
+    try {
+      setQuickSubSourceSaving(true);
+      const created = await createLeadSubSource({
+        lead_source_id: formData.source,
+        name,
+        status: 1,
+      });
+      const newId = created?.id != null ? String(created.id) : '';
+      const response = await apiClient.get(`/lead-sub-sources/by-source/${formData.source}`);
+      const data = Array.isArray(response.data) ? response.data : [];
+      const options = data.map((sub: { id: string; name: string }) => ({
+        id: sub.id,
+        label: sub.name,
+      }));
+      setSubSourceOptions(options);
+      if (newId) {
+        setFormData(prev => ({ ...prev, subSource: newId }));
+        setErrors(prev => ({ ...prev, subSource: '' }));
+      }
+      SweetAlert.showCreateSuccess();
+      closeQuickSubSourceModal();
+    } catch (err: any) {
+      setQuickSubSourceError(err?.message || 'Failed to create sub source');
+    } finally {
+      setQuickSubSourceSaving(false);
+    }
+  };
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -496,7 +634,7 @@ const Create: React.FC<CreateProps> = ({
     if (!formData.brandName) next.brandName = 'Please select a brand';
     if (!formData.source) next.source = 'Please select a source';
     if (!formData.subSource) next.subSource = 'Please select a sub source';
-    if (!formData.industry) next.industry = 'Please select an industry';
+    // Industry optional — was mandatory: if (!formData.industry) next.industry = 'Please select an industry';
     if (!formData.productName || formData.productName.trim() === '') next.productName = 'Please enter product name';
     if (!formData.country) next.country = 'Please select a country';
     if (!formData.state) next.state = 'Please select a state';
@@ -586,9 +724,24 @@ const Create: React.FC<CreateProps> = ({
           <div className="flex flex-wrap gap-3">
             {/* Brand Name */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
-              <label className="block text-sm font-medium mb-2 text-gray-800">
-                Brand Name <span className="text-[#FF0000]">*</span>
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-gray-800">
+                  Brand Name <span className="text-[#FF0000]">*</span>
+                </label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="!text-sm !py-1 !px-0 underline !outline-none whitespace-nowrap hover:!text-orange-500 shrink-0"
+                  onClick={() => {
+                    setQuickBrandError(null);
+                    setQuickBrandName('');
+                    setQuickModal('brand');
+                  }}
+                >
+                  Create Brand
+                </Button>
+              </div>
               <div className='w-full'>
                 <SelectField
                   name="brandName"
@@ -612,9 +765,24 @@ const Create: React.FC<CreateProps> = ({
 
             {/* Source */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
-              <label className="block text-sm font-medium mb-2 text-gray-800">
-                Source <span className="text-[#FF0000]">*</span>
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-gray-800">
+                  Source <span className="text-[#FF0000]">*</span>
+                </label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="!text-sm !py-0 !px-0 !outline-none underline whitespace-nowrap hover:!text-orange-500 shrink-0"
+                  onClick={() => {
+                    setQuickSourceName('');
+                    setQuickSourceError(null);
+                    setQuickModal('source');
+                  }}
+                >
+                  Create Source
+                </Button>
+              </div>
               <div>
                 <SelectField
                   name="source"
@@ -638,10 +806,27 @@ const Create: React.FC<CreateProps> = ({
 
             {/* Sub Source (dropdown) */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
-              <label className="flex text-sm font-medium mb-2 items-center gap-2 text-gray-800">
-                Sub Source <span className="text-[#FF0000]">*</span>
-                {subSourceLoading && <Loader className="w-4 h-4 animate-spin text-blue-500" />}
-              </label>
+              <div className="flex items-center justify-between mb-1 flex-wrap">
+                <label className="flex text-sm font-medium items-center gap-2 text-gray-800">
+                  Sub Source <span className="text-[#FF0000]">*</span>
+                  {subSourceLoading && <Loader className="w-4 h-4 animate-spin text-blue-500" />}
+                </label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="!text-sm !py-0 !px-0 underline !outline-none whitespace-nowrap hover:!text-orange-500 shrink-0"
+                  disabled={!formData.source}
+                  title={!formData.source ? 'Select a source first' : undefined}
+                  onClick={() => {
+                    setQuickSubSourceName('');
+                    setQuickSubSourceError(null);
+                    setQuickModal('subSource');
+                  }}
+                >
+                  Create Sub Source
+                </Button>
+              </div>
               <div>
                 <SelectField
                   name="subSource"
@@ -678,28 +863,30 @@ const Create: React.FC<CreateProps> = ({
               />
             </div> */}
 
-            {/* Assign To */}
-            <div className='w-full sm:w-[calc(50%-12px)]'>
-              <label className="block text-sm font-medium mb-2 text-gray-800">
-                Assign To
-              </label>
-              <div>
-                <SelectField
-                  name="assignTo"
-                  value={formData.assignTo || ''}
-                  onChange={(v) => { setFormData(prev => ({ ...prev, assignTo: typeof v === 'string' ? v : v[0] ?? '' })); }}
-                  options={assignToOptions}
-                  placeholder={assignToLoading ? 'Loading users...' : 'Select Assign To'}
-                  inputClassName="border-gray-200 focus:ring-blue-500"
-                  disabled={assignToLoading}
-                />
+            {/* Assign To — only when child-users API returns at least one user */}
+            {!assignToLoading && assignToOptions.length > 0 ? (
+              <div className='w-full sm:w-[calc(50%-12px)]'>
+                <label className="block text-sm font-medium mb-2 text-gray-800">
+                  Assign To
+                </label>
+                <div>
+                  <SelectField
+                    name="assignTo"
+                    value={formData.assignTo || ''}
+                    onChange={(v) => { setFormData(prev => ({ ...prev, assignTo: typeof v === 'string' ? v : v[0] ?? '' })); }}
+                    options={assignToOptions}
+                    placeholder="Select Assign To"
+                    inputClassName="border-gray-200 focus:ring-blue-500"
+                    disabled={assignToLoading}
+                  />
+                </div>
               </div>
-            </div>
+            ) : null}
 
             {/* Industry */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
               <label className="block text-sm font-medium mb-2 text-gray-800">
-                Industry <span className="text-[#FF0000]">*</span>
+                Industry
               </label>
               <div>
                 <SelectField
@@ -996,6 +1183,152 @@ const Create: React.FC<CreateProps> = ({
           </div>
         </form>
       </div>
+
+      <ModalPopup
+        show={quickModal === 'brand'}
+        onClose={quickBrandSaving ? () => {} : closeQuickBrandModal}
+        title="Create Brand"
+      >
+        <form onSubmit={handleQuickBrandSubmit} className="flex flex-col gap-3">
+          <div>
+            <label htmlFor="miss-quick-brand-name" className="mb-1 block text-sm font-medium text-gray-800">
+              Brand name <span className="text-red-500">*</span>
+            </label>
+            <Input
+              name="miss-quick-brand-name"
+              type="text"
+              value={quickBrandName}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                setQuickBrandName(e.target.value);
+                if (quickBrandError) setQuickBrandError(null);
+              }}
+              placeholder="Enter brand name"
+              autoComplete="off"
+              error={quickBrandError || undefined}
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-1">
+            <button type="button" className="btn-secondary" onClick={closeQuickBrandModal} disabled={quickBrandSaving}>
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              className="btn-primary"
+              disabled={quickBrandSaving}
+            >
+              {quickBrandSaving ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden>
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Create
+                </>
+              ) : (
+                'Create'
+              )}
+            </button>
+          </div>
+        </form>
+      </ModalPopup>
+
+      <ModalPopup
+        show={quickModal === 'source'}
+        onClose={quickSourceSaving ? () => {} : closeQuickSourceModal}
+        title="Create Source"
+      >
+        <form onSubmit={handleQuickSourceSubmit} className="flex flex-col gap-3">
+          <div>
+            <label htmlFor="miss-quick-source-name" className="mb-1 block text-sm font-medium text-gray-800">
+              Source name <span className="text-red-500">*</span>
+            </label>
+            <Input
+              name="miss-quick-source-name"
+              type="text"
+              value={quickSourceName}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                setQuickSourceName(e.target.value);
+                if (quickSourceError) setQuickSourceError(null);
+              }}
+              placeholder="Enter source name"
+              autoComplete="off"
+              error={quickSourceError || undefined}
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-1">
+            <button type="button" className="btn-secondary" onClick={closeQuickSourceModal} disabled={quickSourceSaving}>
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn-primary"
+              disabled={quickSourceSaving}
+            >
+              {quickSourceSaving ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden>
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Create
+                </>
+              ) : (
+                'Create'
+              )}
+            </button>
+          </div>
+        </form>
+      </ModalPopup>
+
+      <ModalPopup
+        show={quickModal === 'subSource'}
+        onClose={quickSubSourceSaving ? () => {} : closeQuickSubSourceModal}
+        title="Create Sub Source"
+      >
+        <form onSubmit={handleQuickSubSourceSubmit} className="flex flex-col gap-3">
+          <div>
+            <label htmlFor="miss-quick-subsource-name" className="mb-1 block text-sm font-medium text-gray-800">
+              Sub source name <span className="text-red-500">*</span>
+            </label>
+            <Input
+              name="miss-quick-subsource-name"
+              type="text"
+              value={quickSubSourceName}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                setQuickSubSourceName(e.target.value);
+                if (quickSubSourceError) setQuickSubSourceError(null);
+              }}
+              placeholder="Enter sub source name"
+              autoComplete="off"
+              error={quickSubSourceError || undefined}
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-1">
+            <button type="button" className="btn-secondary" onClick={closeQuickSubSourceModal} disabled={quickSubSourceSaving}>
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              className="btn-primary"
+              disabled={quickSubSourceSaving}
+            >
+              {quickSubSourceSaving ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden>
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Create
+                </>
+              ) : (
+                'Create'
+              )}
+            </button>
+          </div>
+        </form>
+      </ModalPopup>
 
       {/* Image modal (soft alert) */}
       {imageModalOpen && modalImageUrl && (

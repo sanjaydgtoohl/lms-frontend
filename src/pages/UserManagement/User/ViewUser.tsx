@@ -41,6 +41,21 @@ const ViewUser: React.FC = () => {
     };
     return roleColorMap[role || ''] || 'border-gray-200 text-gray-700 bg-gray-50';
   };
+  const zoneLabel = String(
+    (user as any)?.zone_name ??
+    (user as any)?.zone?.name ??
+    (user as any)?.zone?.zone ??
+    (user as any)?.zone ??
+    '-'
+  ) || '-';
+  const organisationLabel = String(
+    (user as any)?.organisation_name ??
+    (user as any)?.origination?.name ??
+    (user as any)?.orientation?.name ??
+    (user as any)?.origination ??
+    (user as any)?.orientation ??
+    '-'
+  ) || '-';
 
   if (isLoading) {
     return (
@@ -82,6 +97,11 @@ const ViewUser: React.FC = () => {
             <div className='flex gap-x-3 gap-y-1 items-center flex-wrap bg-gray-50 border border-gray-200 rounded-lg py-3 px-3'>
               <div className="text-base text-gray-800 font-semibold">Phone Number :</div>
               <div className="text-sm text-black">{user.phone || '-'}</div>
+            </div>
+
+            <div className='flex gap-x-3 gap-y-1 items-center flex-wrap bg-gray-50 border border-gray-200 rounded-lg py-3 px-3'>
+              <div className="text-base text-gray-800 font-semibold">Zone :</div>
+              <div className="text-sm text-black">{zoneLabel}</div>
             </div>
 
             <div className='flex gap-x-3 gap-y-1 items-center flex-wrap bg-gray-50 border border-gray-200 rounded-lg py-3 px-3'>
@@ -137,6 +157,11 @@ const ViewUser: React.FC = () => {
             <div className='flex gap-x-3 gap-y-1 items-center flex-wrap bg-gray-50 border border-gray-200 rounded-lg py-3 px-3'>
               <div className="text-base text-gray-800 font-semibold">Last Login :</div>
               <div className="text-sm text-black">{user.last_login_at || '-'}</div>
+            </div>
+
+            <div className='flex gap-x-3 gap-y-1 items-center flex-wrap bg-gray-50 border border-gray-200 rounded-lg py-3 px-3'>
+              <div className="text-base text-gray-800 font-semibold">Organisations :</div>
+              <div className="text-sm text-black">{organisationLabel}</div>
             </div>
 
             <div className='flex gap-x-3 gap-y-1 flex-wrap bg-gray-50 border border-gray-200 rounded-lg py-3 px-3 flex-col'>

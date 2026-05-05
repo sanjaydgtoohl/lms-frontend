@@ -102,10 +102,12 @@ interface Props {
   headerActions?: React.ReactNode;
 }
 
+const EMPTY_EXTRA_STATUSES: string[] = [];
+
 const LeadList: React.FC<Props> = ({
   title,
   filterStatus = 'All',
-  extraStatuses = [],
+  extraStatuses = EMPTY_EXTRA_STATUSES,
   permissionStatus,
   headerActions,
 }) => {
@@ -227,7 +229,7 @@ const LeadList: React.FC<Props> = ({
     } finally {
       setLoading(false);
     }
-  }, [filterStatus, extraStatusesKey, currentPage, itemsPerPage]); // <- Add all external dependencies here
+  }, [filterStatus, normalizedExtraStatuses, currentPage, itemsPerPage]); // <- Add all external dependencies here
 
   useEffect(() => {
     fetchLeads();

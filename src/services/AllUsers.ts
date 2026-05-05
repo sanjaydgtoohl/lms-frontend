@@ -5,6 +5,8 @@ export interface User {
   id: string;
   name: string;
   email?: string;
+  zone?: string;
+  origination?: string;
   role?: string;
   roles?: any[];
   status?: 'Active' | 'Inactive';
@@ -103,6 +105,8 @@ export async function listUsers(page = 1, perPage = 10, search?: string): Promis
     const lastLogin = it.last_login_at ?? it.last_login ?? it.lastLogin ?? '';
     const rawCreated = it.created_at ?? it.created ?? '';
     const created = it.created_at_formatted ?? normalizeApiDate(rawCreated);
+    const zone = String(it.zone?.name ?? it.zone?.zone ?? it.zone ?? it.zone_name ?? '') || '';
+    const origination = String(it.origination?.name ?? it.orientation?.name ?? it.origination ?? it.orientation ?? it.organisation_name ?? '') || '';
 
     // Normalize parents: API may return `parents` (array) or `parent` (single)
     let parentsArray: any[] | undefined = undefined;
@@ -116,6 +120,8 @@ export async function listUsers(page = 1, perPage = 10, search?: string): Promis
       id: String(idStr),
       name,
       email,
+      zone,
+      origination,
       role,
       roles,
       status,
@@ -187,11 +193,15 @@ export async function listAttendees(page = 1, perPage = 100, search?: string): P
     const lastLogin = it.last_login_at ?? it.last_login ?? it.lastLogin ?? '';
     const rawCreated = it.created_at ?? it.created ?? '';
     const created = it.created_at_formatted ?? normalizeApiDate(rawCreated);
+    const zone = String(it.zone?.name ?? it.zone?.zone ?? it.zone ?? it.zone_name ?? '') || '';
+    const origination = String(it.origination?.name ?? it.orientation?.name ?? it.origination ?? it.orientation ?? it.organisation_name ?? '') || '';
 
     return {
       id: String(idStr),
       name,
       email,
+      zone,
+      origination,
       role,
       roles,
       status,
