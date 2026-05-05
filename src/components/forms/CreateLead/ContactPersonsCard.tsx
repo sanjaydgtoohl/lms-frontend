@@ -69,10 +69,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
   const [quickName, setQuickName] = useState('');
   const [quickError, setQuickError] = useState<string | null>(null);
   const [quickSubmitting, setQuickSubmitting] = useState(false);
-  const [leadTypeOptions, setLeadTypeOptions] = useState<{ value: string; label: string }[]>([
-    { value: 'Brand', label: 'Brand' },
-    { value: 'Agency', label: 'Agency' },
-  ]);
+  const [leadTypeOptions, setLeadTypeOptions] = useState<{ value: string; label: string }[]>([]);
   const [leadTypeLoading, setLeadTypeLoading] = useState(false);
   const [leadTypeError, setLeadTypeError] = useState<string | null>(null);
 
@@ -228,9 +225,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
             .map((item: any) => ({ value: String(item.id), label: String(item.name) }))
           : [];
 
-        if (mapped.length > 0) {
-          setLeadTypeOptions(mapped);
-        }
+        setLeadTypeOptions(mapped);
       } catch (error: any) {
         setLeadTypeError(error?.message || 'Failed to load lead types');
       }
@@ -346,29 +341,37 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
     return () => { isMounted = false; };
   }, []);
 
-  const updateContacts = (newContacts: Contact[]) => {
-    setContacts(newContacts);
-    onChange?.(newContacts);
+  const updateContacts = (
+    nextOrUpdater: Contact[] | ((prev: Contact[]) => Contact[])
+  ) => {
+    setContacts((prev) => {
+      const next =
+        typeof nextOrUpdater === 'function' ? nextOrUpdater(prev) : nextOrUpdater;
+      onChange?.(next);
+      return next;
+    });
   };
 
   const removeContact = (id: string) => {
-    updateContacts(contacts.filter(c => c.id !== id));
+    updateContacts((prev) => prev.filter((c) => c.id !== id));
   };
 
   const updateContact = (id: string, field: keyof Contact, value: string | boolean) => {
-    updateContacts(contacts.map(c => {
-      const updated = { ...c, [field]: value };
-      // Clear state when country changes
-      if (field === 'country' && value !== c.country) {
-        updated.state = '';
-        updated.city = '';
-      }
-      // Clear city when state changes
-      if (field === 'state' && value !== c.state) {
-        updated.city = '';
-      }
-      return c.id === id ? updated : c;
-    }));
+    updateContacts((prev) =>
+      prev.map((c) => {
+        const updated = { ...c, [field]: value };
+        // Clear state when country changes
+        if (field === 'country' && value !== c.country) {
+          updated.state = '';
+          updated.city = '';
+        }
+        // Clear city when state changes
+        if (field === 'state' && value !== c.state) {
+          updated.city = '';
+        }
+        return c.id === id ? updated : c;
+      })
+    );
   };
 
   // Country dropdown state
@@ -680,14 +683,17 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                           <button
                             type="button"
                             onClick={() => {
-                              const updatedContact = {
-                                ...c,
-                                showSecondMobile: false,
-                                mobileNo2: ''
-                              };
-                              updateContacts(contacts.map(contact =>
-                                contact.id === c.id ? updatedContact : contact
-                              ));
+                              updateContacts((prev) =>
+                                prev.map((contact) =>
+                                  contact.id === c.id
+                                    ? {
+                                      ...contact,
+                                      showSecondMobile: false,
+                                      mobileNo2: '',
+                                    }
+                                    : contact
+                                )
+                              );
                             }}
                             className="px-3 py-2 flex items-center justify-center rounded-lg text-white font-medium transition-colors duration-200 hover:bg-red-700 text-sm gap-1"
                             style={{ backgroundColor: '#D92D20' }}
