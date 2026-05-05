@@ -176,7 +176,7 @@ const AllUsers: React.FC = () => {
         const parents = (it as any).parents ?? ((it as any).parent ? [(it as any).parent] : []);
         return (
           <div
-            className="flex gap-2 justify-start items-center cursor-pointer hover:opacity-80 transition-opacity testsaini"
+            className="flex gap-2 justify-start items-center cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => parents && parents.length > 0 && handleParentUserClick(it)}
           >
             {Array.isArray(parents) && parents.length > 0 ? (
