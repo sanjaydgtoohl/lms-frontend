@@ -721,7 +721,7 @@ const Create: React.FC<CreateProps> = ({
           <div className="flex flex-wrap gap-3">
             {/* Brand Name */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
-              <div className="flex items-center justify-between gap-1">
+              <div className="flex items-center justify-between mb-1">
                 <label className="block text-sm font-medium text-gray-800">
                   Brand Name <span className="text-[#FF0000]">*</span>
                 </label>
@@ -729,7 +729,7 @@ const Create: React.FC<CreateProps> = ({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="!text-sm !py-1 !px-2 underline !outline-none whitespace-nowrap hover:!text-orange-500 shrink-0"
+                  className="!text-sm !py-1 !px-0 underline !outline-none whitespace-nowrap hover:!text-orange-500 shrink-0"
                   onClick={() => {
                     setQuickBrandError(null);
                     setQuickBrandName('');
@@ -762,7 +762,7 @@ const Create: React.FC<CreateProps> = ({
 
             {/* Source */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
-              <div className="flex items-center justify-between gap-1">
+              <div className="flex items-center justify-between mb-1">
                 <label className="block text-sm font-medium text-gray-800">
                   Source <span className="text-[#FF0000]">*</span>
                 </label>
@@ -770,7 +770,7 @@ const Create: React.FC<CreateProps> = ({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="!text-sm !py-1 !px-2 !outline-none underline whitespace-nowrap hover:!text-orange-500 shrink-0"
+                  className="!text-sm !py-0 !px-0 !outline-none underline whitespace-nowrap hover:!text-orange-500 shrink-0"
                   onClick={() => {
                     setQuickSourceName('');
                     setQuickSourceError(null);
@@ -803,7 +803,7 @@ const Create: React.FC<CreateProps> = ({
 
             {/* Sub Source (dropdown) */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
-              <div className="flex items-center justify-between gap-1 flex-wrap">
+              <div className="flex items-center justify-between mb-1 flex-wrap">
                 <label className="flex text-sm font-medium items-center gap-2 text-gray-800">
                   Sub Source <span className="text-[#FF0000]">*</span>
                   {subSourceLoading && <Loader className="w-4 h-4 animate-spin text-blue-500" />}
@@ -812,7 +812,7 @@ const Create: React.FC<CreateProps> = ({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="!text-sm !py-1 !px-2 underline !outline-none whitespace-nowrap hover:!text-orange-500 shrink-0"
+                  className="!text-sm !py-0 !px-0 underline !outline-none whitespace-nowrap hover:!text-orange-500 shrink-0"
                   disabled={!formData.source}
                   title={!formData.source ? 'Select a source first' : undefined}
                   onClick={() => {

@@ -82,7 +82,7 @@ const LeadManagementSection: React.FC<Props> = ({
 
         {(selectedOption === 'brand' || selectedOption === 'agency') && (
           <div className="w-full">
-            <div className="flex items-center justify-between gap-1 mb-1">
+            <div className="flex items-center justify-between gap-1">
               <label className="block text-sm text-gray-800">
                 {selectedOption === 'brand' ? 'Select Brand' : 'Select Agency'}
               </label>

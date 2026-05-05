@@ -570,13 +570,13 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                 {/* Row 3: Type, Designation, Department */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <div className="flex items-center justify-between gap-1">
+                    <div className="flex items-center justify-between mb-1">
                       <label className="block text-sm text-gray-800">Type <span className="text-[#FF0000]">*</span></label>
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="!text-sm !py-0 !px-0 underline whitespace-nowrap hover:!text-orange-500 "
+                        className="!text-sm !py-0 !px-0 underline !outline-none whitespace-nowrap hover:!text-orange-500 "
                         onClick={() => openQuickCreate('type', c.id)}
                       >
                         Create Type
@@ -594,6 +594,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
 
                     {errors?.[c.id]?.type && <div className="text-xs text-red-500 mt-1">{errors[c.id].type}</div>}
                   </div>
+                  
                   <div>
                     <label className="block text-sm text-gray-800 mb-1">Designation <span className="text-[#FF0000]">*</span></label>
                     <SelectField
@@ -613,13 +614,13 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                     )}
                   </div>
                   <div>
-                    <div className="flex items-center justify-between gap-1">
+                    <div className="flex items-center justify-between mb-1">
                       <label className="block text-sm text-gray-800">Department <span className="text-[#FF0000]">*</span></label>
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="!text-sm !py-0 !px-0 underline whitespace-nowrap hover:!text-orange-500 "
+                        className="!text-sm !py-0 !px-0 underline !outline-none whitespace-nowrap hover:!text-orange-500 "
                         onClick={() => openQuickCreate('department', c.id)}
                       >
                         Create Department
@@ -721,13 +722,13 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                     )}
                   </div>
                   <div>
-                    <div className="flex items-center justify-between gap-1 mb-1">
+                    <div className="flex items-center justify-between mb-1">
                       <label className="block text-sm text-gray-800">Sub-Source <span className="text-[#FF0000]">*</span></label>
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="!text-sm !py-1 !px-0 underline whitespace-nowrap hover:!text-orange-500 "
+                        className="!text-sm !py-0 !px-0 underline !outline-none whitespace-nowrap hover:!text-orange-500 "
                         onClick={() => openQuickCreate('subSource', c.id)}
                       >
                         Create Sub Source
