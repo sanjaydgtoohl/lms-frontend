@@ -1,3 +1,7 @@
+/**
+ * Dialog shell only (backdrop, header, children). Text fields live in `children`;
+ * use the shared {@link ./Input} component in the parent form, not a raw input element here.
+ */
 import React, { useEffect, useId } from 'react';
 import { IoMdClose } from 'react-icons/io';
 
@@ -6,10 +10,14 @@ export type ModalPopupProps = {
   onClose: () => void;
   title?: string;
   children?: React.ReactNode;
+  /** Appended to dialog panel (e.g. `max-w-3xl` for wide forms). */
+  panelClassName?: string;
+  /** Appended to body under header (e.g. `max-h-[80vh] overflow-y-auto`). */
+  bodyClassName?: string;
 };
 
 /** Simple centered dialog: backdrop + Escape close, header with optional title and ×. */
-const ModalPopup: React.FC<ModalPopupProps> = ({ show, onClose, title, children }) => {
+const ModalPopup: React.FC<ModalPopupProps> = ({ show, onClose, title, children, panelClassName = '', bodyClassName = '' }) => {
   const titleId = useId();
 
   useEffect(() => {
@@ -42,7 +50,7 @@ const ModalPopup: React.FC<ModalPopupProps> = ({ show, onClose, title, children 
           role="dialog"
           aria-modal="true"
           aria-labelledby={title ? titleId : undefined}
-          className="pointer-events-auto flex w-full max-w-md flex-col rounded-xl border border-gray-200 bg-white shadow-lg"
+          className={`pointer-events-auto flex w-full flex-col rounded-xl border border-gray-200 bg-white shadow-lg ${panelClassName?.trim() ? panelClassName.trim() : 'max-w-md'}`}
           onClick={(e) => e.stopPropagation()}
         >
           <header className="flex items-center justify-between gap-3 border-b border-gray-100 px-4 py-3">
@@ -62,7 +70,9 @@ const ModalPopup: React.FC<ModalPopupProps> = ({ show, onClose, title, children 
               <IoMdClose className="w-5 h-5" />
             </button>
           </header>
-          {children != null && children !== false ? <div className="px-4 py-4">{children}</div> : null}
+          {children != null && children !== false ? (
+            <div className={`px-4 py-4 ${bodyClassName}`.trim()}>{children}</div>
+          ) : null}
         </div>
       </div>
     </>

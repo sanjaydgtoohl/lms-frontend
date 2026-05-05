@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { MasterFormHeader, SelectField } from '../components/ui';
@@ -11,8 +12,8 @@ type Props = {
   inline?: boolean;
 };
 
-// const CreateSourceForm: React.FC<Props> = ({ onClose, onSave, inline: _inline }) => {
-const CreateSourceForm: React.FC<Props> = ({ onClose, onSave}) => {
+const CreateSourceForm: React.FC<Props> = ({ onClose, onSave }) => {
+  const location = useLocation();
   const [source, setSource] = useState('');
   const [subSource, setSubSource] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -20,6 +21,17 @@ const CreateSourceForm: React.FC<Props> = ({ onClose, onSave}) => {
   const [saving, setSaving] = useState(false);
   const [options, setOptions] = useState<LeadSource[]>([]);
   const [loadError, setLoadError] = useState<string>('');
+
+  // Pre-select parent lead source from router state (e.g. navigate with state)
+  useEffect(() => {
+    if (options.length === 0) return;
+    const navRaw = (location.state as { preselectLeadSourceId?: string } | null)?.preselectLeadSourceId;
+    const id = navRaw != null && String(navRaw).trim() !== '' ? String(navRaw) : null;
+    if (!id) return;
+    if (options.some(o => String(o.id) === id)) {
+      setSource(id);
+    }
+  }, [options, location.state]);
 
   useEffect(() => {
     let mounted = true;
@@ -63,6 +75,7 @@ const CreateSourceForm: React.FC<Props> = ({ onClose, onSave}) => {
 
       const payload = {
         id: created?.id,
+        lead_source_id: source,
         source: selectedSourceName,
         subSource: created?.name || subSource,
       };
