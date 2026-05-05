@@ -520,6 +520,7 @@ const Create: React.FC<CreateProps> = ({
       const newId = created?.id != null ? String(created.id) : '';
       if (newId) {
         setFormData(prev => ({ ...prev, brandName: newId }));
+        setErrors(prev => ({ ...prev, brandName: '' }));
       }
       SweetAlert.showCreateSuccess();
       closeQuickBrandModal();
@@ -555,6 +556,7 @@ const Create: React.FC<CreateProps> = ({
       setSourceOptions(opts);
       if (newId) {
         setFormData(prev => ({ ...prev, source: newId, subSource: '' }));
+        setErrors(prev => ({ ...prev, source: '', subSource: '' }));
       }
       SweetAlert.showCreateSuccess();
       closeQuickSourceModal();
@@ -594,6 +596,7 @@ const Create: React.FC<CreateProps> = ({
       setSubSourceOptions(options);
       if (newId) {
         setFormData(prev => ({ ...prev, subSource: newId }));
+        setErrors(prev => ({ ...prev, subSource: '' }));
       }
       SweetAlert.showCreateSuccess();
       closeQuickSubSourceModal();
@@ -1183,7 +1186,7 @@ const Create: React.FC<CreateProps> = ({
 
       <ModalPopup
         show={quickModal === 'brand'}
-        onClose={closeQuickBrandModal}
+        onClose={quickBrandSaving ? () => {} : closeQuickBrandModal}
         title="Create Brand"
       >
         <form onSubmit={handleQuickBrandSubmit} className="flex flex-col gap-3">
@@ -1205,7 +1208,7 @@ const Create: React.FC<CreateProps> = ({
             />
           </div>
           <div className="flex justify-end gap-2 pt-1">
-            <button type="button" className="btn-secondary" onClick={closeQuickBrandModal}>
+            <button type="button" className="btn-secondary" onClick={closeQuickBrandModal} disabled={quickBrandSaving}>
               Cancel
             </button>
 
@@ -1232,7 +1235,7 @@ const Create: React.FC<CreateProps> = ({
 
       <ModalPopup
         show={quickModal === 'source'}
-        onClose={closeQuickSourceModal}
+        onClose={quickSourceSaving ? () => {} : closeQuickSourceModal}
         title="Create Source"
       >
         <form onSubmit={handleQuickSourceSubmit} className="flex flex-col gap-3">
@@ -1254,7 +1257,7 @@ const Create: React.FC<CreateProps> = ({
             />
           </div>
           <div className="flex justify-end gap-2 pt-1">
-            <button type="button" className="btn-secondary" onClick={closeQuickSourceModal}>
+            <button type="button" className="btn-secondary" onClick={closeQuickSourceModal} disabled={quickSourceSaving}>
               Cancel
             </button>
             <button
@@ -1280,7 +1283,7 @@ const Create: React.FC<CreateProps> = ({
 
       <ModalPopup
         show={quickModal === 'subSource'}
-        onClose={closeQuickSubSourceModal}
+        onClose={quickSubSourceSaving ? () => {} : closeQuickSubSourceModal}
         title="Create Sub Source"
       >
         <form onSubmit={handleQuickSubSourceSubmit} className="flex flex-col gap-3">
@@ -1302,7 +1305,7 @@ const Create: React.FC<CreateProps> = ({
             />
           </div>
           <div className="flex justify-end gap-2 pt-1">
-            <button type="button" className="btn-secondary" onClick={closeQuickSubSourceModal}>
+            <button type="button" className="btn-secondary" onClick={closeQuickSubSourceModal} disabled={quickSubSourceSaving}>
               Cancel
             </button>
 

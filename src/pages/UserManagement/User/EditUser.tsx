@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
-import { MasterFormHeader, MultiSelectDropdown } from '../../../components/ui';
+import { MasterFormHeader, MultiSelectDropdown, SelectField } from '../../../components/ui';
 import SweetAlert from '../../../utils/SweetAlert';
 import { apiClient } from '../../../utils/apiClient';
 import { getUserForEdit, updateUserDetails } from '../../../services/EditUser';
@@ -20,6 +20,8 @@ const EditUser: React.FC = () => {
     password_confirmation: '',
     roles: [] as string[],
     managers: [] as string[],
+    zone: '',
+    origination: '',
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -33,6 +35,10 @@ const EditUser: React.FC = () => {
   const [managerOptions, setManagerOptions] = useState<Array<{ label: string; value: string }>>([]);
   const [managersLoading, setManagersLoading] = useState(false);
   const [managersError, setManagersError] = useState<string | null>(null);
+  const [zoneOptions, setZoneOptions] = useState<Array<{ label: string; value: string }>>([]);
+  const [zoneLoading, setZoneLoading] = useState(false);
+  const [originationOptions, setOriginationOptions] = useState<Array<{ label: string; value: string }>>([]);
+  const [originationLoading, setOriginationLoading] = useState(false);
 
   // Fetch initial user data
   useEffect(() => {
@@ -78,6 +84,8 @@ const EditUser: React.FC = () => {
               ? user.roles.map(r => String(r.id))
               : (user.role_id ? [String(user.role_id)] : []),
             managers,
+            zone: String((user as any).zone?.id ?? (user as any).zone_id ?? (user as any).zone?.value ?? (user as any).zone?.name ?? (user as any).zone?.zone ?? (user as any).zone_name ?? (user as any).zone ?? ''),
+            origination: String((user as any).origination?.id ?? (user as any).organisation_id ?? (user as any).orientation?.id ?? (user as any).origination?.value ?? (user as any).orientation?.value ?? (user as any).origination?.name ?? (user as any).orientation?.name ?? (user as any).organisation_name ?? (user as any).origination ?? (user as any).orientation ?? ''),
           });
         }
       } catch (error) {
@@ -139,6 +147,98 @@ const EditUser: React.FC = () => {
 
     loadRoles();
 
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // If backend returns zone as label/name instead of id, remap to option value once options load.
+  useEffect(() => {
+    if (!form.zone || zoneOptions.length === 0) return;
+    const current = String(form.zone);
+    const hasExactValue = zoneOptions.some((opt) => opt.value === current);
+    if (hasExactValue) return;
+    const byLabel = zoneOptions.find((opt) => opt.label.toLowerCase() === current.toLowerCase());
+    if (byLabel) {
+      setForm((prev) => ({ ...prev, zone: byLabel.value }));
+    }
+  }, [zoneOptions, form.zone]);
+
+  // If backend returns organisation as label/name instead of id, remap to option value once options load.
+  useEffect(() => {
+    if (!form.origination || originationOptions.length === 0) return;
+    const current = String(form.origination);
+    const hasExactValue = originationOptions.some((opt) => opt.value === current);
+    if (hasExactValue) return;
+    const byLabel = originationOptions.find((opt) => opt.label.toLowerCase() === current.toLowerCase());
+    if (byLabel) {
+      setForm((prev) => ({ ...prev, origination: byLabel.value }));
+    }
+  }, [originationOptions, form.origination]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadZones = async () => {
+      setZoneLoading(true);
+      try {
+        const resp = await apiClient.get<any>('/zones');
+        let items: any[] = [];
+        if (Array.isArray((resp as any)?.data)) items = (resp as any).data;
+        else if (Array.isArray((resp as any)?.data?.data)) items = (resp as any).data.data;
+        else if (Array.isArray(resp as any)) items = resp as any;
+
+        const opts = items
+          .map((it: any) => ({
+            label: String(it.name ?? it.zone ?? it.label ?? ''),
+            value: String(it.id ?? it.value ?? it.zone ?? ''),
+          }))
+          .filter((it) => it.label && it.value);
+
+        if (mounted) setZoneOptions(opts);
+      } catch (err) {
+        console.error('Failed to load zones', err);
+        if (mounted) setZoneOptions([]);
+      } finally {
+        if (mounted) setZoneLoading(false);
+      }
+    };
+
+    loadZones();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadOrganisations = async () => {
+      setOriginationLoading(true);
+      try {
+        const resp = await apiClient.get<any>('/organisations/list');
+        let items: any[] = [];
+        if (Array.isArray((resp as any)?.data)) items = (resp as any).data;
+        else if (Array.isArray((resp as any)?.data?.data)) items = (resp as any).data.data;
+        else if (Array.isArray(resp as any)) items = resp as any;
+
+        const opts = items
+          .map((it: any) => ({
+            label: String(it.name ?? it.organisation_name ?? it.label ?? ''),
+            value: String(it.id ?? it.value ?? it.organisation_id ?? ''),
+          }))
+          .filter((it) => it.label && it.value);
+
+        if (mounted) setOriginationOptions(opts);
+      } catch (err) {
+        console.error('Failed to load organisations', err);
+        if (mounted) setOriginationOptions([]);
+      } finally {
+        if (mounted) setOriginationLoading(false);
+      }
+    };
+
+    loadOrganisations();
     return () => {
       mounted = false;
     };
@@ -236,12 +336,24 @@ const EditUser: React.FC = () => {
     try {
       setSaving(true);
       const base = { ...form } as Record<string, any>;
+      const selectedZone = zoneOptions.find((opt) => opt.value === String(base.zone));
+      const selectedOrganisation = originationOptions.find((opt) => opt.value === String(base.origination));
+      const zoneId = base.zone ? String(base.zone) : null;
+      const organisationId = base.origination ? String(base.origination) : null;
+      const zoneName = selectedZone?.label || null;
+      const organisationName = selectedOrganisation?.label || null;
       // Build payload expected by backend
       const payload: EditUserPayload = {
         name: String(base.name || ''),
         email: base.email || '',
         phone: base.phone || null,
+        zone: zoneId,
+        zone_id: zoneId,
+        origination: organisationId,
+        organisation_id: organisationId,
       };
+      (payload as Record<string, any>).zone_name = zoneName;
+      (payload as Record<string, any>).organisation_name = organisationName;
 
       // roles is array of role ids -> send as role_ids (array)
       if (base.roles && base.roles.length > 0) {
@@ -579,6 +691,38 @@ const EditUser: React.FC = () => {
                   {errors.phone}
                 </div>
               )}
+            </div>
+
+            <div className="col-span-2 sm:col-span-1">
+              <label className="block text-sm text-gray-600 mb-1">Zone</label>
+              <SelectField
+                name="zone"
+                value={form.zone}
+                onChange={(v) => {
+                  const val = typeof v === 'string' ? v : v[0] ?? '';
+                  setForm((prev) => ({ ...prev, zone: val }));
+                }}
+                options={zoneOptions}
+                placeholder={zoneLoading ? 'Loading zones...' : 'Select zone'}
+                inputClassName="border-gray-200 focus:ring-black"
+                disabled={zoneLoading}
+              />
+            </div>
+
+            <div className="col-span-2 sm:col-span-1">
+              <label className="block text-sm text-gray-600 mb-1">Organisations</label>
+              <SelectField
+                name="origination"
+                value={form.origination}
+                onChange={(v) => {
+                  const val = typeof v === 'string' ? v : v[0] ?? '';
+                  setForm((prev) => ({ ...prev, origination: val }));
+                }}
+                options={originationOptions}
+                placeholder={originationLoading ? 'Loading organisations...' : 'Select organisation'}
+                inputClassName="border-gray-200 focus:ring-black"
+                disabled={originationLoading}
+              />
             </div>
 
             {/* Role */}

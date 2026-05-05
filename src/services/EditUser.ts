@@ -5,6 +5,12 @@ export interface EditUserPayload {
   name: string;
   email: string;
   phone?: string | null;
+  zone?: string | null;
+  zone_id?: string | null;
+  zone_name?: string | null;
+  origination?: string | null;
+  organisation_id?: string | null;
+  organisation_name?: string | null;
   password?: string;
   password_confirmation?: string;
   role_ids?: number[];
@@ -141,6 +147,12 @@ export async function updateUserDetails(
     formData.append('name', payload.name);
     formData.append('email', payload.email);
     if (payload.phone) formData.append('phone', payload.phone);
+    if (payload.zone !== undefined && payload.zone !== null) formData.append('zone', String(payload.zone));
+    if (payload.zone_id !== undefined && payload.zone_id !== null) formData.append('zone_id', String(payload.zone_id));
+    if (payload.zone_name !== undefined && payload.zone_name !== null) formData.append('zone_name', String(payload.zone_name));
+    if (payload.origination !== undefined && payload.origination !== null) formData.append('origination', String(payload.origination));
+    if (payload.organisation_id !== undefined && payload.organisation_id !== null) formData.append('organisation_id', String(payload.organisation_id));
+    if (payload.organisation_name !== undefined && payload.organisation_name !== null) formData.append('organisation_name', String(payload.organisation_name));
     if (payload.password) formData.append('password', payload.password);
     if (payload.password_confirmation) formData.append('password_confirmation', payload.password_confirmation);
     if (payload.role_ids && Array.isArray(payload.role_ids)) {

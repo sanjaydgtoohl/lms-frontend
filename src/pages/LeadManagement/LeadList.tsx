@@ -102,10 +102,12 @@ interface Props {
   headerActions?: React.ReactNode;
 }
 
+const EMPTY_EXTRA_STATUSES: string[] = [];
+
 const LeadList: React.FC<Props> = ({
   title,
   filterStatus = 'All',
-  extraStatuses = [],
+  extraStatuses = EMPTY_EXTRA_STATUSES,
   permissionStatus,
   headerActions,
 }) => {

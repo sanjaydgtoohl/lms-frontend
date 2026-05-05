@@ -50,7 +50,8 @@ const ModalPopup: React.FC<ModalPopupProps> = ({ show, onClose, title, children,
           role="dialog"
           aria-modal="true"
           aria-labelledby={title ? titleId : undefined}
-          className={`pointer-events-auto flex w-full flex-col rounded-xl border border-gray-200 bg-white shadow-lg ${panelClassName?.trim() ? panelClassName.trim() : 'max-w-md'}`}
+          // className={`pointer-events-auto flex w-full flex-col rounded-xl border border-gray-200 bg-white shadow-lg ${panelClassName?.trim() ? panelClassName.trim() : 'max-w-md'}`}
+          className={`pointer-events-auto flex w-full max-w-md flex-col rounded-xl border border-gray-200 bg-white shadow-lg ${panelClassName}`.trim()}
           onClick={(e) => e.stopPropagation()}
         >
           <header className="flex items-center justify-between gap-3 border-b border-gray-100 px-4 py-3">
