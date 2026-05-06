@@ -60,20 +60,21 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
 
   const toggleSelect = (val: string) => {
     if (multi) {
-      if (value.includes(val)) {
+      if (safeValue.includes(val)) {
         // Deselect if already selected
-        onChange(value.filter(v => v !== val));
+        onChange(safeValue.filter(v => v !== val));
       } else {
-        onChange([...value, val]);
+        onChange([...safeValue, val]);
       }
     } else {
       onChange([val]);
-      setOpen(false);
     }
+    // Keep dropdown open while interacting inside the select box.
+    setOpen(true);
   };
 
   const removeOne = (val: string) => {
-    onChange(value.filter(v => v !== val));
+    onChange(safeValue.filter(v => v !== val));
   };
 
   const optionHeight = 40; // px approx per option
@@ -82,7 +83,7 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   return (
     <div ref={ref} className={`relative ${className}`}>
       <div className="w-full">
-  <div className={`flex items-center overflow-y-hidden ${horizontalScroll ? 'flex-nowrap overflow-x-auto msd-scroll' : 'flex-wrap'} gap-2 w-full h-11 px-3 rounded-[10px] bg-white border border-[#DDE1E7] ${inputClassName} ${disabled ? 'opacity-60' : ''}`} onClick={() => { if (disabled) return; setOpen(prev => !prev); }}>
+  <div className={`flex items-center overflow-y-hidden ${horizontalScroll ? 'flex-nowrap overflow-x-auto msd-scroll' : 'flex-wrap'} gap-2 w-full h-11 px-3 rounded-[10px] bg-white border border-[#DDE1E7] ${inputClassName} ${disabled ? 'opacity-60' : ''}`} onClick={() => { if (disabled) return; setOpen(true); }}>
           {/* tags */}
           {safeValue.length > 0 && (
             <div className={`flex items-center gap-2 ${horizontalScroll ? 'flex-1 flex-nowrap' : 'flex-wrap'}`}>
@@ -116,7 +117,7 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
             value={open ? query : ''}
             onChange={(e) => { setQuery(e.target.value); if (!open) setOpen(true); }}
             onFocus={() => { if (!open) setOpen(true); }}
-            placeholder={value && value.length > 0 ? '' : placeholder}
+            placeholder={safeValue.length > 0 ? '' : placeholder}
             className="flex-1 min-w-[80px] h-10 text-sm bg-transparent placeholder-[#9CA3AF] focus:outline-none"
             disabled={disabled}
             autoComplete="off"
@@ -130,7 +131,7 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
           </div>
         </div>
 
-        <input type="hidden" name={name ? name : undefined} value={value.join(',')} />
+        <input type="hidden" name={name ? name : undefined} value={safeValue.join(',')} />
       </div>
 
       <div
@@ -145,7 +146,7 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
           ) : (
             filtered.map((opt) => {
               const o = normalize(opt);
-              const active = value.includes(String(o.value));
+              const active = safeValue.includes(String(o.value));
               return (
                 <div
                   key={o.value}

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useId, useState, useRef } from 'react';
 import SelectDropdown from './SelectDropdown';
+import MultiSelectDropdown from './MultiSelectDropdown';
 import {
   fetchStates,
   fetchCities,
@@ -80,6 +81,14 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
   const [allOptions, setAllOptions] = useState<FilterOptions>(options);
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  const parseMultiValue = useCallback((value: string): string[] => {
+    if (!value) return [];
+    return value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }, []);
+
   // Initialize with options from parent or fetch if not provided
   useEffect(() => {
     if (!isOpen) return;
@@ -98,6 +107,20 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
           modeOfMedia,
           locationType: locationTypes,
         }));
+
+        const selectedCountry = appliedValues.country?.trim();
+        if (selectedCountry) {
+          const selectedCountryOption = countries.find(
+            (opt) =>
+              opt.name === selectedCountry ||
+              opt.label === selectedCountry ||
+              String(opt.id) === selectedCountry
+          );
+          if (selectedCountryOption?.id) {
+            const states = await fetchStates(selectedCountryOption.id);
+            updateFieldOptions('state', states);
+          }
+        }
       } catch (error) {
         console.warn('Failed to load initial filter options:', error);
       }
@@ -133,9 +156,18 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
   const getSelectedOptionId = useCallback(
     (fieldName: string, selectedValue: string): string | number | undefined => {
       if (!selectedValue) return undefined;
+      const primaryValue = selectedValue.includes(',')
+        ? selectedValue
+            .split(',')
+            .map((item) => item.trim())
+            .find(Boolean) || ''
+        : selectedValue;
       const fieldOptions = allOptions[fieldName] || [];
       const matched = fieldOptions.find(
-        (opt) => opt.name === selectedValue || opt.label === selectedValue || String(opt.id) === selectedValue
+        (opt) =>
+          opt.name === primaryValue ||
+          opt.label === primaryValue ||
+          String(opt.id) === primaryValue
       );
       return matched?.id;
     },
@@ -372,7 +404,7 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
 
   const handleReset = useCallback(() => {
     setDraft({
-      country: '',
+      country: 'India',
       state: '',
       city: '',
       zoneArea: '',
@@ -516,27 +548,50 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
                   const fieldOptions = getOptionsForField(field.name as string);
                   const enabled = isFieldEnabled(field.name);
 
+                  if (field.name === 'country') {
+                    return (
+                      <label key={field.name} className="block">
+                        <span className="mb-1 block text-xs font-medium text-gray-700">
+                          {field.label}
+                          {isLoading && <span className="ml-1 text-xs text-blue-600">• Loading...</span>}
+                        </span>
+                        <SelectDropdown
+                          name={field.name as string}
+                          value={draft[field.name]}
+                          placeholder={`Select ${field.label.toLowerCase()}`}
+                          options={fieldOptions}
+                          onChange={(val) =>
+                            handleFieldChange(
+                              field.name,
+                              typeof val === 'string' ? val : val[0] || ''
+                            )
+                          }
+                          disabled={isLoading || !enabled}
+                          className="w-full"
+                          inputClassName="h-10"
+                          searchable
+                        />
+                      </label>
+                    );
+                  }
+
                   return (
                     <label key={field.name} className="block">
                       <span className="mb-1 block text-xs font-medium text-gray-700">
                         {field.label}
                         {isLoading && <span className="ml-1 text-xs text-blue-600">• Loading...</span>}
                       </span>
-                      <SelectDropdown
+                      <MultiSelectDropdown
                         name={field.name as string}
-                        value={draft[field.name]}
+                        value={parseMultiValue(draft[field.name])}
                         placeholder={`Select ${field.label.toLowerCase()}`}
                         options={fieldOptions}
-                        onChange={(val) =>
-                          handleFieldChange(
-                            field.name,
-                            typeof val === 'string' ? val : val[0] || ''
-                          )
-                        }
-                        searchable
+                        onChange={(vals) => handleFieldChange(field.name, vals.join(','))}
                         disabled={isLoading || !enabled}
                         className="w-full"
                         inputClassName="h-10"
+                        multi
+                        horizontalScroll
                       />
                     </label>
                   );
