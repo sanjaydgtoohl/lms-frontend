@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Pagination from '../../components/ui/Pagination';
@@ -15,6 +15,7 @@ import {
   listMissCampaigns,
   deleteMissCampaign,
   getMissCampaign,
+  mapMissCampaignApiToMissCampaign,
   type MissCampaign
 } from '../../services/View';
 import { apiClient } from '../../utils/apiClient';
@@ -29,6 +30,11 @@ import { getUnreadNotificationCount, listNotifications } from '../../services/no
 const View: React.FC = () => {
   const { hasPermission } = usePermissions();
   const dispatch = useDispatch<AppDispatch>();
+  // Previously `navigate`, `params`, `location` were declared after `currentData` (see comment there). Moved here so `viewDetailLoading` initializer can read `params` / `location` without TDZ errors.
+  const navigate = useNavigate();
+  const params = useParams();
+  const location = useLocation();
+
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -52,6 +58,10 @@ const View: React.FC = () => {
   // Image modal (soft alert) state
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [modalImageUrl, setModalImageUrl] = useState<string | null>(null);
+  const [viewDetailLoading, setViewDetailLoading] = useState(() =>
+    Boolean(params.id && !location.pathname.endsWith('/edit'))
+  );
+  const campaignsRef = useRef<MissCampaign[]>([]);
 
   const openImageModal = (url: string) => {
     setModalImageUrl(url);
@@ -78,9 +88,21 @@ const View: React.FC = () => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentData = shouldFetchAll ? campaigns.slice(startIndex, startIndex + itemsPerPage) : campaigns;
 
-  const navigate = useNavigate();
-  const params = useParams();
-  const location = useLocation();
+  // [Previously] Router hooks were here:
+  // const navigate = useNavigate();
+  // const params = useParams();
+  // const location = useLocation();
+
+  useEffect(() => {
+    campaignsRef.current = campaigns;
+  }, [campaigns]);
+
+  useLayoutEffect(() => {
+    const rawId = params.id;
+    const id = rawId ? decodeURIComponent(rawId) : undefined;
+    if (!id || location.pathname.endsWith('/edit')) return;
+    setViewDetailLoading(true);
+  }, [location.pathname, params.id]);
 
   const normalizeString = (value?: string | null): string => String(value ?? '').trim().toLowerCase();
 
@@ -394,8 +416,12 @@ const View: React.FC = () => {
     }
 
     if (id) {
-      const found = campaigns.find(c => c.id === id) || null;
-      setViewItem(found);
+      // Previously view-by-id only searched already-loaded table rows (often missed off-page / deep-linked ids):
+      // const found = campaigns.find(c => c.id === id) || null;
+      // setViewItem(found);
+      // setShowCreate(false);
+      // setEditItem(null);
+      // return;
       setShowCreate(false);
       setEditItem(null);
       return;
@@ -405,6 +431,38 @@ const View: React.FC = () => {
     setViewItem(null);
     setEditItem(null);
   }, [location.pathname, params.id, campaigns]);
+
+  // Previously there was no GET-by-id fetch for view mode; details relied on `campaigns.find` in the effect above.
+  useEffect(() => {
+    const rawId = params.id;
+    const id = rawId ? decodeURIComponent(rawId) : undefined;
+
+    if (!id || location.pathname.endsWith('/edit')) {
+      setViewDetailLoading(false);
+      return undefined;
+    }
+
+    let cancelled = false;
+    setViewDetailLoading(true);
+
+    getMissCampaign(id)
+      .then((data) => {
+        if (cancelled) return;
+        setViewItem(mapMissCampaignApiToMissCampaign(data));
+        setViewDetailLoading(false);
+      })
+      .catch((err) => {
+        console.error('Failed to fetch pre-lead by id:', err);
+        if (cancelled) return;
+        const found = campaignsRef.current.find((c) => c.id === id) || null;
+        setViewItem(found);
+        setViewDetailLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [location.pathname, params.id]);
 
   // Tooltip helpers removed - tooltip functionality not currently in use
 
@@ -496,6 +554,48 @@ const View: React.FC = () => {
 
   const handlePageChange = (page: number) => setCurrentPage(page);
 
+  const rawRouteId = params.id;
+  const decodedRouteId = rawRouteId ? decodeURIComponent(rawRouteId) : undefined;
+  const isPreLeadDetailRoute =
+    Boolean(decodedRouteId) && !location.pathname.endsWith('/edit');
+
+  // Previously there was no dedicated loading / not-found return for `/pre-lead/view/:id`; the main layout rendered immediately (table could flash before detail resolved).
+  if (isPreLeadDetailRoute && viewDetailLoading) {
+    return (
+      <div className="flex-1 p-6 w-full">
+        <div className="flex items-center justify-center min-h-[24rem]">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500" />
+            <p className="mt-4 text-gray-600">Loading pre lead...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (
+    isPreLeadDetailRoute &&
+    !viewDetailLoading &&
+    !viewItem &&
+    !editItem
+  ) {
+    return (
+      <div className="flex-1 p-6 w-full">
+        <div className="flex flex-col items-center justify-center min-h-[24rem] gap-4">
+          <p className="text-gray-600">Pre lead not found or failed to load.</p>
+          <button
+            type="button"
+            onClick={() => navigate('/pre-lead/view')}
+            className="flex items-center space-x-2 btn-primary text-white px-4 py-2 rounded-lg"
+          >
+            <IoIosArrowBack className="w-5 h-5" />
+            <span className="text-sm">Back to list</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 w-full max-w-full overflow-x-hidden h-full">
       {/* SweetAlert is used for inline success/error notifications */}
@@ -544,19 +644,26 @@ const View: React.FC = () => {
 
 
               <div className="grid md:grid-cols-2 gap-6">
-                {/* Image Section */}
-                {viewItem.proof && (
-                  <div className="mb-6">
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <h4 className="text-sm font-medium text-gray-600 mb-3">Proof Image</h4>
+                {/* Proof Image — section always visible; image only when URL exists */}
+                {/* Previously: {viewItem.proof && ( ... entire card ... )} so nothing showed when no image */}
+                <div className="mb-6">
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="text-sm font-medium text-gray-600 mb-3">Proof Image</h4>
+                    {viewItem.proof ? (
                       <img
                         src={viewItem.proof}
                         alt="Campaign Proof"
-                        className="w-full max-h-96 object-contain rounded-lg border border-gray-200"
+                        title="Click to view full image"
+                        className="w-full max-h-96 object-contain rounded-lg border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow"
+                        onClick={() => openImageModal(viewItem.proof)}
                       />
-                    </div>
+                    ) : (
+                      <div className="flex min-h-[14rem] items-center justify-center rounded-lg border border-dashed border-gray-200 bg-white px-4 py-8 text-center text-sm text-gray-400">
+                        No proof image uploaded
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
 
 
                 {/* Details Grid */}
@@ -687,7 +794,12 @@ const View: React.FC = () => {
                             onClick={() => openImageModal(it.proof)}
                           />
                         ) : (
-                          <span className="text-gray-400">-</span>
+                          <div
+                            className="flex h-16 w-16 items-center justify-center rounded border border-dashed border-gray-200 bg-gray-50 text-xs text-gray-400"
+                            title="No proof image"
+                          >
+                            —
+                          </div>
                         )}
                       </div>
                     ),
@@ -711,37 +823,37 @@ const View: React.FC = () => {
             onPageChange={handlePageChange}
           />
           {/* Tooltip popup for full proof text */}
-          {/* Image modal (soft alert) */}
-          {imageModalOpen && modalImageUrl && (
-            <div
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-              onClick={closeImageModal}
-            >
-              <div
-                className="relative bg-white rounded-lg shadow-lg p-4 max-w-[90vw] max-h-[90vh] flex items-center justify-center"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <img
-                  src={modalImageUrl}
-                  alt="Proof full"
-                  className="max-w-[84vw] max-h-[84vh] object-contain"
-                />
-                <div
-                  role="button"
-                  tabIndex={0}
-                  aria-label="Close"
-                  onClick={closeImageModal}
-                  onKeyDown={(e) => { if (e.key === 'Enter') closeImageModal(); }}
-                  className="absolute top-3 right-3 w-8 h-8 bg-white rounded-full p-1 border z-50 cursor-pointer flex items-center justify-center"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-          )}
         </>
+      )}
+      {/* Image modal — placed outside list/detail branches so Pre Lead view page can open proof fullscreen too */}
+      {imageModalOpen && modalImageUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={closeImageModal}
+        >
+          <div
+            className="relative bg-white rounded-lg shadow-lg p-4 max-w-[90vw] max-h-[90vh] flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={modalImageUrl}
+              alt="Proof full"
+              className="max-w-[84vw] max-h-[84vh] object-contain"
+            />
+            <div
+              role="button"
+              tabIndex={0}
+              aria-label="Close"
+              onClick={closeImageModal}
+              onKeyDown={(e) => { if (e.key === 'Enter') closeImageModal(); }}
+              className="absolute top-3 right-3 w-8 h-8 bg-white rounded-full p-1 border z-50 cursor-pointer flex items-center justify-center"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

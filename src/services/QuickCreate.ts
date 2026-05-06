@@ -81,13 +81,13 @@ export const quickCreateApi = {
   createSource: (name: string) => createItem('/lead-sources', { name }),
   listSubSourcesBySource,
   createSubSource: (sourceId: string | number, name: string) =>
-    createItem('/lead-sub-sources', {
+    createItem('/lead-sub-sources/name', {
       lead_source_id: sourceId,
       name,
       status: 1,
     }),
   createSubSourceStandalone: (name: string) =>
-    createItem('/lead-sub-sources', {
+    createItem('/lead-sub-sources/name', {
       name,
       status: 1,
     }),
