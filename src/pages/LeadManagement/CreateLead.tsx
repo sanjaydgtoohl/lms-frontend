@@ -5,7 +5,7 @@ import AssignPriorityCard from '../../components/forms/CreateLead/AssignPriority
 import CommentSection from '../../components/forms/CreateLead/CommentSection';
 import { MasterFormHeader, Button } from '../../components/ui';
 import { useNavigate } from 'react-router-dom';
-import { createLead, getBrandLists, getAgenciesLists } from '../../services/CreateLead';
+import { createLead, getBrandLists, getAgenciesLists, getLeadTypes } from '../../services/CreateLead';
 import SweetAlert from '../../utils/SweetAlert';
 import { apiClient } from '../../utils/apiClient';
 
@@ -79,6 +79,7 @@ const CreateLead: React.FC = () => {
   };
   const [comment, setComment] = useState<string>('');
   const [saving, setSaving] = useState(false);
+  const [leadTypeNameById, setLeadTypeNameById] = useState<Record<string, string>>({});
   const navigate = useNavigate();
 
   // Fetch dropdown data when selectedOption changes
@@ -111,6 +112,28 @@ const CreateLead: React.FC = () => {
       isMounted = false;
     };
   }, [selectedOption]);
+
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const types = await getLeadTypes();
+        if (!isMounted) return;
+        const map: Record<string, string> = {};
+        (Array.isArray(types) ? types : []).forEach((t: any) => {
+          const id = String(t?.id ?? '').trim();
+          const name = String(t?.name ?? '').trim();
+          if (id && name) map[id] = name;
+        });
+        setLeadTypeNameById(map);
+      } catch {
+        if (isMounted) setLeadTypeNameById({});
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const primaryLead = contacts?.[0];
   const primaryContactId = primaryLead?.id || '1';
@@ -295,7 +318,6 @@ const CreateLead: React.FC = () => {
         // current_assign_user must be numeric id — extract digits from formatted id if needed
         current_assign_user: extractNumericId(assignTo),
         priority_id: priority ? Number(priority) : undefined,
-        type: lead.type || undefined,
         designation_id: lead.designation ? Number(lead.designation) : undefined,
         department_id: lead.department ? Number(lead.department) : undefined,
         sub_source_id: lead.subSource ? Number(lead.subSource) : undefined,
@@ -307,6 +329,19 @@ const CreateLead: React.FC = () => {
         comment: comment || undefined,
         call_status_id: callFeedback ? Number(callFeedback) : undefined,
       };
+
+      const typeValue = String(lead.type || '').trim();
+      if (typeValue) {
+        const numericTypeId = Number(typeValue);
+        const isNumericTypeValue =
+          !Number.isNaN(numericTypeId) && Number.isFinite(numericTypeId) && numericTypeId > 0;
+        // Keep backward compatibility: backend still validates "type" as required.
+        // Never send numeric ID in `type`; send label or omit if unresolved.
+        payload.type = leadTypeNameById[typeValue] || (isNumericTypeValue ? undefined : typeValue);
+        if (isNumericTypeValue) {
+          payload.lead_type_id = numericTypeId;
+        }
+      }
 
       if (selectedOption === 'brand') payload.brand_id = dropdownValue || undefined;
       else payload.agency_id = dropdownValue || undefined;
@@ -327,6 +362,7 @@ const CreateLead: React.FC = () => {
                 name: 'fullName',
                 mobile_number: 'mobileNo',
                 type: 'type',
+                lead_type_id: 'type',
                 designation_id: 'designation',
                 department_id: 'department',
                 sub_source_id: 'subSource',
@@ -341,9 +377,9 @@ const CreateLead: React.FC = () => {
           return;
         }
         SweetAlert.showCreateSuccess();
-        setTimeout(() => {
-          navigate('/lead-management/all-leads');
-        }, 1800);
+        // Force canonical list URL to avoid malformed slug/path redirects.
+        window.location.replace(`${window.location.origin}/lead-management/all-leads`);
+        return;
       } catch (err: any) {
         const msg = err?.message || 'Failed to create lead';
         setError(msg);

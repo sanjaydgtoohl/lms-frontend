@@ -19,7 +19,12 @@ const ENDPOINTS = {
 
 /** Map GET list/detail row to UI shape (same rules for both). */
 function mapLeadSubSourceApiRow(it: any, idx: number): LeadSourceItem {
-  const idVal = it.id ?? `LS${String(idx + 1).padStart(3, '0')}`;
+  const idVal =
+    it.id ??
+    it.lead_sub_source_id ??
+    it.sub_source_id ??
+    it.value ??
+    `LS${String(idx + 1).padStart(3, '0')}`;
   const subSource = it.name ?? '';
   const leadSrc = it.lead_source;
   const source =
@@ -123,6 +128,28 @@ export async function updateLeadSubSource(
   id: string | number,
   payload: UpdateLeadSubSourcePayload
 ): Promise<LeadSourceItem> {
-  const res = await apiClient.put<LeadSourceItem>(ENDPOINTS.UPDATE(id), payload);
-  return handleResponse<LeadSourceItem>(res);
+  try {
+    const res = await apiClient.put<LeadSourceItem>(ENDPOINTS.UPDATE(id), payload);
+    return handleResponse<LeadSourceItem>(res);
+  } catch (error: any) {
+    const status = Number(error?.response?.status ?? error?.status ?? 0);
+    const message = String(
+      error?.response?.data?.message ??
+      error?.message ??
+      ''
+    ).toLowerCase();
+    const isMethodNotAllowed =
+      status === 405 ||
+      status === 501 ||
+      message.includes('method not allowed') ||
+      message.includes('not implemented');
+
+    // Fall back to PATCH only for unsupported-method responses.
+    if (!isMethodNotAllowed) {
+      throw error;
+    }
+
+    const res = await apiClient.patch<LeadSourceItem>(ENDPOINTS.UPDATE(id), payload);
+    return handleResponse<LeadSourceItem>(res);
+  }
 }

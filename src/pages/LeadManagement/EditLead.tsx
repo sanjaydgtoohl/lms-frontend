@@ -7,7 +7,7 @@ import LeadManagementSection from '../../components/forms/CreateLead/LeadManagem
 import ContactPersonsCard from '../../components/forms/CreateLead/ContactPersonsCard';
 import AssignPriorityCard from '../../components/forms/CreateLead/AssignPriorityCard';
 import { fetchLeadById, fetchLeadHistory } from '../../services/ViewLead';
-import { getBrandLists, getAgenciesLists } from '../../services/CreateLead';
+import { getBrandLists, getAgenciesLists, getLeadTypes } from '../../services/CreateLead';
 
 import { Button } from '../../components/ui';
 import { updateLead } from '../../services/AllLeads';
@@ -28,6 +28,7 @@ const EditLead: React.FC = () => {
   const [optionsError, setOptionsError] = useState<string | null>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [leadTypeNameById, setLeadTypeNameById] = useState<Record<string, string>>({});
   // const [showEmailComposer, setShowEmailComposer] = useState(false);
   // const [emailTo, setEmailTo] = useState('');
   // const [emailSubject, setEmailSubject] = useState('');
@@ -64,6 +65,14 @@ const EditLead: React.FC = () => {
           return;
         }
 
+        const rawLead = apiLead as any;
+        const resolvedLeadTypeValue =
+          rawLead?.lead_type?.id != null
+            ? String(rawLead.lead_type.id)
+            : (rawLead?.lead_type_id != null
+              ? String(rawLead.lead_type_id)
+              : String(apiLead.type || ''));
+
         const contact = {
           id: String(apiLead.id),
           fullName: apiLead.name || '',
@@ -72,7 +81,7 @@ const EditLead: React.FC = () => {
           mobileNo: Array.isArray(apiLead.mobile_number) ? (apiLead.mobile_number[0] ? (typeof apiLead.mobile_number[0] === 'string' ? apiLead.mobile_number[0] : apiLead.mobile_number[0].number) : '') : (apiLead.mobile_number || apiLead.number || apiLead.phone || ''),
           mobileNo2: Array.isArray(apiLead.mobile_number) ? (apiLead.mobile_number[1] ? (typeof apiLead.mobile_number[1] === 'string' ? apiLead.mobile_number[1] : apiLead.mobile_number[1].number) : '') : '',
           showSecondMobile: Array.isArray(apiLead.mobile_number) && apiLead.mobile_number.length > 1,
-          type: apiLead.type || '',
+          type: resolvedLeadTypeValue,
           designation: apiLead.designation?.id ? String(apiLead.designation.id) : '',
           agencyBrand: apiLead.brand?.name || (apiLead.agency ? apiLead.agency.name : ''),
           subSource: apiLead.sub_source?.id ? String(apiLead.sub_source.id) : '',
@@ -153,6 +162,28 @@ const EditLead: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [successMessage]);
+
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const types = await getLeadTypes();
+        if (!isMounted) return;
+        const map: Record<string, string> = {};
+        (Array.isArray(types) ? types : []).forEach((t: any) => {
+          const id = String(t?.id ?? '').trim();
+          const name = String(t?.name ?? '').trim();
+          if (id && name) map[id] = name;
+        });
+        setLeadTypeNameById(map);
+      } catch {
+        if (isMounted) setLeadTypeNameById({});
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // useEffect(() => {
   //   if (showEmailComposer && editorRef.current) {
@@ -239,7 +270,6 @@ const EditLead: React.FC = () => {
         mobile_number: mobile_number.length ? mobile_number : undefined,
         current_assign_user: extractNumericId(lead.assignTo),
         priority_id: lead.priority ? extractNumericId(lead.priority) : undefined,
-        type: contact?.type || undefined,
         designation_id: contact?.designation ? Number(contact.designation) : undefined,
         department_id: contact?.department ? Number(contact.department) : undefined,
         sub_source_id: contact?.subSource ? Number(contact.subSource) : undefined,
@@ -252,13 +282,26 @@ const EditLead: React.FC = () => {
         call_status_id: callStatusId,
       };
 
+      const typeValue = String(contact?.type || '').trim();
+      if (typeValue) {
+        const numericTypeId = Number(typeValue);
+        const isNumericTypeValue =
+          !Number.isNaN(numericTypeId) && Number.isFinite(numericTypeId) && numericTypeId > 0;
+        // Never send numeric ID in `type`; send label or omit if unresolved.
+        payload.type = leadTypeNameById[typeValue] || (isNumericTypeValue ? undefined : typeValue);
+        if (isNumericTypeValue) {
+          payload.lead_type_id = numericTypeId;
+        }
+      }
+
       if (selectedOption === 'brand') payload.brand_id = lead.brandId || undefined;
       else payload.agency_id = lead.agencyId || undefined;
 
       await updateLead(id || '', payload);
       // Assume updateLead throws on error or returns the updated item
       SweetAlert.showUpdateSuccess();
-      navigate('/lead-management/all-leads');
+      window.location.replace(`${window.location.origin}/lead-management/all-leads`);
+      return;
     } catch (error: any) {
       console.error('Error updating lead:', error);
       try { SweetAlert.showError(error?.message || 'Failed to update lead'); } catch {

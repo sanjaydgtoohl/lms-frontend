@@ -5,13 +5,12 @@ import { Upload, Loader, Trash2 } from 'lucide-react';
 import { SelectField, Button, Input } from '../../components/ui';
 import ModalPopup from '../../components/ui/ModalPopup';
 import { apiClient } from '../../utils/apiClient';
-import { createLeadSubSource } from '../../services/CreateSourceForm';
 import { createMissCampaign, updateMissCampaignWithForm } from '../../services/Create';
-import { listBrands, createBrand } from '../../services/BrandMaster';
 import { listCountries, listStates, listCities } from '../../services/CreateBrandForm';
 import { listAttendees } from '../../services/AllUsers';
 import { fetchCurrentUser } from '../../services/Header';
 import SweetAlert from '../../utils/SweetAlert';
+import { quickCreateApi } from '../../services/QuickCreate';
 
 
 interface CreateProps {
@@ -115,8 +114,8 @@ const Create: React.FC<CreateProps> = ({
     const fetchBrands = async () => {
       try {
         setBrandLoading(true);
-        const response = await listBrands(1, 1000); // fetch all brands (large perPage)
-        const options = (response.data || []).map(brand => ({
+        const response = await quickCreateApi.listBrands();
+        const options = (response || []).map((brand) => ({
           id: brand.id,
           name: brand.name,
         }));
@@ -136,10 +135,8 @@ const Create: React.FC<CreateProps> = ({
     const fetchSources = async () => {
       try {
         setSourceLoading(true);
-        // API call for lead sources
-        const response = await apiClient.get('/lead-sources');
-        const data = Array.isArray(response.data) ? response.data : [];
-        const options = data.map((source: { id: string; name: string }) => ({
+        const response = await quickCreateApi.listSourcesForPreLead();
+        const options = response.map((source) => ({
           id: source.id,
           source: source.name,
         }));
@@ -336,10 +333,8 @@ const Create: React.FC<CreateProps> = ({
     const fetchSubSources = async () => {
       try {
         setSubSourceLoading(true);
-        // API call for sub sources by source id
-        const response = await apiClient.get(`/lead-sub-sources/by-source/${formData.source}`);
-        const data = Array.isArray(response.data) ? response.data : [];
-        const options = data.map((subSource: { id: string; name: string }) => ({
+        const response = await quickCreateApi.listSubSourcesBySourceForPreLead(formData.source);
+        const options = response.map((subSource) => ({
           id: subSource.id,
           label: subSource.name,
         }));
@@ -508,22 +503,36 @@ const Create: React.FC<CreateProps> = ({
       return;
     }
     setQuickBrandError(null);
+    setQuickBrandSaving(true);
     try {
-      setQuickBrandSaving(true);
-      const created = await createBrand({ name });
-      const response = await listBrands(1, 1000);
-      const options = (response.data || []).map(brand => ({
-        id: String(brand.id),
-        name: brand.name,
-      }));
-      setBrandOptions(options);
+      const created = await quickCreateApi.createBrand(name);
       const newId = created?.id != null ? String(created.id) : '';
+      const newLabel = String(created?.name ?? name).trim();
+
+      setBrandOptions((prev) => {
+        if (!newId) return prev;
+        if (prev.some((b) => String(b.id) === newId)) return prev;
+        return [...prev, { id: newId, name: newLabel }];
+      });
+
       if (newId) {
         setFormData(prev => ({ ...prev, brandName: newId }));
         setErrors(prev => ({ ...prev, brandName: '' }));
       }
+
       SweetAlert.showCreateSuccess();
       closeQuickBrandModal();
+
+      try {
+        const response = await quickCreateApi.listBrands();
+        const options = (response || []).map((brand) => ({
+          id: String(brand.id),
+          name: brand.name,
+        }));
+        setBrandOptions(options);
+      } catch {
+        // Create succeeded; refresh list failed — keep optimistic options above
+      }
     } catch (err: any) {
       setQuickBrandError(err?.message || 'Failed to create brand');
     } finally {
@@ -539,27 +548,36 @@ const Create: React.FC<CreateProps> = ({
       return;
     }
     setQuickSourceError(null);
+    setQuickSourceSaving(true);
     try {
-      setQuickSourceSaving(true);
-      const res = await apiClient.post<Record<string, unknown>>('/lead-sources', { name });
-      if (!res.success) {
-        throw new Error(res.message || 'Failed to create source');
-      }
-      const created = res.data as { id?: string | number };
+      const created = await quickCreateApi.createSource(name);
       const newId = created?.id != null ? String(created.id) : '';
-      const response = await apiClient.get('/lead-sources');
-      const raw = Array.isArray(response.data) ? response.data : [];
-      const opts = raw.map((s: { id: string; name: string }) => ({
-        id: String(s.id),
-        source: s.name,
-      }));
-      setSourceOptions(opts);
+      const newLabel = String(created?.name ?? name).trim();
+
+      setSourceOptions((prev) => {
+        if (!newId) return prev;
+        if (prev.some((s) => String(s.id) === newId)) return prev;
+        return [...prev, { id: newId, source: newLabel }];
+      });
+
       if (newId) {
         setFormData(prev => ({ ...prev, source: newId, subSource: '' }));
         setErrors(prev => ({ ...prev, source: '', subSource: '' }));
       }
+
       SweetAlert.showCreateSuccess();
       closeQuickSourceModal();
+
+      try {
+        const response = await quickCreateApi.listSourcesForPreLead();
+        const opts = response.map((s) => ({
+          id: String(s.id),
+          source: s.name,
+        }));
+        setSourceOptions(opts);
+      } catch {
+        // Create succeeded; refresh list failed — keep optimistic options above
+      }
     } catch (err: any) {
       setQuickSourceError(err?.message || 'Failed to create source');
     } finally {
@@ -570,36 +588,46 @@ const Create: React.FC<CreateProps> = ({
   const handleQuickSubSourceSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const name = quickSubSourceName.trim();
+    const selectedSourceId = String(formData.source || '').trim();
     if (!name) {
       setQuickSubSourceError('Please enter sub source name');
       return;
     }
-    if (!formData.source) {
+    if (!selectedSourceId) {
       setQuickSubSourceError('Please select a source first');
       return;
     }
     setQuickSubSourceError(null);
+    setQuickSubSourceSaving(true);
     try {
-      setQuickSubSourceSaving(true);
-      const created = await createLeadSubSource({
-        lead_source_id: formData.source,
-        name,
-        status: 1,
-      });
+      const created = await quickCreateApi.createSubSourceForPreLead(selectedSourceId, name);
       const newId = created?.id != null ? String(created.id) : '';
-      const response = await apiClient.get(`/lead-sub-sources/by-source/${formData.source}`);
-      const data = Array.isArray(response.data) ? response.data : [];
-      const options = data.map((sub: { id: string; name: string }) => ({
-        id: sub.id,
-        label: sub.name,
-      }));
-      setSubSourceOptions(options);
+      const newLabel = String(created?.name ?? name).trim();
+
+      setSubSourceOptions((prev) => {
+        if (!newId) return prev;
+        if (prev.some((s) => String(s.id) === newId)) return prev;
+        return [...prev, { id: newId, label: newLabel }];
+      });
+
       if (newId) {
-        setFormData(prev => ({ ...prev, subSource: newId }));
+        setFormData(prev => ({ ...prev, source: selectedSourceId, subSource: newId }));
         setErrors(prev => ({ ...prev, subSource: '' }));
       }
+
       SweetAlert.showCreateSuccess();
       closeQuickSubSourceModal();
+
+      try {
+        const response = await quickCreateApi.listSubSourcesBySourceForPreLead(selectedSourceId);
+        const options = response.map((sub) => ({
+          id: sub.id,
+          label: sub.name,
+        }));
+        setSubSourceOptions(options);
+      } catch {
+        // Create succeeded; refresh list failed — keep optimistic options above
+      }
     } catch (err: any) {
       setQuickSubSourceError(err?.message || 'Failed to create sub source');
     } finally {
@@ -652,6 +680,8 @@ const Create: React.FC<CreateProps> = ({
 
     const payload: Record<string, any> = {
       name: formData.productName,
+      source: formData.source,
+      subSource: formData.subSource,
       brand_id: formData.brandName,
       lead_source_id: formData.source,
       lead_sub_source_id: formData.subSource,
@@ -831,7 +861,15 @@ const Create: React.FC<CreateProps> = ({
                 <SelectField
                   name="subSource"
                   value={formData.subSource}
-                  onChange={(v) => { setFormData(prev => ({ ...prev, subSource: typeof v === 'string' ? v : v[0] ?? '' })); setErrors(prev => ({ ...prev, subSource: '' })); }}
+                  onChange={(v) => {
+                    const selectedSubSource = typeof v === 'string' ? v : v[0] ?? '';
+                    setFormData(prev => ({
+                      ...prev,
+                      source: prev.source,
+                      subSource: selectedSubSource,
+                    }));
+                    setErrors(prev => ({ ...prev, source: '', subSource: '' }));
+                  }}
                   options={subSourceOptions.map(s => ({ value: String(s.id), label: s.label }))}
                   placeholder={subSourceLoading ? 'Loading sub-sources...' : (formData.source ? 'Search or select option' : 'Select a source first')}
                   inputClassName={errors.subSource ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}
