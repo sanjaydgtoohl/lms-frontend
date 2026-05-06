@@ -174,21 +174,6 @@ const IndustryMaster: React.FC = () => {
     }
 
     if (location.pathname.endsWith('/edit') && id) {
-      setActiveEditId(id);
-      getIndustry(id)
-        .then((data) => {
-          setEditItem({
-            id: String(data.id),
-            name: String(data.name ?? ''),
-            dateTime: parseCreatedAt(data.created_at),
-          });
-          setViewItem(null);
-        })
-        .catch(() => {
-          const found = industriesRef.current.find(i => i.id === id) || null;
-          setEditItem(found);
-          setViewItem(null);
-        });
       return;
     }
 
@@ -201,6 +186,35 @@ const IndustryMaster: React.FC = () => {
 
     setEditItem(null);
     setActiveEditId('');
+  }, [location.pathname, params.id]);
+
+  useEffect(() => {
+    const rawId = params.id;
+    const id = rawId ? decodeURIComponent(rawId) : undefined;
+    if (!location.pathname.endsWith('/edit') || !id) return;
+
+    let cancelled = false;
+    setActiveEditId(id);
+    getIndustry(id)
+      .then((data) => {
+        if (cancelled) return;
+        setEditItem({
+          id: String(data.id),
+          name: String(data.name ?? ''),
+          dateTime: parseCreatedAt(data.created_at),
+        });
+        setViewItem(null);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        const found = industriesRef.current.find(i => i.id === id) || null;
+        setEditItem(found);
+        setViewItem(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [location.pathname, params.id]);
 
   useEffect(() => {

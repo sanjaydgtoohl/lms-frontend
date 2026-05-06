@@ -279,21 +279,6 @@ const DepartmentMaster: React.FC = () => {
 		}
 
 		if (location.pathname.endsWith('/edit') && id) {
-			setActiveEditId(id);
-			getDepartment(id)
-				.then((data) => {
-					setEditItem({
-						id: String(data.id),
-						name: data.name,
-						dateTime: data.created_at || '',
-					});
-					setViewItem(null);
-				})
-				.catch(() => {
-					const found = departmentsRef.current.find(d => d.id === id) || null;
-					setEditItem(found);
-					setViewItem(null);
-				});
 			return;
 		}
 
@@ -307,6 +292,35 @@ const DepartmentMaster: React.FC = () => {
 		// View route only — detail fetch runs in separate effect (no refetch on list updates).
 		setEditItem(null);
 		setActiveEditId('');
+	}, [location.pathname, params.id]);
+
+	useEffect(() => {
+		const rawId = params.id;
+		const id = rawId ? decodeURIComponent(rawId) : undefined;
+		if (!location.pathname.endsWith('/edit') || !id) return;
+
+		let cancelled = false;
+		setActiveEditId(id);
+		getDepartment(id)
+			.then((data) => {
+				if (cancelled) return;
+				setEditItem({
+					id: String(data.id),
+					name: data.name,
+					dateTime: data.created_at || '',
+				});
+				setViewItem(null);
+			})
+			.catch(() => {
+				if (cancelled) return;
+				const found = departmentsRef.current.find(d => d.id === id) || null;
+				setEditItem(found);
+				setViewItem(null);
+			});
+
+		return () => {
+			cancelled = true;
+		};
 	}, [location.pathname, params.id]);
 
 	// View by id only: GET /api/v1/departments/:id — does not re-run when `departments` refreshes.

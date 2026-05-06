@@ -518,8 +518,6 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
       if (!/^\d{6}$/.test(pin)) return;
       if (pin === (lastPinLookupByContactRef.current[contact.id] || '')) return;
 
-      lastPinLookupByContactRef.current[contact.id] = pin;
-
       (async () => {
         try {
           const pinRes = await lookupPinCode(pin);
@@ -555,6 +553,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
             }
           }
 
+          let applied = false;
           updateContacts((prev) => {
             let changed = false;
             const next = prev.map((c) => {
@@ -574,8 +573,12 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
               }
               return updated;
             });
+            if (changed) applied = true;
             return changed ? next : prev;
           });
+          if (applied) {
+            lastPinLookupByContactRef.current[contact.id] = pin;
+          }
         } catch {
           // ignore errors
         }

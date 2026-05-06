@@ -9,41 +9,52 @@ import { createLead, getBrandLists, getAgenciesLists, getLeadTypes } from '../..
 import SweetAlert from '../../utils/SweetAlert';
 import { apiClient } from '../../utils/apiClient';
 
+const DUPLICATE_MOBILE_MSG =
+  'This mobile number already exists in the system. Please enter a different mobile number.';
 
-const CreateLead: React.FC = () => {
-  const DUPLICATE_MOBILE_MSG = 'This mobile number already exists in the system. Please enter a different mobile number.';
-  const normalizeMobileNumber = (value: unknown) => String(value || '').replace(/\D/g, '');
-  const hasMobileMatch = (rows: any[], targetMobile: string) => rows.some((leadRow: any) => {
+function normalizeMobileNumber(value: unknown): string {
+  return String(value || '').replace(/\D/g, '');
+}
+
+function hasMobileMatch(rows: any[], targetMobile: string): boolean {
+  return rows.some((leadRow: any) => {
     const raw = leadRow?.mobile_number;
     const list = Array.isArray(raw) ? raw : [leadRow?.number || leadRow?.phone || raw];
-    return list.some((entry: any) => normalizeMobileNumber(typeof entry === 'string' ? entry : entry?.number) === targetMobile);
+    return list.some(
+      (entry: any) =>
+        normalizeMobileNumber(typeof entry === 'string' ? entry : entry?.number) === targetMobile
+    );
   });
-  const checkDuplicateMobileInSystem = async (targetMobile: string) => {
-    const unwrapListRows = (resp: any): any[] => {
-      const d = resp?.data;
-      if (Array.isArray(d)) return d;
-      if (d && typeof d === 'object' && Array.isArray((d as any).data)) return (d as any).data;
-      return [];
-    };
+}
 
-    try {
-      // Prefer server-side filter: one request when backend supports `mobile_number`.
-      const direct = await apiClient.get<any>(
-        `/leads?mobile_number=${encodeURIComponent(targetMobile)}&per_page=50`
-      );
-      const directRows = unwrapListRows(direct);
-      return hasMobileMatch(directRows, targetMobile);
-    } catch {
-      // Only if dedicated lookup fails, scan a few pages (legacy fallback).
-      for (let page = 1; page <= 5; page += 1) {
-        const res = await apiClient.get<any>(`/leads?page=${page}&per_page=50`);
-        const rows = unwrapListRows(res);
-        if (hasMobileMatch(rows, targetMobile)) return true;
-        if (!rows.length) break;
-      }
-      return false;
-    }
-  };
+function unwrapListRows(resp: any): any[] {
+  const d = resp?.data;
+  if (Array.isArray(d)) return d;
+  if (d && typeof d === 'object' && Array.isArray((d as any).data)) return (d as any).data;
+  return [];
+}
+
+async function checkDuplicateMobileInSystem(targetMobile: string): Promise<boolean> {
+  try {
+    const direct = await apiClient.get<any>(
+      `/leads?mobile_number=${encodeURIComponent(targetMobile)}&per_page=50`
+    );
+    const directRows = unwrapListRows(direct);
+    if (hasMobileMatch(directRows, targetMobile)) return true;
+  } catch {
+    // Fall through to paged scan if filtered request fails.
+  }
+
+  for (let page = 1; page <= 5; page += 1) {
+    const res = await apiClient.get<any>(`/leads?page=${page}&per_page=50`);
+    const rows = unwrapListRows(res);
+    if (hasMobileMatch(rows, targetMobile)) return true;
+    if (!rows.length) break;
+  }
+  return false;
+}
+
+const CreateLead: React.FC = () => {
   const [selectedOption, setSelectedOption] = useState<'brand' | 'agency'>('brand');
   const [dropdownValue, setDropdownValue] = useState<string>('');
   const [brandOptions, setBrandOptions] = useState<{ value: string; label: string }[]>([]);
@@ -191,7 +202,7 @@ const CreateLead: React.FC = () => {
       isCancelled = true;
       clearTimeout(timer);
     };
-  }, [primaryContactId, primaryMobileNo, normalizeMobileNumber, checkDuplicateMobileInSystem]);
+  }, [primaryContactId, primaryMobileNo]);
 
   useEffect(() => {
     const contactId = primaryContactId;
@@ -218,7 +229,7 @@ const CreateLead: React.FC = () => {
       isCancelled = true;
       clearTimeout(timer);
     };
-  }, [primaryContactId, primaryMobileNo2, normalizeMobileNumber, checkDuplicateMobileInSystem]);
+  }, [primaryContactId, primaryMobileNo2]);
 
   const handleSave = () => {
     // Validate minimal required fields and submit to API

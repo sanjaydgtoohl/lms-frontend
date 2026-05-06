@@ -39,6 +39,11 @@ const blankChild = (): ChildAgency => ({
 const toIdArray = (raw: any): string[] => {
   if (raw == null) return [];
 
+  if (typeof raw === 'number' || typeof raw === 'bigint') {
+    const s = String(raw).trim();
+    return s ? [s] : [];
+  }
+
   const pickId = (v: any): string => {
     if (v == null) return '';
     if (typeof v === 'object') {

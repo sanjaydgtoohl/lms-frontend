@@ -305,21 +305,6 @@ const DesignationMaster: React.FC = () => {
     }
 
     if (location.pathname.endsWith('/edit') && id) {
-      setActiveEditId(id);
-      getDesignation(id)
-        .then((data) => {
-          setEditItem({
-            id: String(data.id),
-            name: String(data.name ?? data.title ?? ''),
-            dateTime: data.created_at || '',
-          });
-          setViewItem(null);
-        })
-        .catch(() => {
-          const found = designationsRef.current.find(d => d.id === id) || null;
-          setEditItem(found);
-          setViewItem(null);
-        });
       return;
     }
 
@@ -332,6 +317,35 @@ const DesignationMaster: React.FC = () => {
 
     setEditItem(null);
     setActiveEditId('');
+  }, [location.pathname, params.id]);
+
+  useEffect(() => {
+    const rawId = params.id;
+    const id = rawId ? decodeURIComponent(rawId) : undefined;
+    if (!location.pathname.endsWith('/edit') || !id) return;
+
+    let cancelled = false;
+    setActiveEditId(id);
+    getDesignation(id)
+      .then((data) => {
+        if (cancelled) return;
+        setEditItem({
+          id: String(data.id),
+          name: String(data.name ?? data.title ?? ''),
+          dateTime: data.created_at || '',
+        });
+        setViewItem(null);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        const found = designationsRef.current.find(d => d.id === id) || null;
+        setEditItem(found);
+        setViewItem(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [location.pathname, params.id]);
 
   useEffect(() => {

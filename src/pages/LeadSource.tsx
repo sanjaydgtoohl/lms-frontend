@@ -200,29 +200,12 @@ const LeadSource: React.FC = () => {
     if (location.pathname.endsWith('/create')) {
       setViewItem(null);
       setEditItem(null);
+      setActiveEditId('');
       setActiveLeadSourceId('');
       return;
     }
 
     if (location.pathname.endsWith('/edit') && id) {
-      setActiveEditId(id);
-      getLeadSource(id)
-        .then((data) => {
-          const mappedSourceId = String(data.leadSourceId || '');
-          setActiveLeadSourceId(mappedSourceId);
-          setEditItem({
-            id: data.id,
-            source: mappedSourceId || data.source,
-            subSource: data.subSource,
-            dateTime: data.dateTime,
-          });
-          setViewItem(null);
-        })
-        .catch(() => {
-          const found = itemsRef.current.find(i => i.id === id) || null;
-          setEditItem(found);
-          setViewItem(null);
-        });
       return;
     }
 
@@ -237,6 +220,40 @@ const LeadSource: React.FC = () => {
     setEditItem(null);
     setActiveEditId('');
     setActiveLeadSourceId('');
+  }, [location.pathname, params.id]);
+
+  useEffect(() => {
+    const rawId = params.id;
+    const id = rawId ? decodeURIComponent(rawId) : undefined;
+    if (!location.pathname.endsWith('/edit') || !id) return;
+
+    let cancelled = false;
+    setActiveEditId(id);
+    setActiveLeadSourceId('');
+    getLeadSource(id)
+      .then((data) => {
+        if (cancelled) return;
+        const mappedSourceId = String(data.leadSourceId || '');
+        setActiveLeadSourceId(mappedSourceId);
+        setEditItem({
+          id: data.id,
+          source: mappedSourceId || data.source,
+          subSource: data.subSource,
+          dateTime: data.dateTime,
+        });
+        setViewItem(null);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        const found = itemsRef.current.find(i => i.id === id) || null;
+        setEditItem(found);
+        setViewItem(null);
+        setActiveLeadSourceId(found?.leadSourceId ?? '');
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [location.pathname, params.id]);
 
   useEffect(() => {

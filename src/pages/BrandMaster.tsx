@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import CreateBrandForm from './CreateBrandForm';
 import MasterView from '../components/ui/MasterView';
 import Pagination from '../components/ui/Pagination';
@@ -117,48 +117,62 @@ const BrandMaster: React.FC = () => {
 
   const handleCreateBrand = () => navigate(`${ROUTES.BRAND_MASTER}/create`);
 
+  const brandsRef = useRef<Brand[]>([]);
+  brandsRef.current = brands;
+
   useEffect(() => {
     if (isCreateRoute) {
       setViewItem(null);
       setEditItem(null);
       return;
     }
-
-    if (isEditRoute && routeId) {
-      // Fetch full brand details from API for edit mode
-      getBrand(routeId)
-        .then(data => {
-          setEditItem(data);
-          setViewItem(null);
-        })
-        .catch(() => {
-          // Fallback to locally stored data if API fails
-          const found = brands.find(b => b.id === routeId) || null;
-          setEditItem(found);
-          setViewItem(null);
-        });
-      return;
+    if (!routeId) {
+      setViewItem(null);
+      setEditItem(null);
     }
+  }, [isCreateRoute, routeId]);
 
-    if (isViewRoute && routeId) {
-      // Fetch full brand details from API for view mode
-      getBrand(routeId)
-        .then(data => {
-          setViewItem(data);
-          setEditItem(null);
-        })
-        .catch(() => {
-          // Fallback to locally stored data if API fails
-          const found = brands.find(b => b.id === routeId) || null;
-          setViewItem(found);
-          setEditItem(null);
-        });
-      return;
-    }
+  useEffect(() => {
+    if (!isEditRoute || !routeId) return;
+    let cancelled = false;
+    const id = routeId;
+    getBrand(id)
+      .then((data) => {
+        if (cancelled) return;
+        setEditItem(data);
+        setViewItem(null);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        const found = brandsRef.current.find((b) => b.id === id);
+        setEditItem(found ?? { id, name: '' });
+        setViewItem(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isEditRoute, routeId]);
 
-    setViewItem(null);
-    setEditItem(null);
-  }, [isCreateRoute, isEditRoute, isViewRoute, routeId, brands]);
+  useEffect(() => {
+    if (!isViewRoute || !routeId) return;
+    let cancelled = false;
+    const id = routeId;
+    getBrand(id)
+      .then((data) => {
+        if (cancelled) return;
+        setViewItem(data);
+        setEditItem(null);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        const found = brandsRef.current.find((b) => b.id === id);
+        setViewItem(found ?? { id, name: '' });
+        setEditItem(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isViewRoute, routeId]);
 
   // Fetch brands from API when page, itemsPerPage or search query changes
   useEffect(() => {
