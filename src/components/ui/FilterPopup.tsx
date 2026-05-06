@@ -418,6 +418,9 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
         if (fieldName === 'state' && value) {
           if (stateCascadeTimerRef.current) {
             clearTimeout(stateCascadeTimerRef.current);
+            stateCascadeTimerRef.current = null;
+            // Cancelled callbacks never reach `finally`, so clear loading from superseded runs.
+            setFieldLoading('city', false);
           }
           setFieldLoading('city', true);
           stateCascadeTimerRef.current = setTimeout(async () => {
