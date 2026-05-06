@@ -135,7 +135,7 @@ const Create: React.FC<CreateProps> = ({
     const fetchSources = async () => {
       try {
         setSourceLoading(true);
-        const response = await quickCreateApi.listSources();
+        const response = await quickCreateApi.listSourcesForPreLead();
         const options = response.map((source) => ({
           id: source.id,
           source: source.name,
@@ -333,7 +333,7 @@ const Create: React.FC<CreateProps> = ({
     const fetchSubSources = async () => {
       try {
         setSubSourceLoading(true);
-        const response = await quickCreateApi.listSubSourcesBySource(formData.source);
+        const response = await quickCreateApi.listSubSourcesBySourceForPreLead(formData.source);
         const options = response.map((subSource) => ({
           id: subSource.id,
           label: subSource.name,
@@ -569,7 +569,7 @@ const Create: React.FC<CreateProps> = ({
       closeQuickSourceModal();
 
       try {
-        const response = await quickCreateApi.listSources();
+        const response = await quickCreateApi.listSourcesForPreLead();
         const opts = response.map((s) => ({
           id: String(s.id),
           source: s.name,
@@ -600,7 +600,7 @@ const Create: React.FC<CreateProps> = ({
     setQuickSubSourceError(null);
     setQuickSubSourceSaving(true);
     try {
-      const created = await quickCreateApi.createSubSource(selectedSourceId, name);
+      const created = await quickCreateApi.createSubSourceForPreLead(selectedSourceId, name);
       const newId = created?.id != null ? String(created.id) : '';
       const newLabel = String(created?.name ?? name).trim();
 
@@ -619,7 +619,7 @@ const Create: React.FC<CreateProps> = ({
       closeQuickSubSourceModal();
 
       try {
-        const response = await quickCreateApi.listSubSourcesBySource(selectedSourceId);
+        const response = await quickCreateApi.listSubSourcesBySourceForPreLead(selectedSourceId);
         const options = response.map((sub) => ({
           id: sub.id,
           label: sub.name,

@@ -13,8 +13,21 @@ const toList = <T = any>(payload: any): T[] => {
 };
 
 const toOption = (item: any): QuickOption => ({
-  id: String(item?.id ?? ''),
-  name: String(item?.name ?? ''),
+  id: String(
+    item?.id ??
+    item?.lead_sub_source_id ??
+    item?.sub_source_id ??
+    item?.value ??
+    ''
+  ),
+  name: String(
+    item?.name ??
+    item?.sub_source ??
+    item?.subSource ??
+    item?.title ??
+    item?.label ??
+    ''
+  ),
 });
 
 async function getList(endpoint: string): Promise<QuickOption[]> {
@@ -30,7 +43,7 @@ async function getList(endpoint: string): Promise<QuickOption[]> {
 async function listSubSourcesBySource(sourceId: string | number): Promise<QuickOption[]> {
   const selectedSourceId = String(sourceId);
   try {
-    const res = await apiClient.get<any>('/lead-sub-sources/list');
+    const res = await apiClient.get<any>('/lead-sub-sources');
     const rows = toList<any>(res?.data);
     const toSourceId = (item: any): string => String(
       item?.lead_source_id ??
@@ -49,8 +62,9 @@ async function listSubSourcesBySource(sourceId: string | number): Promise<QuickO
       .map(toOption)
       .filter((it) => it.id && it.name);
 
-    // Prefer strict source-based list; fallback to all when API omits source mapping.
-    return mappedBySource.length > 0 ? mappedBySource : mappedAll;
+    // Prefer strict source-based list. Fall back to all only if payload has no source linkage fields at all.
+    const hasSourceMapping = rows.some((item: any) => Boolean(toSourceId(item)));
+    return mappedBySource.length > 0 ? mappedBySource : (hasSourceMapping ? [] : mappedAll);
   } catch (error) {
     handleApiError(error, false);
     throw error;
@@ -70,6 +84,20 @@ async function createItem(endpoint: string, payload: Record<string, any>): Promi
   }
 }
 
+async function createSubSourceForPreLead(sourceId: string | number, name: string): Promise<QuickOption> {
+  const payload = {
+    lead_source_id: sourceId,
+    name,
+    status: 1,
+  };
+  try {
+    return await createItem('/lead-sub-sources', payload);
+  } catch {
+    // Some environments expose custom create route
+    return createItem('/lead-sub-sources/name', payload);
+  }
+}
+
 export const quickCreateApi = {
   listLeadTypes: () => getList('/lead-types/list'),
   createLeadType: (name: string) => createItem('/lead-types', { name }),
@@ -78,14 +106,18 @@ export const quickCreateApi = {
   listBrands: () => getList('/brands/list'),
   createBrand: (name: string) => createItem('/brands/name', { name }),
   listSources: () => getList('/lead-sources'),
+  listSourcesForPreLead: () => getList('/lead-sources/list'),
   createSource: (name: string) => createItem('/lead-sources', { name }),
   listSubSourcesBySource,
+  listSubSourcesBySourceForPreLead: (sourceId: string | number) =>
+    getList(`/lead-sub-sources/by-source/${String(sourceId)}`),
   createSubSource: (sourceId: string | number, name: string) =>
     createItem('/lead-sub-sources/name', {
       lead_source_id: sourceId,
       name,
       status: 1,
     }),
+  createSubSourceForPreLead,
   createSubSourceStandalone: (name: string) =>
     createItem('/lead-sub-sources/name', {
       name,

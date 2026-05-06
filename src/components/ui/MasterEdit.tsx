@@ -20,6 +20,11 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
   const [loadingOptions, setLoadingOptions] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  useEffect(() => {
+    setForm(item || {});
+    setErrors({});
+  }, [item]);
+
 
   const handleChange = (key: string, value: any) => {
     setForm(prev => ({ ...prev, [key]: value }));
@@ -29,7 +34,6 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
 
 
   useEffect(() => {
-    // if (!item) return;
     let mounted = true;
     setLoadingOptions(true);
     fetchLeadSources()
@@ -48,6 +52,11 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
 
         const incomingId = incoming.lead_source_id ?? incoming.leadSource ?? (incoming.lead_source && (incoming.lead_source.id ?? incoming.lead_source));
         const incomingName = incoming.source ?? (incoming.lead_source && (typeof incoming.lead_source === 'string' ? incoming.lead_source : incoming.lead_source.name));
+
+        // If user has already changed source in form, do not overwrite it.
+        if (form.source && String(form.source).trim() !== '') {
+          return;
+        }
 
         // If we have an id from the item, use that id (string) as the select value.
         if (incomingId) {
@@ -81,7 +90,7 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
         setLoadingOptions(false);
       });
     return () => { mounted = false; };
-  }, [item, form.source, hideSource]);
+  }, [item, hideSource]);
 
   if (!item) return null; // ✅ Hooks ke baad safe
 
@@ -179,7 +188,7 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
         className="w-full bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden"
       >
         <div className="p-4 bg-gray-50 space-y-4 h-[50dvh] ">
-          <div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {Object.entries(form).filter(([k]) => k !== 'id' && k !== 'dateTime' && k !== 'date_time' && !(hideSource && k === 'source')).map(([k]) => (
               <div key={k}>
                 <label className="block text-sm text-gray-800 mb-1">

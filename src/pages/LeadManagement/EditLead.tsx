@@ -274,7 +274,8 @@ const EditLead: React.FC = () => {
       await updateLead(id || '', payload);
       // Assume updateLead throws on error or returns the updated item
       SweetAlert.showUpdateSuccess();
-      navigate('/lead-management/all-leads');
+      window.location.replace(`${window.location.origin}/lead-management/all-leads`);
+      return;
     } catch (error: any) {
       console.error('Error updating lead:', error);
       try { SweetAlert.showError(error?.message || 'Failed to update lead'); } catch {

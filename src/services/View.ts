@@ -115,6 +115,15 @@ function normalizeNestedMissCampaignValue(raw: any): string {
   return '';
 }
 
+function nestedObjectDisplayValue(raw: any): string {
+  if (!raw || typeof raw !== 'object') return '';
+  const values = Object.values(raw)
+    .filter((v) => typeof v === 'string')
+    .map((v) => String(v).trim())
+    .filter(Boolean);
+  return values.join(', ');
+}
+
 /** Maps API miss-campaign payload (list row or GET-by-id) to display/edit-friendly MissCampaign. */
 export function mapMissCampaignApiToMissCampaign(it: any, idx?: number): MissCampaign {
   const id =
@@ -123,22 +132,22 @@ export function mapMissCampaignApiToMissCampaign(it: any, idx?: number): MissCam
   const brandName =
     it.brand?.name ??
     it.brand_name ??
-    (it.brand && typeof it.brand === 'object' ? Object.values(it.brand).join(', ') : '') ??
     it.brandName ??
+    nestedObjectDisplayValue(it.brand) ??
     '';
   const productName = it.name ?? it.product_name ?? it.productName ?? '';
   const source =
     it.lead_source?.name ??
     it.lead_source?.source ??
     it.source ??
-    (it.lead_source && typeof it.lead_source === 'object' ? Object.values(it.lead_source).join(', ') : '') ??
+    nestedObjectDisplayValue(it.lead_source) ??
     '';
   const subSource =
     it.lead_sub_source?.name ??
     it.lead_sub_source?.subSource ??
     it.sub_source ??
-    (it.lead_sub_source && typeof it.lead_sub_source === 'object' ? Object.values(it.lead_sub_source).join(', ') : '') ??
     it.subSource ??
+    nestedObjectDisplayValue(it.lead_sub_source) ??
     '';
   // Previously: const proof = it.image_url ?? it.image_path ?? it.proof ?? '';
   const imageNested =
@@ -222,9 +231,16 @@ export function mapMissCampaignApiToMissCampaign(it: any, idx?: number): MissCam
   const sourceId =
     it.lead_source?.id ?? it.lead_source_id ?? it.source_id ?? it.sourceId ?? it.lead_source?.value ?? '';
   const mediaTypeId = it.media?.id ?? it.media_type_id ?? it.mediaTypeId ?? it.media_type?.id ?? '';
-  const mediaType = normalizeNestedMissCampaignValue(
-    it.media ?? it.media_type ?? it.mediaType ?? it.media_type_name ?? it.mediaTypeName ?? it.media_type_id
-  );
+  const mediaTypeCandidate =
+    it.media_type ??
+    it.mediaType ??
+    it.media_type_name ??
+    it.mediaTypeName ??
+    it.media_type_id ??
+    (it.media && typeof it.media === 'object'
+      ? (it.media.type ?? it.media.name ?? it.media.label ?? it.media.media_type ?? it.media.mediaType)
+      : undefined);
+  const mediaType = normalizeNestedMissCampaignValue(mediaTypeCandidate);
 
   return {
     id: String(id),

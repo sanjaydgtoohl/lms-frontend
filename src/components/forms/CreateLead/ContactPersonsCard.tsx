@@ -10,6 +10,7 @@ import type { Contact, ContactPersonsCardProps } from '../../../types/LeadManage
 import SweetAlert from '../../../utils/SweetAlert';
 
 type QuickCreateKind = 'type' | 'department' | 'subSource';
+type OptionItem = { value: string; label: string };
 
 const QUICK_CREATE_LABELS: Record<
   QuickCreateKind,
@@ -379,15 +380,23 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
   const [countryLoading, setCountryLoading] = useState(false);
   const [countryError, setCountryError] = useState<string | null>(null);
 
-  // State dropdown state
-  const [stateOptions, setStateOptions] = useState<{ value: string; label: string }[]>([]);
-  const [stateLoading, setStateLoading] = useState(false);
-  const [stateError, setStateError] = useState<string | null>(null);
-
-  // City dropdown state
-  const [cityOptions, setCityOptions] = useState<{ value: string; label: string }[]>([]);
-  const [cityLoading, setCityLoading] = useState(false);
-  const [cityError, setCityError] = useState<string | null>(null);
+  // Previously these were shared single states; now keyed by contact id to support multi-row form correctly.
+  // const [stateOptions, setStateOptions] = useState<{ value: string; label: string }[]>([]);
+  // const [stateLoading, setStateLoading] = useState(false);
+  // const [stateError, setStateError] = useState<string | null>(null);
+  // const [cityOptions, setCityOptions] = useState<{ value: string; label: string }[]>([]);
+  // const [cityLoading, setCityLoading] = useState(false);
+  // const [cityError, setCityError] = useState<string | null>(null);
+  const [stateOptionsByContact, setStateOptionsByContact] = useState<Record<string, OptionItem[]>>({});
+  const [stateLoadingByContact, setStateLoadingByContact] = useState<Record<string, boolean>>({});
+  const [stateErrorByContact, setStateErrorByContact] = useState<Record<string, string | null>>({});
+  const [cityOptionsByContact, setCityOptionsByContact] = useState<Record<string, OptionItem[]>>({});
+  const [cityLoadingByContact, setCityLoadingByContact] = useState<Record<string, boolean>>({});
+  const [cityErrorByContact, setCityErrorByContact] = useState<Record<string, string | null>>({});
+  const stateRequestCounterRef = useRef<Record<string, number>>({});
+  const cityRequestCounterRef = useRef<Record<string, number>>({});
+  const countryFetchedForRef = useRef<Record<string, string>>({});
+  const stateFetchedForRef = useRef<Record<string, string>>({});
   useEffect(() => {
     let isMounted = true;
     setCountryLoading(true);
@@ -415,42 +424,72 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
     return () => { isMounted = false; };
   }, []);
 
-  // Fetch states when any contact's country changes
+  // Fetch states per contact when that contact's country changes
   useEffect(() => {
-    let isMounted = true;
+    const activeIds = new Set(contacts.map((c) => c.id));
 
-    // Check if any contact has a country selected
-    const selectedCountry = contacts.find(c => c.country)?.country;
-
-    if (!selectedCountry) {
-      setStateOptions([]);
-      setStateError(null);
-      return;
-    }
-
-    setStateLoading(true);
-    setStateError(null);
-    getStates({ country_id: selectedCountry }).then((data: any) => {
-      if (!isMounted) return;
-      try {
-        setStateOptions(
-          Array.isArray(data)
-            ? data.map((item: any) => ({ value: String(item.id), label: item.name }))
-            : []
-        );
-      } catch (error: any) {
-        setStateError(error?.message || 'Failed to load states');
-        setStateOptions([]);
-      }
-      setStateLoading(false);
-    }).catch((error: any) => {
-      if (isMounted) {
-        setStateError(error?.message || 'Failed to load states');
-        setStateOptions([]);
-        setStateLoading(false);
-      }
+    setStateOptionsByContact((prev) => {
+      const next: Record<string, OptionItem[]> = {};
+      Object.keys(prev).forEach((id) => {
+        if (activeIds.has(id)) next[id] = prev[id];
+      });
+      return next;
     });
-    return () => { isMounted = false; };
+    setStateLoadingByContact((prev) => {
+      const next: Record<string, boolean> = {};
+      Object.keys(prev).forEach((id) => {
+        if (activeIds.has(id)) next[id] = prev[id];
+      });
+      return next;
+    });
+    setStateErrorByContact((prev) => {
+      const next: Record<string, string | null> = {};
+      Object.keys(prev).forEach((id) => {
+        if (activeIds.has(id)) next[id] = prev[id];
+      });
+      return next;
+    });
+
+    contacts.forEach((contact) => {
+      const id = contact.id;
+      const countryId = String(contact.country || '').trim();
+
+      if (!countryId) {
+        countryFetchedForRef.current[id] = '';
+        setStateOptionsByContact((prev) => ({ ...prev, [id]: [] }));
+        setStateErrorByContact((prev) => ({ ...prev, [id]: null }));
+        setStateLoadingByContact((prev) => ({ ...prev, [id]: false }));
+        return;
+      }
+
+      if (countryFetchedForRef.current[id] === countryId) return;
+      countryFetchedForRef.current[id] = countryId;
+
+      const requestId = (stateRequestCounterRef.current[id] || 0) + 1;
+      stateRequestCounterRef.current[id] = requestId;
+      setStateLoadingByContact((prev) => ({ ...prev, [id]: true }));
+      setStateErrorByContact((prev) => ({ ...prev, [id]: null }));
+
+      getStates({ country_id: countryId }).then((data: any) => {
+        if (stateRequestCounterRef.current[id] !== requestId) return;
+        try {
+          const mapped = Array.isArray(data)
+            ? data.map((item: any) => ({ value: String(item.id), label: item.name }))
+            : [];
+          setStateOptionsByContact((prev) => ({ ...prev, [id]: mapped }));
+          setStateErrorByContact((prev) => ({ ...prev, [id]: null }));
+        } catch (error: any) {
+          setStateErrorByContact((prev) => ({ ...prev, [id]: error?.message || 'Failed to load states' }));
+          setStateOptionsByContact((prev) => ({ ...prev, [id]: [] }));
+        }
+        setStateLoadingByContact((prev) => ({ ...prev, [id]: false }));
+      }).catch((error: any) => {
+        if (stateRequestCounterRef.current[id] !== requestId) return;
+        setStateErrorByContact((prev) => ({ ...prev, [id]: error?.message || 'Failed to load states' }));
+        setStateOptionsByContact((prev) => ({ ...prev, [id]: [] }));
+        setStateLoadingByContact((prev) => ({ ...prev, [id]: false }));
+      });
+    });
   }, [contacts]);
 
   // Helper: lookup PIN code using api.postalpincode.in
@@ -473,107 +512,156 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
     }
   };
 
-  // Track last looked-up PIN to avoid setState during render
-  const [lastPinLookup, setLastPinLookup] = useState<string>('');
+  // Track last looked-up PIN per contact to avoid duplicate lookups
+  // Previously: const [lastPinLookup, setLastPinLookup] = useState<string>('');
+  const [lastPinLookupByContact, setLastPinLookupByContact] = useState<Record<string, string>>({});
   useEffect(() => {
-    const contact = contacts.find(c => c.id);
-    if (!contact || !contact.postalCode) return;
+    const activeIds = new Set(contacts.map((c) => c.id));
+    setLastPinLookupByContact((prev) => {
+      const next: Record<string, string> = {};
+      Object.keys(prev).forEach((id) => {
+        if (activeIds.has(id)) next[id] = prev[id];
+      });
+      return next;
+    });
 
-    const pin = contact.postalCode.trim();
-    if (!/^\d{6}$/.test(pin)) return;
-    if (pin === lastPinLookup) return;
+    contacts.forEach((contact) => {
+      if (!contact.postalCode) return;
+      const pin = contact.postalCode.trim();
+      if (!/^\d{6}$/.test(pin)) return;
+      if (pin === (lastPinLookupByContact[contact.id] || '')) return;
 
-    setLastPinLookup(pin);
+      setLastPinLookupByContact((prev) => ({ ...prev, [contact.id]: pin }));
 
-    (async () => {
-      try {
-        const pinRes = await lookupPinCode(pin);
-        if (!pinRes) return;
+      (async () => {
+        try {
+          const pinRes = await lookupPinCode(pin);
+          if (!pinRes) return;
 
-        const { countryName, stateName, cityName } = pinRes;
+          const { countryName, stateName, cityName } = pinRes;
+          const countryOpt = countryOptions.find(
+            (o) => o.label.toLowerCase() === countryName.toLowerCase()
+          );
+          if (!countryOpt) return;
 
-        const countryOpt = countryOptions.find(o => o.label.toLowerCase() === countryName.toLowerCase());
-        if (countryOpt) {
-          setContacts(prev => {
-            const next = prev.map(c => c.id === contact.id ? { ...c, country: countryOpt.value } : c);
-            onChange?.(next);
-            return next;
-          });
-
+          let resolvedStateId = '';
           const statesData = await getStates({ country_id: countryOpt.value });
           if (Array.isArray(statesData)) {
-            const matchedState = statesData.find((s: any) => String(s.name).toLowerCase() === String(stateName).toLowerCase());
-            if (matchedState) {
-              const stateId = String(matchedState.id);
-              setContacts(prev => {
-                const next = prev.map(c => c.id === contact.id ? { ...c, state: stateId } : c);
-                onChange?.(next);
-                return next;
-              });
+            const matchedState = statesData.find(
+              (s: any) => String(s.name).toLowerCase() === String(stateName).toLowerCase()
+            );
+            if (matchedState) resolvedStateId = String(matchedState.id);
+          }
 
-              const citiesData = await getCities({ state_id: stateId });
-              if (Array.isArray(citiesData)) {
-                const matchedCity = citiesData.find((ct: any) => {
-                  const nm = String(ct.name || '').toLowerCase();
-                  const districtField = String(ct.district || ct.District || '').toLowerCase();
-                  const cityField = String(ct.city || '').toLowerCase();
-                  const target = String(cityName || '').toLowerCase();
-                  return nm === target || districtField === target || cityField === target;
-                });
-                if (matchedCity) {
-                  const cityId = String(matchedCity.id);
-                  setContacts(prev => {
-                    const next = prev.map(c => c.id === contact.id ? { ...c, city: cityId } : c);
-                    onChange?.(next);
-                    return next;
-                  });
-                }
-              }
+          let resolvedCityId = '';
+          if (resolvedStateId) {
+            const citiesData = await getCities({ state_id: resolvedStateId });
+            if (Array.isArray(citiesData)) {
+              const target = String(cityName || '').toLowerCase();
+              const matchedCity = citiesData.find((ct: any) => {
+                const nm = String(ct.name || '').toLowerCase();
+                const districtField = String(ct.district || ct.District || '').toLowerCase();
+                const cityField = String(ct.city || '').toLowerCase();
+                return nm === target || districtField === target || cityField === target;
+              });
+              if (matchedCity) resolvedCityId = String(matchedCity.id);
             }
           }
+
+          updateContacts((prev) => {
+            let changed = false;
+            const next = prev.map((c) => {
+              if (c.id !== contact.id) return c;
+              const updated = { ...c };
+              if (countryOpt.value && updated.country !== countryOpt.value) {
+                updated.country = countryOpt.value;
+                changed = true;
+              }
+              if (resolvedStateId && updated.state !== resolvedStateId) {
+                updated.state = resolvedStateId;
+                changed = true;
+              }
+              if (resolvedCityId && updated.city !== resolvedCityId) {
+                updated.city = resolvedCityId;
+                changed = true;
+              }
+              return updated;
+            });
+            return changed ? next : prev;
+          });
+        } catch {
+          // ignore errors
         }
-      } catch {
-        // ignore errors
-      }
-    })();
-  }, [contacts, countryOptions, lastPinLookup, onChange]); // ✅ added onChange
-
-  // Fetch cities when any contact's state changes
-  useEffect(() => {
-    let isMounted = true;
-
-    // Check if any contact has a state selected
-    const selectedState = contacts.find(c => c.state)?.state;
-
-    if (!selectedState) {
-      setCityOptions([]);
-      setCityError(null);
-      return;
-    }
-
-    setCityLoading(true);
-    setCityError(null);
-    getCities({ state_id: selectedState }).then((data: any) => {
-      if (!isMounted) return;
-      try {
-        setCityOptions(
-          Array.isArray(data)
-            ? data.map((item: any) => ({ value: String(item.id), label: item.name }))
-            : []
-        );
-      } catch (error: any) {
-        setCityError(error?.message || 'Failed to load cities');
-        setCityOptions([]);
-      }
-      setCityLoading(false);
-    }).catch((error: any) => {
-      if (isMounted) {
-        setCityError(error?.message || 'Failed to load cities');
-        setCityOptions([]);
-        setCityLoading(false);
-      }
+      })();
     });
-    return () => { isMounted = false; };
+  }, [contacts, countryOptions, lastPinLookupByContact, onChange]);
+
+  // Fetch cities per contact when that contact's state changes
+  useEffect(() => {
+    const activeIds = new Set(contacts.map((c) => c.id));
+
+    setCityOptionsByContact((prev) => {
+      const next: Record<string, OptionItem[]> = {};
+      Object.keys(prev).forEach((id) => {
+        if (activeIds.has(id)) next[id] = prev[id];
+      });
+      return next;
+    });
+    setCityLoadingByContact((prev) => {
+      const next: Record<string, boolean> = {};
+      Object.keys(prev).forEach((id) => {
+        if (activeIds.has(id)) next[id] = prev[id];
+      });
+      return next;
+    });
+    setCityErrorByContact((prev) => {
+      const next: Record<string, string | null> = {};
+      Object.keys(prev).forEach((id) => {
+        if (activeIds.has(id)) next[id] = prev[id];
+      });
+      return next;
+    });
+
+    contacts.forEach((contact) => {
+      const id = contact.id;
+      const stateId = String(contact.state || '').trim();
+
+      if (!stateId) {
+        stateFetchedForRef.current[id] = '';
+        setCityOptionsByContact((prev) => ({ ...prev, [id]: [] }));
+        setCityErrorByContact((prev) => ({ ...prev, [id]: null }));
+        setCityLoadingByContact((prev) => ({ ...prev, [id]: false }));
+        return;
+      }
+
+      if (stateFetchedForRef.current[id] === stateId) return;
+      stateFetchedForRef.current[id] = stateId;
+
+      const requestId = (cityRequestCounterRef.current[id] || 0) + 1;
+      cityRequestCounterRef.current[id] = requestId;
+      setCityLoadingByContact((prev) => ({ ...prev, [id]: true }));
+      setCityErrorByContact((prev) => ({ ...prev, [id]: null }));
+
+      getCities({ state_id: stateId }).then((data: any) => {
+        if (cityRequestCounterRef.current[id] !== requestId) return;
+        try {
+          const mapped = Array.isArray(data)
+            ? data.map((item: any) => ({ value: String(item.id), label: item.name }))
+            : [];
+          setCityOptionsByContact((prev) => ({ ...prev, [id]: mapped }));
+          setCityErrorByContact((prev) => ({ ...prev, [id]: null }));
+        } catch (error: any) {
+          setCityErrorByContact((prev) => ({ ...prev, [id]: error?.message || 'Failed to load cities' }));
+          setCityOptionsByContact((prev) => ({ ...prev, [id]: [] }));
+        }
+        setCityLoadingByContact((prev) => ({ ...prev, [id]: false }));
+      }).catch((error: any) => {
+        if (cityRequestCounterRef.current[id] !== requestId) return;
+        setCityErrorByContact((prev) => ({ ...prev, [id]: error?.message || 'Failed to load cities' }));
+        setCityOptionsByContact((prev) => ({ ...prev, [id]: [] }));
+        setCityLoadingByContact((prev) => ({ ...prev, [id]: false }));
+      });
+    });
   }, [contacts]);
 
   return (
@@ -658,7 +746,7 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                             type="button"
                             onClick={() => updateContact(c.id, 'showSecondMobile', true)}
                             className="px-3 py-2 flex items-center justify-center rounded-lg !text-white font-medium transition-colors mt-6 !bg-orange-500 hover:!bg-orange-600 text-sm gap-1 cursor-pointer"
-                            title="Add another mobile number transaction-all duration-300"
+                            title="Add another mobile number"
                           >
                             <Plus strokeWidth={2.5} className="w-4 h-4" />
 
@@ -814,15 +902,15 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                     <SelectField
                       name="state"
                       placeholder="Select state"
-                      options={stateOptions}
+                      options={stateOptionsByContact[c.id] || []}
                       value={c.state}
                       onChange={(v) => updateContact(c.id, 'state', typeof v === 'string' ? v : v[0] ?? '')}
                       inputClassName="border border-gray-200 focus:ring-blue-500"
-                      disabled={stateLoading}
+                      disabled={!!stateLoadingByContact[c.id]}
                     />
-                    {stateLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
-                    {stateError && <div className="text-xs text-red-500 mt-1">{stateError}</div>}
-                    {!stateLoading && !stateError && stateOptions.length === 0 && (
+                    {!!stateLoadingByContact[c.id] && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
+                    {!!stateErrorByContact[c.id] && <div className="text-xs text-red-500 mt-1">{stateErrorByContact[c.id]}</div>}
+                    {!stateLoadingByContact[c.id] && !stateErrorByContact[c.id] && (stateOptionsByContact[c.id] || []).length === 0 && (
                       <div className="text-xs text-gray-400 mt-1">No states found.</div>
                     )}
                   </div>
@@ -831,15 +919,15 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
                     <SelectField
                       name="city"
                       placeholder="Select city"
-                      options={cityOptions}
+                      options={cityOptionsByContact[c.id] || []}
                       value={c.city}
                       onChange={(v) => updateContact(c.id, 'city', typeof v === 'string' ? v : v[0] ?? '')}
                       inputClassName="border border-gray-200 focus:ring-blue-500"
-                      disabled={cityLoading}
+                      disabled={!!cityLoadingByContact[c.id]}
                     />
-                    {cityLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
-                    {cityError && <div className="text-xs text-red-500 mt-1">{cityError}</div>}
-                    {!cityLoading && !cityError && cityOptions.length === 0 && (
+                    {!!cityLoadingByContact[c.id] && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
+                    {!!cityErrorByContact[c.id] && <div className="text-xs text-red-500 mt-1">{cityErrorByContact[c.id]}</div>}
+                    {!cityLoadingByContact[c.id] && !cityErrorByContact[c.id] && (cityOptionsByContact[c.id] || []).length === 0 && (
                       <div className="text-xs text-gray-400 mt-1">No cities found.</div>
                     )}
                   </div>

@@ -351,9 +351,9 @@ const CreateLead: React.FC = () => {
           return;
         }
         SweetAlert.showCreateSuccess();
-        setTimeout(() => {
-          navigate('/lead-management/all-leads');
-        }, 1800);
+        // Force canonical list URL to avoid malformed slug/path redirects.
+        window.location.replace(`${window.location.origin}/lead-management/all-leads`);
+        return;
       } catch (err: any) {
         const msg = err?.message || 'Failed to create lead';
         setError(msg);
