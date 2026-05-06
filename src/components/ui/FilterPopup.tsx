@@ -53,6 +53,7 @@ export type FilterSection = {
 };
 
 export type FilterOptions = Record<string, LocationOption[]>;
+const EMPTY_FILTER_OPTIONS: FilterOptions = {};
 
 type FilterPopupProps = {
   isOpen: boolean;
@@ -73,13 +74,14 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
   onApply,
   onReset,
   filterSections,
-  options = {},
+  options = EMPTY_FILTER_OPTIONS,
 }) => {
   const titleId = useId();
   const [draft, setDraft] = useState<LocationFilterValues>(appliedValues);
   const [loadingFields, setLoadingFields] = useState<Set<string>>(new Set());
   const [allOptions, setAllOptions] = useState<FilterOptions>(options);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const stateCascadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const parseMultiValue = useCallback((value: string): string[] => {
     if (!value) return [];
@@ -89,47 +91,22 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
       .filter(Boolean);
   }, []);
 
-  // Initialize with options from parent or fetch if not provided
-  useEffect(() => {
-    if (!isOpen) return;
+  const getNormalizedOptionLabel = useCallback((opt: LocationOption): string => {
+    return String(opt.name || opt.label || opt.id || '').trim();
+  }, []);
 
-    const loadInitial = async () => {
-      try {
-        const [countries, modeOfMedia, locationTypes] = await Promise.all([
-          fetchCountries(),
-          fetchModeOfMedia(),
-          fetchLocationTypes(),
-        ]);
-
-        setAllOptions((prev) => ({
-          ...prev,
-          country: countries,
-          modeOfMedia,
-          locationType: locationTypes,
-        }));
-
-        const selectedCountry = appliedValues.country?.trim();
-        if (selectedCountry) {
-          const selectedCountryOption = countries.find(
-            (opt) =>
-              opt.name === selectedCountry ||
-              opt.label === selectedCountry ||
-              String(opt.id) === selectedCountry
-          );
-          if (selectedCountryOption?.id) {
-            const states = await fetchStates(selectedCountryOption.id);
-            updateFieldOptions('state', states);
-          }
+  const mergeUniqueOptions = useCallback((groups: LocationOption[][]): LocationOption[] => {
+    const map = new Map<string, LocationOption>();
+    groups.forEach((group) => {
+      group.forEach((opt) => {
+        const key = `${String(opt.id)}::${getNormalizedOptionLabel(opt).toLowerCase()}`;
+        if (!map.has(key)) {
+          map.set(key, opt);
         }
-      } catch (error) {
-        console.warn('Failed to load initial filter options:', error);
-      }
-    };
-
-    loadInitial();
-    setDraft(appliedValues);
-
-  }, [isOpen, appliedValues]);
+      });
+    });
+    return Array.from(map.values());
+  }, [getNormalizedOptionLabel]);
 
   // Helper function to mark field as loading
   const setFieldLoading = useCallback((fieldName: string, isLoading: boolean) => {
@@ -152,27 +129,184 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
     }));
   }, []);
 
-  // UI stores display names in draft, but cascading APIs expect IDs.
-  const getSelectedOptionId = useCallback(
-    (fieldName: string, selectedValue: string): string | number | undefined => {
-      if (!selectedValue) return undefined;
-      const primaryValue = selectedValue.includes(',')
-        ? selectedValue
-            .split(',')
-            .map((item) => item.trim())
-            .find(Boolean) || ''
-        : selectedValue;
+  const findOptionByValue = useCallback(
+    (fieldName: string, selectedValue: string): LocationOption | undefined => {
       const fieldOptions = allOptions[fieldName] || [];
-      const matched = fieldOptions.find(
-        (opt) =>
-          opt.name === primaryValue ||
-          opt.label === primaryValue ||
-          String(opt.id) === primaryValue
-      );
-      return matched?.id;
+      const normalizedValue = selectedValue.trim();
+      return fieldOptions.find((opt) => {
+        const label = getNormalizedOptionLabel(opt);
+        return (
+          label === normalizedValue ||
+          String(opt.id) === normalizedValue
+        );
+      });
     },
-    [allOptions]
+    [allOptions, getNormalizedOptionLabel]
   );
+
+  // UI stores display names in draft, but cascading APIs expect IDs.
+  const getSelectedOptionIds = useCallback(
+    (fieldName: string, selectedValue: string): Array<string | number> => {
+      const selectedItems = parseMultiValue(selectedValue);
+      if (!selectedItems.length) return [];
+      return selectedItems
+        .map((item) => findOptionByValue(fieldName, item)?.id)
+        .filter((id): id is string | number => id !== undefined && id !== null);
+    },
+    [findOptionByValue, parseMultiValue]
+  );
+
+  // Initialize with options from parent or fetch if not provided and rehydrate dependent cascades.
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const loadInitial = async () => {
+      try {
+        const [countries, modeOfMedia, locationTypes] = await Promise.all([
+          fetchCountries(),
+          fetchModeOfMedia(),
+          fetchLocationTypes(),
+        ]);
+
+        let nextOptions: FilterOptions = {
+          ...options,
+          country: countries,
+          modeOfMedia,
+          locationType: locationTypes,
+        };
+
+        const resolveIds = (fieldName: string, rawValue: string) =>
+          parseMultiValue(rawValue)
+            .map((item) => {
+              const matched = (nextOptions[fieldName] || []).find((opt) => {
+                const label = getNormalizedOptionLabel(opt);
+                return label === item || String(opt.id) === item;
+              });
+              return matched?.id;
+            })
+            .filter((id): id is string | number => id !== undefined && id !== null);
+
+        const countryIds = resolveIds('country', appliedValues.country);
+        if (countryIds.length) {
+          const statesByCountry = await Promise.all(countryIds.map((id) => fetchStates(id)));
+          nextOptions = { ...nextOptions, state: mergeUniqueOptions(statesByCountry) };
+        }
+
+        const stateIds = resolveIds('state', appliedValues.state);
+        if (stateIds.length) {
+          const citiesByState = await Promise.all(stateIds.map((id) => fetchCities(id)));
+          nextOptions = { ...nextOptions, city: mergeUniqueOptions(citiesByState) };
+        }
+
+        const cityIds = resolveIds('city', appliedValues.city);
+        if (cityIds.length) {
+          const [zonesByCity, arterialByCity] = await Promise.all([
+            Promise.all(cityIds.map((id) => fetchZones(id))),
+            Promise.all(cityIds.map((id) => fetchArterialRoutes(id))),
+          ]);
+          nextOptions = {
+            ...nextOptions,
+            zoneArea: mergeUniqueOptions(zonesByCity),
+            arterialRoute: mergeUniqueOptions(arterialByCity),
+          };
+        }
+
+        const zoneIds = resolveIds('zoneArea', appliedValues.zoneArea);
+        if (zoneIds.length) {
+          const subZonesByZone = await Promise.all(zoneIds.map((id) => fetchSubZones(id)));
+          nextOptions = { ...nextOptions, subZoneArea: mergeUniqueOptions(subZonesByZone) };
+        }
+
+        const subZoneIds = resolveIds('subZoneArea', appliedValues.subZoneArea);
+        if (subZoneIds.length) {
+          const pincodesBySubZone = await Promise.all(subZoneIds.map((id) => fetchPincodes(id)));
+          nextOptions = { ...nextOptions, pincode: mergeUniqueOptions(pincodesBySubZone) };
+        }
+
+        const modeIds = resolveIds('modeOfMedia', appliedValues.modeOfMedia);
+        if (modeIds.length) {
+          const publishersByMode = await Promise.all(modeIds.map((id) => fetchPublishers(id)));
+          nextOptions = { ...nextOptions, publisher: mergeUniqueOptions(publishersByMode) };
+        }
+
+        const publisherIds = resolveIds('publisher', appliedValues.publisher);
+        if (publisherIds.length) {
+          const mainCategoriesByPublisher = await Promise.all(
+            publisherIds.map((id) => fetchMainCategories(id))
+          );
+          nextOptions = { ...nextOptions, mainCategory: mergeUniqueOptions(mainCategoriesByPublisher) };
+        }
+
+        const mainCategoryIds = resolveIds('mainCategory', appliedValues.mainCategory);
+        if (mainCategoryIds.length) {
+          const categoriesByMainCategory = await Promise.all(
+            mainCategoryIds.map((id) => fetchCategories(id))
+          );
+          nextOptions = { ...nextOptions, category: mergeUniqueOptions(categoriesByMainCategory) };
+        }
+
+        const categoryIds = resolveIds('category', appliedValues.category);
+        if (categoryIds.length) {
+          const subCategoriesByCategory = await Promise.all(
+            categoryIds.map((id) => fetchSubCategories(id))
+          );
+          nextOptions = { ...nextOptions, categorySub: mergeUniqueOptions(subCategoriesByCategory) };
+        }
+
+        const locationTypeIds = resolveIds('locationType', appliedValues.locationType);
+        if (locationTypeIds.length) {
+          const orientationsByLocationType = await Promise.all(
+            locationTypeIds.map((id) => fetchOrientations(id))
+          );
+          nextOptions = { ...nextOptions, orientation: mergeUniqueOptions(orientationsByLocationType) };
+        }
+
+        const orientationIds = resolveIds('orientation', appliedValues.orientation);
+        if (orientationIds.length) {
+          const resolutionsByOrientation = await Promise.all(
+            orientationIds.map((id) => fetchResolutions(id))
+          );
+          nextOptions = { ...nextOptions, resolution: mergeUniqueOptions(resolutionsByOrientation) };
+        }
+
+        const resolutionIds = resolveIds('resolution', appliedValues.resolution);
+        if (resolutionIds.length) {
+          const screenLocationsByResolution = await Promise.all(
+            resolutionIds.map((id) => fetchScreenLocations(id))
+          );
+          nextOptions = { ...nextOptions, screenLocation: mergeUniqueOptions(screenLocationsByResolution) };
+        }
+
+        const screenLocationIds = resolveIds('screenLocation', appliedValues.screenLocation);
+        if (screenLocationIds.length) {
+          const stretchesByScreenLocation = await Promise.all(
+            screenLocationIds.map((id) => fetchStretches(id))
+          );
+          nextOptions = { ...nextOptions, stretch: mergeUniqueOptions(stretchesByScreenLocation) };
+        }
+
+        const stretchIds = resolveIds('stretch', appliedValues.stretch);
+        if (stretchIds.length) {
+          const propertiesByStretch = await Promise.all(stretchIds.map((id) => fetchProperties(id)));
+          nextOptions = { ...nextOptions, property: mergeUniqueOptions(propertiesByStretch) };
+        }
+
+        setAllOptions(nextOptions);
+      } catch (error) {
+        console.warn('Failed to load initial filter options:', error);
+      }
+    };
+
+    loadInitial();
+    setDraft(appliedValues);
+  }, [
+    isOpen,
+    appliedValues,
+    options,
+    parseMultiValue,
+    getNormalizedOptionLabel,
+    mergeUniqueOptions,
+  ]);
 
   // Handle cascading updates when a field changes
   const handleFieldChange = useCallback(
@@ -273,7 +407,8 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
       // Fetch dependent field data
       try {
         if (fieldName === 'country' && value) {
-          const countryId = getSelectedOptionId('country', value);
+          const countryId = getSelectedOptionIds('country', value)[0];
+          if (countryId === undefined) return;
           setFieldLoading('state', true);
           const states = await fetchStates(countryId);
           updateFieldOptions('state', states);
@@ -281,21 +416,40 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
         }
 
         if (fieldName === 'state' && value) {
-          const stateId = getSelectedOptionId('state', value);
+          if (stateCascadeTimerRef.current) {
+            clearTimeout(stateCascadeTimerRef.current);
+          }
           setFieldLoading('city', true);
-          const cities = await fetchCities(stateId);
-          updateFieldOptions('city', cities);
-          setFieldLoading('city', false);
+          stateCascadeTimerRef.current = setTimeout(async () => {
+            try {
+              const stateIds = getSelectedOptionIds('state', value);
+              if (!stateIds.length) {
+                updateFieldOptions('city', []);
+                return;
+              }
+              const citiesByState = await Promise.all(stateIds.map((stateId) => fetchCities(stateId)));
+              const cities = mergeUniqueOptions(citiesByState);
+              updateFieldOptions('city', cities);
+            } catch (error) {
+              console.warn('State cascade fetch error handled gracefully:', error);
+            } finally {
+              setFieldLoading('city', false);
+            }
+          }, 300);
+          return;
         }
 
         if (fieldName === 'city' && value) {
-          const cityId = getSelectedOptionId('city', value);
+          const cityIds = getSelectedOptionIds('city', value);
+          if (!cityIds.length) return;
           setFieldLoading('zoneArea', true);
           setFieldLoading('arterialRoute', true);
-          const [zones, arterialRoutes] = await Promise.all([
-            fetchZones(cityId),
-            fetchArterialRoutes(cityId),
+          const [zonesByCity, arterialRoutesByCity] = await Promise.all([
+            Promise.all(cityIds.map((cityId) => fetchZones(cityId))),
+            Promise.all(cityIds.map((cityId) => fetchArterialRoutes(cityId))),
           ]);
+          const zones = mergeUniqueOptions(zonesByCity);
+          const arterialRoutes = mergeUniqueOptions(arterialRoutesByCity);
           updateFieldOptions('zoneArea', zones);
           updateFieldOptions('arterialRoute', arterialRoutes);
           setFieldLoading('zoneArea', false);
@@ -303,89 +457,129 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
         }
 
         if (fieldName === 'zoneArea' && value) {
-          const zoneId = getSelectedOptionId('zoneArea', value);
+          const zoneIds = getSelectedOptionIds('zoneArea', value);
+          if (!zoneIds.length) return;
           setFieldLoading('subZoneArea', true);
-          const subZones = await fetchSubZones(zoneId);
+          const subZonesByZone = await Promise.all(zoneIds.map((zoneId) => fetchSubZones(zoneId)));
+          const subZones = mergeUniqueOptions(subZonesByZone);
           updateFieldOptions('subZoneArea', subZones);
           setFieldLoading('subZoneArea', false);
         }
 
         if (fieldName === 'subZoneArea' && value) {
-          const subZoneId = getSelectedOptionId('subZoneArea', value);
+          const subZoneIds = getSelectedOptionIds('subZoneArea', value);
+          if (!subZoneIds.length) return;
           setFieldLoading('pincode', true);
-          const pincodes = await fetchPincodes(subZoneId);
+          const pincodesBySubZone = await Promise.all(subZoneIds.map((subZoneId) => fetchPincodes(subZoneId)));
+          const pincodes = mergeUniqueOptions(pincodesBySubZone);
           updateFieldOptions('pincode', pincodes);
           setFieldLoading('pincode', false);
         }
 
         if (fieldName === 'mainCategory' && value) {
-          const mainCategoryId = getSelectedOptionId('mainCategory', value) || value;
+          const mainCategoryIds = getSelectedOptionIds('mainCategory', value);
+          if (!mainCategoryIds.length) return;
           setFieldLoading('category', true);
-          const categories = await fetchCategories(mainCategoryId);
+          const categoriesByMainCategory = await Promise.all(
+            mainCategoryIds.map((mainCategoryId) => fetchCategories(mainCategoryId))
+          );
+          const categories = mergeUniqueOptions(categoriesByMainCategory);
           updateFieldOptions('category', categories);
           setFieldLoading('category', false);
         }
 
         if (fieldName === 'category' && value) {
-          const categoryId = getSelectedOptionId('category', value);
+          const categoryIds = getSelectedOptionIds('category', value);
+          if (!categoryIds.length) return;
           setFieldLoading('categorySub', true);
-          const subCategories = await fetchSubCategories(categoryId);
+          const subCategoriesByCategory = await Promise.all(
+            categoryIds.map((categoryId) => fetchSubCategories(categoryId))
+          );
+          const subCategories = mergeUniqueOptions(subCategoriesByCategory);
           updateFieldOptions('categorySub', subCategories);
           setFieldLoading('categorySub', false);
         }
 
         if (fieldName === 'modeOfMedia' && value) {
-          const modeOfMediaValue = getSelectedOptionId('modeOfMedia', value) || value;
+          const modeOfMediaIds = getSelectedOptionIds('modeOfMedia', value);
+          if (!modeOfMediaIds.length) return;
           setFieldLoading('publisher', true);
-          const publishers = await fetchPublishers(modeOfMediaValue);
+          const publishersByMode = await Promise.all(
+            modeOfMediaIds.map((modeOfMediaValue) => fetchPublishers(modeOfMediaValue))
+          );
+          const publishers = mergeUniqueOptions(publishersByMode);
           updateFieldOptions('publisher', publishers);
           setFieldLoading('publisher', false);
         }
 
         if (fieldName === 'publisher' && value) {
-          const publisherValue = getSelectedOptionId('publisher', value) || value;
+          const publisherIds = getSelectedOptionIds('publisher', value);
+          if (!publisherIds.length) return;
           setFieldLoading('mainCategory', true);
-          const mainCategories = await fetchMainCategories(publisherValue);
+          const mainCategoriesByPublisher = await Promise.all(
+            publisherIds.map((publisherValue) => fetchMainCategories(publisherValue))
+          );
+          const mainCategories = mergeUniqueOptions(mainCategoriesByPublisher);
           updateFieldOptions('mainCategory', mainCategories);
           setFieldLoading('mainCategory', false);
         }
 
         if (fieldName === 'locationType' && value) {
-          const locationTypeValue = getSelectedOptionId('locationType', value) || value;
+          const locationTypeIds = getSelectedOptionIds('locationType', value);
+          if (!locationTypeIds.length) return;
           setFieldLoading('orientation', true);
-          const orientations = await fetchOrientations(locationTypeValue);
+          const orientationsByLocationType = await Promise.all(
+            locationTypeIds.map((locationTypeValue) => fetchOrientations(locationTypeValue))
+          );
+          const orientations = mergeUniqueOptions(orientationsByLocationType);
           updateFieldOptions('orientation', orientations);
           setFieldLoading('orientation', false);
         }
 
         if (fieldName === 'orientation' && value) {
-          const orientationValue = getSelectedOptionId('orientation', value) || value;
+          const orientationIds = getSelectedOptionIds('orientation', value);
+          if (!orientationIds.length) return;
           setFieldLoading('resolution', true);
-          const resolutions = await fetchResolutions(orientationValue);
+          const resolutionsByOrientation = await Promise.all(
+            orientationIds.map((orientationValue) => fetchResolutions(orientationValue))
+          );
+          const resolutions = mergeUniqueOptions(resolutionsByOrientation);
           updateFieldOptions('resolution', resolutions);
           setFieldLoading('resolution', false);
         }
 
         if (fieldName === 'resolution' && value) {
-          const resolutionValue = getSelectedOptionId('resolution', value) || value;
+          const resolutionIds = getSelectedOptionIds('resolution', value);
+          if (!resolutionIds.length) return;
           setFieldLoading('screenLocation', true);
-          const screenLocations = await fetchScreenLocations(resolutionValue);
+          const screenLocationsByResolution = await Promise.all(
+            resolutionIds.map((resolutionValue) => fetchScreenLocations(resolutionValue))
+          );
+          const screenLocations = mergeUniqueOptions(screenLocationsByResolution);
           updateFieldOptions('screenLocation', screenLocations);
           setFieldLoading('screenLocation', false);
         }
 
         if (fieldName === 'screenLocation' && value) {
-          const screenLocationValue = getSelectedOptionId('screenLocation', value) || value;
+          const screenLocationIds = getSelectedOptionIds('screenLocation', value);
+          if (!screenLocationIds.length) return;
           setFieldLoading('stretch', true);
-          const stretches = await fetchStretches(screenLocationValue);
+          const stretchesByScreenLocation = await Promise.all(
+            screenLocationIds.map((screenLocationValue) => fetchStretches(screenLocationValue))
+          );
+          const stretches = mergeUniqueOptions(stretchesByScreenLocation);
           updateFieldOptions('stretch', stretches);
           setFieldLoading('stretch', false);
         }
 
         if (fieldName === 'stretch' && value) {
-          const stretchValue = getSelectedOptionId('stretch', value) || value;
+          const stretchIds = getSelectedOptionIds('stretch', value);
+          if (!stretchIds.length) return;
           setFieldLoading('property', true);
-          const properties = await fetchProperties(stretchValue);
+          const propertiesByStretch = await Promise.all(
+            stretchIds.map((stretchValue) => fetchProperties(stretchValue))
+          );
+          const properties = mergeUniqueOptions(propertiesByStretch);
           updateFieldOptions('property', properties);
           setFieldLoading('property', false);
         }
@@ -394,7 +588,7 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
         // Errors are silently handled - dropdowns will show empty if API fails
       }
     },
-    [draft, getSelectedOptionId, setFieldLoading, updateFieldOptions]
+    [draft, getSelectedOptionIds, mergeUniqueOptions, setFieldLoading, updateFieldOptions]
   );
 
   const handleApply = useCallback(() => {
@@ -444,6 +638,10 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
   const controller = abortControllerRef.current;
 
   return () => {
+    if (stateCascadeTimerRef.current) {
+      clearTimeout(stateCascadeTimerRef.current);
+      stateCascadeTimerRef.current = null;
+    }
     if (controller) {
       controller.abort();
     }

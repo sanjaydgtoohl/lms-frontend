@@ -57,7 +57,6 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
     if (!open) setQuery('');
   }, [open]);
 
-
   const toggleSelect = (val: string) => {
     if (multi) {
       if (safeValue.includes(val)) {
@@ -66,11 +65,13 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
       } else {
         onChange([...safeValue, val]);
       }
+      // Keep open for multi-select so user can pick multiple options quickly.
+      setOpen(true);
     } else {
       onChange([val]);
+      // Single-select should close after choosing one value.
+      setOpen(false);
     }
-    // Keep dropdown open while interacting inside the select box.
-    setOpen(true);
   };
 
   const removeOne = (val: string) => {

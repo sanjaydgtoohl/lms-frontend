@@ -47,10 +47,9 @@ const DeviceInventory: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   const hasActiveLocationFilter = Boolean(
-    Object.entries(appliedLocation).some(([key, value]) => {
+    Object.entries(appliedLocation).some(([, value]) => {
       const trimmed = value.trim();
       if (!trimmed) return false;
-      if (key === 'country' && trimmed.toLowerCase() === 'india') return false;
       return true;
     })
   );
