@@ -7,7 +7,7 @@ import LeadManagementSection from '../../components/forms/CreateLead/LeadManagem
 import ContactPersonsCard from '../../components/forms/CreateLead/ContactPersonsCard';
 import AssignPriorityCard from '../../components/forms/CreateLead/AssignPriorityCard';
 import { fetchLeadById, fetchLeadHistory } from '../../services/ViewLead';
-import { getBrandLists, getAgenciesLists } from '../../services/CreateLead';
+import { getBrandLists, getAgenciesLists, getLeadTypes } from '../../services/CreateLead';
 
 import { Button } from '../../components/ui';
 import { updateLead } from '../../services/AllLeads';
@@ -28,6 +28,7 @@ const EditLead: React.FC = () => {
   const [optionsError, setOptionsError] = useState<string | null>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [leadTypeNameById, setLeadTypeNameById] = useState<Record<string, string>>({});
   // const [showEmailComposer, setShowEmailComposer] = useState(false);
   // const [emailTo, setEmailTo] = useState('');
   // const [emailSubject, setEmailSubject] = useState('');
@@ -162,6 +163,28 @@ const EditLead: React.FC = () => {
     }
   }, [successMessage]);
 
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const types = await getLeadTypes();
+        if (!isMounted) return;
+        const map: Record<string, string> = {};
+        (Array.isArray(types) ? types : []).forEach((t: any) => {
+          const id = String(t?.id ?? '').trim();
+          const name = String(t?.name ?? '').trim();
+          if (id && name) map[id] = name;
+        });
+        setLeadTypeNameById(map);
+      } catch {
+        if (isMounted) setLeadTypeNameById({});
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   // useEffect(() => {
   //   if (showEmailComposer && editorRef.current) {
   //     // Ensure editor is properly initialized
@@ -261,9 +284,12 @@ const EditLead: React.FC = () => {
 
       const typeValue = String(contact?.type || '').trim();
       if (typeValue) {
-        payload.type = typeValue;
         const numericTypeId = Number(typeValue);
-        if (!Number.isNaN(numericTypeId) && Number.isFinite(numericTypeId) && numericTypeId > 0) {
+        const isNumericTypeValue =
+          !Number.isNaN(numericTypeId) && Number.isFinite(numericTypeId) && numericTypeId > 0;
+        // Never send numeric ID in `type`; send label or omit if unresolved.
+        payload.type = leadTypeNameById[typeValue] || (isNumericTypeValue ? undefined : typeValue);
+        if (isNumericTypeValue) {
           payload.lead_type_id = numericTypeId;
         }
       }

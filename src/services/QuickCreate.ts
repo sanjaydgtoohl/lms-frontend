@@ -33,6 +33,9 @@ const toOption = (item: any): QuickOption => ({
 async function getList(endpoint: string): Promise<QuickOption[]> {
   try {
     const res = await apiClient.get<any>(endpoint);
+    if (!res || res.success === false) {
+      throw new Error(res?.message || 'Failed to fetch list');
+    }
     return toList<any>(res?.data).map(toOption).filter((it) => it.id && it.name);
   } catch (error) {
     handleApiError(error, false);
@@ -92,7 +95,24 @@ async function createSubSourceForPreLead(sourceId: string | number, name: string
   };
   try {
     return await createItem('/lead-sub-sources', payload);
-  } catch {
+  } catch (error: any) {
+    const status = Number(error?.response?.status ?? error?.status ?? 0);
+    const message = String(
+      error?.response?.data?.message ??
+      error?.message ??
+      ''
+    ).toLowerCase();
+    const isMethodNotAllowed =
+      status === 405 ||
+      status === 501 ||
+      message.includes('method not allowed') ||
+      message.includes('not implemented') ||
+      message.includes('route not found');
+
+    if (!isMethodNotAllowed) {
+      throw error;
+    }
+
     // Some environments expose custom create route
     return createItem('/lead-sub-sources/name', payload);
   }

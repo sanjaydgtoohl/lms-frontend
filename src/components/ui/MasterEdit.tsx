@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import Breadcrumb from './Breadcrumb';
 import SelectField from './SelectField';
@@ -19,11 +19,16 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
   const [options, setOptions] = useState<LeadSource[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const latestSourceRef = useRef<string>('');
 
   useEffect(() => {
     setForm(item || {});
     setErrors({});
   }, [item]);
+
+  useEffect(() => {
+    latestSourceRef.current = String(form?.source ?? '').trim();
+  }, [form?.source]);
 
 
   const handleChange = (key: string, value: any) => {
@@ -54,7 +59,7 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
         const incomingName = incoming.source ?? (incoming.lead_source && (typeof incoming.lead_source === 'string' ? incoming.lead_source : incoming.lead_source.name));
 
         // If user has already changed source in form, do not overwrite it.
-        if (form.source && String(form.source).trim() !== '') {
+        if (latestSourceRef.current !== '') {
           return;
         }
 
@@ -77,7 +82,7 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
         }
 
         // If nothing from item, default to first option id (if available)
-        if ((!form.source || form.source === '') && list.length > 0) {
+        if (latestSourceRef.current === '' && list.length > 0) {
           setForm(prev => ({ ...prev, source: String(list[0].id) }));
         }
       })
