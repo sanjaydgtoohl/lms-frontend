@@ -56,6 +56,16 @@ const emptyContact = (id = '1'): Contact => ({
   postalCode: '',
 });
 
+function pruneRecordByActiveIds<T>(prev: Record<string, T>, activeIds: Set<string>): Record<string, T> {
+  const next: Record<string, T> = {};
+  Object.keys(prev).forEach((id) => {
+    if (activeIds.has(id)) next[id] = prev[id];
+  });
+  const pk = Object.keys(prev);
+  const nk = Object.keys(next);
+  if (pk.length === nk.length && nk.every((k) => prev[k] === next[k])) return prev;
+  return next;
+}
 
 const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
   initialContacts,
@@ -397,6 +407,8 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
   const cityRequestCounterRef = useRef<Record<string, number>>({});
   const countryFetchedForRef = useRef<Record<string, string>>({});
   const stateFetchedForRef = useRef<Record<string, string>>({});
+  /** Ref (not state) avoids effect↔state feedback loops when recording PIN lookups. */
+  const lastPinLookupByContactRef = useRef<Record<string, string>>({});
   useEffect(() => {
     let isMounted = true;
     setCountryLoading(true);
@@ -428,27 +440,9 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
   useEffect(() => {
     const activeIds = new Set(contacts.map((c) => c.id));
 
-    setStateOptionsByContact((prev) => {
-      const next: Record<string, OptionItem[]> = {};
-      Object.keys(prev).forEach((id) => {
-        if (activeIds.has(id)) next[id] = prev[id];
-      });
-      return next;
-    });
-    setStateLoadingByContact((prev) => {
-      const next: Record<string, boolean> = {};
-      Object.keys(prev).forEach((id) => {
-        if (activeIds.has(id)) next[id] = prev[id];
-      });
-      return next;
-    });
-    setStateErrorByContact((prev) => {
-      const next: Record<string, string | null> = {};
-      Object.keys(prev).forEach((id) => {
-        if (activeIds.has(id)) next[id] = prev[id];
-      });
-      return next;
-    });
+    setStateOptionsByContact((prev) => pruneRecordByActiveIds(prev, activeIds));
+    setStateLoadingByContact((prev) => pruneRecordByActiveIds(prev, activeIds));
+    setStateErrorByContact((prev) => pruneRecordByActiveIds(prev, activeIds));
 
     contacts.forEach((contact) => {
       const id = contact.id;
@@ -512,26 +506,19 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
     }
   };
 
-  // Track last looked-up PIN per contact to avoid duplicate lookups
-  // Previously: const [lastPinLookup, setLastPinLookup] = useState<string>('');
-  const [lastPinLookupByContact, setLastPinLookupByContact] = useState<Record<string, string>>({});
   useEffect(() => {
     const activeIds = new Set(contacts.map((c) => c.id));
-    setLastPinLookupByContact((prev) => {
-      const next: Record<string, string> = {};
-      Object.keys(prev).forEach((id) => {
-        if (activeIds.has(id)) next[id] = prev[id];
-      });
-      return next;
+    Object.keys(lastPinLookupByContactRef.current).forEach((id) => {
+      if (!activeIds.has(id)) delete lastPinLookupByContactRef.current[id];
     });
 
     contacts.forEach((contact) => {
       if (!contact.postalCode) return;
       const pin = contact.postalCode.trim();
       if (!/^\d{6}$/.test(pin)) return;
-      if (pin === (lastPinLookupByContact[contact.id] || '')) return;
+      if (pin === (lastPinLookupByContactRef.current[contact.id] || '')) return;
 
-      setLastPinLookupByContact((prev) => ({ ...prev, [contact.id]: pin }));
+      lastPinLookupByContactRef.current[contact.id] = pin;
 
       (async () => {
         try {
@@ -594,33 +581,15 @@ const ContactPersonsCard: React.FC<ContactPersonsCardProps> = ({
         }
       })();
     });
-  }, [contacts, countryOptions, lastPinLookupByContact, onChange]);
+  }, [contacts, countryOptions]);
 
   // Fetch cities per contact when that contact's state changes
   useEffect(() => {
     const activeIds = new Set(contacts.map((c) => c.id));
 
-    setCityOptionsByContact((prev) => {
-      const next: Record<string, OptionItem[]> = {};
-      Object.keys(prev).forEach((id) => {
-        if (activeIds.has(id)) next[id] = prev[id];
-      });
-      return next;
-    });
-    setCityLoadingByContact((prev) => {
-      const next: Record<string, boolean> = {};
-      Object.keys(prev).forEach((id) => {
-        if (activeIds.has(id)) next[id] = prev[id];
-      });
-      return next;
-    });
-    setCityErrorByContact((prev) => {
-      const next: Record<string, string | null> = {};
-      Object.keys(prev).forEach((id) => {
-        if (activeIds.has(id)) next[id] = prev[id];
-      });
-      return next;
-    });
+    setCityOptionsByContact((prev) => pruneRecordByActiveIds(prev, activeIds));
+    setCityLoadingByContact((prev) => pruneRecordByActiveIds(prev, activeIds));
+    setCityErrorByContact((prev) => pruneRecordByActiveIds(prev, activeIds));
 
     contacts.forEach((contact) => {
       const id = contact.id;

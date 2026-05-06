@@ -5,6 +5,7 @@ export interface LeadSourceItem {
   id: string;
   source: string;
   subSource?: string;
+  leadSourceId?: string;
   dateTime?: string;
 }
 
@@ -31,6 +32,11 @@ function mapLeadSubSourceApiRow(it: any, idx: number): LeadSourceItem {
     leadSrc && typeof leadSrc === 'object' && leadSrc !== null && 'name' in leadSrc
       ? String((leadSrc as { name?: string }).name ?? '')
       : String(leadSrc ?? '');
+  const leadSourceId =
+    it.lead_source_id ??
+    (leadSrc && typeof leadSrc === 'object' && leadSrc !== null && 'id' in leadSrc
+      ? (leadSrc as { id?: string | number }).id
+      : undefined);
   const rawCreated = it.created_at ?? '';
   let dateTime = '';
   if (rawCreated) {
@@ -49,6 +55,7 @@ function mapLeadSubSourceApiRow(it: any, idx: number): LeadSourceItem {
     id: String(idVal),
     source,
     subSource,
+    leadSourceId: leadSourceId != null ? String(leadSourceId) : undefined,
     dateTime,
   };
 }

@@ -10,20 +10,23 @@ type Props = {
   onClose: () => void;
   onSave?: (updated: Record<string, any>) => void;
   hideSource?: boolean;
+  sourceAsInput?: boolean;
   /** Optional label to use when the field key is `name` (useful when hideSource is true) */
   nameLabel?: string;
 };
 
-const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false, nameLabel }) => {
+const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false, sourceAsInput = false, nameLabel }) => {
   const [form, setForm] = useState<Record<string, any>>(item || {});
   const [options, setOptions] = useState<LeadSource[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const latestSourceRef = useRef<string>('');
 
   useEffect(() => {
     setForm(item || {});
     setErrors({});
+    setSubmitting(false);
   }, [item]);
 
   useEffect(() => {
@@ -39,6 +42,11 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
 
 
   useEffect(() => {
+    if (hideSource || sourceAsInput) {
+      setOptions([]);
+      setLoadingOptions(false);
+      return;
+    }
     let mounted = true;
     setLoadingOptions(true);
     fetchLeadSources()
@@ -58,9 +66,12 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
         const incomingId = incoming.lead_source_id ?? incoming.leadSource ?? (incoming.lead_source && (incoming.lead_source.id ?? incoming.lead_source));
         const incomingName = incoming.source ?? (incoming.lead_source && (typeof incoming.lead_source === 'string' ? incoming.lead_source : incoming.lead_source.name));
 
-        // If user has already changed source in form, do not overwrite it.
-        if (latestSourceRef.current !== '') {
-          return;
+        // If form already has source, keep it only when it is a valid option id.
+        // Otherwise, remap from incoming payload so dropdown can display selected value.
+        const currentFormSource = String(latestSourceRef.current || '').trim();
+        if (currentFormSource !== '') {
+          const isExistingId = list.some(o => String(o.id) === currentFormSource);
+          if (isExistingId) return;
         }
 
         // If we have an id from the item, use that id (string) as the select value.
@@ -95,13 +106,14 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
         setLoadingOptions(false);
       });
     return () => { mounted = false; };
-  }, [item, hideSource]);
+  }, [item, hideSource, sourceAsInput]);
 
   if (!item) return null; // ✅ Hooks ke baad safe
 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
 
     // Determine sub-source field key if present in the form
     const possibleSubKeys = ['subSource', 'sub_source', 'name'];
@@ -129,6 +141,7 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
 
     if (onSave) {
       try {
+        setSubmitting(true);
         const res: any = (onSave as any)(form as Record<string, any>);
         if (res && typeof res.then === 'function') {
           await res;
@@ -164,6 +177,8 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
 
         setErrors(prev => ({ ...prev, form: message }));
         return;
+      } finally {
+        setSubmitting(false);
       }
     }
     onClose();
@@ -204,7 +219,7 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
                       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
                       .join(' ')}
                 </label>
-                {k === 'source' ? (
+                {k === 'source' && !sourceAsInput ? (
                   <>
                     <SelectField
                       name={k}
@@ -229,6 +244,7 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
                     <input
                       value={form[k] ?? ''}
                       onChange={(e) => handleChange(k, e.target.value)}
+                      readOnly={k === 'source' && sourceAsInput}
                       className={`w-full px-3 py-2 border rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-1 transition-colors ${errors[k] ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-black'
                         }`}
                     />
@@ -254,7 +270,13 @@ const MasterEdit: React.FC<Props> = ({ item, onClose, onSave, hideSource = false
           </div>
           <div className="flex items-center justify-end space-x-3 pt-2">
             <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
-            <button type="submit" className="px-4 py-2 rounded-lg btn-primary text-white shadow-sm">Update</button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="px-4 py-2 rounded-lg btn-primary text-white shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {submitting ? 'Updating...' : 'Update'}
+            </button>
           </div>
         </div>
       </motion.form>

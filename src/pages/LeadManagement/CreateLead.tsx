@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import LeadManagementSection from '../../components/forms/CreateLead/LeadManagementSection';
 import ContactPersonsCard from '../../components/forms/CreateLead/ContactPersonsCard';
 import AssignPriorityCard from '../../components/forms/CreateLead/AssignPriorityCard';
@@ -12,28 +12,38 @@ import { apiClient } from '../../utils/apiClient';
 
 const CreateLead: React.FC = () => {
   const DUPLICATE_MOBILE_MSG = 'This mobile number already exists in the system. Please enter a different mobile number.';
-  const normalizeMobileNumber = useCallback(
-    (value: unknown) => String(value || '').replace(/\D/g, ''),
-    []
-  );
-  const hasMobileMatch = useCallback((rows: any[], targetMobile: string) => rows.some((leadRow: any) => {
+  const normalizeMobileNumber = (value: unknown) => String(value || '').replace(/\D/g, '');
+  const hasMobileMatch = (rows: any[], targetMobile: string) => rows.some((leadRow: any) => {
     const raw = leadRow?.mobile_number;
     const list = Array.isArray(raw) ? raw : [leadRow?.number || leadRow?.phone || raw];
     return list.some((entry: any) => normalizeMobileNumber(typeof entry === 'string' ? entry : entry?.number) === targetMobile);
-  }), [normalizeMobileNumber]);
-  const checkDuplicateMobileInSystem = useCallback(async (targetMobile: string) => {
-    const direct = await apiClient.get<any>(`/leads?mobile_number=${encodeURIComponent(targetMobile)}&per_page=10`);
-    const directRows = Array.isArray(direct?.data) ? direct.data : [];
-    if (hasMobileMatch(directRows, targetMobile)) return true;
+  });
+  const checkDuplicateMobileInSystem = async (targetMobile: string) => {
+    const unwrapListRows = (resp: any): any[] => {
+      const d = resp?.data;
+      if (Array.isArray(d)) return d;
+      if (d && typeof d === 'object' && Array.isArray((d as any).data)) return (d as any).data;
+      return [];
+    };
 
-    for (let page = 1; page <= 5; page += 1) {
-      const res = await apiClient.get<any>(`/leads?page=${page}&per_page=50`);
-      const rows = Array.isArray(res?.data) ? res.data : [];
-      if (hasMobileMatch(rows, targetMobile)) return true;
-      if (!rows.length) break;
+    try {
+      // Prefer server-side filter: one request when backend supports `mobile_number`.
+      const direct = await apiClient.get<any>(
+        `/leads?mobile_number=${encodeURIComponent(targetMobile)}&per_page=50`
+      );
+      const directRows = unwrapListRows(direct);
+      return hasMobileMatch(directRows, targetMobile);
+    } catch {
+      // Only if dedicated lookup fails, scan a few pages (legacy fallback).
+      for (let page = 1; page <= 5; page += 1) {
+        const res = await apiClient.get<any>(`/leads?page=${page}&per_page=50`);
+        const rows = unwrapListRows(res);
+        if (hasMobileMatch(rows, targetMobile)) return true;
+        if (!rows.length) break;
+      }
+      return false;
     }
-    return false;
-  }, [hasMobileMatch]);
+  };
   const [selectedOption, setSelectedOption] = useState<'brand' | 'agency'>('brand');
   const [dropdownValue, setDropdownValue] = useState<string>('');
   const [brandOptions, setBrandOptions] = useState<{ value: string; label: string }[]>([]);
@@ -416,7 +426,6 @@ const CreateLead: React.FC = () => {
           onChange={(c) => {
             const updated = c && c.length > 0 ? c : [{ id: '1', fullName: '', profileUrl: '', email: '', mobileNo: '', mobileNo2: '', showSecondMobile: false, type: '', designation: '', agencyBrand: '', subSource: '', department: '', country: '', state: '', city: '', zone: '', postalCode: '' }];
             setContacts(updated);
-            // Clear errors for fields that are now valid
             const lead = updated[0];
             const id = lead.id || '1';
             clearContactFieldError(id, 'fullName', lead.fullName);

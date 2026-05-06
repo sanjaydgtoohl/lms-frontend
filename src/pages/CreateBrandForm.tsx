@@ -135,6 +135,12 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
   const [industries, setIndustries] = useState<Industry[]>([]);
   const [postalLoading, setPostalLoading] = useState(false);
   const [postalError, setPostalError] = useState<string>('');
+  const editBrandId = String(
+    initialData?.id ??
+    initialData?.brand_id ??
+    initialData?._raw?.id ??
+    ''
+  ).trim();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -199,9 +205,9 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
       };
 
       let res;
-      if (mode === 'edit' && initialData?.id) {
+      if (mode === 'edit' && editBrandId) {
         // Update existing brand
-        res = await updateBrand(initialData.id, payload);
+        res = await updateBrand(editBrandId, payload);
         if (res) {
           SweetAlert.showUpdateSuccess();
           onClose();
@@ -404,7 +410,13 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
 
         // If initialData provided and contains agency name/id, try to preselect the matching id(s)
         if (mounted && initialData) {
-          const rawAgency = initialData.agency_id ?? initialData.agency ?? initialData.agencies ?? initialData.agencyName ?? null;
+          const rawAgency =
+            initialData.agency_ids ??
+            initialData.agency_id ??
+            initialData.agency ??
+            initialData.agencies ??
+            initialData.agencyName ??
+            null;
           if (rawAgency) {
             const agencyIds: string[] = [];
 
@@ -727,7 +739,7 @@ const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.22 }}
+      transition={{ duration: 0.22 }} 
       className="space-y-6"
     >
       <MasterFormHeader onBack={onClose} title={mode === 'edit' ? 'Edit Brand' : 'Create Brand'} />

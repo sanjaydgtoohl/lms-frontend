@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, Outlet } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from './redux/store';
 import { forceLogout, setAuthenticated } from './redux/slices/authSlice';
@@ -179,16 +179,13 @@ function App() {
 
               <Route path="inventory/device" element={<PermissionRoute><DeviceInventory /></PermissionRoute>} />
 
-              {/* Lead Management Routes */}
               <Route path="lead-management">
                 <Route index element={<PermissionRoute><AllLeads /></PermissionRoute>} />
                 <Route path="all-leads" element={<PermissionRoute><AllLeads /></PermissionRoute>} />
-                {/* <Route path="brief-status" element={<PermissionRoute><BriefStatus /></PermissionRoute>} /> */}
                 <Route path="brief-leads" element={<PermissionRoute><BriefStatus /></PermissionRoute>} />
                 <Route path="pending" element={<PermissionRoute><Pending /></PermissionRoute>} />
                 <Route path="interested" element={<PermissionRoute><Interested /></PermissionRoute>} />
                 <Route path="meeting-scheduled" element={<PermissionRoute><MeetingScheduled /></PermissionRoute>} />
-                {/* <Route path="meeting-done" element={<PermissionRoute><MeetingDone /></PermissionRoute>} /> */}
                 <Route path="meetings" element={<PermissionRoute><MeetingDone /></PermissionRoute>} />
                 <Route path="create" element={<PermissionRoute><CreateLead /></PermissionRoute>} />
                 <Route path="edit/:id" element={<PermissionRoute><EditLead /></PermissionRoute>} />
@@ -204,7 +201,7 @@ function App() {
               <Route path="pre-lead/view/:id" element={<PermissionRoute><MissCampaignView /></PermissionRoute>} />
               <Route path="pre-lead/view/:id/edit" element={<PermissionRoute><MissCampaignView /></PermissionRoute>} />
               {/* Brief Pipeline Routes */}
-              <Route path="brief">
+              <Route path="brief" element={<Outlet />}>
                 <Route path="Brief_Pipeline" element={<PermissionRoute><BriefPipeline /></PermissionRoute>} />
                 <Route path="create" element={<PermissionRoute><BriefPipeline /></PermissionRoute>} />
                 <Route path="log" element={<PermissionRoute><BriefLog /></PermissionRoute>} />
@@ -216,7 +213,7 @@ function App() {
               </Route>
 
               {/* Meeting Pipeline Routes */}
-              <Route path="meeting">
+              <Route path="meeting" element={<Outlet />}>
                 <Route index element={<PermissionRoute><MeetingPipeline /></PermissionRoute>} />
                 <Route path="create" element={<PermissionRoute><MeetingPipeline /></PermissionRoute>} />
                 <Route path=":id" element={<PermissionRoute><MeetingPipeline /></PermissionRoute>} />
@@ -224,7 +221,7 @@ function App() {
               </Route>
 
               {/* User Management Routes */}
-              <Route path="user-management">
+              <Route path="user-management" element={<Outlet />}>
                 <Route index element={<PermissionRoute><AllPermissions /></PermissionRoute>} />
                 <Route path="permission" element={<PermissionRoute><AllPermissions /></PermissionRoute>} />
                 <Route path="permission/create" element={<PermissionRoute><CreatePermission /></PermissionRoute>} />

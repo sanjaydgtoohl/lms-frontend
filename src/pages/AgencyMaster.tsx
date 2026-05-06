@@ -102,7 +102,6 @@ function mapApiAgencyToUi(a: any): Agency {
 }
 
 const AgencyMaster: React.FC = () => {
-  const [showCreate, setShowCreate] = useState(false);
   const [viewItem, setViewItem] = useState<Record<string, any> | null>(null);
   const [editItem, setEditItem] = useState<Agency | null>(null);
   const [agenciesList, setAgenciesList] = useState<Agency[]>([]);
@@ -145,7 +144,6 @@ const AgencyMaster: React.FC = () => {
   const handleSaveAgency = (data: { parent: { name: string; type: string; client: string[] }; children: Array<{ name: string; type: string; client: string[] }> }): void => {
     // For now just log the saved data. Integrate with API/store as needed.
     console.log('Saved agencies payload:', data);
-    setShowCreate(false);
   };
 
   const handleView = (item: Agency) => {
@@ -195,7 +193,6 @@ const AgencyMaster: React.FC = () => {
     const id = rawId ? decodeURIComponent(rawId) : undefined;
 
     if (location.pathname.endsWith('/create')) {
-      setShowCreate(true);
       setViewItem(null);
       setEditItem(null);
       return;
@@ -207,14 +204,12 @@ const AgencyMaster: React.FC = () => {
         .then(data => {
           setEditItem(data as any);
           setViewItem(null);
-          setShowCreate(false);
         })
         .catch(() => {
           // Fallback to locally stored data if API fails
           const fetched = getItem('agency', id);
           setEditItem((fetched || { id }) as any);
           setViewItem(null);
-          setShowCreate(false);
         });
       return;
     }
@@ -226,19 +221,16 @@ const AgencyMaster: React.FC = () => {
           // Full API payload for MasterView — all fields from GET /agencies/:id (same as before mapping trim)
           setViewItem(data as Record<string, any>);
           setEditItem(null);
-          setShowCreate(false);
         })
         .catch(() => {
           const fetched = getItem('agency', id);
           if (fetched) setViewItem(fetched as Agency);
           else setViewItem({ id, agencyGroup: '', agencyName: '', agencyType: '', contactPerson: '', dateTime: '' });
           setEditItem(null);
-          setShowCreate(false);
         });
       return;
     }
 
-    setShowCreate(false);
     setViewItem(null);
     setEditItem(null);
   }, [location.pathname, params.id]);
@@ -254,7 +246,7 @@ const AgencyMaster: React.FC = () => {
 
   return (
     <div className="flex-1 w-full max-w-full overflow-x-hidden">
-      {showCreate ? (
+      {location.pathname.endsWith('/create') ? (
         <CreateAgencyForm onClose={() => navigate(ROUTES.AGENCY_MASTER)} onSave={handleSaveAgency} />
       ) : viewItem ? (
         <MasterView item={viewItem} onClose={() => navigate(ROUTES.AGENCY_MASTER)} />

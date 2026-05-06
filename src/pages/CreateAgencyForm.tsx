@@ -35,6 +35,49 @@ const blankChild = (): ChildAgency => ({
   type: '',
   client: [],
 });
+
+const toIdArray = (raw: any): string[] => {
+  if (raw == null) return [];
+
+  const pickId = (v: any): string => {
+    if (v == null) return '';
+    if (typeof v === 'object') {
+      const idVal =
+        v.id ??
+        v.brand_id ??
+        v.client_id ??
+        v.agency_client_id ??
+        v.value;
+      if (idVal != null && String(idVal).trim() !== '') return String(idVal);
+      return '';
+    }
+    return String(v).trim();
+  };
+
+  if (Array.isArray(raw)) {
+    return raw
+      .map(pickId)
+      .filter(Boolean);
+  }
+
+  if (typeof raw === 'string') {
+    const val = raw.trim();
+    if (!val) return [];
+    // Supports "1,2,3" or single value "1"
+    if (val.includes(',')) {
+      return val.split(',').map(s => s.trim()).filter(Boolean);
+    }
+    return [val];
+  }
+
+  if (typeof raw === 'object') {
+    const single = pickId(raw);
+    return single ? [single] : [];
+  }
+
+  return [];
+};
+
 const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', initialData }) => {
   const [parent, setParent] = useState<ParentAgency>({ name: '', type: '', client: [] });
   const [children, setChildren] = useState<ChildAgency[]>([]);
@@ -92,22 +135,18 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
         parentTypeId = String(rawParentType);
       }
 
-      // Extract agency clients - could be array of objects or array of ids
-      // Also check for brand data in the response
-      let parentClientIds: string[] = [];
-      let rawParentClient = parentData.client || parentData.clients || [];
-
-      // If no client data but brand data exists, use brand IDs as clients
-      if ((!rawParentClient || rawParentClient.length === 0) && parentData.brand && Array.isArray(parentData.brand)) {
-        rawParentClient = parentData.brand;
-      }
-
-      if (Array.isArray(rawParentClient)) {
-        parentClientIds = rawParentClient.map((c: any) => {
-          if (typeof c === 'object' && c?.id) return String(c.id);
-          return String(c);
-        });
-      }
+      // Extract agency clients from multiple possible API keys/shapes.
+      const rawParentClient =
+        parentData.client ??
+        parentData.clients ??
+        parentData.client_ids ??
+        parentData.brand ??
+        parentData.brands ??
+        parentData.brand_ids ??
+        parentData.agency_client ??
+        parentData.agency_clients ??
+        [];
+      const parentClientIds: string[] = toIdArray(rawParentClient);
 
       setParent({
         name: parentData.name || parentData.agencyName || '',
@@ -133,22 +172,17 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
             childTypeId = String(rawChildType);
           }
 
-          // Extract child agency clients
-          // Also check for brand data in the response
-          let childClientIds: string[] = [];
-          let rawChildClient = c.client || c.clients || [];
-
-          // If no client data but brand data exists, use brand IDs as clients
-          if ((!rawChildClient || rawChildClient.length === 0) && c.brand && Array.isArray(c.brand)) {
-            rawChildClient = c.brand;
-          }
-
-          if (Array.isArray(rawChildClient)) {
-            childClientIds = rawChildClient.map((cc: any) => {
-              if (typeof cc === 'object' && cc?.id) return String(cc.id);
-              return String(cc);
-            });
-          }
+          const rawChildClient =
+            c.client ??
+            c.clients ??
+            c.client_ids ??
+            c.brand ??
+            c.brands ??
+            c.brand_ids ??
+            c.agency_client ??
+            c.agency_clients ??
+            [];
+          const childClientIds: string[] = toIdArray(rawChildClient);
 
           return {
             id: `child-${idx}-${Date.now()}`,

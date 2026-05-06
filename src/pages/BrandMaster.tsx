@@ -49,7 +49,6 @@ const BrandMaster: React.FC = () => {
   const [totalItems, setTotalItems] = useState(0);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [showCreate, setShowCreate] = useState(false);
   const [viewItem, setViewItem] = useState<Brand | null>(null);
   const [editItem, setEditItem] = useState<Brand | null>(null);
 
@@ -74,6 +73,12 @@ const BrandMaster: React.FC = () => {
   const navigate = useNavigate();
   const params = useParams();
   const location = useLocation();
+  const rawId = params.id;
+  const routeId = rawId ? decodeURIComponent(rawId) : undefined;
+  const isCreateRoute = location.pathname.endsWith('/create');
+  const isEditRoute = location.pathname.endsWith('/edit') && Boolean(routeId);
+  const isViewRoute = Boolean(routeId) && !location.pathname.endsWith('/edit');
+  const isListRoute = !isCreateRoute && !isEditRoute && !isViewRoute;
 
   const handleEdit = (id: string) => navigate(`${ROUTES.BRAND_MASTER}/${encodeURIComponent(id)}/edit`);
   const handleView = (id: string) => navigate(`${ROUTES.BRAND_MASTER}/${encodeURIComponent(id)}`);
@@ -113,59 +118,53 @@ const BrandMaster: React.FC = () => {
   const handleCreateBrand = () => navigate(`${ROUTES.BRAND_MASTER}/create`);
 
   useEffect(() => {
-    const rawId = params.id;
-    const id = rawId ? decodeURIComponent(rawId) : undefined;
-
-    if (location.pathname.endsWith('/create')) {
-      setShowCreate(true);
+    if (isCreateRoute) {
       setViewItem(null);
       setEditItem(null);
       return;
     }
 
-    if (location.pathname.endsWith('/edit') && id) {
+    if (isEditRoute && routeId) {
       // Fetch full brand details from API for edit mode
-      getBrand(id)
+      getBrand(routeId)
         .then(data => {
           setEditItem(data);
           setViewItem(null);
-          setShowCreate(false);
         })
         .catch(() => {
           // Fallback to locally stored data if API fails
-          const found = brands.find(b => b.id === id) || null;
+          const found = brands.find(b => b.id === routeId) || null;
           setEditItem(found);
           setViewItem(null);
-          setShowCreate(false);
         });
       return;
     }
 
-    if (id) {
+    if (isViewRoute && routeId) {
       // Fetch full brand details from API for view mode
-      getBrand(id)
+      getBrand(routeId)
         .then(data => {
           setViewItem(data);
-          setShowCreate(false);
           setEditItem(null);
         })
         .catch(() => {
           // Fallback to locally stored data if API fails
-          const found = brands.find(b => b.id === id) || null;
+          const found = brands.find(b => b.id === routeId) || null;
           setViewItem(found);
-          setShowCreate(false);
           setEditItem(null);
         });
       return;
     }
 
-    setShowCreate(false);
     setViewItem(null);
     setEditItem(null);
-  }, [location.pathname, params.id, brands]);
+  }, [isCreateRoute, isEditRoute, isViewRoute, routeId, brands]);
 
   // Fetch brands from API when page, itemsPerPage or search query changes
   useEffect(() => {
+    if (!isListRoute) {
+      return;
+    }
     let cancelled = false;
     async function load() {
       setLoading(true);
@@ -183,7 +182,7 @@ const BrandMaster: React.FC = () => {
     }
     load();
     return () => { cancelled = true; };
-  }, [currentPage, itemsPerPage, searchQuery]);
+  }, [currentPage, itemsPerPage, searchQuery, isListRoute]);
 
   const handlePageChange = (page: number) => setCurrentPage(page);
 
@@ -206,7 +205,7 @@ const BrandMaster: React.FC = () => {
         onClose={() => setShowAgenciesModal(false)}
         title="Agencies"
       />
-      {showCreate ? (
+      {isCreateRoute ? (
         <CreateBrandForm inline onClose={() => navigate(ROUTES.BRAND_MASTER)} />
       ) : viewItem ? (
         <MasterView

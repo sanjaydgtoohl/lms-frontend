@@ -9,7 +9,6 @@ import ConfirmDialog from '../components/ui/ConfirmDialog';
 import SearchBar from '../components/ui/SearchBar';
 import Table, { type Column } from '../components/ui/Table';
 import { listLeadSources, getLeadSource, deleteLeadSubSource, updateLeadSubSource, type LeadSourceItem } from '../services/LeadSource';
-import { fetchLeadSources } from '../services/CreateSourceForm';
 import { ROUTES } from '../constants';
 import { usePermissions } from '../hooks/SidebarMenuHooks';
 
@@ -17,7 +16,6 @@ import SweetAlert from '../utils/SweetAlert';
 import TableHeader from '../components/ui/TableHeader';
 
 const LeadSource: React.FC = () => {
-  const [showCreate, setShowCreate] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [loading, setLoading] = useState(false);
@@ -27,16 +25,28 @@ const LeadSource: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewItem, setViewItem] = useState<LeadSourceItem | null>(null);
   const [editItem, setEditItem] = useState<LeadSourceItem | null>(null);
+  const [activeEditId, setActiveEditId] = useState<string>('');
+  const [activeLeadSourceId, setActiveLeadSourceId] = useState<string>('');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmDeleteLabel, setConfirmDeleteLabel] = useState<string>('');
   const [confirmLoading, setConfirmLoading] = useState(false);
 
   const itemsRef = useRef<LeadSourceItem[]>([]);
   itemsRef.current = items;
+  const navigate = useNavigate();
+  const params = useParams();
+  const location = useLocation();
 
   const { hasPermission } = usePermissions();
+  const rawId = params.id;
+  const routeId = rawId ? decodeURIComponent(rawId) : undefined;
+  const isCreateRoute = location.pathname.endsWith('/create');
+  const isEditRoute = location.pathname.endsWith('/edit') && Boolean(routeId);
+  const isViewRoute = Boolean(routeId) && !location.pathname.endsWith('/edit');
+  const isListRoute = !isCreateRoute && !isEditRoute && !isViewRoute;
 
   useEffect(() => {
+    if (!isListRoute) return;
     let isMounted = true;
 
     const fetchData = async (page = currentPage, search = searchQuery) => {
@@ -73,7 +83,7 @@ const LeadSource: React.FC = () => {
     (async () => { await fetchData(); })();
 
     return () => { isMounted = false; };
-  }, [currentPage, searchQuery, itemsPerPage]); // ✅ added itemsPerPage
+  }, [currentPage, searchQuery, itemsPerPage, isListRoute]); // ✅ added itemsPerPage
 
   // Helper so other handlers can reload the list after actions
   const refresh = async (page = currentPage, search = searchQuery) => {
@@ -103,10 +113,6 @@ const LeadSource: React.FC = () => {
 
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentData = items;
-
-  const navigate = useNavigate();
-  const params = useParams();
-  const location = useLocation();
 
   const handleCreate = () => {
     navigate(`${ROUTES.SOURCE_MASTER}/create`);
@@ -146,21 +152,21 @@ const LeadSource: React.FC = () => {
     return (async () => {
       // Map UI fields to API payload
       const name = updated.subSource ?? updated.name ?? '';
-      const leadSourceName = updated.source; // UI holds name
-      // Resolve source id by name
-      const sourceOptions = await fetchLeadSources();
-      const matched = sourceOptions.find(s => s.name === leadSourceName);
-      const leadSourceId = matched ? matched.id : leadSourceName; // fallback to given value
-      await updateLeadSubSource(updated.id, {
+      const leadSourceId = activeLeadSourceId || updated.source;
+      if (!leadSourceId) {
+        throw new Error('Lead source id is missing');
+      }
+      const idToUpdate = activeEditId || String(updated.id || '').trim();
+      if (!idToUpdate) {
+        throw new Error('Lead sub-source id is missing');
+      }
+      await updateLeadSubSource(idToUpdate, {
         name,
         lead_source_id: leadSourceId,
         status: 1,
       });
-      // Refresh the list from server so table shows latest data
-      await refresh();
       // Show SweetAlert update success
       SweetAlert.showUpdateSuccess();
-      navigate(ROUTES.SOURCE_MASTER);
     })();
   };
 
@@ -192,30 +198,46 @@ const LeadSource: React.FC = () => {
     const id = rawId ? decodeURIComponent(rawId) : undefined;
 
     if (location.pathname.endsWith('/create')) {
-      setShowCreate(true);
       setViewItem(null);
       setEditItem(null);
+      setActiveLeadSourceId('');
       return;
     }
 
     if (location.pathname.endsWith('/edit') && id) {
-      const found = items.find(i => i.id === id) || null;
-      setEditItem(found);
-      setViewItem(null);
-      setShowCreate(false);
+      setActiveEditId(id);
+      getLeadSource(id)
+        .then((data) => {
+          const mappedSourceId = String(data.leadSourceId || '');
+          setActiveLeadSourceId(mappedSourceId);
+          setEditItem({
+            id: data.id,
+            source: mappedSourceId || data.source,
+            subSource: data.subSource,
+            dateTime: data.dateTime,
+          });
+          setViewItem(null);
+        })
+        .catch(() => {
+          const found = itemsRef.current.find(i => i.id === id) || null;
+          setEditItem(found);
+          setViewItem(null);
+        });
       return;
     }
 
     if (!id) {
-      setShowCreate(false);
       setViewItem(null);
       setEditItem(null);
+      setActiveEditId('');
+      setActiveLeadSourceId('');
       return;
     }
 
-    setShowCreate(false);
     setEditItem(null);
-  }, [location.pathname, params.id, items]);
+    setActiveEditId('');
+    setActiveLeadSourceId('');
+  }, [location.pathname, params.id]);
 
   useEffect(() => {
     const rawId = params.id;
@@ -229,7 +251,12 @@ const LeadSource: React.FC = () => {
     getLeadSource(id)
       .then(data => {
         if (cancelled) return;
-        setViewItem(data);
+        setViewItem({
+          id: data.id,
+          source: data.source,
+          subSource: data.subSource,
+          dateTime: data.dateTime,
+        });
       })
       .catch(() => {
         if (cancelled) return;
@@ -254,7 +281,7 @@ const LeadSource: React.FC = () => {
         onCancel={() => setConfirmDeleteId(null)}
         onConfirm={confirmDelete}
       />
-      {showCreate ? (
+      {isCreateRoute ? (
         <CreateSourceForm
           inline
           onClose={() => {
@@ -268,7 +295,11 @@ const LeadSource: React.FC = () => {
       ) : viewItem ? (
         <MasterView item={viewItem} onClose={() => navigate(ROUTES.SOURCE_MASTER)} />
       ) : editItem ? (
-        <MasterEdit item={editItem} onClose={() => navigate(ROUTES.SOURCE_MASTER)} onSave={handleSaveEdit} />
+        <MasterEdit
+          item={editItem}
+          onClose={() => navigate(ROUTES.SOURCE_MASTER, { replace: true })}
+          onSave={handleSaveEdit}
+        />
       ) : (
         <>
           <MasterHeader

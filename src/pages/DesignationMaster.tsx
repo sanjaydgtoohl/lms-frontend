@@ -141,7 +141,6 @@ const CreateDesignationForm: React.FC<{
 
 const DesignationMaster: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [showCreate, setShowCreate] = useState(false);
 
   const itemsPerPage = 10;
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -248,6 +247,8 @@ const DesignationMaster: React.FC = () => {
 
   const [viewItem, setViewItem] = useState<Designation | null>(null);
   const [editItem, setEditItem] = useState<Designation | null>(null);
+  const [activeEditId, setActiveEditId] = useState<string>('');
+  const updateInFlightRef = useRef(false);
 
   const designationsRef = useRef<Designation[]>([]);
   designationsRef.current = designations;
@@ -298,30 +299,40 @@ const DesignationMaster: React.FC = () => {
     const id = rawId ? decodeURIComponent(rawId) : undefined;
 
     if (location.pathname.endsWith('/create')) {
-      setShowCreate(true);
       setViewItem(null);
       setEditItem(null);
       return;
     }
 
     if (location.pathname.endsWith('/edit') && id) {
-      const found = designations.find(d => d.id === id) || null;
-      setEditItem(found);
-      setViewItem(null);
-      setShowCreate(false);
+      setActiveEditId(id);
+      getDesignation(id)
+        .then((data) => {
+          setEditItem({
+            id: String(data.id),
+            name: String(data.name ?? data.title ?? ''),
+            dateTime: data.created_at || '',
+          });
+          setViewItem(null);
+        })
+        .catch(() => {
+          const found = designationsRef.current.find(d => d.id === id) || null;
+          setEditItem(found);
+          setViewItem(null);
+        });
       return;
     }
 
     if (!id) {
-      setShowCreate(false);
       setViewItem(null);
       setEditItem(null);
+      setActiveEditId('');
       return;
     }
 
-    setShowCreate(false);
     setEditItem(null);
-  }, [location.pathname, params.id, designations]);
+    setActiveEditId('');
+  }, [location.pathname, params.id]);
 
   useEffect(() => {
     const rawId = params.id;
@@ -354,9 +365,13 @@ const DesignationMaster: React.FC = () => {
 
   const handleSaveEditedDesignation = (updated: Record<string, any>) => {
     return (async () => {
+      if (updateInFlightRef.current) return;
       try {
+        updateInFlightRef.current = true;
         // API expects `title` for update payload
-        await updateDesignation(updated.id, { title: updated.name } as any);
+        const idToUpdate = activeEditId || String(updated.id || '').trim();
+        if (!idToUpdate) throw new Error('Designation id is missing');
+        await updateDesignation(idToUpdate, { title: updated.name } as any);
         // Refresh list from server so table shows latest data
         await refresh();
         SweetAlert.showUpdateSuccess();
@@ -384,6 +399,8 @@ const DesignationMaster: React.FC = () => {
         const thrown = new Error(message);
         (thrown as any).original = e;
         throw thrown;
+      } finally {
+        updateInFlightRef.current = false;
       }
     })();
   };
@@ -411,7 +428,7 @@ const DesignationMaster: React.FC = () => {
         onCancel={() => setConfirmDeleteId(null)}
         onConfirm={confirmDelete}
       />
-      {showCreate ? (
+      {location.pathname.endsWith('/create') ? (
         <CreateDesignationForm onClose={() => navigate(ROUTES.DESIGNATION_MASTER)} onSave={handleSaveDesignation} />
       ) : viewItem ? (
         <MasterView item={viewItem} onClose={() => navigate(ROUTES.DESIGNATION_MASTER)} />
