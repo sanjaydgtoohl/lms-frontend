@@ -83,6 +83,17 @@ const toIdArray = (raw: any): string[] => {
   return [];
 };
 
+/** First defined-but-empty (`''`, `[]`) must not block later keys that carry real IDs (edit payloads vary by API). */
+function pickFirstUsableClientRaw(...candidates: any[]): any {
+  for (const v of candidates) {
+    if (v == null) continue;
+    if (typeof v === 'string' && v.trim() === '') continue;
+    if (Array.isArray(v) && v.length === 0) continue;
+    return v;
+  }
+  return [];
+}
+
 const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', initialData }) => {
   const [parent, setParent] = useState<ParentAgency>({ name: '', type: '', client: [] });
   const [children, setChildren] = useState<ChildAgency[]>([]);
@@ -141,16 +152,17 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
       }
 
       // Extract agency clients from multiple possible API keys/shapes.
-      const rawParentClient =
-        parentData.client ??
-        parentData.clients ??
-        parentData.client_ids ??
-        parentData.brand ??
-        parentData.brands ??
-        parentData.brand_ids ??
-        parentData.agency_client ??
-        parentData.agency_clients ??
-        [];
+      const rawParentClient = pickFirstUsableClientRaw(
+        parentData.client,
+        parentData.clients,
+        parentData.client_ids,
+        parentData.brand,
+        parentData.brands,
+        parentData.brand_ids,
+        parentData.agency_client,
+        parentData.agency_clients,
+        []
+      );
       const parentClientIds: string[] = toIdArray(rawParentClient);
 
       setParent({
@@ -177,16 +189,17 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
             childTypeId = String(rawChildType);
           }
 
-          const rawChildClient =
-            c.client ??
-            c.clients ??
-            c.client_ids ??
-            c.brand ??
-            c.brands ??
-            c.brand_ids ??
-            c.agency_client ??
-            c.agency_clients ??
-            [];
+          const rawChildClient = pickFirstUsableClientRaw(
+            c.client,
+            c.clients,
+            c.client_ids,
+            c.brand,
+            c.brands,
+            c.brand_ids,
+            c.agency_client,
+            c.agency_clients,
+            []
+          );
           const childClientIds: string[] = toIdArray(rawChildClient);
 
           return {
