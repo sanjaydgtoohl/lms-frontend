@@ -113,21 +113,31 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({
           });
         } else if (parts[3] === 'edit') {
           const id = decodeURIComponent(parts[2]);
-          crumbs.push({
-            label: `ID: ${id}`,
-            path: `/master/${masterType}/${id}`,
-          });
+          // For Lead Source, don't show raw id in breadcrumb.
+          if (masterType !== 'source') {
+            crumbs.push({
+              label: `ID: ${id}`,
+              path: `/master/${masterType}/${id}`,
+            });
+          }
           crumbs.push({
             label: 'Edit',
             isActive: true,
           });
         } else {
           // View mode
-          const id = decodeURIComponent(parts[2]);
-          crumbs.push({
-            label: `ID: ${id}`,
-            isActive: true,
-          });
+          if (masterType === 'source') {
+            crumbs.push({
+              label: 'View',
+              isActive: true,
+            });
+          } else {
+            const id = decodeURIComponent(parts[2]);
+            crumbs.push({
+              label: `ID: ${id}`,
+              isActive: true,
+            });
+          }
         }
       }
       return crumbs;

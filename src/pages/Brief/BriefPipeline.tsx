@@ -51,7 +51,6 @@ const BriefPipeline: React.FC = () => {
   const [totalItems, setTotalItems] = useState(0);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [showCreate, setShowCreate] = useState(false);
   const [viewItem, setViewItem] = useState<Brief | null>(null);
   const [editItem, setEditItem] = useState<Brief | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -115,7 +114,6 @@ const BriefPipeline: React.FC = () => {
     const id = rawId ? decodeURIComponent(rawId) : undefined;
 
     if (location.pathname.endsWith('/create')) {
-      setShowCreate(true);
       setViewItem(null);
       setEditItem(null);
       return;
@@ -147,7 +145,6 @@ const BriefPipeline: React.FC = () => {
       if (found) {
         setEditItem(patchSubmissionFields(found));
         setViewItem(null);
-        setShowCreate(false);
         return;
       }
 
@@ -159,7 +156,6 @@ const BriefPipeline: React.FC = () => {
           if (!mounted) return;
           setEditItem(single ? patchSubmissionFields(single) : null);
           setViewItem(null);
-          setShowCreate(false);
         } catch (err) {
           console.error('Failed to fetch brief for edit', err);
           setEditItem(null);
@@ -174,12 +170,10 @@ const BriefPipeline: React.FC = () => {
     if (id) {
       const found = briefs.find(b => b.id === id) || null;
       setViewItem(found);
-      setShowCreate(false);
       setEditItem(null);
       return;
     }
 
-    setShowCreate(false);
     setViewItem(null);
     setEditItem(null);
   }, [location.pathname, params.id, briefs]);
@@ -451,7 +445,7 @@ const BriefPipeline: React.FC = () => {
 
   return (
     <div className="flex-1 w-full max-w-full overflow-x-hidden">
-      {showCreate ? (
+      {location.pathname.endsWith('/create') ? (
         <CreateBriefForm
           inline
           onClose={() => {

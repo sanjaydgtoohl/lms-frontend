@@ -162,7 +162,6 @@ const DepartmentMaster: React.FC = () => {
 	const [error, setError] = useState<string | null>(null);
 	const [searchQuery, setSearchQuery] = useState('');
 
-	const [showCreate, setShowCreate] = useState(false);
 	const navigate = useNavigate();
 	const params = useParams();
 	const location = useLocation();
@@ -220,6 +219,7 @@ const DepartmentMaster: React.FC = () => {
 
 	const [viewItem, setViewItem] = useState<Department | null>(null);
 	const [editItem, setEditItem] = useState<Department | null>(null);
+	const [activeEditId, setActiveEditId] = useState<string>('');
 
 	const departmentsRef = useRef<Department[]>([]);
 	departmentsRef.current = departments;
@@ -273,31 +273,55 @@ const DepartmentMaster: React.FC = () => {
 		const id = rawId ? decodeURIComponent(rawId) : undefined;
 
 		if (location.pathname.endsWith('/create')) {
-			setShowCreate(true);
 			setViewItem(null);
 			setEditItem(null);
 			return;
 		}
 
 		if (location.pathname.endsWith('/edit') && id) {
-			const found = departments.find(d => d.id === id) || null;
-			setEditItem(found);
-			setViewItem(null);
-			setShowCreate(false);
 			return;
 		}
 
 		if (!id) {
-			setShowCreate(false);
 			setViewItem(null);
 			setEditItem(null);
+			setActiveEditId('');
 			return;
 		}
 
 		// View route only — detail fetch runs in separate effect (no refetch on list updates).
-		setShowCreate(false);
 		setEditItem(null);
-	}, [location.pathname, params.id, departments]);
+		setActiveEditId('');
+	}, [location.pathname, params.id]);
+
+	useEffect(() => {
+		const rawId = params.id;
+		const id = rawId ? decodeURIComponent(rawId) : undefined;
+		if (!location.pathname.endsWith('/edit') || !id) return;
+
+		let cancelled = false;
+		setActiveEditId(id);
+		getDepartment(id)
+			.then((data) => {
+				if (cancelled) return;
+				setEditItem({
+					id: String(data.id),
+					name: data.name,
+					dateTime: data.created_at || '',
+				});
+				setViewItem(null);
+			})
+			.catch(() => {
+				if (cancelled) return;
+				const found = departmentsRef.current.find(d => d.id === id) || null;
+				setEditItem(found);
+				setViewItem(null);
+			});
+
+		return () => {
+			cancelled = true;
+		};
+	}, [location.pathname, params.id]);
 
 	// View by id only: GET /api/v1/departments/:id — does not re-run when `departments` refreshes.
 	useEffect(() => {
@@ -332,8 +356,10 @@ const DepartmentMaster: React.FC = () => {
 	const handleSaveEditedDepartment = (updated: Record<string, any>) => {
 		(async () => {
 			try {
-				await updateDepartment(updated.id, { name: updated.name });
-				setDepartments(prev => prev.map(d => (d.id === updated.id ? { ...d, name: updated.name } as Department : d)));
+				const idToUpdate = activeEditId || String(updated.id || '').trim();
+				if (!idToUpdate) throw new Error('Department id is missing');
+				await updateDepartment(idToUpdate, { name: updated.name });
+				setDepartments(prev => prev.map(d => (d.id === idToUpdate ? { ...d, name: updated.name } as Department : d)));
 				SweetAlert.showUpdateSuccess();
 			} catch (e: any) {
 				SweetAlert.showError(e?.message || 'Failed to update department');
@@ -353,7 +379,7 @@ const DepartmentMaster: React.FC = () => {
 				onCancel={() => setConfirmDeleteId(null)}
 				onConfirm={confirmDelete}
 			/>
-			{showCreate ? (
+			{location.pathname.endsWith('/create') ? (
 				<CreateDepartmentForm onClose={() => navigate(ROUTES.DEPARTMENT_MASTER)} onSave={handleSaveDepartment} />
 			) : viewItem ? (
 				<MasterView item={viewItem} onClose={() => navigate(ROUTES.DEPARTMENT_MASTER)} />

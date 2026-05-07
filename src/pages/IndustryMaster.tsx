@@ -40,7 +40,6 @@ const parseCreatedAt = (val?: string | null) => {
 
 const IndustryMaster: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [showCreate, setShowCreate] = useState(false);
 
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
@@ -115,6 +114,8 @@ const IndustryMaster: React.FC = () => {
 
   const [viewItem, setViewItem] = useState<Industry | null>(null);
   const [editItem, setEditItem] = useState<Industry | null>(null);
+  const [activeEditId, setActiveEditId] = useState<string>('');
+  const updateInFlightRef = useRef(false);
 
   const industriesRef = useRef<Industry[]>([]);
   industriesRef.current = industries;
@@ -167,30 +168,54 @@ const IndustryMaster: React.FC = () => {
     const id = rawId ? decodeURIComponent(rawId) : undefined;
 
     if (location.pathname.endsWith('/create')) {
-      setShowCreate(true);
       setViewItem(null);
       setEditItem(null);
       return;
     }
 
     if (location.pathname.endsWith('/edit') && id) {
-      const found = industries.find(i => i.id === id) || null;
-      setEditItem(found);
-      setViewItem(null);
-      setShowCreate(false);
       return;
     }
 
     if (!id) {
-      setShowCreate(false);
       setViewItem(null);
       setEditItem(null);
+      setActiveEditId('');
       return;
     }
 
-    setShowCreate(false);
     setEditItem(null);
-  }, [location.pathname, params.id, industries]);
+    setActiveEditId('');
+  }, [location.pathname, params.id]);
+
+  useEffect(() => {
+    const rawId = params.id;
+    const id = rawId ? decodeURIComponent(rawId) : undefined;
+    if (!location.pathname.endsWith('/edit') || !id) return;
+
+    let cancelled = false;
+    setActiveEditId(id);
+    getIndustry(id)
+      .then((data) => {
+        if (cancelled) return;
+        setEditItem({
+          id: String(data.id),
+          name: String(data.name ?? ''),
+          dateTime: parseCreatedAt(data.created_at),
+        });
+        setViewItem(null);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        const found = industriesRef.current.find(i => i.id === id) || null;
+        setEditItem(found);
+        setViewItem(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [location.pathname, params.id]);
 
   useEffect(() => {
     const rawId = params.id;
@@ -224,10 +249,18 @@ const IndustryMaster: React.FC = () => {
   const handleSaveEditedIndustry = async (updated: Record<string, any>) => {
     // Return a promise and allow caller (`MasterEdit`) to catch and display field errors inline.
     return (async () => {
-      await updateIndustry(updated.id, { name: updated.name });
-      // Refresh the list from server so table shows latest data
-      await refresh();
-      SweetAlert.showUpdateSuccess();
+      if (updateInFlightRef.current) return;
+      try {
+        updateInFlightRef.current = true;
+        const idToUpdate = activeEditId || String(updated.id || '').trim();
+        if (!idToUpdate) throw new Error('Industry id is missing');
+        await updateIndustry(idToUpdate, { name: updated.name });
+        // Refresh the list from server so table shows latest data
+        await refresh();
+        SweetAlert.showUpdateSuccess();
+      } finally {
+        updateInFlightRef.current = false;
+      }
     })();
   };
 
@@ -254,7 +287,7 @@ const IndustryMaster: React.FC = () => {
         onCancel={() => setConfirmDeleteId(null)}
         onConfirm={confirmDelete}
       />
-      {showCreate ? (
+      {location.pathname.endsWith('/create') ? (
         <CreateIndustryForm onClose={() => navigate(ROUTES.INDUSTRY_MASTER)} onSave={handleSaveIndustry} />
       ) : viewItem ? (
         <MasterView item={viewItem} onClose={() => navigate(ROUTES.INDUSTRY_MASTER)} />
