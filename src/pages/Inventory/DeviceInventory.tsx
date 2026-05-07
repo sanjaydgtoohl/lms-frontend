@@ -22,7 +22,7 @@ const DeviceInventory: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
   const [appliedLocation, setAppliedLocation] = useState({
-    country: '',
+    country: 'India',
     state: '',
     city: '',
     zoneArea: '',
@@ -47,7 +47,11 @@ const DeviceInventory: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   const hasActiveLocationFilter = Boolean(
-    Object.values(appliedLocation).some((value) => value.trim())
+    Object.entries(appliedLocation).some(([, value]) => {
+      const trimmed = value.trim();
+      if (!trimmed) return false;
+      return true;
+    })
   );
 
   const exportFetchRows = useCallback(
@@ -234,7 +238,7 @@ const DeviceInventory: React.FC = () => {
                 }}
                 onReset={() => {
                   setAppliedLocation({
-                    country: '',
+                    country: 'India',
                     state: '',
                     city: '',
                     zoneArea: '',

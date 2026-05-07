@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useId, useState, useRef } from 'react';
 import SelectDropdown from './SelectDropdown';
+import MultiSelectDropdown from './MultiSelectDropdown';
 import {
   fetchStates,
   fetchCities,
@@ -22,6 +23,46 @@ import {
   fetchCountries,
 } from '../../services/LocationCategoryDevice';
 
+/** Comma-separated tokens (legacy labels or IDs during hydration). */
+function splitCsvTokens(value: string): string[] {
+  if (!value) return [];
+  return value.split(',').map((item) => item.trim()).filter(Boolean);
+}
+
+function joinCsvTokens(tokens: string[]): string {
+  return tokens.filter(Boolean).join(',');
+}
+
+function migrateTokensToIdsCsv(
+  rawValue: string,
+  opts: LocationOption[],
+  labelFn: (opt: LocationOption) => string
+): string {
+  const tokens = splitCsvTokens(rawValue);
+  if (!tokens.length) return '';
+  const ids = tokens.map((token) => {
+    const byId = opts.find((o) => String(o.id) === token);
+    if (byId) return String(byId.id);
+    const byLabel = opts.find((o) => labelFn(o) === token);
+    return byLabel ? String(byLabel.id) : token;
+  });
+  return joinCsvTokens(ids);
+}
+
+function idsCsvToLabelsCsv(
+  rawValue: string,
+  opts: LocationOption[],
+  labelFn: (opt: LocationOption) => string
+): string {
+  const ids = splitCsvTokens(rawValue);
+  if (!ids.length) return '';
+  const labels = ids.map((idStr) => {
+    const opt = opts.find((o) => String(o.id) === idStr);
+    return opt ? labelFn(opt) : idStr;
+  });
+  return joinCsvTokens(labels);
+}
+
 export type LocationFilterValues = {
   country: string;
   state: string;
@@ -43,6 +84,27 @@ export type LocationFilterValues = {
   property: string;
 };
 
+/** Fields edited via MultiSelectDropdown — draft holds comma-separated option IDs; labels are sent on Apply. */
+const MULTI_SELECT_FIELDS: (keyof LocationFilterValues)[] = [
+  'state',
+  'city',
+  'zoneArea',
+  'subZoneArea',
+  'pincode',
+  'arterialRoute',
+  'modeOfMedia',
+  'publisher',
+  'mainCategory',
+  'category',
+  'categorySub',
+  'locationType',
+  'orientation',
+  'resolution',
+  'screenLocation',
+  'stretch',
+  'property',
+];
+
 export type FilterSection = {
   title: string;
   fields: Array<{
@@ -52,6 +114,7 @@ export type FilterSection = {
 };
 
 export type FilterOptions = Record<string, LocationOption[]>;
+const EMPTY_FILTER_OPTIONS: FilterOptions = {};
 
 type FilterPopupProps = {
   isOpen: boolean;
@@ -72,41 +135,48 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
   onApply,
   onReset,
   filterSections,
-  options = {},
+  options = EMPTY_FILTER_OPTIONS,
 }) => {
   const titleId = useId();
   const [draft, setDraft] = useState<LocationFilterValues>(appliedValues);
   const [loadingFields, setLoadingFields] = useState<Set<string>>(new Set());
   const [allOptions, setAllOptions] = useState<FilterOptions>(options);
-  const abortControllerRef = useRef<AbortController | null>(null);
+  const stateCascadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Latest generation per cascade target — stale async completions must not call updateFieldOptions. */
+  const cascadeGenRef = useRef<Record<string, number>>({});
 
-  // Initialize with options from parent or fetch if not provided
-  useEffect(() => {
-    if (!isOpen) return;
+  const bumpCascadeGen = (key: string): number => {
+    const next = (cascadeGenRef.current[key] ?? 0) + 1;
+    cascadeGenRef.current[key] = next;
+    return next;
+  };
 
-    const loadInitial = async () => {
-      try {
-        const [countries, modeOfMedia, locationTypes] = await Promise.all([
-          fetchCountries(),
-          fetchModeOfMedia(),
-          fetchLocationTypes(),
-        ]);
+  const isStaleCascadeGen = (key: string, gen: number): boolean =>
+    cascadeGenRef.current[key] !== gen;
 
-        setAllOptions((prev) => ({
-          ...prev,
-          country: countries,
-          modeOfMedia,
-          locationType: locationTypes,
-        }));
-      } catch (error) {
-        console.warn('Failed to load initial filter options:', error);
-      }
-    };
+  /** Single token for paired zoneArea + arterialRoute updates from city. */
+  const CITY_CHILDREN_CASCADE_KEY = '__city_children__';
 
-    loadInitial();
-    setDraft(appliedValues);
+  const invalidateCascadeTargets = (keys: string[]) => {
+    keys.forEach((k) => bumpCascadeGen(k));
+  };
 
-  }, [isOpen, appliedValues]);
+  const getNormalizedOptionLabel = useCallback((opt: LocationOption): string => {
+    return String(opt.name || opt.label || opt.id || '').trim();
+  }, []);
+
+  const mergeUniqueOptions = useCallback((groups: LocationOption[][]): LocationOption[] => {
+    const map = new Map<string, LocationOption>();
+    groups.forEach((group) => {
+      group.forEach((opt) => {
+        const key = `${String(opt.id)}::${getNormalizedOptionLabel(opt).toLowerCase()}`;
+        if (!map.has(key)) {
+          map.set(key, opt);
+        }
+      });
+    });
+    return Array.from(map.values());
+  }, [getNormalizedOptionLabel]);
 
   // Helper function to mark field as loading
   const setFieldLoading = useCallback((fieldName: string, isLoading: boolean) => {
@@ -129,18 +199,279 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
     }));
   }, []);
 
-  // UI stores display names in draft, but cascading APIs expect IDs.
-  const getSelectedOptionId = useCallback(
-    (fieldName: string, selectedValue: string): string | number | undefined => {
-      if (!selectedValue) return undefined;
-      const fieldOptions = allOptions[fieldName] || [];
-      const matched = fieldOptions.find(
-        (opt) => opt.name === selectedValue || opt.label === selectedValue || String(opt.id) === selectedValue
-      );
-      return matched?.id;
+  /** Resolve comma-separated tokens to option IDs (tokens are IDs for multi-select draft, or labels for country). */
+  const getSelectedOptionIds = useCallback(
+    (fieldName: string, selectedValue: string): Array<string | number> => {
+      const tokens = splitCsvTokens(selectedValue);
+      if (!tokens.length) return [];
+      const opts = allOptions[fieldName] || [];
+      return tokens
+        .map((token) => {
+          const byId = opts.find((o) => String(o.id) === token);
+          if (byId) return byId.id;
+          const trimmed = token.trim();
+          const byLabel = opts.find((o) => getNormalizedOptionLabel(o) === trimmed);
+          return byLabel?.id;
+        })
+        .filter((id): id is string | number => id !== undefined && id !== null);
     },
-    [allOptions]
+    [allOptions, getNormalizedOptionLabel]
   );
+
+  // Initialize with options from parent or fetch if not provided and rehydrate dependent cascades.
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let cancelled = false;
+
+    const loadInitial = async () => {
+      let countries: LocationOption[];
+      let modeOfMedia: LocationOption[];
+      let locationTypes: LocationOption[];
+      try {
+        [countries, modeOfMedia, locationTypes] = await Promise.all([
+          fetchCountries(),
+          fetchModeOfMedia(),
+          fetchLocationTypes(),
+        ]);
+      } catch (error) {
+        if (!cancelled) {
+          console.warn('Failed to load initial filter options:', error);
+        }
+        return;
+      }
+
+      let nextOptions: FilterOptions = {
+        ...options,
+        country: countries,
+        modeOfMedia,
+        locationType: locationTypes,
+      };
+
+      const commit = () => {
+        if (cancelled) return;
+        setAllOptions({ ...nextOptions });
+        setDraft((prev) => {
+          const next = { ...prev };
+          for (const field of MULTI_SELECT_FIELDS) {
+            const opts = nextOptions[field as string] || [];
+            next[field] = migrateTokensToIdsCsv(String(prev[field] ?? ''), opts, getNormalizedOptionLabel);
+          }
+          return next;
+        });
+      };
+
+      commit();
+
+      const resolveIds = (fieldName: string, rawValue: string) =>
+        splitCsvTokens(rawValue)
+          .map((item) => {
+            const matched = (nextOptions[fieldName] || []).find((opt) => {
+              const label = getNormalizedOptionLabel(opt);
+              return label === item || String(opt.id) === item;
+            });
+            return matched?.id;
+          })
+          .filter((id): id is string | number => id !== undefined && id !== null);
+
+      const countryIds = resolveIds('country', appliedValues.country);
+      if (countryIds.length) {
+        try {
+          const statesByCountry = await Promise.all(countryIds.map((id) => fetchStates(id)));
+          nextOptions = { ...nextOptions, state: mergeUniqueOptions(statesByCountry) };
+          commit();
+        } catch (error) {
+          if (!cancelled) console.warn('Failed to load state options for filter:', error);
+        }
+      }
+
+      const stateIds = resolveIds('state', appliedValues.state);
+      if (stateIds.length) {
+        try {
+          const citiesByState = await Promise.all(stateIds.map((id) => fetchCities(id)));
+          nextOptions = { ...nextOptions, city: mergeUniqueOptions(citiesByState) };
+          commit();
+        } catch (error) {
+          if (!cancelled) console.warn('Failed to load city options for filter:', error);
+        }
+      }
+
+      const cityIds = resolveIds('city', appliedValues.city);
+      if (cityIds.length) {
+        try {
+          const zonesByCity = await Promise.all(cityIds.map((id) => fetchZones(id)));
+          nextOptions = { ...nextOptions, zoneArea: mergeUniqueOptions(zonesByCity) };
+          commit();
+        } catch (error) {
+          if (!cancelled) console.warn('Failed to load zone options for filter:', error);
+        }
+        try {
+          const arterialByCity = await Promise.all(cityIds.map((id) => fetchArterialRoutes(id)));
+          nextOptions = { ...nextOptions, arterialRoute: mergeUniqueOptions(arterialByCity) };
+          commit();
+        } catch (error) {
+          if (!cancelled) console.warn('Failed to load arterial route options for filter:', error);
+        }
+      }
+
+      const zoneIds = resolveIds('zoneArea', appliedValues.zoneArea);
+      if (zoneIds.length) {
+        try {
+          const subZonesByZone = await Promise.all(zoneIds.map((id) => fetchSubZones(id)));
+          nextOptions = { ...nextOptions, subZoneArea: mergeUniqueOptions(subZonesByZone) };
+          commit();
+        } catch (error) {
+          if (!cancelled) console.warn('Failed to load sub-zone options for filter:', error);
+        }
+      }
+
+      const subZoneIds = resolveIds('subZoneArea', appliedValues.subZoneArea);
+      if (subZoneIds.length) {
+        try {
+          const pincodesBySubZone = await Promise.all(subZoneIds.map((id) => fetchPincodes(id)));
+          nextOptions = { ...nextOptions, pincode: mergeUniqueOptions(pincodesBySubZone) };
+          commit();
+        } catch (error) {
+          if (!cancelled) console.warn('Failed to load pincode options for filter:', error);
+        }
+      }
+
+      const modeIds = resolveIds('modeOfMedia', appliedValues.modeOfMedia);
+      if (modeIds.length) {
+        try {
+          const publishersByMode = await Promise.all(modeIds.map((id) => fetchPublishers(id)));
+          nextOptions = { ...nextOptions, publisher: mergeUniqueOptions(publishersByMode) };
+          commit();
+        } catch (error) {
+          if (!cancelled) console.warn('Failed to load publisher options for filter:', error);
+        }
+      }
+
+      const publisherIds = resolveIds('publisher', appliedValues.publisher);
+      if (publisherIds.length) {
+        try {
+          const mainCategoriesByPublisher = await Promise.all(
+            publisherIds.map((id) => fetchMainCategories(id))
+          );
+          nextOptions = { ...nextOptions, mainCategory: mergeUniqueOptions(mainCategoriesByPublisher) };
+          commit();
+        } catch (error) {
+          if (!cancelled) console.warn('Failed to load main category options for filter:', error);
+        }
+      }
+
+      const mainCategoryIds = resolveIds('mainCategory', appliedValues.mainCategory);
+      if (mainCategoryIds.length) {
+        try {
+          const categoriesByMainCategory = await Promise.all(
+            mainCategoryIds.map((id) => fetchCategories(id))
+          );
+          nextOptions = { ...nextOptions, category: mergeUniqueOptions(categoriesByMainCategory) };
+          commit();
+        } catch (error) {
+          if (!cancelled) console.warn('Failed to load category options for filter:', error);
+        }
+      }
+
+      const categoryIds = resolveIds('category', appliedValues.category);
+      if (categoryIds.length) {
+        try {
+          const subCategoriesByCategory = await Promise.all(
+            categoryIds.map((id) => fetchSubCategories(id))
+          );
+          nextOptions = { ...nextOptions, categorySub: mergeUniqueOptions(subCategoriesByCategory) };
+          commit();
+        } catch (error) {
+          if (!cancelled) console.warn('Failed to load sub-category options for filter:', error);
+        }
+      }
+
+      const locationTypeIds = resolveIds('locationType', appliedValues.locationType);
+      if (locationTypeIds.length) {
+        try {
+          const orientationsByLocationType = await Promise.all(
+            locationTypeIds.map((id) => fetchOrientations(id))
+          );
+          nextOptions = { ...nextOptions, orientation: mergeUniqueOptions(orientationsByLocationType) };
+          commit();
+        } catch (error) {
+          if (!cancelled) console.warn('Failed to load orientation options for filter:', error);
+        }
+      }
+
+      const orientationIds = resolveIds('orientation', appliedValues.orientation);
+      if (orientationIds.length) {
+        try {
+          const resolutionsByOrientation = await Promise.all(
+            orientationIds.map((id) => fetchResolutions(id))
+          );
+          nextOptions = { ...nextOptions, resolution: mergeUniqueOptions(resolutionsByOrientation) };
+          commit();
+        } catch (error) {
+          if (!cancelled) console.warn('Failed to load resolution options for filter:', error);
+        }
+      }
+
+      const resolutionIds = resolveIds('resolution', appliedValues.resolution);
+      if (resolutionIds.length) {
+        try {
+          const screenLocationsByResolution = await Promise.all(
+            resolutionIds.map((id) => fetchScreenLocations(id))
+          );
+          nextOptions = { ...nextOptions, screenLocation: mergeUniqueOptions(screenLocationsByResolution) };
+          commit();
+        } catch (error) {
+          if (!cancelled) console.warn('Failed to load screen location options for filter:', error);
+        }
+      }
+
+      const screenLocationIds = resolveIds('screenLocation', appliedValues.screenLocation);
+      if (screenLocationIds.length) {
+        try {
+          const stretchesByScreenLocation = await Promise.all(
+            screenLocationIds.map((id) => fetchStretches(id))
+          );
+          nextOptions = { ...nextOptions, stretch: mergeUniqueOptions(stretchesByScreenLocation) };
+          commit();
+        } catch (error) {
+          if (!cancelled) console.warn('Failed to load stretch options for filter:', error);
+        }
+      }
+
+      const stretchIds = resolveIds('stretch', appliedValues.stretch);
+      if (stretchIds.length) {
+        try {
+          const propertiesByStretch = await Promise.all(stretchIds.map((id) => fetchProperties(id)));
+          nextOptions = { ...nextOptions, property: mergeUniqueOptions(propertiesByStretch) };
+          commit();
+        } catch (error) {
+          if (!cancelled) console.warn('Failed to load property options for filter:', error);
+        }
+      }
+    };
+
+    loadInitial();
+    setDraft(appliedValues);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    isOpen,
+    appliedValues,
+    options,
+    getNormalizedOptionLabel,
+    mergeUniqueOptions,
+  ]);
+
+  useEffect(() => {
+    if (isOpen) return;
+    if (stateCascadeTimerRef.current) {
+      clearTimeout(stateCascadeTimerRef.current);
+      stateCascadeTimerRef.current = null;
+      setFieldLoading('city', false);
+    }
+  }, [isOpen, setFieldLoading]);
 
   // Handle cascading updates when a field changes
   const handleFieldChange = useCallback(
@@ -241,138 +572,326 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
       // Fetch dependent field data
       try {
         if (fieldName === 'country' && value) {
-          const countryId = getSelectedOptionId('country', value);
+          const countryId = getSelectedOptionIds('country', value)[0];
+          if (countryId === undefined) return;
+          invalidateCascadeTargets(['city', CITY_CHILDREN_CASCADE_KEY, 'subZoneArea', 'pincode']);
+          const gen = bumpCascadeGen('state');
           setFieldLoading('state', true);
-          const states = await fetchStates(countryId);
-          updateFieldOptions('state', states);
-          setFieldLoading('state', false);
+          try {
+            const states = await fetchStates(countryId);
+            if (isStaleCascadeGen('state', gen)) return;
+            updateFieldOptions('state', states);
+          } catch (error) {
+            console.warn('Cascade fetch error handled gracefully:', error);
+          } finally {
+            setFieldLoading('state', false);
+          }
         }
 
-        if (fieldName === 'state' && value) {
-          const stateId = getSelectedOptionId('state', value);
-          setFieldLoading('city', true);
-          const cities = await fetchCities(stateId);
-          updateFieldOptions('city', cities);
-          setFieldLoading('city', false);
+        if (fieldName === 'state') {
+          if (!value) {
+            if (stateCascadeTimerRef.current) {
+              clearTimeout(stateCascadeTimerRef.current);
+              stateCascadeTimerRef.current = null;
+            }
+            invalidateCascadeTargets([CITY_CHILDREN_CASCADE_KEY, 'subZoneArea', 'pincode']);
+            bumpCascadeGen('city');
+            setFieldLoading('city', false);
+            updateFieldOptions('city', []);
+          } else {
+            invalidateCascadeTargets([CITY_CHILDREN_CASCADE_KEY, 'subZoneArea', 'pincode']);
+            bumpCascadeGen('city');
+            if (stateCascadeTimerRef.current) {
+              clearTimeout(stateCascadeTimerRef.current);
+              stateCascadeTimerRef.current = null;
+              // Cancelled callbacks never reach `finally`, so clear loading from superseded runs.
+              setFieldLoading('city', false);
+            }
+            setFieldLoading('city', true);
+            stateCascadeTimerRef.current = setTimeout(async () => {
+              const gen = bumpCascadeGen('city');
+              try {
+                const stateIds = getSelectedOptionIds('state', value);
+                if (!stateIds.length) {
+                  if (!isStaleCascadeGen('city', gen)) {
+                    updateFieldOptions('city', []);
+                  }
+                  return;
+                }
+                const citiesByState = await Promise.all(stateIds.map((stateId) => fetchCities(stateId)));
+                const cities = mergeUniqueOptions(citiesByState);
+                if (isStaleCascadeGen('city', gen)) return;
+                updateFieldOptions('city', cities);
+              } catch (error) {
+                console.warn('State cascade fetch error handled gracefully:', error);
+              } finally {
+                setFieldLoading('city', false);
+              }
+            }, 300);
+            return;
+          }
         }
 
         if (fieldName === 'city' && value) {
-          const cityId = getSelectedOptionId('city', value);
+          const cityIds = getSelectedOptionIds('city', value);
+          if (!cityIds.length) return;
+          invalidateCascadeTargets(['subZoneArea', 'pincode']);
+          const gen = bumpCascadeGen(CITY_CHILDREN_CASCADE_KEY);
           setFieldLoading('zoneArea', true);
           setFieldLoading('arterialRoute', true);
-          const [zones, arterialRoutes] = await Promise.all([
-            fetchZones(cityId),
-            fetchArterialRoutes(cityId),
-          ]);
-          updateFieldOptions('zoneArea', zones);
-          updateFieldOptions('arterialRoute', arterialRoutes);
-          setFieldLoading('zoneArea', false);
-          setFieldLoading('arterialRoute', false);
+          try {
+            const [zonesByCity, arterialRoutesByCity] = await Promise.all([
+              Promise.all(cityIds.map((cityId) => fetchZones(cityId))),
+              Promise.all(cityIds.map((cityId) => fetchArterialRoutes(cityId))),
+            ]);
+            const zones = mergeUniqueOptions(zonesByCity);
+            const arterialRoutes = mergeUniqueOptions(arterialRoutesByCity);
+            if (isStaleCascadeGen(CITY_CHILDREN_CASCADE_KEY, gen)) return;
+            updateFieldOptions('zoneArea', zones);
+            updateFieldOptions('arterialRoute', arterialRoutes);
+          } catch (error) {
+            console.warn('Cascade fetch error handled gracefully:', error);
+          } finally {
+            setFieldLoading('zoneArea', false);
+            setFieldLoading('arterialRoute', false);
+          }
         }
 
         if (fieldName === 'zoneArea' && value) {
-          const zoneId = getSelectedOptionId('zoneArea', value);
+          const zoneIds = getSelectedOptionIds('zoneArea', value);
+          if (!zoneIds.length) return;
+          invalidateCascadeTargets(['pincode']);
+          const gen = bumpCascadeGen('subZoneArea');
           setFieldLoading('subZoneArea', true);
-          const subZones = await fetchSubZones(zoneId);
-          updateFieldOptions('subZoneArea', subZones);
-          setFieldLoading('subZoneArea', false);
+          try {
+            const subZonesByZone = await Promise.all(zoneIds.map((zoneId) => fetchSubZones(zoneId)));
+            const subZones = mergeUniqueOptions(subZonesByZone);
+            if (isStaleCascadeGen('subZoneArea', gen)) return;
+            updateFieldOptions('subZoneArea', subZones);
+          } catch (error) {
+            console.warn('Cascade fetch error handled gracefully:', error);
+          } finally {
+            setFieldLoading('subZoneArea', false);
+          }
         }
 
         if (fieldName === 'subZoneArea' && value) {
-          const subZoneId = getSelectedOptionId('subZoneArea', value);
+          const subZoneIds = getSelectedOptionIds('subZoneArea', value);
+          if (!subZoneIds.length) return;
+          const gen = bumpCascadeGen('pincode');
           setFieldLoading('pincode', true);
-          const pincodes = await fetchPincodes(subZoneId);
-          updateFieldOptions('pincode', pincodes);
-          setFieldLoading('pincode', false);
+          try {
+            const pincodesBySubZone = await Promise.all(subZoneIds.map((subZoneId) => fetchPincodes(subZoneId)));
+            const pincodes = mergeUniqueOptions(pincodesBySubZone);
+            if (isStaleCascadeGen('pincode', gen)) return;
+            updateFieldOptions('pincode', pincodes);
+          } catch (error) {
+            console.warn('Cascade fetch error handled gracefully:', error);
+          } finally {
+            setFieldLoading('pincode', false);
+          }
         }
 
         if (fieldName === 'mainCategory' && value) {
-          const mainCategoryId = getSelectedOptionId('mainCategory', value) || value;
+          const mainCategoryIds = getSelectedOptionIds('mainCategory', value);
+          if (!mainCategoryIds.length) return;
+          invalidateCascadeTargets(['category', 'categorySub']);
+          const gen = bumpCascadeGen('category');
           setFieldLoading('category', true);
-          const categories = await fetchCategories(mainCategoryId);
-          updateFieldOptions('category', categories);
-          setFieldLoading('category', false);
+          try {
+            const categoriesByMainCategory = await Promise.all(
+              mainCategoryIds.map((mainCategoryId) => fetchCategories(mainCategoryId))
+            );
+            const categories = mergeUniqueOptions(categoriesByMainCategory);
+            if (isStaleCascadeGen('category', gen)) return;
+            updateFieldOptions('category', categories);
+          } catch (error) {
+            console.warn('Cascade fetch error handled gracefully:', error);
+          } finally {
+            setFieldLoading('category', false);
+          }
         }
 
         if (fieldName === 'category' && value) {
-          const categoryId = getSelectedOptionId('category', value);
+          const categoryIds = getSelectedOptionIds('category', value);
+          if (!categoryIds.length) return;
+          invalidateCascadeTargets(['categorySub']);
+          const gen = bumpCascadeGen('categorySub');
           setFieldLoading('categorySub', true);
-          const subCategories = await fetchSubCategories(categoryId);
-          updateFieldOptions('categorySub', subCategories);
-          setFieldLoading('categorySub', false);
+          try {
+            const subCategoriesByCategory = await Promise.all(
+              categoryIds.map((categoryId) => fetchSubCategories(categoryId))
+            );
+            const subCategories = mergeUniqueOptions(subCategoriesByCategory);
+            if (isStaleCascadeGen('categorySub', gen)) return;
+            updateFieldOptions('categorySub', subCategories);
+          } catch (error) {
+            console.warn('Cascade fetch error handled gracefully:', error);
+          } finally {
+            setFieldLoading('categorySub', false);
+          }
         }
 
         if (fieldName === 'modeOfMedia' && value) {
-          const modeOfMediaValue = getSelectedOptionId('modeOfMedia', value) || value;
+          const modeOfMediaIds = getSelectedOptionIds('modeOfMedia', value);
+          if (!modeOfMediaIds.length) return;
+          invalidateCascadeTargets(['publisher', 'mainCategory', 'category', 'categorySub']);
+          const gen = bumpCascadeGen('publisher');
           setFieldLoading('publisher', true);
-          const publishers = await fetchPublishers(modeOfMediaValue);
-          updateFieldOptions('publisher', publishers);
-          setFieldLoading('publisher', false);
+          try {
+            const publishersByMode = await Promise.all(
+              modeOfMediaIds.map((modeOfMediaValue) => fetchPublishers(modeOfMediaValue))
+            );
+            const publishers = mergeUniqueOptions(publishersByMode);
+            if (isStaleCascadeGen('publisher', gen)) return;
+            updateFieldOptions('publisher', publishers);
+          } catch (error) {
+            console.warn('Cascade fetch error handled gracefully:', error);
+          } finally {
+            setFieldLoading('publisher', false);
+          }
         }
 
         if (fieldName === 'publisher' && value) {
-          const publisherValue = getSelectedOptionId('publisher', value) || value;
+          const publisherIds = getSelectedOptionIds('publisher', value);
+          if (!publisherIds.length) return;
+          invalidateCascadeTargets(['mainCategory', 'category', 'categorySub']);
+          const gen = bumpCascadeGen('mainCategory');
           setFieldLoading('mainCategory', true);
-          const mainCategories = await fetchMainCategories(publisherValue);
-          updateFieldOptions('mainCategory', mainCategories);
-          setFieldLoading('mainCategory', false);
+          try {
+            const mainCategoriesByPublisher = await Promise.all(
+              publisherIds.map((publisherValue) => fetchMainCategories(publisherValue))
+            );
+            const mainCategories = mergeUniqueOptions(mainCategoriesByPublisher);
+            if (isStaleCascadeGen('mainCategory', gen)) return;
+            updateFieldOptions('mainCategory', mainCategories);
+          } catch (error) {
+            console.warn('Cascade fetch error handled gracefully:', error);
+          } finally {
+            setFieldLoading('mainCategory', false);
+          }
         }
 
         if (fieldName === 'locationType' && value) {
-          const locationTypeValue = getSelectedOptionId('locationType', value) || value;
+          const locationTypeIds = getSelectedOptionIds('locationType', value);
+          if (!locationTypeIds.length) return;
+          invalidateCascadeTargets(['orientation', 'resolution', 'screenLocation', 'stretch', 'property']);
+          const gen = bumpCascadeGen('orientation');
           setFieldLoading('orientation', true);
-          const orientations = await fetchOrientations(locationTypeValue);
-          updateFieldOptions('orientation', orientations);
-          setFieldLoading('orientation', false);
+          try {
+            const orientationsByLocationType = await Promise.all(
+              locationTypeIds.map((locationTypeValue) => fetchOrientations(locationTypeValue))
+            );
+            const orientations = mergeUniqueOptions(orientationsByLocationType);
+            if (isStaleCascadeGen('orientation', gen)) return;
+            updateFieldOptions('orientation', orientations);
+          } catch (error) {
+            console.warn('Cascade fetch error handled gracefully:', error);
+          } finally {
+            setFieldLoading('orientation', false);
+          }
         }
 
         if (fieldName === 'orientation' && value) {
-          const orientationValue = getSelectedOptionId('orientation', value) || value;
+          const orientationIds = getSelectedOptionIds('orientation', value);
+          if (!orientationIds.length) return;
+          invalidateCascadeTargets(['resolution', 'screenLocation', 'stretch', 'property']);
+          const gen = bumpCascadeGen('resolution');
           setFieldLoading('resolution', true);
-          const resolutions = await fetchResolutions(orientationValue);
-          updateFieldOptions('resolution', resolutions);
-          setFieldLoading('resolution', false);
+          try {
+            const resolutionsByOrientation = await Promise.all(
+              orientationIds.map((orientationValue) => fetchResolutions(orientationValue))
+            );
+            const resolutions = mergeUniqueOptions(resolutionsByOrientation);
+            if (isStaleCascadeGen('resolution', gen)) return;
+            updateFieldOptions('resolution', resolutions);
+          } catch (error) {
+            console.warn('Cascade fetch error handled gracefully:', error);
+          } finally {
+            setFieldLoading('resolution', false);
+          }
         }
 
         if (fieldName === 'resolution' && value) {
-          const resolutionValue = getSelectedOptionId('resolution', value) || value;
+          const resolutionIds = getSelectedOptionIds('resolution', value);
+          if (!resolutionIds.length) return;
+          invalidateCascadeTargets(['screenLocation', 'stretch', 'property']);
+          const gen = bumpCascadeGen('screenLocation');
           setFieldLoading('screenLocation', true);
-          const screenLocations = await fetchScreenLocations(resolutionValue);
-          updateFieldOptions('screenLocation', screenLocations);
-          setFieldLoading('screenLocation', false);
+          try {
+            const screenLocationsByResolution = await Promise.all(
+              resolutionIds.map((resolutionValue) => fetchScreenLocations(resolutionValue))
+            );
+            const screenLocations = mergeUniqueOptions(screenLocationsByResolution);
+            if (isStaleCascadeGen('screenLocation', gen)) return;
+            updateFieldOptions('screenLocation', screenLocations);
+          } catch (error) {
+            console.warn('Cascade fetch error handled gracefully:', error);
+          } finally {
+            setFieldLoading('screenLocation', false);
+          }
         }
 
         if (fieldName === 'screenLocation' && value) {
-          const screenLocationValue = getSelectedOptionId('screenLocation', value) || value;
+          const screenLocationIds = getSelectedOptionIds('screenLocation', value);
+          if (!screenLocationIds.length) return;
+          invalidateCascadeTargets(['stretch', 'property']);
+          const gen = bumpCascadeGen('stretch');
           setFieldLoading('stretch', true);
-          const stretches = await fetchStretches(screenLocationValue);
-          updateFieldOptions('stretch', stretches);
-          setFieldLoading('stretch', false);
+          try {
+            const stretchesByScreenLocation = await Promise.all(
+              screenLocationIds.map((screenLocationValue) => fetchStretches(screenLocationValue))
+            );
+            const stretches = mergeUniqueOptions(stretchesByScreenLocation);
+            if (isStaleCascadeGen('stretch', gen)) return;
+            updateFieldOptions('stretch', stretches);
+          } catch (error) {
+            console.warn('Cascade fetch error handled gracefully:', error);
+          } finally {
+            setFieldLoading('stretch', false);
+          }
         }
 
         if (fieldName === 'stretch' && value) {
-          const stretchValue = getSelectedOptionId('stretch', value) || value;
+          const stretchIds = getSelectedOptionIds('stretch', value);
+          if (!stretchIds.length) return;
+          invalidateCascadeTargets(['property']);
+          const gen = bumpCascadeGen('property');
           setFieldLoading('property', true);
-          const properties = await fetchProperties(stretchValue);
-          updateFieldOptions('property', properties);
-          setFieldLoading('property', false);
+          try {
+            const propertiesByStretch = await Promise.all(
+              stretchIds.map((stretchValue) => fetchProperties(stretchValue))
+            );
+            const properties = mergeUniqueOptions(propertiesByStretch);
+            if (isStaleCascadeGen('property', gen)) return;
+            updateFieldOptions('property', properties);
+          } catch (error) {
+            console.warn('Cascade fetch error handled gracefully:', error);
+          } finally {
+            setFieldLoading('property', false);
+          }
         }
       } catch (error) {
         console.warn('Cascade fetch error handled gracefully:', error);
         // Errors are silently handled - dropdowns will show empty if API fails
       }
     },
-    [draft, getSelectedOptionId, setFieldLoading, updateFieldOptions]
+    [draft, getSelectedOptionIds, mergeUniqueOptions, setFieldLoading, updateFieldOptions]
   );
 
   const handleApply = useCallback(() => {
-    onApply(draft);
+    const outgoing: LocationFilterValues = { ...draft };
+    for (const field of MULTI_SELECT_FIELDS) {
+      const opts = allOptions[field as string] || [];
+      outgoing[field] = idsCsvToLabelsCsv(String(draft[field] ?? ''), opts, getNormalizedOptionLabel);
+    }
+    onApply(outgoing);
     onClose();
-  }, [draft, onApply, onClose]);
+  }, [allOptions, draft, getNormalizedOptionLabel, onApply, onClose]);
 
   const handleReset = useCallback(() => {
     setDraft({
-      country: '',
+      country: 'India',
       state: '',
       city: '',
       zoneArea: '',
@@ -408,26 +927,32 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
     return () => document.removeEventListener('keydown', onKey);
   }, [isOpen, onClose]);
 
- useEffect(() => {
-  const controller = abortControllerRef.current;
-
-  return () => {
-    if (controller) {
-      controller.abort();
-    }
-  };
-}, []);
+  useEffect(() => {
+    return () => {
+      if (stateCascadeTimerRef.current) {
+        clearTimeout(stateCascadeTimerRef.current);
+        stateCascadeTimerRef.current = null;
+      }
+    };
+  }, []);
 
   if (!isOpen) return null;
 
-  // Helper to convert LocationOption[] to display format
-  const getOptionsForField = (fieldName: string): string[] => {
+  const getCountrySelectOptions = (): string[] => {
+    const opts = allOptions.country;
+    if (!opts) return [];
+    return opts.map((opt: LocationOption) => getNormalizedOptionLabel(opt));
+  };
+
+  const getMultiSelectStructuredOptions = (
+    fieldName: string
+  ): Array<{ value: string; label: string }> => {
     const opts = allOptions[fieldName];
     if (!opts) return [];
-
-    return opts.map((opt: LocationOption) => {
-      return opt.name || opt.label || String(opt.id);
-    });
+    return opts.map((opt: LocationOption) => ({
+      value: String(opt.id),
+      label: getNormalizedOptionLabel(opt),
+    }));
   };
 
   const isFieldEnabled = (fieldName: keyof LocationFilterValues): boolean => {
@@ -513,30 +1038,54 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
               <div className="grid gap-3 sm:grid-cols-3">
                 {section.fields.map((field) => {
                   const isLoading = loadingFields.has(field.name as string);
-                  const fieldOptions = getOptionsForField(field.name as string);
                   const enabled = isFieldEnabled(field.name);
 
+                  if (field.name === 'country') {
+                    const countryOptions = getCountrySelectOptions();
+                    return (
+                      <label key={field.name} className="block">
+                        <span className="mb-1 block text-xs font-medium text-gray-700">
+                          {field.label}
+                          {isLoading && <span className="ml-1 text-xs text-blue-600">• Loading...</span>}
+                        </span>
+                        <SelectDropdown
+                          name={field.name as string}
+                          value={draft[field.name]}
+                          placeholder={`Select ${field.label.toLowerCase()}`}
+                          options={countryOptions}
+                          onChange={(val) =>
+                            handleFieldChange(
+                              field.name,
+                              typeof val === 'string' ? val : val[0] || ''
+                            )
+                          }
+                          disabled={isLoading || !enabled}
+                          className="w-full"
+                          inputClassName="h-10"
+                          searchable
+                        />
+                      </label>
+                    );
+                  }
+
+                  const multiOptions = getMultiSelectStructuredOptions(field.name as string);
                   return (
                     <label key={field.name} className="block">
                       <span className="mb-1 block text-xs font-medium text-gray-700">
                         {field.label}
                         {isLoading && <span className="ml-1 text-xs text-blue-600">• Loading...</span>}
                       </span>
-                      <SelectDropdown
+                      <MultiSelectDropdown
                         name={field.name as string}
-                        value={draft[field.name]}
+                        value={splitCsvTokens(draft[field.name])}
                         placeholder={`Select ${field.label.toLowerCase()}`}
-                        options={fieldOptions}
-                        onChange={(val) =>
-                          handleFieldChange(
-                            field.name,
-                            typeof val === 'string' ? val : val[0] || ''
-                          )
-                        }
-                        searchable
+                        options={multiOptions}
+                        onChange={(vals) => handleFieldChange(field.name, joinCsvTokens(vals))}
                         disabled={isLoading || !enabled}
                         className="w-full"
                         inputClassName="h-10"
+                        multi
+                        horizontalScroll
                       />
                     </label>
                   );
