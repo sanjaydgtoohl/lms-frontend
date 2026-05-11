@@ -790,7 +790,7 @@ const View: React.FC = () => {
                           <img
                             src={it.proof}
                             alt="Proof"
-                            className="h-16 w-16 object-cover rounded border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow"
+                            className="h-16 w-16 object-cover rounded border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow !bg-white p-2"
                             onClick={() => openImageModal(it.proof)}
                           />
                         ) : (

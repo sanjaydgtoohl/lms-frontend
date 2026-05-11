@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Plus, User, LogOut, Settings, UserRound, LifeBuoy, ChevronDown, Menu } from 'lucide-react';
+import { Bell, Plus, User, LogOut, UserRound, ChevronDown, Menu } from 'lucide-react';
 import { Button } from '../ui';
 import { fetchCurrentUser } from '../../services/Header';
 import { clearAllNotifications, getUnreadNotificationCount, listNotifications, markAllNotificationsRead, markNotificationRead } from '../../services/notifications';
@@ -276,12 +276,12 @@ const Header: React.FC<HeaderProps> = ({
               type="button"
               ref={notificationButtonRef}
               onClick={handleNotificationClick}
-              className="relative inline-flex border-0! outline-0! focus:outline-0 items-center p-2! justify-center rounded-full! text-gray-600 bg-gray-100! focus:outline-none focus:ring-0 aspect-square"
+              className="relative inline-flex  outline-0! focus:outline-0 items-center justify-center !p-2 !rounded-full text-gray-600 !bg-gray-100 focus:outline-none focus:ring-0 aspect-square sainitest"
               aria-label="Open notifications"
             >
               <Bell className="text-orange-600" />
               {reduxUnreadCount > 0 && (
-                <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-orange-600 px-1.5 aspect-square text-[10px] font-semibold text-white">
+                <span className="absolute -right-1 -top-1 inline-flex min-h-4 w-5 h-5 min-w-4 max-h-6 max-w-6 items-center justify-center rounded-full bg-orange-600 px-1.5 aspect-square text-[10px] font-semibold text-white">
                   {reduxUnreadCount > 99 ? '99+' : reduxUnreadCount}
                 </span>
               )}
@@ -414,7 +414,7 @@ const Header: React.FC<HeaderProps> = ({
               aria-haspopup="menu"
               aria-expanded={isUserMenuOpen}
               onClick={() => setIsUserMenuOpen((v) => !v)}
-              className="group flex items-center gap-2 px-2 py-1.5 rounded-full focus:outline-none focus:ring-2 focus:ring-[#344054]"
+              className="group flex items-center gap-2 px-2 py-1.5 rounded-full !outline-0 focus:outline-none focus:ring-0 focus:ring-[#344054]"
             >
               <div className="w-8 h-8 bg-[#344054] rounded-full flex items-center justify-center text-white">
                 <User className="w-4 h-4" />
@@ -436,7 +436,7 @@ const Header: React.FC<HeaderProps> = ({
                 >
                   <div className="px-4 py-4 border-b border-gray-100 bg-white">
                     <div className="flex items-center gap-4">
-                      <div className="min-w-14 min-h-14 max-w-14 max-h-14 rounded-full bg-gray-200 border-gray-300 text-gray-800 flex items-center justify-center font-semibold text-lg">
+                      <div className="min-w-14 min-h-14 max-w-14 max-h-14 rounded-full bg-gray-200 border-gray-300 text-gray-600 flex items-center justify-center font-semibold text-lg">
                         {user?.name ? user.name[0].toUpperCase() : ''}
                       </div>
                       <div className="min-w-0">
@@ -467,7 +467,7 @@ const Header: React.FC<HeaderProps> = ({
                         <UserRound className="w-5 h-5 text-gray-500" />
                         <span className="font-medium">Profile</span>
                       </Button>
-                      <Button
+                      {/* <Button
                         role="menuitem"
                         variant="transparent"
                         onClick={() => setIsUserMenuOpen(false)}
@@ -475,8 +475,8 @@ const Header: React.FC<HeaderProps> = ({
                       >
                         <Settings className="w-5 h-5 text-gray-500" />
                         <span className="font-medium">Settings</span>
-                      </Button>
-                      <Button
+                      </Button> */}
+                      {/* <Button
                         role="menuitem"
                         variant="transparent"
                         onClick={() => setIsUserMenuOpen(false)}
@@ -484,7 +484,7 @@ const Header: React.FC<HeaderProps> = ({
                       >
                         <LifeBuoy className="w-5 h-5 text-gray-500" />
                         <span className="font-medium">Support</span>
-                      </Button>
+                      </Button> */}
                     </div>
 
                     <div className="py-1">

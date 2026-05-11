@@ -390,7 +390,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
 
       {/* Footer Section */}
       <div className="border-t border-gray-100 p-3 space-y-2">
-        <div
+        {/* <div
           className={`flex items-center px-4 py-2.5 text-sm font-medium text-gray-800 rounded-lg hover:bg-orange-50 transition-all cursor-pointer ${isCollapsed ? "px-2 justify-center" : ""
             }`}
         >
@@ -398,7 +398,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
             className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-gray-800 ${isCollapsed ? "" : "mr-2.5"}`}
           />
           {!isCollapsed && <span className="text-gray-800">Help</span>}
-        </div>
+        </div> */}
 
         <div
           onClick={handleLogout}
