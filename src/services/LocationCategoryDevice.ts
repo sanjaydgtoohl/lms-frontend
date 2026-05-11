@@ -161,25 +161,57 @@ async function makeApiRequest(endpoint: string, payload: any = {}): Promise<Loca
   // Create new request promise
   const requestPromise = (async () => {
     try {
-      const formPayload = new URLSearchParams();
-      Object.entries(payload || {}).forEach(([key, value]) => {
-        if (value === undefined || value === null || value === '') return;
-        if (Array.isArray(value)) {
-          value.forEach((v) => {
-            if (v !== undefined && v !== null && v !== '') {
-              formPayload.append(key, String(v));
-            }
-          });
-          return;
-        }
-        formPayload.append(key, String(value));
-      });
+      const buildFormPayload = (): URLSearchParams => {
+        const formPayload = new URLSearchParams();
+        Object.entries(payload || {}).forEach(([key, value]) => {
+          if (value === undefined || value === null || value === '') return;
+          if (Array.isArray(value)) {
+            value.forEach((v) => {
+              if (v !== undefined && v !== null && v !== '') {
+                formPayload.append(key, String(v));
+              }
+            });
+            return;
+          }
+          formPayload.append(key, String(value));
+        });
+        return formPayload;
+      };
 
-      const response = await sspApiClient.post(endpoint, formPayload, {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      });
+      const buildQueryParams = (): Record<string, string | string[]> => {
+        const params: Record<string, string | string[]> = {};
+        Object.entries(payload || {}).forEach(([key, value]) => {
+          if (value === undefined || value === null || value === '') return;
+          if (Array.isArray(value)) {
+            const arr = value
+              .filter((v) => v !== undefined && v !== null && v !== '')
+              .map((v) => String(v));
+            if (arr.length) params[key] = arr;
+            return;
+          }
+          params[key] = String(value);
+        });
+        return params;
+      };
+
+      let response;
+      try {
+        response = await sspApiClient.post(endpoint, buildFormPayload(), {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        });
+      } catch (error: any) {
+        const status = error?.response?.status;
+        if (status !== 405) {
+          throw error;
+        }
+        // Some deployments expose filter endpoints as GET-only.
+        response = await sspApiClient.get(endpoint, {
+          params: buildQueryParams(),
+        });
+      }
+
       const data = response.data;
       if (!data) {
         throw new Error('No data in response');
