@@ -8,6 +8,8 @@ import type { AxiosInstance } from 'axios';
 
 
 const RAW_SSP_BASE_URL =
+  (typeof globalThis !== 'undefined' && (globalThis as any).VITE_SSP_API_BASE_URL) ||
+  String(import.meta.env.VITE_SSP_API_BASE_URL || '').trim() ||
   (typeof globalThis !== 'undefined' && (globalThis as any).VITE_SSP_BASE_URL) ||
   String(import.meta.env.VITE_SSP_BASE_URL || '').trim();
 
