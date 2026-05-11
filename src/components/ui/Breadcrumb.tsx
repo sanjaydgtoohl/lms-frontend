@@ -47,13 +47,13 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({
   // If items are provided, use them directly
   if (items && items.length > 0) {
     return (
-      <nav className="flex items-center space-x-2 text-sm" aria-label="Breadcrumb">
+      <nav className="flex items-center space-x-2 text-sm breadcrumb-wrapper" aria-label="Breadcrumb">
         <ol className="flex items-center space-x-2">
           {showHome && (
             <>
               <li>
                 <Link
-                className='!text-gray-800 font-semibold'
+                className='text-gray-800 font-semibold'
                   to="/dashboard">
                   <Home className="w-4 h-4" />
                 </Link>
@@ -67,7 +67,7 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({
               {item.path && !item.isActive ? (
                 <Link
                   to={item.path}
-                  className='!text-gray-800 font-semibold'
+                  className='text-gray-800 font-semibold'
                 >
                   {item.label}
                 </Link>

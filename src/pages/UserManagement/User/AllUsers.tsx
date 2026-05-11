@@ -218,7 +218,7 @@ const AllUsers: React.FC = () => {
       render: (it: User) => (
         <div className="flex justify-center">
           <span
-            className={`inline-flex items-center justify-center h-7 px-3 border border-transparent rounded-full text-xs font-medium leading-tight whitespace-nowrap ${getStatusBadgeColor(
+            className={`inline-flex items-center justify-center h-7 px-3 border border-transparent rounded-full text-xs font-medium leading-tight text-green-600 whitespace-nowrap ${getStatusBadgeColor(
               it.status
             )}`}
           >
