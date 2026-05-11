@@ -8,14 +8,14 @@ function resolveProxyTarget(apiBaseUrl: string): string {
     return `${url.protocol}//${url.host}`
   } catch {
     // If it's not a valid absolute URL (e.g., '/api'), default to prod host
-    return 'https://www.apislms.dgtoohl.com'
+    return 'https://www.api.jiggle.safebima.com' // www.api.jiggle.safebima.com
   }
 }
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  const apiBaseUrl = String(env.VITE_API_BASE_URL || 'https://www.apislms.dgtoohl.com/api/v1').trim()
+  const apiBaseUrl = String(env.VITE_API_BASE_URL || 'https://www.api.jiggle.safebima.com/api/v1').trim()
 
   return {
     plugins: [react(), tailwind()],
