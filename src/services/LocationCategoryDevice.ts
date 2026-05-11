@@ -250,11 +250,20 @@ export async function fetchCities(stateId?: string | number): Promise<LocationOp
 export async function fetchZones(cityId?: string | number): Promise<LocationOption[]> {
   try {
     const hasCity = cityId !== undefined && cityId !== null && String(cityId).trim() !== '';
-    return await makeApiRequest('/location/zones', {
+    const payload = {
       city: hasCity ? String(cityId) : null,
       city_id: hasCity ? cityId : null,
       ...(hasCity ? { 'city[]': [String(cityId)] } : {}),
-    });
+    };
+
+    // Some SSP deployments expose this endpoint as `/location/zone` instead of `/location/zones`.
+    const primary = await makeApiRequest('/location/zones', payload);
+    if (primary.length > 0) return primary;
+
+    const fallback = await makeApiRequest('/location/zone', payload);
+    if (fallback.length > 0) return fallback;
+
+    return primary;
   } catch (error) {
     console.warn('Warning: Could not fetch zones:', error);
     return [];
