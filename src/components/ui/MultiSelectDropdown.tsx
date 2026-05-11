@@ -100,7 +100,7 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                       onClick={(e) => { e.stopPropagation(); removeOne(v); }}
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); removeOne(v); } }}
                       aria-label={`Remove ${label}`}
-                      className="ml-1 leading-none text-gray-600 hover:text-gray-900 cursor-pointer select-none"
+                      className="ml-1 leading-none !text-gray-700 hover:text-gray-900 cursor-pointer select-none"
                     >
                       <svg className="w-3 h-3" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />

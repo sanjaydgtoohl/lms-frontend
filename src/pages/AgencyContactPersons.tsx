@@ -82,7 +82,7 @@ const AgencyContactPersons: React.FC = () => {
     return (
       <div className="flex-1 p-6 w-full">
         
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center flex flex-col items-center justify-center">
           <p className="text-red-700 font-medium text-lg">No contact persons found</p>
           <p className="text-red-600 text-sm mt-2">This agency has no contact persons associated with it.</p>
           <Button

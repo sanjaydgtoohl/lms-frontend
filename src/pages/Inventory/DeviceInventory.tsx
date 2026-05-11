@@ -172,7 +172,7 @@ const DeviceInventory: React.FC = () => {
                     aria-haspopup="dialog"
                     aria-label="Filter by state and city"
                     className={`flex h-full min-h-[2.5rem] items-center justify-center px-3 py-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2 ${hasActiveLocationFilter
-                        ? 'text-indigo-600'
+                        ? 'text-gray-500'
                         : 'text-gray-500 hover:text-gray-800'
                       }`}
                   >
