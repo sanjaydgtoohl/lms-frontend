@@ -146,7 +146,7 @@ function transformToOptions(data: any): LocationOption[] {
  * Uses local HTTP client routed through Vite proxy
  */
 async function makeApiRequest(endpoint: string, payload: any = {}): Promise<LocationOption[]> {
-  const cacheKey = `POST:${endpoint}:${JSON.stringify(payload)}`;
+  const cacheKey = `${endpoint}:${JSON.stringify(payload)}`;
 
   // Check cache first
   const cached = getFromCache(cacheKey);
@@ -196,22 +196,32 @@ async function makeApiRequest(endpoint: string, payload: any = {}): Promise<Loca
         return params;
       };
 
-      let response;
-      try {
-        response = await sspApiClient.post(endpoint, buildFormPayload(), {
+      const queryParams = buildQueryParams();
+      const formPayload = buildFormPayload();
+
+      // Staging/prod can be GET-only while some local setups accept POST.
+      // Use validateStatus to prevent noisy 405 throws during method fallback.
+      let response = await sspApiClient.request({
+        url: endpoint,
+        method: 'get',
+        params: queryParams,
+        validateStatus: () => true,
+      });
+
+      if (response.status === 404 || response.status === 405 || response.status === 415) {
+        response = await sspApiClient.request({
+          url: endpoint,
+          method: 'post',
+          data: formPayload,
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
           },
+          validateStatus: () => true,
         });
-      } catch (error: any) {
-        const status = error?.response?.status;
-        if (status !== 405) {
-          throw error;
-        }
-        // Some deployments expose filter endpoints as GET-only.
-        response = await sspApiClient.get(endpoint, {
-          params: buildQueryParams(),
-        });
+      }
+
+      if (response.status < 200 || response.status >= 300) {
+        throw new Error(`Request failed (${response.status}) for ${endpoint}`);
       }
 
       const data = response.data;
