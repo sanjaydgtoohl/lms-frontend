@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Plus, User, LogOut, UserRound, ChevronDown, Menu } from 'lucide-react';
+import { Bell, Plus, User, LogOut, UserRound, ChevronDown, Menu, Check } from 'lucide-react';
 import { Button } from '../ui';
 import { fetchCurrentUser } from '../../services/Header';
 import { clearAllNotifications, getUnreadNotificationCount, listNotifications, markAllNotificationsRead, markNotificationRead } from '../../services/notifications';
@@ -9,8 +9,10 @@ import type { AppDispatch, RootState } from '../../redux/store';
 import { logoutUser } from '../../redux/slices/authSlice';
 import { setUnreadCount } from '../../redux/slices/notificationSlice';
 import { FaMoon, FaSun } from 'react-icons/fa';
-import type { NotificationItem, NotificationTab } from '../../services/notifications';
-import { Check } from 'lucide-react';
+import type { NotificationCategory, NotificationItem, NotificationTab } from '../../services/notifications';
+
+const NOTIFICATIONS_DROPDOWN_PAGE_SIZE = 10;
+const NOTIFICATIONS_FETCH_CHUNK = 100;
 
 interface HeaderProps {
   onCreateClick?: () => void;
@@ -31,9 +33,32 @@ const Header: React.FC<HeaderProps> = ({
   const allNotifications = useSelector((state: RootState) => state.notifications.all);
   const reduxUnreadCount = allNotifications?.unreadCount || 0;
   const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] = React.useState(false);
-  const [recentNotifications, setRecentNotifications] = React.useState<NotificationItem[]>([]);
   const [showUnreadOnly, setShowUnreadOnly] = React.useState(false);
-  const [activeDropdownTab] = React.useState<NotificationTab>('all');
+  const [activeDropdownTab, setActiveDropdownTab] = React.useState<NotificationTab>('all');
+  const [notifCache, setNotifCache] = React.useState<NotificationItem[]>([]);
+  const [notifVisibleCount, setNotifVisibleCount] = React.useState(NOTIFICATIONS_DROPDOWN_PAGE_SIZE);
+  const [notifServerPage, setNotifServerPage] = React.useState(1);
+  const [notifServerLastPage, setNotifServerLastPage] = React.useState(1);
+  const [notifLoadingMore, setNotifLoadingMore] = React.useState(false);
+
+  const notifCacheRef = React.useRef<NotificationItem[]>([]);
+  const notifVisibleCountRef = React.useRef(NOTIFICATIONS_DROPDOWN_PAGE_SIZE);
+  const notifServerPageRef = React.useRef(1);
+  const notifServerLastPageRef = React.useRef(1);
+  const notifListPage1InflightRef = React.useRef<Map<string, Promise<void>>>(new Map());
+
+  React.useEffect(() => {
+    notifCacheRef.current = notifCache;
+  }, [notifCache]);
+  React.useEffect(() => {
+    notifVisibleCountRef.current = notifVisibleCount;
+  }, [notifVisibleCount]);
+  React.useEffect(() => {
+    notifServerPageRef.current = notifServerPage;
+  }, [notifServerPage]);
+  React.useEffect(() => {
+    notifServerLastPageRef.current = notifServerLastPage;
+  }, [notifServerLastPage]);
   const [isMarkingRead, setIsMarkingRead] = React.useState(false);
   const notificationDropdownRef = React.useRef<HTMLDivElement | null>(null);
   const notificationButtonRef = React.useRef<HTMLButtonElement | null>(null);
@@ -80,27 +105,133 @@ const Header: React.FC<HeaderProps> = ({
   //   return config?.categories || [];
   // };
 
+  const getTabCategories = (tab: NotificationTab): NotificationCategory[] => {
+    const tabConfig: Array<{ key: NotificationTab; categories: NotificationCategory[] }> = [
+      { key: 'all', categories: [] },
+      { key: 'unread', categories: [] },
+      { key: 'lead-management', categories: ['Lead Created', 'Assignment Updated'] },
+      { key: 'brief', categories: ['Brief Created', 'Status Updated', 'Assignment Updated'] },
+      { key: 'pre-lead', categories: ['Pre Lead Created'] },
+      { key: 'system', categories: ['System'] },
+    ];
+    const config = tabConfig.find((c) => c.key === tab);
+    return config?.categories || [];
+  };
+
+  const notificationMatchesDropdownTab = (n: NotificationItem, tab: NotificationTab): boolean => {
+    if (tab === 'all') return true;
+    const raw = String((n.originalData as any)?.category ?? '')
+      .toLowerCase()
+      .trim();
+    if (tab === 'lead-management') return raw === 'lead';
+    if (tab === 'brief') return raw === 'brief';
+    if (tab === 'pre-lead') return raw === 'pre-lead' || raw === 'pre lead';
+    if (tab === 'system') return raw === 'system';
+    return true;
+  };
+
   const loadRecentNotifications = async (tab: NotificationTab = activeDropdownTab, unreadOnly: boolean = showUnreadOnly) => {
-    try {
-      let effectiveTab = tab;
-      // let effectiveCategories = getTabCategories(tab); // Commented out category functionality
+    const effectiveTab: NotificationTab = unreadOnly ? 'unread' : tab;
+    const categories = getTabCategories(tab);
+    const dedupeKey = `${tab}|u:${unreadOnly ? 1 : 0}|t:${effectiveTab}|c:${categories.join(',')}`;
 
-      if (unreadOnly) {
-        effectiveTab = 'unread';
-      }
-
-      const response = await listNotifications(1, 5, effectiveTab, []);
-
-      // Frontend-side filtering: if unreadOnly is true, filter to show only unread notifications
-      let filteredNotifications = response.data || [];
-      if (unreadOnly) {
-        filteredNotifications = filteredNotifications.filter(n => !n.read);
-      }
-
-      setRecentNotifications(filteredNotifications);
-    } catch (error) {
-      console.error('Failed to load recent notifications:', error);
+    const inflight = notifListPage1InflightRef.current;
+    const existing = inflight.get(dedupeKey);
+    if (existing) {
+      await existing;
+      return;
     }
+
+    const run = Promise.resolve().then(async () => {
+      try {
+        const response = await listNotifications(1, NOTIFICATIONS_FETCH_CHUNK, effectiveTab, categories);
+
+        let filteredNotifications = response.data || [];
+        filteredNotifications = filteredNotifications.filter((n) => notificationMatchesDropdownTab(n, tab));
+        if (unreadOnly) {
+          filteredNotifications = filteredNotifications.filter((n) => !n.read);
+        }
+
+        const lastPage = response.meta?.pagination?.last_page ?? 1;
+        notifCacheRef.current = filteredNotifications;
+        notifServerPageRef.current = 1;
+        notifServerLastPageRef.current = lastPage;
+        setNotifCache(filteredNotifications);
+        setNotifServerPage(1);
+        setNotifServerLastPage(lastPage);
+        const initialVisible =
+          filteredNotifications.length === 0
+            ? 0
+            : Math.min(NOTIFICATIONS_DROPDOWN_PAGE_SIZE, filteredNotifications.length);
+        notifVisibleCountRef.current = initialVisible;
+        setNotifVisibleCount(initialVisible);
+      } catch (error) {
+        console.error('Failed to load recent notifications:', error);
+      } finally {
+        inflight.delete(dedupeKey);
+      }
+    });
+
+    inflight.set(dedupeKey, run);
+    await run;
+  };
+
+  const handleLoadMoreNotifications = async () => {
+    if (notifLoadingMore) return;
+
+    const cache = notifCacheRef.current;
+    const visible = notifVisibleCountRef.current;
+    const nextVisible = visible + NOTIFICATIONS_DROPDOWN_PAGE_SIZE;
+
+    if (visible < cache.length) {
+      const newVisible = Math.min(nextVisible, cache.length);
+      notifVisibleCountRef.current = newVisible;
+      setNotifVisibleCount(newVisible);
+      return;
+    }
+
+    const serverPage = notifServerPageRef.current;
+    const serverLast = notifServerLastPageRef.current;
+    if (serverPage >= serverLast) return;
+
+    setNotifLoadingMore(true);
+    try {
+      const effectiveTab: NotificationTab = showUnreadOnly ? 'unread' : activeDropdownTab;
+      const categories = getTabCategories(activeDropdownTab);
+      const nextPage = serverPage + 1;
+      const response = await listNotifications(nextPage, NOTIFICATIONS_FETCH_CHUNK, effectiveTab, categories);
+      let batch = response.data || [];
+      batch = batch.filter((n) => notificationMatchesDropdownTab(n, activeDropdownTab));
+      if (showUnreadOnly) {
+        batch = batch.filter((n) => !n.read);
+      }
+
+      const prev = notifCacheRef.current;
+      const seen = new Set(prev.map((n) => n.id));
+      const merged = [...prev];
+      for (const n of batch) {
+        if (!seen.has(n.id)) merged.push(n);
+      }
+      notifCacheRef.current = merged;
+
+      const newLast = response.meta?.pagination?.last_page ?? serverLast;
+      const newVisible = Math.min(visible + NOTIFICATIONS_DROPDOWN_PAGE_SIZE, merged.length);
+
+      setNotifCache(merged);
+      setNotifServerPage(nextPage);
+      setNotifServerLastPage(newLast);
+      notifVisibleCountRef.current = newVisible;
+      setNotifVisibleCount(newVisible);
+    } catch (error) {
+      console.error('Failed to load more notifications:', error);
+    } finally {
+      setNotifLoadingMore(false);
+    }
+  };
+
+  const handleDropdownTabChange = (tab: NotificationTab) => {
+    setActiveDropdownTab(tab);
+    void loadRecentNotifications(tab, showUnreadOnly);
   };
 
   React.useEffect(() => {
@@ -125,16 +256,7 @@ const Header: React.FC<HeaderProps> = ({
     setIsNotificationDropdownOpen((prev) => {
       const next = !prev;
       if (next) {
-        // Refresh count and notifications only when opening dropdown
-        (async () => {
-          try {
-            const count = await getUnreadNotificationCount();
-            dispatch(setUnreadCount({ module: 'all', count }));
-          } catch (error) {
-            console.error('Failed to refresh notification count:', error);
-          }
-        })();
-        loadRecentNotifications(activeDropdownTab, showUnreadOnly);
+        void loadRecentNotifications(activeDropdownTab, showUnreadOnly);
       }
       return next;
     });
@@ -164,7 +286,14 @@ const Header: React.FC<HeaderProps> = ({
   const handleRemoveAllNotifications = async () => {
     try {
       await clearAllNotifications();
-      setRecentNotifications([]);
+      notifCacheRef.current = [];
+      notifVisibleCountRef.current = 0;
+      notifServerPageRef.current = 1;
+      notifServerLastPageRef.current = 1;
+      setNotifCache([]);
+      setNotifVisibleCount(0);
+      setNotifServerPage(1);
+      setNotifServerLastPage(1);
       setShowUnreadOnly(false);
       const unread = await getUnreadNotificationCount();
       dispatch(setUnreadCount({ module: 'all', count: unread }));
@@ -223,6 +352,14 @@ const Header: React.FC<HeaderProps> = ({
     }
     setDark(!dark);
   };
+
+  const displayedNotifications = React.useMemo(
+    () => notifCache.slice(0, notifVisibleCount),
+    [notifCache, notifVisibleCount]
+  );
+  const showNotificationLoadMore =
+    notifCache.length > 0 &&
+    (notifVisibleCount < notifCache.length || notifServerPage < notifServerLastPage);
 
   return (
     <header className="header-bg sticky top-0 z-20 border-b border-gray-200 bg-gray-50 backdrop-blur supports-backdrop-filter:bg-white/70">
@@ -340,7 +477,7 @@ const Header: React.FC<HeaderProps> = ({
                     {/* {hasCategories && (
                       <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-gray-200">
                         {[
-                          { key: 'all', label: 'All' }, 
+                          { key: 'all', label: 'All' },
                           { key: 'lead-management', label: 'Lead' },
                           { key: 'brief', label: 'Brief' },
                           { key: 'pre-lead', label: 'Pre Lead' },
@@ -358,47 +495,80 @@ const Header: React.FC<HeaderProps> = ({
                         ))}
                       </div>
                     )} */}
+
+                    <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-gray-200">
+                      {[
+                        { key: 'all' as const, label: 'All' },
+                        { key: 'lead-management' as const, label: 'Lead' },
+                        { key: 'brief' as const, label: 'Brief' },
+                        { key: 'pre-lead' as const, label: 'Pre Lead' },
+                      ].map((tab) => (
+                        <button
+                          key={tab.key}
+                          type="button"
+                          onClick={() => handleDropdownTabChange(tab.key)}
+                          className={`px-3! py-1 leading-none text-sm! rounded-md! outline-none border-0 font-medium transition ${activeDropdownTab === tab.key
+                            ? 'bg-gray-800! text-white'
+                            : 'bg-gray-200! text-gray-700! hover:text-white! hover:bg-gray-800!'
+                            }`}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <div className="min-h-30 max-h-100 overflow-y-auto flex flex-col items-center">
-                    {recentNotifications.length === 0 ? (
+                  <div className="min-h-30 max-h-100 overflow-y-auto flex flex-col items-center w-full">
+                    {notifCache.length === 0 ? (
                       <div className="px-4 py-6 text-center text-sm text-gray-500">
                         No notifications yet
                       </div>
                     ) : (
-                      recentNotifications.map((notification) => (
-                        <div
-                          key={notification.id}
-                          className="px-4 py-3 border-b border-gray-100 cursor-pointer"
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => {
-                            handleNotificationItemClick(notification);
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
+                      <>
+                        {displayedNotifications.map((notification) => (
+                          <div
+                            key={notification.id}
+                            className="px-4 py-3 border-b border-gray-100 cursor-pointer w-full"
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => {
                               handleNotificationItemClick(notification);
-                            }
-                          }}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">
-                                {notification.title}
-                              </p>
-                              <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-                                {notification.message}
-                              </p>
-                              <p className="text-xs text-gray-400 mt-1">
-                                {new Date(notification.createdAt).toLocaleDateString()}
-                              </p>
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                handleNotificationItemClick(notification);
+                              }
+                            }}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-900 truncate">
+                                  {notification.title}
+                                </p>
+                                <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                                  {notification.message}
+                                </p>
+                                <p className="text-xs text-gray-400 mt-1">
+                                  {new Date(notification.createdAt).toLocaleDateString()}
+                                </p>
+                              </div>
+                              {!notification.read && (
+                                <div className="w-2 h-2 bg-blue-600 rounded-full shrink-0 mt-2" />
+                              )}
                             </div>
-                            {!notification.read && (
-                              <div className="w-2 h-2 bg-blue-600 rounded-full shrink-0 mt-2" />
-                            )}
                           </div>
-                        </div>
-                      ))
+                        ))}
+                        {showNotificationLoadMore && (
+                          <button
+                            type="button"
+                            onClick={handleLoadMoreNotifications}
+                            disabled={notifLoadingMore}
+                            className="my-3 px-4 py-2 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 w-[calc(100%-2rem)]"
+                          >
+                            {notifLoadingMore ? 'Loading…' : 'Load more'}
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
