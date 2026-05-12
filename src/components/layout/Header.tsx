@@ -10,16 +10,10 @@ import { logoutUser } from '../../redux/slices/authSlice';
 import { setUnreadCount } from '../../redux/slices/notificationSlice';
 import { FaMoon, FaSun } from 'react-icons/fa';
 import type { NotificationCategory, NotificationItem, NotificationTab } from '../../services/notifications';
+import type { HeaderProps } from '../../types';
 
 const NOTIFICATIONS_DROPDOWN_PAGE_SIZE = 10;
-const NOTIFICATIONS_FETCH_CHUNK = 100;
-
-interface HeaderProps {
-  onCreateClick?: () => void;
-  createButtonText?: string;
-  showHamburger?: boolean;
-  onHamburgerClick?: () => void;
-}
+const NOTIFICATIONS_FETCH_CHUNK = 100; 
 
 const Header: React.FC<HeaderProps> = ({
   onCreateClick,

@@ -144,3 +144,11 @@ export interface NavigationItem {
   icon?: string;
   children?: NavigationItem[];
 }
+
+
+export interface HeaderProps {
+  onCreateClick?: () => void;
+  createButtonText?: string;
+  showHamburger?: boolean;
+  onHamburgerClick?: () => void;
+}
