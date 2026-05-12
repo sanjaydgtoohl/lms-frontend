@@ -70,7 +70,7 @@ const FilePreviewModal: React.FC<{
           <div className="text-sm font-medium">{name || 'File Preview'}</div>
           <button
             type="button"
-            className={`text-sm text-gray-600 hover:text-gray-900 ${closeButtonClassName || ''}`.trim()}
+            className={`bg-secondary ${closeButtonClassName || ''}`.trim()}
             onClick={onClose}
           >
             Close

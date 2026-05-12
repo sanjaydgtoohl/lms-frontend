@@ -171,3 +171,19 @@ button.cancel-btn {
 .dark .text-blue-600 {
   @apply text-white;
 } 
+
+
+.dark .bg-purple-100 {
+  @apply bg-purple-500 border-purple-300;
+}
+
+
+
+
+.dark .bg-green-100{
+  @apply bg-green-600 border-green-400;  
+}
+
+.dark .text-green-600 {
+  @apply !text-white;
+}

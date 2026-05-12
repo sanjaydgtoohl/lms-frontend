@@ -579,6 +579,6 @@ box-shadow:  5px 5px 10px #131313,
 }
 
 
-.device-inventory-outer-section table tbody td{
+/* .device-inventory-outer-section table tbody td{
   @apply !max-w-[80px] overflow-hidden text-ellipsis whitespace-nowrap;
-}
+} */
