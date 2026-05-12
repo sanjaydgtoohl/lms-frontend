@@ -15,14 +15,7 @@ import { useSelector, useDispatch } from "react-redux";
 import type { AppDispatch, RootState } from "../../redux/store";
 import { toggleExpandedItem, setExpandedItems } from "../../redux/slices/sidebarSlice";
 import { logoutUser } from "../../redux/slices/authSlice";
-
-interface SidebarProps {
-  isCollapsed: boolean
-  onToggle: () => void
-  isMobile: boolean
-  mobileOpen: boolean
-  onCloseMobile: () => void
-}
+import type { SidebarProps } from "../../types/sidebar";  
 
 const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false, onCloseMobile }) => {
   const dispatch = useDispatch<AppDispatch>()
@@ -38,7 +31,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
       console.error("Logout failed:", error);
     }
   };
-
 
   const isCollapsed = useSelector(
     (state: RootState) => state.sidebar.isCollapsed

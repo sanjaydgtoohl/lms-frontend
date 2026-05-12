@@ -1,19 +1,6 @@
 import React from 'react';
 import { Trash2, Users, AlertCircle } from 'lucide-react';
-
-type DialogType = 'delete' | 'assign' | 'warning';
-
-interface ConfirmDialogProps {
-  isOpen: boolean;
-  title?: string;
-  message?: string;
-  confirmLabel?: string;
-  cancelLabel?: string;
-  loading?: boolean;
-  type?: DialogType;
-  onCancel: () => void;
-  onConfirm: () => void;
-}
+import type { ConfirmDialogProps, DialogType } from '../../types/modal';
 
 const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   isOpen,

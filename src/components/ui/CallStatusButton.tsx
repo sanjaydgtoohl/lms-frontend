@@ -1,10 +1,5 @@
-import React from 'react';
-
-interface CallStatusButtonProps {
-  value: string;
-  onClick?: () => void;
-  isActive?: boolean;
-}
+import React from 'react'; 
+import type { CallStatusButtonProps } from '../../types/button';
 
 const CallStatusButton: React.FC<CallStatusButtonProps> = ({ value, onClick, isActive }) => {
   return (

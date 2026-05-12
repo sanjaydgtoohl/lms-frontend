@@ -1,20 +1,5 @@
 import React, { useEffect } from 'react';
-
-interface ParentUser {
-  id?: string | number;
-  name: string;
-  email?: string;
-  status?: 'Active' | 'Inactive';
-}
-
-interface ParentUserModalProps {
-  isOpen: boolean;
-  // support multiple parents
-  parentUser: ParentUser[] | null;
-  onClose: () => void;
-  userName?: string;
-  title?: string;
-}
+import type { ParentUserModalProps } from '../../types/modal';
 
 const ParentUserModal: React.FC<ParentUserModalProps> = ({
   isOpen,

@@ -1,19 +1,5 @@
-import React, { useEffect } from 'react';
-
-interface Role {
-  id?: string | number;
-  name: string;
-  display_name?: string;
-  description?: string;
-}
-
-interface RolesModalProps {
-  isOpen: boolean;
-  roles: Role[];
-  onClose: () => void;
-  userName?: string;
-  title?: string;
-}
+import React, { useEffect } from 'react'
+import type { RolesModalProps } from '../../types/modal';
 
 const RolesModal: React.FC<RolesModalProps> = ({
   isOpen,

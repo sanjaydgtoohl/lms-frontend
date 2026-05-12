@@ -1,11 +1,8 @@
 import React from 'react';
 import Breadcrumb from './Breadcrumb';
 import { IoIosArrowBack } from 'react-icons/io';
+import type { MasterCreateHeaderProps } from '../../types/mastereSection';
 
-interface MasterCreateHeaderProps {
-  title?: string;
-  onClose?: () => void;
-}
 
 export const MasterCreateHeader: React.FC<MasterCreateHeaderProps> = ({
   title,

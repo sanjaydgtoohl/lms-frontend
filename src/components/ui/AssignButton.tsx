@@ -1,10 +1,5 @@
-import React from 'react';
-
-interface AssignButtonProps {
-  value: string;
-  onClick?: () => void;
-  isActive?: boolean;
-}
+import React from 'react'; 
+import type { AssignButtonProps } from '../../types/button';
 
 const AssignButton: React.FC<AssignButtonProps> = ({ value, onClick, isActive }) => {
   return (

@@ -2,11 +2,7 @@ import React from 'react';
 import Breadcrumb from './Breadcrumb';
 import Button from './Button';
 import { FaAngleLeft } from 'react-icons/fa';
-
-interface MasterFormHeaderProps {
-  onBack: () => void;
-  title: string;
-}
+import type { MasterFormHeaderProps } from '../../types/mastereSection';
 
 const MasterFormHeader: React.FC<MasterFormHeaderProps> = ({ 
   onBack,

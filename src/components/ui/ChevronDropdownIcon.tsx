@@ -1,16 +1,11 @@
 import { ChevronDown } from 'lucide-react';
-
-interface ChevronDropdownIconProps {
-  isOpen?: boolean;
-  className?: string;
-}
+import type { ChevronDropdownIconProps } from '../../types/dropdown';
 
 export const ChevronDropdownIcon = ({ isOpen, className = '' }: ChevronDropdownIconProps) => {
   return (
-    <ChevronDown 
-      className={`pointer-events-none w-4 h-4 min-w-[1rem] min-h-[1rem] text-gray-800transition-transform ${
-        isOpen ? 'rotate-180' : ''
-      } ${className}`}
+    <ChevronDown
+      className={`pointer-events-none w-4 h-4 min-w-[1rem] min-h-[1rem] text-gray-800transition-transform ${isOpen ? 'rotate-180' : ''
+        } ${className}`}
     />
   );
 };

@@ -1,18 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronRight, Home } from 'lucide-react';
-
-export interface BreadcrumbItem {
-  label: string;
-  path?: string;
-  isActive?: boolean;
-}
-
-interface BreadcrumbProps {
-  items?: BreadcrumbItem[];
-  showHome?: boolean;
-  currentPageTitle?: string;
-}
+import type { BreadcrumbItem, BreadcrumbProps } from '../../types/breadcrumb';
 
 const segmentNameMap: Record<string, string> = {
   'dashboard': 'Dashboard',

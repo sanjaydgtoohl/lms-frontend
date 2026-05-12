@@ -1,17 +1,7 @@
 import { Component } from 'react';
-import type { ErrorInfo, ReactNode } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';  
+import type { Props, State } from '../../types/error';
 
-interface Props {
-  children: ReactNode;
-  fallback?: ReactNode;
-}
-
-interface State {
-  hasError: boolean;
-  error: Error | null;
-  errorInfo: ErrorInfo | null;
-}
 
 class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {

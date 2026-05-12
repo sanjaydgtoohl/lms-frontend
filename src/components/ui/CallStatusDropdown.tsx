@@ -2,17 +2,13 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import CallStatusButton from './CallStatusButton';
 import ConfirmDialog from './ConfirmDialog';
+import type { CallStatusDropdownProps } from '../../types/dropdown';
 
 const DROPDOWN_MIN_WIDTH = 180;
 const DROPDOWN_EST_HEIGHT = 220;
 const VIEWPORT_GAP = 8;
 
-interface CallStatusDropdownProps {
-  value: string;
-  options: string[];
-  onChange: (newStatus: string) => void;
-  onConfirm?: (newStatus: string) => Promise<void>;
-}
+
 
 const CallStatusDropdown: React.FC<CallStatusDropdownProps> = ({ value, options, onChange, onConfirm }) => {
   const [open, setOpen] = useState(false);

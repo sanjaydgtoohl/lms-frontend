@@ -2,18 +2,11 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import AssignButton from './AssignButton';
 import ConfirmDialog from './ConfirmDialog';
+import type { AssignDropdownProps } from '../../types/button';
 
 const DROPDOWN_MIN_WIDTH = 180;
 const DROPDOWN_EST_HEIGHT = 220;
-const VIEWPORT_GAP = 8;
-
-interface AssignDropdownProps {
-  value: string;
-  options: string[];
-  onChange: (newValue: string) => void;
-  onConfirm?: (newValue: string) => Promise<void>;
-  context?: 'brief' | 'lead';
-}
+const VIEWPORT_GAP = 8; 
 
 const AssignDropdown: React.FC<AssignDropdownProps> = ({ value, options, onChange, onConfirm, context = 'brief' }) => {
   const [open, setOpen] = useState(false);

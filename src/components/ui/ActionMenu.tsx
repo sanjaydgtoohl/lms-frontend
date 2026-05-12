@@ -3,29 +3,8 @@ import { createPortal } from 'react-dom';
 import { MoreHorizontal, Edit, Eye, Trash, Upload, MessageCircle, CalendarPlus, FilePlus2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 // import { usePermissions } from '../../hooks/SidebarMenuHooks';
-import { usePermissions } from '../../hooks/SidebarMenuHooks';
-
-
-interface ActionMenuProps {
-  onEdit?: () => void;
-  onView?: () => void;
-  onDelete?: () => void;
-  onUpload?: () => void;
-  onChat?: () => void;
-  onCreateMeeting?: () => void;
-  onBriefCreation?: () => void;
-  /** Permission slugs for additional checks */
-  editPermissionSlug?: string;
-  viewPermissionSlug?: string;
-  deletePermissionSlug?: string;
-  uploadPermissionSlug?: string;
-  /** If true, forces the menu to open above the trigger (used for last rows) */
-  isLast?: boolean;
-  /** Index of the row (0-based) - helps determine if near bottom */
-  rowIndex?: number;
-  /** Total number of rows - helps determine if near bottom */
-  totalRows?: number;
-}
+import { usePermissions } from '../../hooks/SidebarMenuHooks'; 
+import type { ActionMenuProps } from '../../types/actionMenu';
 
 const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, onUpload, onChat, onCreateMeeting, onBriefCreation, editPermissionSlug, viewPermissionSlug, deletePermissionSlug, uploadPermissionSlug, isLast, rowIndex, totalRows }) => {
   const [isOpen, setIsOpen] = useState(false);

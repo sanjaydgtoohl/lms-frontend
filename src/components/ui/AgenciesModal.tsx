@@ -1,17 +1,5 @@
 import React, { useEffect } from 'react';
-
-interface Agency {
-  id?: string | number;
-  name?: string;
-  email?: string;
-}
-
-interface AgenciesModalProps {
-  isOpen: boolean;
-  agencies: Agency[];
-  onClose: () => void;
-  title?: string;
-}
+import type { AgenciesModalProps } from '../../types/modal';
 
 const AgenciesModal: React.FC<AgenciesModalProps> = ({
   isOpen,

@@ -1,20 +1,6 @@
 import React, { useEffect } from 'react';
 import './NotificationPopup.css';
-
-interface NotificationPopupProps {
-  isOpen: boolean;
-  onClose: () => void;
-  message?: string;
-  type?: 'success' | 'error' | 'info';
-  title?: string;
-  duration?: number; // Auto-dismiss duration in ms (0 = no auto-dismiss)
-  customStyle?: {
-    bg?: string;
-    border?: string;
-    text?: string;
-    icon?: string;
-  };
-}
+import type { NotificationPopupProps } from '../../types/notification';
 
 const NotificationPopup: React.FC<NotificationPopupProps> = ({ 
   isOpen, 

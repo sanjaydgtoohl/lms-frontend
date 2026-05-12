@@ -1,22 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './MasterForm.css';
-import { SelectField } from './index';
-
-interface FormField {
-  name: string;
-  label: string;
-  type: string;
-  required?: boolean;
-  placeholder?: string;
-  options?: { label: string; value: string }[];
-}
-
-interface MasterFormProps {
-  fields: FormField[];
-  onSubmit?: (data: Record<string, any>) => void;
-  initialData?: Record<string, any>;
-  submitLabel?: string;
-}
+import { SelectField } from './index'; 
+import type { MasterFormProps } from '../../types/mastereSection';
 
 const MasterForm: React.FC<MasterFormProps> = ({
   fields,

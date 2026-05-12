@@ -1,13 +1,7 @@
 import React from 'react';
 import { ChevronRight } from 'lucide-react';
-import { IoIosArrowBack } from 'react-icons/io';
-
-interface PaginationProps {
-  currentPage: number;
-  totalItems: number;
-  itemsPerPage: number;
-  onPageChange: (page: number) => void;
-}
+import { IoIosArrowBack } from 'react-icons/io'; 
+import type { PaginationProps } from '../../types/pagination';
 
 const Pagination: React.FC<PaginationProps> = ({
   currentPage,

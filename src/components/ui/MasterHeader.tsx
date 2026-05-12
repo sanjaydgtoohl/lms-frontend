@@ -1,10 +1,9 @@
 import React from 'react';
-import Breadcrumb, { type BreadcrumbItem } from './Breadcrumb';
+// import Breadcrumb, { type BreadcrumbItem } from './Breadcrumb';
 import { Plus } from 'lucide-react';
 // import { usePermissions } from '../../hooks/SidebarMenuHooks';
 import { usePermissions } from '../../hooks/SidebarMenuHooks';
-
-
+import type { BreadcrumbItem } from '../../types/breadcrumb';
 
 interface MasterHeaderProps {
   onCreateClick: () => void;

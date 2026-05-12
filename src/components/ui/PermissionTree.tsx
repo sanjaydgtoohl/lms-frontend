@@ -1,25 +1,6 @@
 import { ChevronRight } from "lucide-react";
 import React, { useState, useCallback, useEffect } from 'react';
-
-export interface PermissionNode {
-  id: number;
-  display_name: string;
-  name?: string;
-  description?: string;
-  url?: string;
-  icon_file?: string | null;
-  icon_text?: string;
-  is_parent?: number | null;
-  status?: string;
-  order?: number;
-  children?: PermissionNode[];
-}
-
-interface PermissionTreeProps {
-  data: PermissionNode[];
-  selectedPermissionIds?: number[];
-  onChange?: (selected: number[]) => void;
-}
+import type { PermissionTreeProps, PermissionNode } from '../../types/permision';
 
 const PermissionTree: React.FC<PermissionTreeProps> = ({ data, selectedPermissionIds = [], onChange }) => {
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});

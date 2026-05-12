@@ -2,10 +2,7 @@ import { useSidebarMenu } from '../../hooks/SidebarMenuHooks';
 import React from 'react';
 import { PermissionDenied } from './index';
 import { Navigate, useLocation } from 'react-router-dom';
-
-interface PermissionRouteProps {
-  children: React.ReactNode;
-}
+import type { PermissionRouteProps } from '../../types/route';
 
 const PermissionRoute: React.FC<PermissionRouteProps> = ({ children }) => {
   const { allPermittedPaths, loading } = useSidebarMenu();
