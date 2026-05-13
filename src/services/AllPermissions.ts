@@ -1,12 +1,6 @@
 import { handleApiError } from '../utils/apiErrorHandler';
 import { apiClient } from '../utils/apiClient';
-
-export interface Permission {
-  id: string;
-  name: string;
-  display_name?: string;
-  description?: string;
-}
+import type { allPermissionTypeServices } from '../types/permission';
 
 const ENDPOINTS = {
   LIST: '/permissions',
@@ -28,7 +22,7 @@ async function handleResponse<T>(res: any): Promise<T> {
 }
 
 export type PermissionListResponse = {
-  data: Permission[];
+  data: allPermissionTypeServices[];
   meta?: any;
 };
 
@@ -52,7 +46,7 @@ export async function listPermissions(page = 1, perPage = 10, search?: string): 
       name,
       display_name,
       description,
-    } as Permission;
+    } as allPermissionTypeServices;
   });
 
   return {
@@ -61,21 +55,21 @@ export async function listPermissions(page = 1, perPage = 10, search?: string): 
   };
 }
 
-export async function getPermission(id: string): Promise<Permission> {
+export async function getPermission(id: string): Promise<allPermissionTypeServices> {
   const cleanId = normalizeIdForBackend(id);
   const res = await apiClient.get<any>(ENDPOINTS.DETAIL(cleanId));
-  return handleResponse<Permission>(res);
+  return handleResponse<allPermissionTypeServices>(res);
 }
 
-export async function createPermission(payload: Partial<Permission>): Promise<Permission> {
+export async function createPermission(payload: Partial<allPermissionTypeServices>): Promise<allPermissionTypeServices> {
   const res = await apiClient.post<any>(ENDPOINTS.CREATE, payload);
-  return handleResponse<Permission>(res);
+  return handleResponse<allPermissionTypeServices>(res);
 }
 
-export async function updatePermission(id: string, payload: Partial<Permission>): Promise<Permission> {
+export async function updatePermission(id: string, payload: Partial<allPermissionTypeServices>): Promise<allPermissionTypeServices> {
   const cleanId = normalizeIdForBackend(id);
   const res = await apiClient.put<any>(ENDPOINTS.UPDATE(cleanId), payload);
-  return handleResponse<Permission>(res);
+  return handleResponse<allPermissionTypeServices>(res);
 }
 
 export async function deletePermission(id: string): Promise<void> {

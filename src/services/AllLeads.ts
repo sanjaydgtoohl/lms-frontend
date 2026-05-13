@@ -1,26 +1,5 @@
 import { apiClient } from '../utils/apiClient';
-
-export interface LeadItem {
-  id: string | number;
-  name?: string;
-  brand_name?: string;
-  brand_id?: number | string;
-  contact_person?: string;
-  mobile_number?: string[];
-  number?: string;
-  phone?: string;
-  email?: string;
-  lead_source?: string;
-  lead_sub_source?: string;
-  priority_id?: number | string;
-  current_assign_user?: number | string;
-  [key: string]: any;
-}
-
-export type LeadListResponse = {
-  data: LeadItem[];
-  meta?: any;
-};
+import type { LeadListResponse, LeadItem } from '../types/lead';
 
 const ENDPOINTS = {
   LIST: '/leads',

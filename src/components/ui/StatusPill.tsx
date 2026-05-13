@@ -1,9 +1,6 @@
 import React from 'react';
+import type { StatusPillProps } from '../../types/status';
 
-interface StatusPillProps {
-  label: string;
-  color?: string;
-}
 
 export const StatusPill: React.FC<StatusPillProps> = ({ 
   label, 

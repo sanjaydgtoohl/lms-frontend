@@ -2,20 +2,7 @@
 import { Filter, X } from "lucide-react";
 import SelectField from "./SelectField";
 import React, { useState, useRef, useEffect } from "react";
-
-interface FilterOption {
-    key: string;
-    label: string;
-    options: { value: string; label: string }[];
-}
-
-interface PageHeaderProps {
-    title: string;
-    children?: React.ReactNode;
-    filterOptions?: FilterOption[];
-    onFilterChange?: (filters: Record<string, string>) => void;
-    appliedFilters?: Record<string, string>;
-}
+import type { PageHeaderProps } from '../../types/table';
 
 const TableHeader: React.FC<PageHeaderProps> = ({
     title,
@@ -26,7 +13,7 @@ const TableHeader: React.FC<PageHeaderProps> = ({
 }) => {
     const filterRef = useRef<HTMLDivElement>(null);
     const [showFilters, setShowFilters] = useState(false);
-    
+
     const handleFilterChange = (key: string, value: string) => {
         const newFilters = { ...appliedFilters };
         if (value === '') {

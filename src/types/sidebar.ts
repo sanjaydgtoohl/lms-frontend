@@ -5,3 +5,11 @@ export interface SidebarProps {
   mobileOpen: boolean
   onCloseMobile: () => void
 }
+
+
+// sidebar slice type
+export interface SidebarState {
+  isCollapsed: boolean;
+  expandedItems: string[];
+  mobileOpen: boolean;
+}

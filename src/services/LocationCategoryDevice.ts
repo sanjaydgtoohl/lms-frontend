@@ -2,9 +2,9 @@
  * Service for handling location, category, and device API calls
  * Uses local HTTP client with proxy to avoid CORS issues
  */
-
 import axios from 'axios';
 import type { AxiosInstance } from 'axios';
+import type { LocationOption, CascadingFilterOptions, CacheEntry } from '../types/locationCategory';
 
 
 const RAW_SSP_BASE_URL =
@@ -38,39 +38,6 @@ sspApiClient.interceptors.response.use(
   }
 );
 
-// Types
-export interface LocationOption {
-  id: string | number;
-  name: string;
-  label?: string;
-}
-
-export interface CascadingFilterOptions {
-  countries: LocationOption[];
-  states: LocationOption[];
-  cities: LocationOption[];
-  zones: LocationOption[];
-  subZones: LocationOption[];
-  pincodes: LocationOption[];
-  arterialRoutes: LocationOption[];
-  modeOfMedia: LocationOption[];
-  publishers: LocationOption[];
-  mainCategories: LocationOption[];
-  categories: LocationOption[];
-  subCategories: LocationOption[];
-  locationTypes: LocationOption[];
-  orientations: LocationOption[];
-  resolutions: LocationOption[];
-  screenLocations: LocationOption[];
-  stretches: LocationOption[];
-  properties: LocationOption[];
-}
-
-// ============ CACHE & REQUEST DEDUPLICATION ============
-interface CacheEntry {
-  data: LocationOption[];
-  timestamp: number;
-}
 
 const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes in milliseconds
 const apiCache = new Map<string, CacheEntry>();

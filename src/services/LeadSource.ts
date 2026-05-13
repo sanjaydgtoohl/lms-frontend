@@ -1,13 +1,6 @@
 import { handleApiError } from '../utils/apiErrorHandler';
 import { apiClient } from '../utils/apiClient';
-
-export interface LeadSourceItem {
-  id: string;
-  source: string;
-  subSource?: string;
-  leadSourceId?: string;
-  dateTime?: string;
-}
+import type { LeadSourceItem } from '../types/lead';
 
 // Infer a few common API wrappers without hard-coding endpoint constants yet
 const ENDPOINTS = {

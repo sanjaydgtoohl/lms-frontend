@@ -21,13 +21,7 @@ import {
 import SweetAlert from '../utils/SweetAlert';
 import { usePermissions } from '../hooks/SidebarMenuHooks';
 import TableHeader from '../components/ui/TableHeader';
-
-
-interface Department {
-	id: string;
-	name: string;
-	dateTime: string;
-}
+import type { Department } from '../types/masterData';
 
 // Helpers to parse API date strings like "19-11-2025 10:35:57"
 const parseApiDateToISO = (s?: string) => {

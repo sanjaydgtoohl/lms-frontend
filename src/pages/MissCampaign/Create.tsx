@@ -11,17 +11,7 @@ import { listAttendees } from '../../services/AllUsers';
 import { fetchCurrentUser } from '../../services/Header';
 import SweetAlert from '../../utils/SweetAlert';
 import { quickCreateApi } from '../../services/QuickCreate';
-
-
-interface CreateProps {
-  inline?: boolean;
-  mode?: 'create' | 'edit';
-  initialData?: Record<string, any>;
-  onClose?: () => void;
-  onSave?: (data: Record<string, any>) => void;
-}
-
-
+import type { CreateProps } from '../../types/create';
 
 const Create: React.FC<CreateProps> = ({
   inline = false,

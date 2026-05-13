@@ -6,27 +6,8 @@ import { Plus, Trash2 } from 'lucide-react';
 import { MasterFormHeader, SelectField, MultiSelectDropdown } from '../components/ui';
 import { updateAgency } from '../services/AgencyMaster';
 import SweetAlert from '../utils/SweetAlert';
+import type { ChildAgency, ParentAgency, Props } from '../types/agency';
 
-// --- Types used by this form
-interface ParentAgency {
-  name: string;
-  type: string;
-  client: string[];
-}
-
-interface ChildAgency {
-  id: string;
-  name: string;
-  type: string;
-  client: string[];
-}
-
-interface Props {
-  onClose: () => void;
-  onSave?: (payload: { parent: ParentAgency; children: Array<{ name: string; type: string; client: string[] }> }) => Promise<any> | any;
-  mode?: 'create' | 'edit';
-  initialData?: Record<string, any>;
-}
 
 // helper to create a new blank child entry
 const blankChild = (): ChildAgency => ({

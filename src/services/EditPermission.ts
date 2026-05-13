@@ -1,32 +1,6 @@
 import { apiClient } from '../utils/apiClient';
 import { handleApiError } from '../utils/apiErrorHandler';
-
-export interface PermissionEditPayload {
-  display_name: string;
-  name: string;
-  url?: string;
-  is_parent?: number | null;
-  description: string;
-  icon_text?: string;
-  order?: string | number;
-  status?: string;
-  icon_file?: File | null;
-}
-
-export interface PermissionEditDetail {
-  id: string;
-  display_name: string;
-  name: string;
-  url: string;
-  is_parent: string | number | null;
-  description: string;
-  icon_text: string;
-  order?: string | number;
-  icon_file?: string;
-  status?: string;
-  created_at?: string;
-  updated_at?: string;
-}
+import type { PermissionEditDetail, PermissionEditPayload } from '../types/permission';
 
 const ENDPOINTS = {
   GET_PERMISSION: (id: string) => `/permissions/${id}`,

@@ -1,21 +1,6 @@
 import { handleApiError } from '../utils/apiErrorHandler';
 import { apiClient } from '../utils/apiClient';
-
-export interface BrandItem {
-  id: string;
-  name: string;
-  agencyName?: string;
-  brandType?: string;
-  contactPerson?: string;
-  industry?: string;
-  country?: string;
-  state?: string;
-  city?: string;
-  zone?: string;
-  pinCode?: string;
-  dateTime?: string;
-  [key: string]: unknown;
-}
+import type { BrandItem } from '../types/brand';
 
 const ENDPOINTS = {
   LIST: '/brands',

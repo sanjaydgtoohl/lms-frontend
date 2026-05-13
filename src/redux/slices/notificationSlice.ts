@@ -1,19 +1,6 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import type { NotificationItem } from "../../services/notifications";
-
-interface ModuleNotifications {
-  notifications: NotificationItem[];
-  unreadCount: number;
-  totalItems: number;
-}
-
-interface NotificationState {
-  all: ModuleNotifications;
-  leadManagement: ModuleNotifications;
-  brief: ModuleNotifications;
-  preLead: ModuleNotifications;
-  system: ModuleNotifications;
-}
+import type { ModuleNotifications, NotificationState } from "../../types/notification";
 
 const createInitialModuleState = (): ModuleNotifications => ({
   notifications: [],

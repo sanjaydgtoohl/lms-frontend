@@ -9,20 +9,14 @@ import { listPermissions, deletePermission } from '../../../services/AllPermissi
 import SweetAlert from '../../../utils/SweetAlert';
 import ConfirmDialog from '../../../components/ui/ConfirmDialog';
 import TableHeader from '../../../components/ui/TableHeader';
+import type { AllPermissionType } from '../../../types/permission';
 
-interface Permission {
-  id: string;
-  name: string;
-  display_name?: string;
-  description?: string;
-  srNo?: number;
-}
 
 const AllPermissions: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const itemsPerPage = 10;
-  const [permissions, setPermissions] = useState<Permission[]>([]);
+  const [permissions, setPermissions] = useState<AllPermissionType[]>([]);
   const [loading, setLoading] = useState(false);
   const [totalItems, setTotalItems] = useState(0);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);

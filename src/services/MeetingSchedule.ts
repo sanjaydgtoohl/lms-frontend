@@ -1,38 +1,6 @@
 import { useUiStore } from '../store/ui';
 import { apiClient } from '../utils/apiClient';
-
-export interface MeetingScheduleItem {
-  id?: string;
-  uuid?: string;
-  title: string;
-  lead_id: string;
-  attendees_id: number[];
-  type: string;
-  location: string;
-  agenda: string;
-  link?: string;
-  meeting_date: string;
-  meeting_time: string;
-  status?: string | number;
-  created_at?: string;
-  updated_at?: string;
-  _raw?: Record<string, unknown>;
-  [key: string]: unknown;
-}
-
-export type MeetingListResponse = {
-  data: MeetingScheduleItem[];
-  meta?: {
-    pagination?: {
-      current_page: number;
-      per_page: number;
-      total: number;
-      last_page: number;
-      from: number | null;
-      to: number | null;
-    }
-  }
-};
+import type { MeetingScheduleItem, MeetingListResponse } from '../types/meeting';
 
 const ENDPOINTS = {
   LIST: '/meetings',

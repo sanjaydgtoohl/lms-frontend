@@ -1,13 +1,6 @@
 import React from 'react';
+import type { SimpleListCardProps } from '../../types/card';
 
-interface SimpleListCardProps<T> {
-  title: string;
-  items: T[];
-  renderItem: (item: T, index: number) => React.ReactNode;
-  footer?: React.ReactNode;
-  headerRight?: React.ReactNode;
-  onItemClick?: (item: T, index: number) => void;
-}
 
 const SimpleListCard = <T,>({ title, items, renderItem, footer, headerRight, onItemClick }: SimpleListCardProps<T>) => {
   return (
@@ -46,5 +39,3 @@ const SimpleListCard = <T,>({ title, items, renderItem, footer, headerRight, onI
 };
 
 export default SimpleListCard;
-
-

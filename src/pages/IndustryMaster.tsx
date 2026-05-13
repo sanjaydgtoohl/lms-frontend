@@ -14,12 +14,7 @@ import { usePermissions } from '../hooks/SidebarMenuHooks';
 
 import SweetAlert from '../utils/SweetAlert';
 import TableHeader from '../components/ui/TableHeader';
-
-interface Industry {
-  id: string;
-  name: string;
-  dateTime: string;
-}
+import type { Industry } from '../types/masterData';
 
 /** Normalise API `created_at` for table / MasterView (matches list mapping). */
 const parseCreatedAt = (val?: string | null) => {

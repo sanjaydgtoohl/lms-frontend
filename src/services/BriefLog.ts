@@ -1,47 +1,5 @@
 import { apiClient } from '../utils/apiClient';
-
-export interface ContactPerson {
-  id: number;
-  name: string;
-  email?: string | null;
-}
-
-export interface NamedEntity {
-  id: number;
-  name: string;
-}
-
-export interface BriefLogItem {
-  id: number;
-  brief_id?: number;
-  name: string;
-  action?: string;
-  description?: string;
-  user_name?: string;
-  product_name?: string;
-  mode_of_campaign?: string;
-  media_type?: string;
-  budget?: string | number;
-  comment?: string;
-  submission_date?: string;
-  status?: string | number;
-  left_time?: string;
-  contact_person?: ContactPerson | null;
-  brand?: NamedEntity | null;
-  agency?: NamedEntity | null;
-  assigned_user?: NamedEntity | null;
-  created_by_user?: NamedEntity | null;
-  brief_status?: NamedEntity | null;
-  priority?: NamedEntity | null;
-  created_at?: string;
-  updated_at?: string;
-  [key: string]: any;
-}
-
-export type BriefLogListResponse = {
-  data: BriefLogItem[];
-  meta?: any;
-};
+import type { BriefLogItem, BriefLogListResponse } from '../types/brief';
 
 const ENDPOINTS = {
   LIST: '/briefs/brief-logs',

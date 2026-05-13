@@ -9,20 +9,13 @@ import { listRoles, deleteRole } from '../../../services/AllRoles';
 import SweetAlert from '../../../utils/SweetAlert';
 import ConfirmDialog from '../../../components/ui/ConfirmDialog';
 import TableHeader from '../../../components/ui/TableHeader';
-
-interface Role {
-  id: string;
-  name: string;
-  description?: string;
-  srNo?: number;
-  _realId?: string; // Add for type safety
-}
+import type { allRoleType } from '../../../types/role';
 
 const AllRoles: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const itemsPerPage = 10;
-  const [roles, setRoles] = useState<Role[]>([]);
+  const [roles, setRoles] = useState<allRoleType[]>([]);
   const [loading, setLoading] = useState(false);
   const [totalItems, setTotalItems] = useState(0);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);

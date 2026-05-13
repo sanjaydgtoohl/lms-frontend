@@ -1,11 +1,5 @@
 import React from 'react';
-interface StatCardProps {
-  title: string | React.ReactNode;
-  value: string | number;
-  icon?: React.ReactNode;
-  trend?: 'up' | 'down';
-  trendValue?: string;
-}
+import type { StatCardProps } from '../../types/card';
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, icon }) => {
   return (

@@ -1,18 +1,5 @@
 import { apiClient } from '../utils/apiClient';
-
-export interface BriefStatusItem {
-  id: number | string;
-  name: string;
-  uuid?: string;
-  [key: string]: any;
-}
-
-export interface BriefStatusResponse {
-  success?: boolean;
-  message?: string;
-  data?: BriefStatusItem[];
-  meta?: any;
-}
+import type { BriefStatusItem, BriefStatusResponse } from '../types/brief';
 
 /**
  * Fetch all brief statuses from API

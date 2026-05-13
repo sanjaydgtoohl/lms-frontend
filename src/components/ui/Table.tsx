@@ -2,44 +2,7 @@ import React from 'react';
 import ActionMenu from './ActionMenu';
 import { Loader2 } from 'lucide-react';
 import { toTitleCase } from '../../utils';
-
-export type Column<T> = {
-  /** unique key for the column */
-  key: string;
-  /** header label */
-  header: React.ReactNode;
-  /** optional cell renderer - receives the row item */
-  render?: (item: T) => React.ReactNode;
-  /** hide this column from mobile card view (default false) */
-  hideOnMobile?: boolean;
-  /** optional className for the column cells */
-  className?: string;
-};
-
-interface TableProps<T> {
-  data: T[];
-  columns: Column<T>[];
-  startIndex?: number; // starting index for Sr. No.
-  loading?: boolean;
-  onEdit?: (item: T) => void;
-  onView?: (item: T) => void;
-  onDelete?: (item: T) => void;
-  onUpload?: (item: T) => void;
-  onChat?: (item: T) => void;
-  onCreateMeeting?: (item: T) => void;
-  onBriefCreation?: (item: T) => void;
-  /** Permission slugs for actions */
-  editPermissionSlug?: string;
-  viewPermissionSlug?: string;
-  deletePermissionSlug?: string;
-  uploadPermissionSlug?: string;
-  /** optional render key extractor (defaults to item.id || index) */
-  keyExtractor?: (item: T, index: number) => string;
-  /** compact mode reduces cell padding (default false) */
-  compact?: boolean;
-  /** when true, show desktop table layout even on small screens (compact styles applied) */
-  desktopOnMobile?: boolean;
-}
+import type { TableProps } from '../../types/table';
 
 const Table = <T,>(props: TableProps<T>) => {
   const { data, columns, startIndex = 0, loading = false, onEdit, onView, onDelete, onUpload, onChat, onCreateMeeting, onBriefCreation, editPermissionSlug, viewPermissionSlug, deletePermissionSlug, uploadPermissionSlug, keyExtractor, compact = false, desktopOnMobile = true } = props;
@@ -63,126 +26,126 @@ const Table = <T,>(props: TableProps<T>) => {
       <div className={`${desktopOnMobile ? 'block' : 'hidden lg:block'} overflow-x-auto overflow-y-visible`}>
         <div className="relative">
           <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-100">
-            <tr>
-              {columns.map(col => (
-                <th
-                  key={String(col.key)}
-                  className={`${headerPadClass} text-left text-sm font-semibold text-black tracking-wider border-b border-gray-200 whitespace-nowrap truncate ${col.className || ''}`}
-                  style={{ maxWidth: 220 }}
-                >
-                  {typeof col.header === 'string' ? toTitleCase(col.header) : col.header}
-                </th>
-              ))}
-              {showActions && (
-                <th className={`${headerPadClass}text-left text-sm font-semibold text-black tracking-wider border-b border-gray-200 whitespace-nowrap truncate`} style={{ maxWidth: 220 }}>
-                  {toTitleCase('Actions')}
-                </th>
-              )}
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {loading ? (
+            <thead className="bg-gray-100">
               <tr>
-                <td colSpan={columns.length + (showActions ? 1 : 0)} className={`${cellPadClass} py-20`}>
-                  <div className="flex flex-col items-center justify-center space-y-3">
-                    <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
-                    <p className="text-sm text-gray-500">Loading data...</p>
-                  </div>
-                </td>
+                {columns.map(col => (
+                  <th
+                    key={String(col.key)}
+                    className={`${headerPadClass} text-left text-sm font-semibold text-black tracking-wider border-b border-gray-200 whitespace-nowrap truncate ${col.className || ''}`}
+                    style={{ maxWidth: 220 }}
+                  >
+                    {typeof col.header === 'string' ? toTitleCase(col.header) : col.header}
+                  </th>
+                ))}
+                {showActions && (
+                  <th className={`${headerPadClass}text-left text-sm font-semibold text-black tracking-wider border-b border-gray-200 whitespace-nowrap truncate`} style={{ maxWidth: 220 }}>
+                    {toTitleCase('Actions')}
+                  </th>
+                )}
               </tr>
-            ) : !hasData ? (
-              <tr>
-                <td colSpan={columns.length + (showActions ? 1 : 0)} className={`${cellPadClass} py-20`}>
-                  <div className="flex flex-col items-center justify-center space-y-2">
-                    <svg
-                      className="w-12 h-12 text-gray-300"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-                      />
-                    </svg>
-                    <p className="text-sm font-medium text-gray-500">No records found</p>
-                    <p className="text-xs text-gray-400">Try adjusting your search or filters</p>
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              data.map((item, index) => (
-                <tr
-                  key={keyExtractor ? keyExtractor(item, index) : (String((item as Record<string, unknown>).id) || String(index))}
-                  className="hover:bg-gray-50 transition-colors duration-150 border-gray-200"
-                >
-                    {columns.map(col => (
-                    <td
-                      key={col.key}
-                      className={`${cellPadClass} whitespace-nowrap text-sm text-gray-700 ${col.className || ''}`}
-                      style={{ maxWidth: 320 }}
-                    >
-                          {(() => {
-                            // Get the raw output from renderer or default extractor
-                            const extracted = col.render
-                              ? col.render(item)
-                              : (() => {
-                                const raw = String((item as Record<string, unknown>)[col.key] ?? '-');
-                                // Don't title-case obvious codes, numbers, or hashes
-                               if (raw === '-' || /^[#\d]/.test(raw) || /\d{2}[-/.]\d{2}[-/.]\d{2,4}/.test(raw)) return raw;
-                                return toTitleCase(raw);
-                              })();
-
-                            // If renderer returned a valid React element, render it directly
-                            if (React.isValidElement(extracted)) return extracted;
-
-                            // Defensive handling for plain objects (avoid React child error)
-                            if (extracted === null || extracted === undefined) return '';
-                            if (typeof extracted === 'object') {
-                              // Prefer common `name` field when available
-                              const _ex: any = extracted as any;
-                              if (_ex && 'name' in _ex) return String(_ex.name ?? '');
-                              try {
-                                return String(JSON.stringify(extracted));
-                              } catch {
-                                return String(extracted);
-                              }
-                            }
-
-                            return extracted;
-                          })()}
-                    </td>
-                  ))}
-                  {showActions && (
-                    <td className={`${cellPadClass} whitespace-nowrap text-center text-sm relative`}>
-                      <div className="flex justify-center">
-                        <ActionMenu
-                          isLast={index === data.length - 1}
-                          rowIndex={index}
-                          totalRows={data.length}
-                          onEdit={() => onEdit?.(item)}
-                          onView={() => onView?.(item)}
-                          {...(onDelete && { onDelete: () => onDelete(item) })}
-                          {...(onUpload && { onUpload: () => onUpload(item) })}
-                          {...(onChat && { onChat: () => onChat(item) })}
-                          {...(onCreateMeeting && { onCreateMeeting: () => onCreateMeeting(item) })}
-                          {...(onBriefCreation && { onBriefCreation: () => onBriefCreation(item) })}
-                          editPermissionSlug={editPermissionSlug}
-                          viewPermissionSlug={viewPermissionSlug}
-                          deletePermissionSlug={deletePermissionSlug}
-                          uploadPermissionSlug={uploadPermissionSlug}
-                        />
-                      </div>
-                    </td>
-                  )}
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {loading ? (
+                <tr>
+                  <td colSpan={columns.length + (showActions ? 1 : 0)} className={`${cellPadClass} py-20`}>
+                    <div className="flex flex-col items-center justify-center space-y-3">
+                      <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+                      <p className="text-sm text-gray-500">Loading data...</p>
+                    </div>
+                  </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : !hasData ? (
+                <tr>
+                  <td colSpan={columns.length + (showActions ? 1 : 0)} className={`${cellPadClass} py-20`}>
+                    <div className="flex flex-col items-center justify-center space-y-2">
+                      <svg
+                        className="w-12 h-12 text-gray-300"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                        />
+                      </svg>
+                      <p className="text-sm font-medium text-gray-500">No records found</p>
+                      <p className="text-xs text-gray-400">Try adjusting your search or filters</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                data.map((item, index) => (
+                  <tr
+                    key={keyExtractor ? keyExtractor(item, index) : (String((item as Record<string, unknown>).id) || String(index))}
+                    className="hover:bg-gray-50 transition-colors duration-150 border-gray-200"
+                  >
+                    {columns.map(col => (
+                      <td
+                        key={col.key}
+                        className={`${cellPadClass} whitespace-nowrap text-sm text-gray-700 ${col.className || ''}`}
+                        style={{ maxWidth: 320 }}
+                      >
+                        {(() => {
+                          // Get the raw output from renderer or default extractor
+                          const extracted = col.render
+                            ? col.render(item)
+                            : (() => {
+                              const raw = String((item as Record<string, unknown>)[col.key] ?? '-');
+                              // Don't title-case obvious codes, numbers, or hashes
+                              if (raw === '-' || /^[#\d]/.test(raw) || /\d{2}[-/.]\d{2}[-/.]\d{2,4}/.test(raw)) return raw;
+                              return toTitleCase(raw);
+                            })();
+
+                          // If renderer returned a valid React element, render it directly
+                          if (React.isValidElement(extracted)) return extracted;
+
+                          // Defensive handling for plain objects (avoid React child error)
+                          if (extracted === null || extracted === undefined) return '';
+                          if (typeof extracted === 'object') {
+                            // Prefer common `name` field when available
+                            const _ex: any = extracted as any;
+                            if (_ex && 'name' in _ex) return String(_ex.name ?? '');
+                            try {
+                              return String(JSON.stringify(extracted));
+                            } catch {
+                              return String(extracted);
+                            }
+                          }
+
+                          return extracted;
+                        })()}
+                      </td>
+                    ))}
+                    {showActions && (
+                      <td className={`${cellPadClass} whitespace-nowrap text-center text-sm relative`}>
+                        <div className="flex justify-center">
+                          <ActionMenu
+                            isLast={index === data.length - 1}
+                            rowIndex={index}
+                            totalRows={data.length}
+                            onEdit={() => onEdit?.(item)}
+                            onView={() => onView?.(item)}
+                            {...(onDelete && { onDelete: () => onDelete(item) })}
+                            {...(onUpload && { onUpload: () => onUpload(item) })}
+                            {...(onChat && { onChat: () => onChat(item) })}
+                            {...(onCreateMeeting && { onCreateMeeting: () => onCreateMeeting(item) })}
+                            {...(onBriefCreation && { onBriefCreation: () => onBriefCreation(item) })}
+                            editPermissionSlug={editPermissionSlug}
+                            viewPermissionSlug={viewPermissionSlug}
+                            deletePermissionSlug={deletePermissionSlug}
+                            uploadPermissionSlug={uploadPermissionSlug}
+                          />
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 

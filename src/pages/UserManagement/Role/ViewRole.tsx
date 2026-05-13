@@ -4,18 +4,13 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { MasterFormHeader } from '../../../components/ui';
 import { ROUTES } from '../../../constants';
 import { getRoleById } from '../../../services/ViewRole';
-
-interface Role {
-  id: string | number;
-  name: string;
-  description: string;
-}
+import type { viewRoletype } from '../../../types/role';
 
 const ViewRole: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
-  const [role, setRole] = useState<Role | null>(null);
+  const [role, setRole] = useState<viewRoletype | null>(null);
 
   useEffect(() => {
     const fetchRole = async () => {

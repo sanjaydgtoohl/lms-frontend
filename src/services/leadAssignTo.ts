@@ -1,11 +1,5 @@
 import { apiClient } from '../utils/apiClient';
-
-export interface AssignLeadResponse<T = any> {
-  success?: boolean;
-  message?: string;
-  data?: T;
-  meta?: any;
-}
+import type { AssignLeadResponse } from '../types/lead';
 
 /**
  * Assign a user to a lead.

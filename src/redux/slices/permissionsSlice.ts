@@ -1,15 +1,8 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { apiClient } from "../../utils/apiClient";
 import { extractAllPaths, extractAllSlugs, mapMenu } from "../../services/Side";
-import type { ApiSidebarItem, NavigationItem } from "../../services/Side";
-
-interface PermissionsState {
-  sidebarMenu: NavigationItem[];
-  allPermittedPaths: string[];
-  allPermittedSlugs: string[];
-  loading: boolean;
-  permissionsLoaded: boolean;
-}
+import type { ApiSidebarItem } from "../../services/Side";
+import type { PermissionsState } from "../../types/permission";
 
 const initialState: PermissionsState = {
   sidebarMenu: [],

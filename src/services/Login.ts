@@ -3,33 +3,7 @@ import type { LoginCredentials } from '../types';
 import { setCookie, deleteCookie, getCookie } from '../utils/cookies';
 import sessionManager from './sessionManager';
 import http from './http';
-
-// API Response structure based on the actual API
-export interface LoginApiResponse {
-  success: boolean;
-  message: string;
-  meta: {
-    timestamp: string;
-    status_code: number;
-  };
-  data: {
-    token: string;
-    refreshToken: string;
-    token_type: string;
-    expires_in: number;
-  };
-}
-
-// Error response structure
-export interface LoginErrorResponse {
-  success: boolean;
-  message: string;
-  meta: {
-    timestamp: string;
-    status_code: number;
-  };
-  details?: any;
-}
+import type { LoginApiResponse, LoginErrorResponse } from '../types/user';
 
 class LoginService {
   constructor() {}

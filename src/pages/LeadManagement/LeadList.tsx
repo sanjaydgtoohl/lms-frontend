@@ -17,11 +17,7 @@ import type { AppDispatch } from '../../redux/store';
 import { setUnreadCount, setNotifications, incrementUnreadCount } from '../../redux/slices/notificationSlice';
 import { getUnreadNotificationCount, listNotifications } from '../../services/notifications';
 import type { Lead } from '../../types/AllLeadtype';
-
-interface UserOption {
-  id: number | string;
-  name: string;
-}
+import type { Props, UserOption } from '../../types/lead';
 
 import { getCallStatuses } from '../../services/CallStatus';
 import { apiClient } from '../../utils/apiClient';
@@ -94,13 +90,7 @@ const deletePermissionMap: Record<string, string> = {
   'Brief': 'leads-b.delete',
 };
 
-interface Props {
-  title: string;
-  filterStatus?: string; // if not provided, show all
-  extraStatuses?: string[];
-  permissionStatus?: string;
-  headerActions?: React.ReactNode;
-}
+
 
 const EMPTY_EXTRA_STATUSES: string[] = [];
 

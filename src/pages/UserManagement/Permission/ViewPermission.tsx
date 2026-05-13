@@ -4,19 +4,14 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { MasterFormHeader, PermissionDenied } from '../../../components/ui';
 import { ROUTES } from '../../../constants';
 import { getPermission } from '../../../services/AllPermissions';
+import type { viewPermissionType } from '../../../types/permission';
 
-interface Permission {
-  id: string;
-  name: string;
-  display_name?: string;
-  description?: string;
-}
 
 const ViewPermission: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
-  const [permission, setPermission] = useState<Permission | null>(null);
+  const [permission, setPermission] = useState<viewPermissionType | null>(null);
 
   useEffect(() => {
     const fetchPermission = async () => {

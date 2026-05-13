@@ -1,20 +1,4 @@
-export interface Permission {
-  read: boolean;
-  create: boolean;
-  update: boolean;
-  delete: boolean;
-  view?: boolean;
-}
-
-export interface Submodule {
-  name: string;
-  permissions: Permission;
-}
-
-export interface Module {
-  name: string;
-  submodules: Submodule[];
-}
+import type { Module } from '../types/permission';
 
 export const rolePermissionsData: Module[] = [
   {

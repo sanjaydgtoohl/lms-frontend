@@ -10,3 +10,9 @@ export interface ChevronDropdownIconProps {
   className?: string;
 }
 
+export interface StatusDropdownProps {
+  value: string;
+  options: string[];
+  onChange: (newValue: string) => void;
+  onConfirm?: (newValue: string) => Promise<void>;
+}

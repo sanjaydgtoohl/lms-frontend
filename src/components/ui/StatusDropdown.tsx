@@ -2,17 +2,12 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import Badge from './Badge';
 import ConfirmDialog from './ConfirmDialog';
+import type { StatusDropdownProps } from '../../types/dropdown';
 
 const DROPDOWN_WIDTH = 176;
 const DROPDOWN_EST_HEIGHT = 220;
 const VIEWPORT_GAP = 8;
 
-interface StatusDropdownProps {
-  value: string;
-  options: string[];
-  onChange: (newValue: string) => void;
-  onConfirm?: (newValue: string) => Promise<void>;
-}
 
 const StatusDropdown: React.FC<StatusDropdownProps> = ({ value, options, onChange, onConfirm }) => {
   const [open, setOpen] = useState(false);

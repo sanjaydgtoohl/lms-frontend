@@ -1,42 +1,5 @@
 import { apiClient } from '../utils/apiClient';
-
-export type NotificationTab = 'all' | 'unread' | 'system' | 'lead-management' | 'brief' | 'pre-lead';
-
-export type NotificationCategory =
-  | 'Lead Created'
-  | 'Pre Lead Created'
-  | 'Brief Created'
-  | 'Assignment Updated'
-  | 'Status Updated'
-  | 'System'
-  | string;
-
-export interface NotificationItem {
-  id: string;
-  title: string;
-  message: string;
-  category: NotificationCategory;
-  read: boolean;
-  createdAt: string;
-  source?: string;
-  link?: string;
-  originalData?: any; // Store original payload for additional details
-}
-
-export interface NotificationListResponse {
-  data: NotificationItem[];
-  meta?: {
-    total?: number;
-    pagination?: {
-      current_page: number;
-      per_page: number;
-      total: number;
-      last_page: number;
-      from: number;
-      to: number;
-    };
-  };
-}
+import type { NotificationItem, NotificationListResponse, NotificationTab, NotificationCategory } from '../types/notification';
 
 const normalizeNotification = (payload: any): NotificationItem => {
   // Handle the new data structure with nested 'data' object
@@ -46,7 +9,7 @@ const normalizeNotification = (payload: any): NotificationItem => {
     data.category ||
     data.event_type ||
     data.type ||
-    data.notification_type ||
+    data.notification_type || 
     payload.category ||
     payload.event_type ||
     payload.type ||
@@ -170,44 +133,21 @@ export async function listNotifications(
   
   const items = (response.data || []).map(normalizeNotification);
 
-  const p = response.meta?.pagination as
-    | {
-        current_page?: number;
-        per_page?: number;
-        last_page?: number;
-        total?: number;
-        from?: number;
-        to?: number;
-        page?: number;
-        limit?: number;
-        totalPages?: number;
+  const meta = response.meta
+    ? {
+        total: response.meta.pagination?.total,
+        pagination: response.meta.pagination
+          ? {
+              current_page: response.meta.pagination.page,
+              per_page: response.meta.pagination.limit,
+              total: response.meta.pagination.total,
+              last_page: Math.max(1, Math.ceil(response.meta.pagination.total / response.meta.pagination.limit)),
+              from: (response.meta.pagination.page - 1) * response.meta.pagination.limit + 1,
+              to: Math.min(response.meta.pagination.page * response.meta.pagination.limit, response.meta.pagination.total),
+            }
+          : undefined,
       }
-    | undefined;
-
-  const meta =
-    response.meta && p
-      ? (() => {
-          const current_page = Number(p.current_page ?? p.page ?? 1);
-          const per_page = Number(p.per_page ?? p.limit ?? perPage);
-          const total = Number(p.total ?? 0);
-          const last_page = Number(
-            p.last_page ??
-              p.totalPages ??
-              (per_page > 0 ? Math.max(1, Math.ceil(total / per_page)) : 1)
-          );
-          return {
-            total,
-            pagination: {
-              current_page,
-              per_page,
-              total,
-              last_page,
-              from: p.from ?? (total === 0 ? 0 : (current_page - 1) * per_page + 1),
-              to: p.to ?? Math.min(current_page * per_page, total),
-            },
-          };
-        })()
-      : undefined;
+    : undefined;
 
   return {
     data: items,

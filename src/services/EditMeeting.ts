@@ -1,18 +1,12 @@
 import type { MeetingScheduleItem } from './MeetingSchedule';
-import type { LeadItem } from './AllLeads';
+// import type { LeadItem } from './AllLeads';
+import type { LeadItem } from '../types/lead';
 import type { User as UserItem } from './AllUsers';
 import { apiClient } from '../utils/apiClient';
 import { listLeads } from './AllLeads';
 import { listAttendees } from './AllUsers';
+import type { MeetingFormData } from '../types/meeting';
 
-export interface MeetingFormData {
-  lead: LeadItem;
-  attendees: UserItem[];
-  meetingData: MeetingScheduleItem & {
-    meetin_start_date?: string;
-    meetin_end_date?: string;
-  };
-}
 
 export const fetchMeetingById = async (id: string): Promise<MeetingFormData> => {
     try {

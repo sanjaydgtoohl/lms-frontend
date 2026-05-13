@@ -1,11 +1,5 @@
 import { apiClient } from '../utils/apiClient';
-
-export interface UpdateAssignResponse<T = any> {
-  success?: boolean;
-  message?: string;
-  data?: T;
-  meta?: any;
-}
+import type { UpdateAssignResponse } from '../types/brief';
 
 /**
  * Update the assigned user for a brief.

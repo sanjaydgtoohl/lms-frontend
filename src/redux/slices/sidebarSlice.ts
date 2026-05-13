@@ -1,10 +1,5 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-
-interface SidebarState {
-  isCollapsed: boolean;
-  expandedItems: string[];
-  mobileOpen: boolean;
-}
+import type { SidebarState } from "../../types/sidebar";
 
 const initialState: SidebarState = {
   isCollapsed: false,

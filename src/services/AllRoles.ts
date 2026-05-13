@@ -1,12 +1,6 @@
 import { handleApiError } from '../utils/apiErrorHandler';
 import { apiClient } from '../utils/apiClient';
-
-export interface Role {
-  id: string;
-  name: string;
-  description?: string;
-  _realId?: string; // Store the actual backend ID
-}
+import type { allRolesInterface } from '../types/role';
 
 const ENDPOINTS = {
   LIST: '/roles',
@@ -28,7 +22,7 @@ async function handleResponse<T>(res: any): Promise<T> {
 }
 
 export type RoleListResponse = {
-  data: Role[];
+  data: allRolesInterface[];
   meta?: any;
 };
 
@@ -58,7 +52,7 @@ export async function listRoles(page = 1, perPage = 10, search?: string): Promis
       _realId: String(realId), // Store the real ID
       name,
       description,
-    } as Role;
+    } as allRolesInterface;
   });
 
   return {
@@ -67,21 +61,21 @@ export async function listRoles(page = 1, perPage = 10, search?: string): Promis
   };
 }
 
-export async function getRole(id: string): Promise<Role> {
+export async function getRole(id: string): Promise<allRolesInterface> {
   const cleanId = id.replace(/^#/, '');
   const res = await apiClient.get<any>(ENDPOINTS.DETAIL(cleanId));
-  return handleResponse<Role>(res);
+  return handleResponse<allRolesInterface>(res);
 }
 
-export async function createRole(payload: Partial<Role>): Promise<Role> {
+export async function createRole(payload: Partial<allRolesInterface>): Promise<allRolesInterface> {
   const res = await apiClient.post<any>(ENDPOINTS.CREATE, payload);
-  return handleResponse<Role>(res);
+  return handleResponse<allRolesInterface>(res);
 }
 
-export async function updateRole(id: string, payload: Partial<Role>): Promise<Role> {
+export async function updateRole(id: string, payload: Partial<allRolesInterface>): Promise<allRolesInterface> {
   const cleanId = id.replace(/^#/, '');
   const res = await apiClient.put<any>(ENDPOINTS.UPDATE(cleanId), payload);
-  return handleResponse<Role>(res);
+  return handleResponse<allRolesInterface>(res);
 }
 
 export async function deleteRole(id: string): Promise<void> {

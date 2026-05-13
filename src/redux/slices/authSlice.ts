@@ -1,16 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { apiClient } from "../../services/api";
 import sessionManager from "../../services/sessionManager";
-import type { User } from "../../types";
-
-interface AuthState {
-  user: User | null;
-  token: string | null;
-  refreshTokenValue: string | null;
-  isAuthenticated: boolean;
-  loading: boolean;
-  error: string | null;
-}
+import type { AuthState } from "../../types/auth";
 
 // Login thunk
 export const loginUser = createAsyncThunk(

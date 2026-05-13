@@ -1,44 +1,6 @@
 
 import http from './http';
-
-
-export interface SubmittedPlanFile {
-  path: string;
-  url: string;
-  name: string;
-}
-
-export interface PlannerStatus {
-  id: number;
-  name: string;
-}
-
-export interface BriefSummary {
-  id: number;
-  uuid: string;
-  name: string;
-  product_name: string;
-}
-
-export interface EditSubmittedPlanResponse {
-  success: boolean;
-  message: string;
-  data: {
-    id: number;
-    status: string;
-    status_label: string;
-    brief: BriefSummary;
-    planner_status: PlannerStatus;
-    submitted_plan: SubmittedPlanFile[];
-    submitted_plan_count: number;
-    backup_plan: string | null;
-    backup_plan_url: string | null;
-    has_backup_plan: boolean;
-    created_at: string;
-    updated_at: string;
-    planner_id?: number; // for convenience if present in response
-  };
-}
+import type { EditSubmittedPlanResponse } from '../types/edit';
 
 /**
  * Update submitted plan and backup plan for a planner

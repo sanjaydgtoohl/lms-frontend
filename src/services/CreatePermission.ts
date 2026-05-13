@@ -1,22 +1,6 @@
 import { handleApiError } from '../utils/apiErrorHandler';
 import { apiClient } from '../utils/apiClient';
-
-export interface PermissionPayload {
-  displayName: string;
-  name: string;
-  url?: string;
-  parentPermission?: string | null;
-  description: string;
-  order?: string | number;
-}
-
-export interface PermissionDetail extends PermissionPayload {
-  id: string;
-  slug?: string;
-  status?: string;
-  created_at?: string;
-  updated_at?: string;
-}
+import type { PermissionPayload, PermissionDetail } from '../types/permission';
 
 const ENDPOINTS = {
   CREATE: '/permissions',

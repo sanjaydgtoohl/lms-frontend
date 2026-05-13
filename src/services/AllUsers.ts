@@ -1,31 +1,6 @@
 import { handleApiError } from '../utils/apiErrorHandler';
 import { apiClient } from '../utils/apiClient';
-
-export interface User {
-  id: string;
-  name: string;
-  email?: string;
-  zone?: string;
-  origination?: string;
-  role?: string;
-  roles?: any[];
-  status?: 'Active' | 'Inactive';
-  lastLogin?: string;
-  created?: string;
-  created_at_formatted?: string;
-  last_login_at?: string;
-  // `parent` kept for backward compatibility (first parent), `parents` contains all parents when available
-  parent?: {
-    id: number;
-    name: string;
-    email?: string;
-  };
-  parents?: Array<{
-    id: number;
-    name: string;
-    email?: string;
-  }>;
-}
+import type { User } from '../types/user';
 
 const ENDPOINTS = {
   LIST: '/users',
