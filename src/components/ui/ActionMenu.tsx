@@ -316,7 +316,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, onUpl
             `}
             onClick={(e) => e.stopPropagation()}
           >
-            {(onEdit && (!editPermissionSlug || hasPermission(editPermissionSlug))) && (
+            {(onEdit && editPermissionSlug && hasPermission(editPermissionSlug)) && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -339,7 +339,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, onUpl
               </button>
             )}
 
-            {(onView && (!viewPermissionSlug || hasPermission(viewPermissionSlug))) && (
+            {(onView && viewPermissionSlug && hasPermission(viewPermissionSlug)) && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -362,7 +362,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, onUpl
               </button>
             )}
 
-            {(onUpload && (!uploadPermissionSlug || hasPermission(uploadPermissionSlug))) && (
+            {(onUpload && uploadPermissionSlug && hasPermission(uploadPermissionSlug)) && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -454,9 +454,9 @@ const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onView, onDelete, onUpl
               </button>
             )}
 
-            {(onDelete && (!deletePermissionSlug || hasPermission(deletePermissionSlug))) && (
+            {(onDelete && deletePermissionSlug && hasPermission(deletePermissionSlug)) && (
               <>
-                {((onEdit && (!editPermissionSlug || hasPermission(editPermissionSlug))) || (onView && (!viewPermissionSlug || hasPermission(viewPermissionSlug)))) && (
+                {((onEdit && editPermissionSlug && hasPermission(editPermissionSlug)) || (onView && viewPermissionSlug && hasPermission(viewPermissionSlug))) && (
                   <div className="my-1 border-t border-gray-200" />
                 )}
                 <button

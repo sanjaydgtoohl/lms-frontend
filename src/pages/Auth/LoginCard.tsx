@@ -5,9 +5,10 @@ import { Button, Input } from '../../components/ui';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../redux/store';
-import { loginUser, setAuthenticated } from '../../redux/slices/authSlice';
+import { loginUser } from '../../redux/slices/authSlice';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants';
+import { extractErrorMessage } from '../../utils/extractErrorMessage';
 
 const loginSchema = z.object({
   email: z
@@ -61,27 +62,14 @@ export default function LoginCard() {
     try {
       // Dispatch Redux loginUser thunk
       await dispatch(loginUser({ email: data.email, password: data.password })).unwrap();
-      dispatch(setAuthenticated(true));
       setLoginError(null);
       navigate(ROUTES.DASHBOARD, { replace: true });
-    } catch (error: any) {
-      if (typeof error === 'string') {
-        setLoginError(error);
-        return;
-      }
-      // Try to extract API error message if present
-      let apiErrorMsg = '';
-      if (error?.response?.data?.errors) {
-        // Try to extract the first error message from errors object
-        const errors = error.response.data.errors;
-        if (typeof errors === 'object') {
-          const firstKey = Object.keys(errors)[0];
-          if (firstKey && Array.isArray(errors[firstKey]) && errors[firstKey][0]) {
-            apiErrorMsg = errors[firstKey][0];
-          }
-        }
-      }
-      setLoginError(apiErrorMsg || error?.message || 'Login failed. Please check your credentials.');
+    } catch (error: unknown) {
+      const message =
+        typeof error === 'string'
+          ? error
+          : extractErrorMessage(error);
+      setLoginError(message || 'Login failed. Please check your credentials.');
     }
   };
 

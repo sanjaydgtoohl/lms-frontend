@@ -1,20 +1,16 @@
 import { API_BASE_URL, API_ENDPOINTS } from '../constants';
-import type { 
-  LoginCredentials, 
-  AuthResponse, 
-  ApiResponse, 
-  User, 
-  Course
-} from '../types';
-import { authService } from '.';
+import type { LoginCredentials, AuthResponse, ApiResponse, User, Course } from '../types';
 import http from './http';
 import { handleApiError } from '../utils/apiErrorHandler';
 
 class ApiClient {
-    // Public method to allow custom requests
-    async customRequest<T>(endpoint: string, options: { method?: string; data?: any } = {}): Promise<ApiResponse<T>> {
-      return this.request<T>(endpoint, options);
-    }
+  async customRequest<T>(
+    endpoint: string,
+    options: { method?: string; data?: unknown } = {}
+  ): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, options);
+  }
+
   private baseURL: string;
 
   constructor(baseURL: string) {
@@ -30,7 +26,10 @@ class ApiClient {
     return `${normalizedBase}${normalizedEndpoint}`;
   }
 
-  private async request<T>(endpoint: string, options: { method?: string; data?: any } = {}): Promise<ApiResponse<T>> {
+  private async request<T>(
+    endpoint: string,
+    options: { method?: string; data?: unknown } = {}
+  ): Promise<ApiResponse<T>> {
     try {
       const method = (options.method || 'GET').toUpperCase();
       const url = this.resolveUrl(endpoint);
@@ -42,64 +41,37 @@ class ApiClient {
       }
 
       return data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('API Error:', error);
       handleApiError(error, false);
       throw error;
     }
   }
 
-  // Auth Methods
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    // Use the dedicated authService for proper API handling
-    const response = await authService.login(credentials);
-    
-    if (response.token) {
-      this.setToken(response.token);
-    }
-
-    return response;
+    const { default: loginService } = await import('./Login');
+    return loginService.login(credentials) as Promise<AuthResponse>;
   }
 
   async register(userData: Partial<User> & { password: string }): Promise<AuthResponse> {
-    const response = await this.request<AuthResponse>(
-      API_ENDPOINTS.AUTH.REGISTER,
-      {
-        method: 'POST',
-        data: userData,
-      }
-    );
-
-    if (response.data.token) {
-      this.setToken(response.data.token);
-    }
-
+    const response = await this.request<AuthResponse>(API_ENDPOINTS.AUTH.REGISTER, {
+      method: 'POST',
+      data: userData,
+    });
     return response.data;
   }
 
   async logout(): Promise<void> {
     try {
-      await this.request(API_ENDPOINTS.AUTH.LOGOUT, {
-        method: 'POST',
-      });
-    } finally {
-      this.clearToken();
+      await this.request(API_ENDPOINTS.AUTH.LOGOUT, { method: 'POST' });
+    } catch {
+      // Logout clears client state regardless of API result
     }
   }
 
   async refreshToken(): Promise<AuthResponse> {
-
-    // Do not send refreshToken in body; rely on cookie
-    const response = await this.request<AuthResponse>(API_ENDPOINTS.AUTH.REFRESH, {
-      method: 'POST',
-      data: {},
-    });
-
-    if (response.data.token) {
-      this.setToken(response.data.token);
-    }
-
-    return response.data;
+    const { default: sessionManager } = await import('./sessionManager');
+    return sessionManager.refreshTokens() as Promise<AuthResponse>;
   }
 
   async getProfile(): Promise<User> {
@@ -107,7 +79,6 @@ class ApiClient {
     return response.data;
   }
 
-  // Course Methods
   async getCourses(): Promise<Course[]> {
     const response = await this.request<Course[]>(API_ENDPOINTS.COURSES.LIST);
     return response.data;
@@ -135,35 +106,13 @@ class ApiClient {
   }
 
   async deleteCourse(id: string): Promise<void> {
-    await this.request(API_ENDPOINTS.COURSES.DELETE(id), {
-      method: 'DELETE',
-    });
+    await this.request(API_ENDPOINTS.COURSES.DELETE(id), { method: 'DELETE' });
   }
 
   async enrollInCourse(id: string): Promise<void> {
-    await this.request(API_ENDPOINTS.COURSES.ENROLL(id), {
-      method: 'POST',
-    });
-  }
-
-  // Token Management
- setToken(token: string): void {
-  const expires = 3600;
-  document.cookie = `auth_token=${encodeURIComponent(token)}; Path=/; Max-Age=${expires}; Secure; SameSite=Lax`;
-}
-
-  clearToken(): void {
-    // Clear cookies
-    document.cookie = 'auth_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    document.cookie = 'refresh_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT';
-  }
-
-  isAuthenticated(): boolean {
-    const match = document.cookie.match(new RegExp('(?:^|; )' + encodeURIComponent('auth_token') + '=([^;]*)'));
-    return !!(match && match[1]);
+    await this.request(API_ENDPOINTS.COURSES.ENROLL(id), { method: 'POST' });
   }
 }
 
-// Create and export a singleton instance
 export const apiClient = new ApiClient(API_BASE_URL);
 export default apiClient;

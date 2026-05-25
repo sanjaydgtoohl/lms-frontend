@@ -38,11 +38,11 @@ export const ROUTES = {
     DETAIL: (id: string) => `/brief/${id}`,
   },
   MISS_CAMPAIGN: {
-    ROOT: '/miss-campaign',
-    VIEW: '/miss-campaign/view',
-    CREATE: '/miss-campaign/create',
-    EDIT: (id: string) => `/miss-campaign/view/${id}/edit`,
-    DETAIL: (id: string) => `/miss-campaign/view/${id}`,
+    ROOT: '/pre-lead',
+    VIEW: '/pre-lead/view',
+    CREATE: '/pre-lead/create',
+    EDIT: (id: string) => `/pre-lead/view/${id}/edit`,
+    DETAIL: (id: string) => `/pre-lead/view/${id}`,
   },
   CAMPAIGN_MANAGEMENT: '/campaign-management',
   FINANCE: '/finance',
@@ -116,11 +116,8 @@ export const COURSE_STATUS = {
   ARCHIVED: 'archived',
 } as const;
 
-// Local Storage Keys
+// Storage Keys (theme only — auth tokens live in Redux + refresh cookie)
 export const STORAGE_KEYS = {
-  AUTH_TOKEN: 'auth_token',
-  REFRESH_TOKEN: 'refresh_token',
-  USER_DATA: 'user_data',
   THEME: 'theme',
 } as const;
 

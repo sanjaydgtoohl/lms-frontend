@@ -4,56 +4,15 @@
  */
 
 import { useUiStore } from '../store/ui';
+import { extractErrorMessage } from './extractErrorMessage';
+
+export { extractErrorMessage } from './extractErrorMessage';
 
 export interface ApiError {
   message: string;
   code?: string;
   statusCode?: number;
   details?: Record<string, any>;
-}
-
-/**
- * Extract error message from various error formats
- */
-export function extractErrorMessage(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  
-  if (typeof error === 'string') {
-    return error;
-  }
-  
-  if (error && typeof error === 'object') {
-    const err = error as Record<string, any>;
-    
-    // Check common error message fields
-    if (err.message) return String(err.message);
-    if (err.error) return String(err.error);
-    if (err.errors) {
-      if (Array.isArray(err.errors)) {
-        return err.errors.join(', ');
-      }
-      if (typeof err.errors === 'object') {
-        const errorMessages = Object.values(err.errors)
-          .flatMap((v: any) => (Array.isArray(v) ? v : [v]))
-          .map((v) => String(v));
-        return errorMessages.join(', ');
-      }
-      return String(err.errors);
-    }
-    if (err.details) {
-      if (typeof err.details === 'string') return err.details;
-      if (Array.isArray(err.details)) return err.details.join(', ');
-      if (typeof err.details === 'object') {
-        const details = Object.values(err.details)
-          .flatMap((v: any) => (Array.isArray(v) ? v : [v]));
-        return details.join(', ');
-      }
-    }
-  }
-  
-  return 'An unexpected error occurred. Please try again.';
 }
 
 /**

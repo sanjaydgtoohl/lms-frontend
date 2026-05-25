@@ -4,7 +4,7 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import ErrorBoundary from '../ui/ErrorBoundary';
 import NotificationPopup from '../ui/NotificationPopup';
-import { useUiStore } from '../../store/ui';
+import { useUiStore, useUiActions } from '../../store/ui';
 import { debounce } from 'lodash';
 
 const Layout: React.FC = () => {
@@ -12,7 +12,7 @@ const Layout: React.FC = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const notification = useUiStore((s) => s.notification);
-  const hideNotification = useUiStore((s) => s.hideNotification);
+  const { hideNotification } = useUiActions();
 
   // Handle responsive sidebar
   useEffect(() => {

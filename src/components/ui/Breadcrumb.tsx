@@ -209,11 +209,11 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({
       return crumbs;
     }
 
-    // Handle miss-campaign routes
-    if (pathname.startsWith('/miss-campaign')) {
+    // Handle pre-lead routes
+    if (pathname.startsWith('/pre-lead')) {
       crumbs.push({
-        label: 'Miss Campaign',
-        path: '/miss-campaign/view',
+        label: 'Pre Lead',
+        path: '/pre-lead/view',
       });
 
       if (pathname.includes('/create')) {
@@ -225,7 +225,7 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({
         const id = parts[2];
         crumbs.push({
           label: `ID: ${id}`,
-          path: `/miss-campaign/view/${id}`,
+          path: `/pre-lead/view/${id}`,
         });
         crumbs.push({
           label: 'Edit',

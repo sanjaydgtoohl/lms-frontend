@@ -108,7 +108,7 @@ export interface NavigationItem {
 export function fixPath(url?: string): string | undefined {
   if (!url || url === 'javascript:void(0)') return undefined;
   let path = url.startsWith('/') ? url : `/${url}`;
-  path = path.replace(/\{id\}/g, ':id');
+  path = path.replace(/\{[^}]+\}/g, ':id');
   return path;
 }
 
