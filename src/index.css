@@ -457,46 +457,256 @@ button[data-btn-label="Update"]:hover {
 
 /* login page css start  */
 
-.login-page{ 
-  @apply bg-[#121212];
+.login-page {
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(254, 96, 0, 0.14), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 85% 90%, rgba(254, 96, 0, 0.08), transparent 50%),
+    linear-gradient(165deg, #0a0a0a 0%, #121212 45%, #0d0d0d 100%);
+}
+
+.login-particles {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.login-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.login-glow-left {
+  width: 420px;
+  height: 420px;
+  top: -120px;
+  left: -80px;
+  background: rgba(254, 96, 0, 0.12);
+}
+
+.login-glow-right {
+  width: 360px;
+  height: 360px;
+  bottom: -100px;
+  right: -60px;
+  background: rgba(254, 96, 0, 0.08);
+}
+
+.login-logo-wrap {
+  padding: 1rem 1.25rem;
+  border-radius: 1rem;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.login-logo {
+  width: min(280px, 72vw);
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.login-tagline {
+  font-size: 0.75rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.login-tagline-accent {
+  color: #fe6000;
+  font-weight: 600;
+}
+
+.login-headline {
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.15;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.login-headline-accent {
+  color: #fe6000;
+}
+
+.login-subcopy {
+  color: #9ca3af;
 }
 
 .login-card-wrapper {
-  @apply px-8 py-14 rounded-2xl w-[400px] z-20 border-gray-200 mx-3;
-             border-radius: 50px;
-background: #1E1E1E;
-box-shadow:  5px 5px 10px #131313,
-             -5px -5px 10px #292929;
+  position: relative;
+  padding: 2rem 1.75rem 1.5rem;
+  border-radius: 1.25rem;
+  background: rgba(22, 22, 22, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(254, 96, 0, 0.06) inset;
+  backdrop-filter: blur(12px);
 }
 
-.login-card-wrapper img {
-  @apply w-60 object-contain mx-auto;
+.login-card-accent {
+  position: absolute;
+  top: 0;
+  left: 1.5rem;
+  right: 1.5rem;
+  height: 3px;
+  border-radius: 0 0 4px 4px;
+  background: linear-gradient(90deg, transparent, #fe6000, transparent);
+}
+
+.login-card-header {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.login-card-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.login-card-subtitle {
+  margin-top: 0.375rem;
+  font-size: 0.875rem;
+  color: #9ca3af;
+}
+
+.login-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  margin-bottom: 1.25rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: rgba(127, 29, 29, 0.35);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  color: #fecaca;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.login-error-icon {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+  color: #f87171;
+}
+
+.login-footer-note {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  text-align: center;
+  font-size: 0.6875rem;
+  color: #6b7280;
+  letter-spacing: 0.02em;
 }
 
 @layer components {
-.login-card-wrapper .input-item {
-    @apply py-4 px-5 w-full rounded-full bg-[#1E1E1E] text-white
-           /* shadow-[inset_5px_5px_1px_#1a1a1a,inset_-5px_-5px_1px_#232323] */
-           border-[#363636] border-2
-           transition-all duration-300 ease-in-out
-           focus:outline-none;
+  .login-card-wrapper .input-item {
+    padding: 0.875rem 1rem;
+    width: 100%;
+    border-radius: 0.75rem;
+    background: #141414;
+    color: #ffffff;
+    border: 1px solid #2d2d2d;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .login-card-wrapper .input-item::placeholder {
+    color: #6b7280;
+  }
+
+  .login-card-wrapper .input-item:hover {
+    border-color: #404040;
+  }
+
+  .login-card-wrapper .input-item:focus {
+    outline: none;
+    border-color: #fe6000;
+    box-shadow: 0 0 0 3px rgba(254, 96, 0, 0.15);
+  }
+
+  .login-card-wrapper label {
+    color: #e5e7eb !important;
+    font-weight: 500;
+    font-size: 0.8125rem;
+    margin-bottom: 0.375rem;
+  }
+
+  .login-card-wrapper .password-toggle-btn {
+    color: #9ca3af;
+  }
+
+  .login-card-wrapper .password-toggle-btn:hover {
+    color: #fe6000;
+  }
+
+  .login-card-wrapper p[id$='-error'] {
+    color: #fca5a5 !important;
+    font-size: 0.8125rem;
+    margin-top: 0.375rem;
   }
 }
 
+.login-btn {
+  margin-top: 0.25rem;
+  background: linear-gradient(135deg, #fe6000 0%, #e55500 100%) !important;
+  color: #ffffff !important;
+  width: 100%;
+  border-radius: 0.75rem !important;
+  border: none !important;
+  padding-top: 0.875rem !important;
+  padding-bottom: 0.875rem !important;
+  font-weight: 600 !important;
+  font-size: 0.9375rem !important;
+  letter-spacing: 0.01em;
+  box-shadow: 0 4px 14px rgba(254, 96, 0, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease !important;
+}
+
+.login-btn:hover:not(:disabled) {
+  filter: brightness(1.06);
+  box-shadow: 0 6px 20px rgba(254, 96, 0, 0.45);
+  transform: translateY(-1px);
+}
+
+.login-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+@media (max-width: 1023px) {
+  .login-brand-panel {
+    margin-bottom: 1.5rem;
+  }
+
+  .login-logo {
+    width: min(240px, 80vw);
+  }
+
+  .login-card-wrapper {
+    padding: 1.75rem 1.25rem 1.25rem;
+  }
+}
+
+/* legacy selectors kept for compatibility */
 #particles-js {
   @apply absolute top-0 left-0 w-full h-full z-10 opacity-40;
 }
 
-.top-wave {
-  @apply absolute top-0 left-0 w-full h-dvh;
-}
-
-.bottom-wave {
-  @apply absolute bottom-0 left-0 w-full w-dvh h-dvh flex items-end;
-}
-
-.login-btn {
-    @apply  bg-[#fe6000] text-white w-full rounded-full hover:bg-[#bd4900] border-0 transition-all !py-4;
+.login-card-wrapper img.login-logo {
+  width: min(280px, 72vw);
+  margin: 0;
 }
 
 .shadow-custom {
