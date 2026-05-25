@@ -81,8 +81,9 @@ class EnhancedApiClient {
       if (!parsed) return false;
 
       persistAuthTokens({
-        token: parsed.accessToken,
+        token: parsed.token,
         expiresIn: parsed.expiresIn,
+        tokenExpiresAt: parsed.tokenExpiresAt,
         refreshToken: parsed.refreshToken,
         refreshExpiresIn: parsed.refreshExpiresIn,
       });

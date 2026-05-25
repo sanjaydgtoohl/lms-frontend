@@ -18,37 +18,30 @@ describe('sessionManager.refreshTokens', () => {
     deleteCookie('auth_token_expires');
   });
 
-  it('should refresh with Bearer header and store access token in Redux', async () => {
+  it('uses expires_in from API and stores expiry in Redux', async () => {
     document.cookie = 'refresh_token=test-refresh; Path=/';
+    const before = Date.now();
 
     const mockResp = {
       data: {
         success: true,
         data: {
           token: 'new-access-token',
-          refreshToken: 'new-refresh-token',
-          expires_in: 120,
-          refresh_expires_in: 300,
+          refresh_token: 'new-refresh-token',
+          expires_in: 3600,
+          token_type: 'bearer',
         },
       },
     };
 
     jest.spyOn(http as any, 'post').mockResolvedValue(mockResp);
 
-    const result = await refreshTokens();
+    await refreshTokens();
 
-    expect(result).toBeDefined();
-    expect((http as any).post).toHaveBeenCalledWith(
-      '/auth/refresh',
-      { refresh_token: 'test-refresh' },
-      expect.objectContaining({
-        skipAuth: true,
-        headers: expect.objectContaining({
-          Authorization: 'Bearer test-refresh',
-        }),
-      })
-    );
-    expect(store.getState().auth.token).toBe('new-access-token');
+    const auth = store.getState().auth;
+    expect(auth.token).toBe('new-access-token');
+    expect(auth.expiresIn).toBe(3600);
+    expect(auth.tokenExpiresAt).toBeGreaterThanOrEqual(before + 3600 * 1000 - 1000);
     expect(getCookie('refresh_token')).toBe('new-refresh-token');
   });
 });

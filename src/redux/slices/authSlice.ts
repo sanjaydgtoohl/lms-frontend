@@ -5,7 +5,7 @@ import { apiClient } from "../../utils/apiClient";
 import {
   clearAuthTokens,
   getRefreshToken,
-  persistAuthTokens,
+  persistAuthTokensFromApi,
   isAccessTokenValid,
 } from "../../services/auth/tokenStorage";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
@@ -25,6 +25,7 @@ interface AuthState {
   user: AuthUser | null;
   token: string | null;
   tokenExpiresAt: number | null;
+  expiresIn: number | null;
   isAuthenticated: boolean;
   isInitialized: boolean;
   loading: boolean;
@@ -35,6 +36,7 @@ const initialState: AuthState = {
   user: null,
   token: null,
   tokenExpiresAt: null,
+  expiresIn: null,
   isAuthenticated: false,
   isInitialized: false,
   loading: false,
@@ -89,14 +91,13 @@ export const loginUser = createAsyncThunk(
   ) => {
     try {
       const response = await loginService.login(credentials);
-      const refreshToken =
-        (response as any).refresh_token || response.refreshToken;
 
-      persistAuthTokens({
+      persistAuthTokensFromApi({
         token: response.token,
-        expiresIn: response.expires_in || 3600,
-        refreshToken,
-        refreshExpiresIn: (response as any).refresh_expires_in,
+        refresh_token: (response as { refresh_token?: string }).refresh_token,
+        refreshToken: response.refreshToken,
+        expires_in: response.expires_in,
+        refresh_expires_in: (response as { refresh_expires_in?: number }).refresh_expires_in,
       });
 
       sessionManager.scheduleRefresh();
@@ -132,10 +133,13 @@ const authSlice = createSlice({
   reducers: {
     setTokens: (
       state,
-      action: { payload: { token: string; tokenExpiresAt: number } }
+      action: {
+        payload: { token: string; tokenExpiresAt: number; expiresIn: number };
+      }
     ) => {
       state.token = action.payload.token;
       state.tokenExpiresAt = action.payload.tokenExpiresAt;
+      state.expiresIn = action.payload.expiresIn;
       state.isAuthenticated = true;
       state.error = null;
     },
@@ -143,6 +147,7 @@ const authSlice = createSlice({
       state.user = null;
       state.token = null;
       state.tokenExpiresAt = null;
+      state.expiresIn = null;
       state.isAuthenticated = false;
       state.loading = false;
       state.error = null;
@@ -151,6 +156,7 @@ const authSlice = createSlice({
       state.user = null;
       state.token = null;
       state.tokenExpiresAt = null;
+      state.expiresIn = null;
       state.isAuthenticated = false;
       state.loading = false;
       state.error = null;
@@ -176,6 +182,7 @@ const authSlice = createSlice({
         state.user = null;
         state.token = null;
         state.tokenExpiresAt = null;
+        state.expiresIn = null;
       })
       .addCase(loginUser.pending, (state) => {
         state.loading = true;
@@ -205,6 +212,7 @@ const authSlice = createSlice({
         state.user = null;
         state.token = null;
         state.tokenExpiresAt = null;
+        state.expiresIn = null;
         state.error = null;
       })
       .addCase(logoutUser.rejected, (state) => {
@@ -213,6 +221,7 @@ const authSlice = createSlice({
         state.user = null;
         state.token = null;
         state.tokenExpiresAt = null;
+        state.expiresIn = null;
       });
   },
 });

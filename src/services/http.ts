@@ -94,13 +94,14 @@ class Http {
                 }
 
                 persistAuthTokens({
-                  token: parsed.accessToken,
+                  token: parsed.token,
                   expiresIn: parsed.expiresIn,
+                  tokenExpiresAt: parsed.tokenExpiresAt,
                   refreshToken: parsed.refreshToken,
                   refreshExpiresIn: parsed.refreshExpiresIn,
                 });
 
-                const freshToken = getAccessToken() || parsed.accessToken;
+                const freshToken = getAccessToken() || parsed.token;
                 this.requestQueue.forEach((cb) => cb(freshToken));
                 this.requestQueue = [];
                 return freshToken;

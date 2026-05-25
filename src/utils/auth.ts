@@ -1,6 +1,7 @@
 import { jwtDecode } from "jwt-decode";
 import sessionManager from '../services/sessionManager';
 import { getTokenExpiresAt } from '../services/auth/tokenStorage';
+import { getRefreshDelayMs } from '../services/auth/tokenExpiry';
 
 interface JWTPayload {
   exp?: number;
@@ -47,12 +48,7 @@ export const setupTokenExpirationCheck = () => {
 export const getTimeUntilNextRefresh = (): number => {
   const expiryMs = getTokenExpiresAt();
   if (!expiryMs) return -1;
-
-  const now = Date.now();
-  const refreshTime = expiryMs - 5 * 60 * 1000;
-  const msUntilRefresh = refreshTime - now;
-
-  return Math.max(msUntilRefresh, -1);
+  return getRefreshDelayMs(expiryMs);
 };
 
 let proactiveRefreshTimer: number | null = null;

@@ -1,28 +1,41 @@
 import { dispatchAuthAction, getAccessToken, getTokenExpiresAt, isAccessTokenValid } from '../../redux/authTokenBridge';
 import { deleteCookie, getCookie, setCookie } from '../../utils/cookies';
+import {
+  getSecondsUntilExpiry,
+  normalizeAuthTokenResponse,
+  type AuthTokenApiData,
+} from './tokenExpiry';
 
 const REFRESH_TOKEN_KEY = 'refresh_token';
 const REFRESH_TOKEN_EXPIRES_KEY = 'refresh_token_expires';
 
-export { getAccessToken, getTokenExpiresAt, isAccessTokenValid };
+export { getAccessToken, getTokenExpiresAt, isAccessTokenValid, getSecondsUntilExpiry };
+export type { AuthTokenApiData };
+export { normalizeAuthTokenResponse };
 
 export function getRefreshToken(): string | null {
   return getCookie(REFRESH_TOKEN_KEY);
 }
 
+export function persistAuthTokensFromApi(data: AuthTokenApiData): ReturnType<typeof normalizeAuthTokenResponse> {
+  const normalized = normalizeAuthTokenResponse(data);
+  persistAuthTokens(normalized);
+  return normalized;
+}
+
 export function persistAuthTokens(params: {
   token: string;
   expiresIn: number;
+  tokenExpiresAt: number;
   refreshToken?: string | null;
   refreshExpiresIn?: number;
 }): void {
-  const tokenExpiresAt = Date.now() + params.expiresIn * 1000;
-
   dispatchAuthAction({
     type: 'auth/setTokens',
     payload: {
       token: params.token,
-      tokenExpiresAt,
+      tokenExpiresAt: params.tokenExpiresAt,
+      expiresIn: params.expiresIn,
     },
   });
 

@@ -1,4 +1,5 @@
 import type { AppDispatch, RootState } from './store';
+import { isTokenExpiresAtValid } from '../services/auth/tokenExpiry';
 
 type StoreRef = {
   getState: () => RootState;
@@ -26,10 +27,14 @@ export function getTokenExpiresAt(): number | null {
   return getStore().getState().auth.tokenExpiresAt;
 }
 
+export function getTokenExpiresIn(): number | null {
+  return getStore().getState().auth.expiresIn;
+}
+
 export function isAccessTokenValid(): boolean {
   const { token, tokenExpiresAt } = getStore().getState().auth;
-  if (!token || !tokenExpiresAt) return false;
-  return Date.now() < tokenExpiresAt;
+  if (!token) return false;
+  return isTokenExpiresAtValid(tokenExpiresAt);
 }
 
 export function dispatchAuthAction(action: Parameters<AppDispatch>[0]): void {

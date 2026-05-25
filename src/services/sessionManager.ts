@@ -5,6 +5,7 @@ import {
   persistAuthTokens,
 } from './auth/tokenStorage';
 import { parseRefreshResponse, postRefreshToken } from './auth/refreshAccessToken';
+import { getRefreshDelayMs } from './auth/tokenExpiry';
 
 let refreshTimer: number | null = null;
 let refreshInProgress = false;
@@ -22,8 +23,7 @@ export async function scheduleRefresh() {
   const expiresAt = getTokenExpiresAt();
   if (!expiresAt) return;
 
-  const msBeforeRefresh = expiresAt - Date.now() - 5 * 60 * 1000;
-  const timeout = Math.max(msBeforeRefresh, 0);
+  const timeout = getRefreshDelayMs(expiresAt);
 
   refreshTimer = window.setTimeout(async () => {
     try {
@@ -52,8 +52,9 @@ export async function refreshTokens() {
     }
 
     persistAuthTokens({
-      token: parsed.accessToken,
+      token: parsed.token,
       expiresIn: parsed.expiresIn,
+      tokenExpiresAt: parsed.tokenExpiresAt,
       refreshToken: parsed.refreshToken,
       refreshExpiresIn: parsed.refreshExpiresIn,
     });
