@@ -27,6 +27,17 @@ export interface AgencyItem {
   [key: string]: unknown;
 }
 
+/** Shared master list row (designation, department, industry, etc.) */
+export interface MasterNameDateRow {
+  id: string;
+  name: string;
+  dateTime: string;
+}
+
+export type DesignationTableRow = MasterNameDateRow;
+export type DepartmentTableRow = MasterNameDateRow;
+export type IndustryTableRow = MasterNameDateRow;
+
 export interface DepartmentItem {
   id: string | number;
   name: string;

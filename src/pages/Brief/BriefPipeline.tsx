@@ -30,6 +30,7 @@ import { setUnreadCount, setNotifications } from '../../redux/slices/notificatio
 import { getUnreadNotificationCount, listNotifications } from '../../services/notifications';
 import FilePreviewModal from '../../components/ui/FilePreviewModal';
 import { Eye } from 'lucide-react';
+import type { UserOption } from '../../types/lead/lead.types';
 
 type Brief = ServiceBriefItem;
 
@@ -212,7 +213,6 @@ const BriefPipeline: React.FC = () => {
 
 
   // Assign To options state and effect (fetch from API)
-  interface UserOption { id: number | string; name: string; }
   const [assignToOptions, setAssignToOptions] = useState<UserOption[]>([]);
   useEffect(() => {
     const loadUsers = async () => {

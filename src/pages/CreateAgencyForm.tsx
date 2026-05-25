@@ -13,30 +13,14 @@ import { Plus, Trash2 } from 'lucide-react';
 import { MasterFormHeader, SelectField, MultiSelectDropdown } from '../components/ui';
 import { updateAgency } from '../services/AgencyMaster';
 import SweetAlert from '../utils/SweetAlert';
-
-// --- Types used by this form
-interface ParentAgency {
-  name: string;
-  type: string;
-  client: string[];
-}
-
-interface ChildAgency {
-  id: string;
-  name: string;
-  type: string;
-  client: string[];
-}
-
-interface Props {
-  onClose: () => void;
-  onSave?: (payload: { parent: ParentAgency; children: Array<{ name: string; type: string; client: string[] }> }) => Promise<any> | any;
-  mode?: 'create' | 'edit';
-  initialData?: Record<string, any>;
-}
+import type {
+  ChildAgencyFormValues,
+  CreateAgencyFormProps,
+  ParentAgencyFormValues,
+} from '../types/pages/forms.types';
 
 // helper to create a new blank child entry
-const blankChild = (): ChildAgency => ({
+const blankChild = (): ChildAgencyFormValues => ({
   id: `child-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
   name: '',
   type: '',
@@ -101,9 +85,9 @@ function pickFirstUsableClientRaw(...candidates: any[]): any {
   return [];
 }
 
-const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', initialData }) => {
-  const [parent, setParent] = useState<ParentAgency>({ name: '', type: '', client: [] });
-  const [children, setChildren] = useState<ChildAgency[]>([]);
+const CreateAgencyForm: React.FC<CreateAgencyFormProps> = ({ onClose, onSave, mode = 'create', initialData }) => {
+  const [parent, setParent] = useState<ParentAgencyFormValues>({ name: '', type: '', client: [] });
+  const [children, setChildren] = useState<ChildAgencyFormValues[]>([]);
   const childNameRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [lastAddedId, setLastAddedId] = useState<string | null>(null);
   const [parentErrors, setParentErrors] = useState<{ name?: string; type?: string; client?: string }>({});
@@ -229,7 +213,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
     setChildren(prev => [...prev, nc]);
     setLastAddedId(nc.id);
   };
-  const handleUpdateChild = (id: string, key: keyof ChildAgency, value: any) => {
+  const handleUpdateChild = (id: string, key: keyof ChildAgencyFormValues, value: string | string[]) => {
     setChildren(prev => prev.map(c => c.id === id ? { ...c, [key]: value } : c));
   };
   // legacy remove (not used) -- removed to avoid unused variable lint
@@ -347,7 +331,7 @@ const CreateAgencyForm: React.FC<Props> = ({ onClose, onSave, mode = 'create', i
           children: children.map(c => ({ name: c.name.trim(), type: c.type, client: c.client })),
         };
         const customRes = onSave(payload);
-        if (customRes && typeof customRes.then === 'function') await customRes;
+        if (customRes && typeof (customRes as Promise<unknown>).then === 'function') await customRes;
       }
 
       if (mode === 'edit') {

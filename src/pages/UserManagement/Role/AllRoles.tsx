@@ -16,20 +16,13 @@ import { listRoles, deleteRole } from '../../../services/AllRoles';
 import SweetAlert from '../../../utils/SweetAlert';
 import ConfirmDialog from '../../../components/ui/ConfirmDialog';
 import TableHeader from '../../../components/ui/TableHeader';
-
-interface Role {
-  id: string;
-  name: string;
-  description?: string;
-  srNo?: number;
-  _realId?: string; // Add for type safety
-}
+import type { RoleTableRow } from '../../../types/user/rbac.types';
 
 const AllRoles: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const itemsPerPage = 10;
-  const [roles, setRoles] = useState<Role[]>([]);
+  const [roles, setRoles] = useState<RoleTableRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [totalItems, setTotalItems] = useState(0);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -111,12 +104,12 @@ const AllRoles: React.FC = () => {
     {
       key: 'srNo',
       header: 'S. No.',
-      render: (it: Role & { srNo: number }) => it.srNo,
+      render: (it: RoleTableRow & { srNo: number }) => it.srNo,
       className: 'text-left whitespace-nowrap'
     },
-    { key: 'name', header: 'Name', render: (it: Role) => it.name, className: 'max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap' },
-    { key: 'description', header: 'Description', render: (it: Role) => it.description, className: 'max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap' },
-  ] as Column<Role>[]);
+    { key: 'name', header: 'Name', render: (it: RoleTableRow) => it.name, className: 'max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap' },
+    { key: 'description', header: 'Description', render: (it: RoleTableRow) => it.description, className: 'max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap' },
+  ] as Column<RoleTableRow>[]);
 
   return (
     <div className="flex-1 w-full max-w-full overflow-x-hidden">
@@ -154,11 +147,11 @@ const AllRoles: React.FC = () => {
             startIndex={(currentPage - 1) * itemsPerPage}
             loading={loading}
             desktopOnMobile={true}
-            keyExtractor={(it: Role) => it.id}
+            keyExtractor={(it: RoleTableRow) => it.id}
             columns={columns}
-            onEdit={(it: Role) => handleEdit(it.id)}
-            onView={(it: Role) => handleView(it.id)}
-            onDelete={(it: Role) => handleDelete(it.id)}
+            onEdit={(it: RoleTableRow) => handleEdit(it.id)}
+            onView={(it: RoleTableRow) => handleView(it.id)}
+            onDelete={(it: RoleTableRow) => handleDelete(it.id)}
             editPermissionSlug="roles.edit"
             viewPermissionSlug="roles.view"
             deletePermissionSlug="roles.delete"

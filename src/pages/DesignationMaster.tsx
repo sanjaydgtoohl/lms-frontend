@@ -27,13 +27,7 @@ import {
 import SweetAlert from '../utils/SweetAlert';
 import { usePermissions } from '../hooks/SidebarMenuHooks';
 import TableHeader from '../components/ui/TableHeader';
-
-
-interface Designation {
-  id: string;
-  name: string;
-  dateTime: string;
-}
+import type { DesignationTableRow } from '../types/master/master.types';
 
 // Helpers to parse API date strings like "19-11-2025 10:35:57"
 const parseApiDateToISO = (s?: string) => {
@@ -156,7 +150,7 @@ const DesignationMaster: React.FC = () => {
   const { hasPermission } = usePermissions();
 
   // Store designations in state fetched from API
-  const [designations, setDesignations] = useState<Designation[]>([]);
+  const [designations, setDesignations] = useState<DesignationTableRow[]>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -252,12 +246,12 @@ const DesignationMaster: React.FC = () => {
     setCurrentPage(page);
   };
 
-  const [viewItem, setViewItem] = useState<Designation | null>(null);
-  const [editItem, setEditItem] = useState<Designation | null>(null);
+  const [viewItem, setViewItem] = useState<DesignationTableRow | null>(null);
+  const [editItem, setEditItem] = useState<DesignationTableRow | null>(null);
   const [activeEditId, setActiveEditId] = useState<string>('');
   const updateInFlightRef = useRef(false);
 
-  const designationsRef = useRef<Designation[]>([]);
+  const designationsRef = useRef<DesignationTableRow[]>([]);
   designationsRef.current = designations;
 
   const refresh = async (page = currentPage, search = searchQuery) => {
@@ -269,7 +263,7 @@ const DesignationMaster: React.FC = () => {
       const perPageToFetch = search ? 1000 : itemsPerPage;
 
       const resp = await listDesignations(pageToFetch, perPageToFetch);
-      let mapped: Designation[] = resp.data.map((it: ApiDesignation) => ({
+      let mapped: DesignationTableRow[] = resp.data.map((it: ApiDesignation) => ({
         id: String(it.id),
         name: String(it.name ?? it.title ?? ''),
         dateTime: it.created_at || '',
@@ -375,7 +369,7 @@ const DesignationMaster: React.FC = () => {
       })
       .catch(() => {
         if (cancelled) return;
-        const found = designationsRef.current.find((d: Designation) => d.id === id) || null;
+        const found = designationsRef.current.find((d: DesignationTableRow) => d.id === id) || null;
         setViewItem(found);
       });
 

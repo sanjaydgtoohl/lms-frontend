@@ -103,3 +103,7 @@ export interface EditLeadFormData {
 
 /** @deprecated Use EditLeadFormData */
 export type EditLeadtype = EditLeadFormData;
+
+export const MEETING_PIPELINE_STATUS_OPTIONS = ['Meeting Done', 'Meeting Scheduled'] as const;
+
+export type MeetingPipelineStatus = (typeof MEETING_PIPELINE_STATUS_OPTIONS)[number];

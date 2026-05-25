@@ -20,6 +20,7 @@ import { ChevronRight } from 'lucide-react';
 import Swal from 'sweetalert2';
 import FilePreviewModal from '../../components/ui/FilePreviewModal';
 import { IoIosArrowBack } from 'react-icons/io';
+import type { SubmittedPlansListProps } from '../../types/pages/brief-pages.types';
 
 // No mock data, will fetch from API
 
@@ -135,11 +136,6 @@ const PlanHistory: React.FC = () => {
   );
 };
 
-
-interface SubmittedPlansListProps {
-  plans: PlannerHistoryItem[];
-  loading?: boolean;
-}
 
 const SubmittedPlansList: React.FC<SubmittedPlansListProps> = ({ plans = [], loading }) => {
   const [currentPage, setCurrentPage] = useState(1);

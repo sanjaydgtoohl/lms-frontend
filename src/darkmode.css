@@ -23,19 +23,16 @@
   border-color: var(--border-subtle) !important;
 }
 
-/* Logo */
+/* Logo — height controlled by .app-sidebar-topbar in shell-theme.css */
 .app-sidebar-logo.sidebar-logo-item {
   position: relative;
-  min-height: 4rem;
 }
 
 .app-sidebar-logo-img,
 .sidebar-logo-item img {
   position: relative;
   left: auto;
-  height: 2.25rem;
   width: auto;
-  max-width: 11rem;
   object-fit: contain;
   filter: none !important;
 }

@@ -16,20 +16,13 @@ import { listPermissions, deletePermission } from '../../../services/AllPermissi
 import SweetAlert from '../../../utils/SweetAlert';
 import ConfirmDialog from '../../../components/ui/ConfirmDialog';
 import TableHeader from '../../../components/ui/TableHeader';
-
-interface Permission {
-  id: string;
-  name: string;
-  display_name?: string;
-  description?: string;
-  srNo?: number;
-}
+import type { PermissionTableRow } from '../../../types/user/rbac.types';
 
 const AllPermissions: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const itemsPerPage = 10;
-  const [permissions, setPermissions] = useState<Permission[]>([]);
+  const [permissions, setPermissions] = useState<PermissionTableRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [totalItems, setTotalItems] = useState(0);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -119,12 +112,12 @@ const AllPermissions: React.FC = () => {
     {
       key: 'srNo',
       header: 'S. No.',
-      render: (it: Permission & { srNo: number }) => it.srNo,
+      render: (it: PermissionTableRow & { srNo: number }) => it.srNo,
       className: 'text-left whitespace-nowrap'
     },
-    { key: 'display_name', header: 'Name', render: (it: Permission) => it.display_name || it.name, className: 'max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap' },
-    { key: 'description', header: 'Description', render: (it: Permission) => it.description, className: 'max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap' },
-  ] as Column<Permission>[]);
+    { key: 'display_name', header: 'Name', render: (it: PermissionTableRow) => it.display_name || it.name, className: 'max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap' },
+    { key: 'description', header: 'Description', render: (it: PermissionTableRow) => it.description, className: 'max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap' },
+  ] as Column<PermissionTableRow>[]);
 
   return (
     <div className="flex-1 w-full max-w-full overflow-x-hidden">
@@ -162,11 +155,11 @@ const AllPermissions: React.FC = () => {
             startIndex={(currentPage - 1) * itemsPerPage}
             loading={loading}
             desktopOnMobile={true}
-            keyExtractor={(it: Permission) => it.id}
+            keyExtractor={(it: PermissionTableRow) => it.id}
             columns={columns}
-            onEdit={(it: Permission) => handleEdit(it.id)}
-            onView={(it: Permission) => handleView(it.id)}
-            onDelete={(it: Permission) => handleDelete(it.id)}
+            onEdit={(it: PermissionTableRow) => handleEdit(it.id)}
+            onView={(it: PermissionTableRow) => handleView(it.id)}
+            onDelete={(it: PermissionTableRow) => handleDelete(it.id)}
             editPermissionSlug="permission.edit"
             viewPermissionSlug="permission.view"
             deletePermissionSlug="permission.delete"

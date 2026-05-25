@@ -22,11 +22,7 @@ import { usePermissions } from '../hooks/SidebarMenuHooks';
 import SweetAlert from '../utils/SweetAlert';
 import TableHeader from '../components/ui/TableHeader';
 
-interface Industry {
-  id: string;
-  name: string;
-  dateTime: string;
-}
+import type { IndustryTableRow } from '../types/master/master.types';
 
 /** Normalise API `created_at` for table / MasterView (matches list mapping). */
 const parseCreatedAt = (val?: string | null) => {
@@ -52,7 +48,7 @@ const IndustryMaster: React.FC = () => {
   const [confirmLoading, setConfirmLoading] = useState(false);
   const itemsPerPage = 10;
 
-  const [industries, setIndustries] = useState<Industry[]>([]);
+  const [industries, setIndustries] = useState<IndustryTableRow[]>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -72,7 +68,7 @@ const IndustryMaster: React.FC = () => {
 
   const handleSaveIndustry = (data?: any) => {
     // Optimistic prepend so UI shows newly created item immediately
-    const newItem: Industry = {
+    const newItem: IndustryTableRow = {
       id: String(data?.id || `I${String(industries.length + 1).padStart(3, '0')}`),
       name: data?.name || '',
       dateTime: new Date().toISOString(),
@@ -119,12 +115,12 @@ const IndustryMaster: React.FC = () => {
     setCurrentPage(page);
   };
 
-  const [viewItem, setViewItem] = useState<Industry | null>(null);
-  const [editItem, setEditItem] = useState<Industry | null>(null);
+  const [viewItem, setViewItem] = useState<IndustryTableRow | null>(null);
+  const [editItem, setEditItem] = useState<IndustryTableRow | null>(null);
   const [activeEditId, setActiveEditId] = useState<string>('');
   const updateInFlightRef = useRef(false);
 
-  const industriesRef = useRef<Industry[]>([]);
+  const industriesRef = useRef<IndustryTableRow[]>([]);
   industriesRef.current = industries;
 
   const refresh = async (page = currentPage, search = searchQuery) => {
@@ -137,7 +133,7 @@ const IndustryMaster: React.FC = () => {
 
       const resp = await listIndustries(pageToFetch, perPageToFetch);
 
-      let mapped: Industry[] = (resp.data || []).map((it: ApiIndustry) => ({
+      let mapped: IndustryTableRow[] = (resp.data || []).map((it: ApiIndustry) => ({
         id: String(it.id),
         name: it.name,
         dateTime: parseCreatedAt(it.created_at),
@@ -244,7 +240,7 @@ const IndustryMaster: React.FC = () => {
       })
       .catch(() => {
         if (cancelled) return;
-        const found = industriesRef.current.find((i: Industry) => i.id === id) || null;
+        const found = industriesRef.current.find((i: IndustryTableRow) => i.id === id) || null;
         setViewItem(found);
       });
 

@@ -18,13 +18,14 @@ import { matchesQuery } from '../utils/index.tsx';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import AgenciesModal from '../components/ui/AgenciesModal';
 import { deleteBrand } from '../services/BrandMaster';
-import { listBrands, getBrand, type BrandItem as ServiceBrandItem } from '../services/BrandMaster';
+import { listBrands, getBrand } from '../services/BrandMaster';
+import type { BrandItem } from '../types/master/master.types';
 import { usePermissions } from '../hooks/SidebarMenuHooks';
 
 import SweetAlert from '../utils/SweetAlert';
 import TableHeader from '../components/ui/TableHeader.tsx';
 
-type Brand = ServiceBrandItem;
+type Brand = BrandItem;
 
 // Helpers to parse API date strings like "19-11-2025 10:35:57"
 const parseApiDateToISO = (s?: string) => {

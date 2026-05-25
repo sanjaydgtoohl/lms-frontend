@@ -14,15 +14,9 @@ import SweetAlert from '../../../utils/SweetAlert';
 import { createRole as apiCreateRole } from '../../../services/CreateRole';
 import http from '../../../services/http';
 import PermissionTree from '../../../components/ui/PermissionTree';
+import type { RbacFormPageProps } from '../../../types/pages/forms.types';
 
-type Props = {
-  mode?: 'create' | 'edit';
-  initialData?: Record<string, any>;
-};
-
-
-
-const CreateRole: React.FC<Props> = ({ mode = 'create', initialData }) => {
+const CreateRole: React.FC<RbacFormPageProps> = ({ mode = 'create', initialData }) => {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     name: '',

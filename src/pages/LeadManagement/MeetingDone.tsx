@@ -8,12 +8,13 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FiFilter } from 'react-icons/fi';
 import LeadList from './LeadList';
-
-const STATUS_OPTIONS = ['Meeting Done', 'Meeting Scheduled'] as const;
-type MeetingStatus = (typeof STATUS_OPTIONS)[number];
+import {
+  MEETING_PIPELINE_STATUS_OPTIONS,
+  type MeetingPipelineStatus,
+} from '../../types/lead/lead.types';
 
 const MeetingDone: React.FC = () => {
-  const [selectedStatuses, setSelectedStatuses] = useState<MeetingStatus[]>([]);
+  const [selectedStatuses, setSelectedStatuses] = useState<MeetingPipelineStatus[]>([]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const filterRef = useRef<HTMLDivElement | null>(null);
 
@@ -29,7 +30,7 @@ const MeetingDone: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const toggleStatus = (status: MeetingStatus) => {
+  const toggleStatus = (status: MeetingPipelineStatus) => {
     setSelectedStatuses((prev) =>
       prev.includes(status)
         ? prev.filter((item) => item !== status)
@@ -41,7 +42,7 @@ const MeetingDone: React.FC = () => {
     // Default (none selected) and both selected: show all meeting data
     if (
       selectedStatuses.length === 0 ||
-      selectedStatuses.length === STATUS_OPTIONS.length
+      selectedStatuses.length === MEETING_PIPELINE_STATUS_OPTIONS.length
     ) {
       return {
         filterStatus: 'Meeting Done',
@@ -84,7 +85,7 @@ const MeetingDone: React.FC = () => {
                 Filter By Status
               </p>
               <div className="space-y-2">
-                {STATUS_OPTIONS.map((status) => (
+                {MEETING_PIPELINE_STATUS_OPTIONS.map((status) => (
                   <label key={status} className="flex items-center gap-2 text-sm text-gray-700">
                     <input
                       type="checkbox"

@@ -30,11 +30,7 @@ import { usePermissions } from '../hooks/SidebarMenuHooks';
 import TableHeader from '../components/ui/TableHeader';
 
 
-interface Department {
-	id: string;
-	name: string;
-	dateTime: string;
-}
+import type { DepartmentTableRow } from '../types/master/master.types';
 
 // Helpers to parse API date strings like "19-11-2025 10:35:57"
 const parseApiDateToISO = (s?: string) => {
@@ -163,7 +159,7 @@ const DepartmentMaster: React.FC = () => {
 	const [confirmLoading, setConfirmLoading] = useState(false);
 
 	// Store departments in state fetched from API
-	const [departments, setDepartments] = useState<Department[]>([]);
+	const [departments, setDepartments] = useState<DepartmentTableRow[]>([]);
 	const [totalItems, setTotalItems] = useState(0);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -224,11 +220,11 @@ const DepartmentMaster: React.FC = () => {
 		setCurrentPage(page);
 	};
 
-	const [viewItem, setViewItem] = useState<Department | null>(null);
-	const [editItem, setEditItem] = useState<Department | null>(null);
+	const [viewItem, setViewItem] = useState<DepartmentTableRow | null>(null);
+	const [editItem, setEditItem] = useState<DepartmentTableRow | null>(null);
 	const [activeEditId, setActiveEditId] = useState<string>('');
 
-	const departmentsRef = useRef<Department[]>([]);
+	const departmentsRef = useRef<DepartmentTableRow[]>([]);
 	departmentsRef.current = departments;
 
 	const refresh = async (page = currentPage, search = searchQuery) => {
@@ -240,7 +236,7 @@ const DepartmentMaster: React.FC = () => {
 			const perPageToFetch = search ? 1000 : itemsPerPage; // Fetch all when searching
 
 			const resp = await listDepartments(pageToFetch, perPageToFetch);
-			let mapped: Department[] = resp.data.map((it: ApiDepartment) => ({
+			let mapped: DepartmentTableRow[] = resp.data.map((it: ApiDepartment) => ({
 				id: String(it.id),
 				name: it.name,
 				dateTime: it.created_at || '',
@@ -351,7 +347,7 @@ const DepartmentMaster: React.FC = () => {
 			})
 			.catch(() => {
 				if (cancelled) return;
-				const found = departmentsRef.current.find((d: Department) => d.id === id) || null;
+				const found = departmentsRef.current.find((d: DepartmentTableRow) => d.id === id) || null;
 				setViewItem(found);
 			});
 
@@ -366,7 +362,7 @@ const DepartmentMaster: React.FC = () => {
 				const idToUpdate = activeEditId || String(updated.id || '').trim();
 				if (!idToUpdate) throw new Error('Department id is missing');
 				await updateDepartment(idToUpdate, { name: updated.name });
-				setDepartments(prev => prev.map(d => (d.id === idToUpdate ? { ...d, name: updated.name } as Department : d)));
+				setDepartments(prev => prev.map(d => (d.id === idToUpdate ? { ...d, name: updated.name } as DepartmentTableRow : d)));
 				SweetAlert.showUpdateSuccess();
 			} catch (e: any) {
 				SweetAlert.showError(e?.message || 'Failed to update department');

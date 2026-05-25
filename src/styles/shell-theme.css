@@ -35,6 +35,8 @@
   --card-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
   --shadow-sidebar: 4px 0 24px rgba(15, 23, 42, 0.06);
   --shadow-header: 0 1px 0 rgba(15, 23, 42, 0.06);
+  /** Shared height for sidebar logo row + main header */
+  --shell-topbar-height: 3.5rem;
 }
 
 .dark {
@@ -93,19 +95,36 @@
   border-right-color: var(--border-subtle);
 }
 
+/* Sidebar logo row — same height as .app-header */
+.app-sidebar-topbar {
+  display: flex;
+  align-items: center;
+  height: var(--shell-topbar-height);
+  min-height: var(--shell-topbar-height);
+  max-height: var(--shell-topbar-height);
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  box-sizing: border-box;
+}
+
 .app-sidebar-logo {
   display: flex;
   align-items: center;
-  min-height: 3.5rem;
-  padding: 0.5rem 0.75rem;
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+  padding: 0 0.75rem;
   text-decoration: none;
+  box-sizing: border-box;
 }
 
 .app-sidebar-logo-img {
   display: block;
-  max-height: 2.25rem;
+  height: auto;
+  max-height: 2rem;
   width: auto;
-  min-width: 2rem;
+  max-width: 11rem;
+  min-width: 0;
   object-fit: contain;
 }
 
@@ -133,8 +152,14 @@
   stroke: var(--brand-accent-hover);
 }
 
-.app-sidebar-logo--collapsed img {
-  max-height: 2rem;
+.app-sidebar-logo--collapsed {
+  justify-content: center;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.app-sidebar-logo--collapsed .app-sidebar-logo-img {
+  max-height: 1.75rem;
   max-width: 2.5rem;
 }
 
@@ -193,11 +218,16 @@
   position: sticky;
   top: 0;
   z-index: 20;
+  height: var(--shell-topbar-height);
+  min-height: var(--shell-topbar-height);
+  max-height: var(--shell-topbar-height);
+  flex-shrink: 0;
   background: var(--header-bg);
   border-bottom: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-header);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  box-sizing: border-box;
 }
 
 .app-header-inner {
@@ -205,13 +235,15 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.625rem 1rem;
-  min-height: 3.5rem;
+  height: 100%;
+  min-height: 0;
+  padding: 0 1rem;
+  box-sizing: border-box;
 }
 
 @media (min-width: 640px) {
   .app-header-inner {
-    padding: 0.625rem 1.25rem;
+    padding: 0 1.25rem;
   }
 }
 

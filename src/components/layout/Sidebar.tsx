@@ -35,7 +35,7 @@ const SidebarLogo: React.FC<{ collapsed?: boolean }> = ({ collapsed }) => {
         key={theme}
         src={logoSrc}
         alt="DGTOOHL 360"
-        className="app-sidebar-logo-img h-9 w-auto max-w-[11rem] object-contain transition-opacity duration-200"
+        className="app-sidebar-logo-img transition-opacity duration-200"
       />
     </Link>
   );
@@ -261,7 +261,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
         className={`${sidebarClasses} ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
         ref={popupRef}
       >
-        <SidebarLogo />
+        <div className="app-sidebar-topbar">
+          <SidebarLogo />
+        </div>
         <nav className="app-sidebar-nav">{navigationItems.map((item) => renderNavigationItem(item))}</nav>
         <div className="app-sidebar-footer">
           <button
@@ -281,8 +283,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
   }
 
   return (
-    <aside className={sidebarClasses}>
-      <div className="border-b border-[var(--border-subtle)]">
+      <aside className={sidebarClasses}>
+      <div className="app-sidebar-topbar">
         <SidebarLogo collapsed={isCollapsed} />
       </div>
 

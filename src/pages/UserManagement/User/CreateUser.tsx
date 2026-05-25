@@ -13,17 +13,13 @@ import { MasterFormHeader, MultiSelectDropdown, SelectField } from '../../../com
 import { apiClient } from '../../../utils/apiClient';
 import { createUser, updateUser } from '../../../services/CreateUser';
 import SweetAlert from '../../../utils/SweetAlert';
-
-type Props = {
-  mode?: 'create' | 'edit';
-  initialData?: Record<string, any>;
-};
+import type { RbacFormPageProps } from '../../../types/pages/forms.types';
 
 // roleOptions will be fetched from the API
 
 // status removed — backend doesn't require a status field from the frontend
 
-const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
+const CreateUser: React.FC<RbacFormPageProps> = ({ mode = 'create', initialData }) => {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     name: '',

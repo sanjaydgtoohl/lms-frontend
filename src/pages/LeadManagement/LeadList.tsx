@@ -23,12 +23,8 @@ import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '../../redux/store';
 import { setUnreadCount, setNotifications, incrementUnreadCount } from '../../redux/slices/notificationSlice';
 import { getUnreadNotificationCount, listNotifications } from '../../services/notifications';
-import type { Lead } from '../../types/AllLeadtype';
-
-interface UserOption {
-  id: number | string;
-  name: string;
-}
+import type { Lead, UserOption } from '../../types/AllLeadtype';
+import type { LeadListPageProps } from '../../types/pages/lead-list.types';
 
 import { getCallStatuses } from '../../services/CallStatus';
 import { apiClient } from '../../utils/apiClient';
@@ -101,17 +97,9 @@ const deletePermissionMap: Record<string, string> = {
   'Brief': 'leads-b.delete',
 };
 
-interface Props {
-  title: string;
-  filterStatus?: string; // if not provided, show all
-  extraStatuses?: string[];
-  permissionStatus?: string;
-  headerActions?: React.ReactNode;
-}
-
 const EMPTY_EXTRA_STATUSES: string[] = [];
 
-const LeadList: React.FC<Props> = ({
+const LeadList: React.FC<LeadListPageProps> = ({
   title,
   filterStatus = 'All',
   extraStatuses = EMPTY_EXTRA_STATUSES,

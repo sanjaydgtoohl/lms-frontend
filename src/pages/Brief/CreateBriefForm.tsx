@@ -21,17 +21,9 @@ import SweetAlert from '../../utils/SweetAlert';
 import { apiClient } from '../../utils/apiClient';
 import FilePreviewModal from '../../components/ui/FilePreviewModal';
 import { Eye } from 'lucide-react';
-// Dropdown UI uses SelectField component
+import type { MasterFormWithSaveProps } from '../../types/pages/forms.types';
 
-type Props = {
-  onClose: () => void;
-  onSave?: (data: any) => void;
-  inline?: boolean;
-  initialData?: Record<string, any>;
-  mode?: 'create' | 'edit';
-};
-
-const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode = 'create' }) => {
+const CreateBriefForm: React.FC<MasterFormWithSaveProps> = ({ onClose, onSave, initialData, mode = 'create' }) => {
   useEffect(() => {
     console.log('CreateBriefForm initialData:', initialData);
   }, [initialData]);

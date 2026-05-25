@@ -6,6 +6,8 @@ export * from './user/user.types';
 export * from './user/rbac.types';
 export * from './lead/lead.types';
 export * from './master/master.types';
+export * from './brief/brief.types';
+export * from './pages';
 export * from './inventory.types';
 export * from './inventory/device.types';
 
