@@ -203,6 +203,8 @@ export async function deleteMeeting(id: string): Promise<void> {
   }
 }
 
+export type { MeetingScheduleItem, MeetingListResponse } from '../types/meeting';
+
 export default {
   listMeetings,
   getMeeting,

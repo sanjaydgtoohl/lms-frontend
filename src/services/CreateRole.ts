@@ -1,6 +1,6 @@
 import { apiClient } from '../utils/apiClient';
 import { handleApiError } from '../utils/apiErrorHandler';
-import type { Permission } from '../data/rolePermissionsData';
+import type { Permission } from '../types/permission';
 
 const ENDPOINTS = {
   PERMISSIONS: '/permissions',

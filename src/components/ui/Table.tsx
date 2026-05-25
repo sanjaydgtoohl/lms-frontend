@@ -241,4 +241,5 @@ const Table = <T,>(props: TableProps<T>) => {
   );
 };
 
+export type { Column } from '../../types/table';
 export default Table;

@@ -59,6 +59,8 @@ export async function getPlannerStatuses(): Promise<{ data: { id: number; name: 
   }
 }
 
+export type { BriefLogItem, BriefLogListResponse } from '../types/brief';
+
 export default {
   listBriefLogs,
   getBriefById,

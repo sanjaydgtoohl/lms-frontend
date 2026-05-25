@@ -115,3 +115,5 @@ export async function deleteBrand(id: string): Promise<void> {
   const res = await apiClient.delete<unknown>(ENDPOINTS.DELETE(encodeURIComponent(id)));
   await handleResponse<unknown>(res);
 }
+
+export type { BrandItem } from '../types/brand';

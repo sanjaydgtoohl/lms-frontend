@@ -153,3 +153,5 @@ export async function updateLeadSubSource(
     return handleResponse<LeadSourceItem>(res);
   }
 }
+
+export type { LeadSourceItem } from '../types/lead';

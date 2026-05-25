@@ -106,12 +106,12 @@ const AllPermissions: React.FC = () => {
     {
       key: 'srNo',
       header: 'S. No.',
-      render: (it: Permission & { srNo: number }) => it.srNo,
+      render: (it: AllPermissionType & { srNo: number }) => it.srNo,
       className: 'text-left whitespace-nowrap'
     },
-    { key: 'display_name', header: 'Name', render: (it: Permission) => it.display_name || it.name, className: 'max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap' },
-    { key: 'description', header: 'Description', render: (it: Permission) => it.description, className: 'max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap' },
-  ] as Column<Permission>[]);
+    { key: 'display_name', header: 'Name', render: (it: AllPermissionType) => it.display_name || it.name, className: 'max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap' },
+    { key: 'description', header: 'Description', render: (it: AllPermissionType) => it.description, className: 'max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap' },
+  ] as Column<AllPermissionType>[]);
 
   return (
     <div className="flex-1 w-full max-w-full overflow-x-hidden">
@@ -149,11 +149,11 @@ const AllPermissions: React.FC = () => {
             startIndex={(currentPage - 1) * itemsPerPage}
             loading={loading}
             desktopOnMobile={true}
-            keyExtractor={(it: Permission) => it.id}
+            keyExtractor={(it: AllPermissionType) => it.id}
             columns={columns}
-            onEdit={(it: Permission) => handleEdit(it.id)}
-            onView={(it: Permission) => handleView(it.id)}
-            onDelete={(it: Permission) => handleDelete(it.id)}
+            onEdit={(it: AllPermissionType) => handleEdit(it.id)}
+            onView={(it: AllPermissionType) => handleView(it.id)}
+            onDelete={(it: AllPermissionType) => handleDelete(it.id)}
             editPermissionSlug="permission.edit"
             viewPermissionSlug="permission.view"
             deletePermissionSlug="permission.delete"

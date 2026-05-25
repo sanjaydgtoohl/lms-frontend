@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import type { Permission } from '../../data/rolePermissionsData';
+import type { Permission } from '../../types/permission';
 import { PencilIcon, EyeIcon, Trash2Icon, PlusIcon, ChevronDown } from 'lucide-react';
 import SearchBar from './SearchBar';
 

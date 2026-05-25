@@ -1,3 +1,6 @@
+import type { LeadItem } from './lead';
+import type { User as UserItem } from './user';
+
 // Types for meeting API response
 export interface MeetingLead {
     id: number;

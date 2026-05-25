@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { AlertTriangle } from 'lucide-react';  
 import type { Props, State } from '../../types/error';
 

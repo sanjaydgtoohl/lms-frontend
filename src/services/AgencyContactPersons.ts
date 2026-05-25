@@ -96,3 +96,5 @@ export async function getContactPersonDetail(id: string): Promise<ContactPerson>
     _raw: raw,
   };
 }
+
+export type { ContactPerson, ContactPersonsListResponse, ContactPersonRaw } from '../types/agency';

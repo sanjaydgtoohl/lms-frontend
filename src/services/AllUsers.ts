@@ -221,3 +221,5 @@ export async function deleteUser(id: string): Promise<void> {
   const res = await apiClient.delete<unknown>(ENDPOINTS.DELETE(numericId));
   await handleResponse<unknown>(res);
 }
+
+export type { User } from '../types/user';

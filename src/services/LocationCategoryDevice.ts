@@ -562,3 +562,5 @@ export function getApiCacheStats(): { cacheEntries: number; pendingRequests: num
     pendingRequests: pendingRequests.size,
   };
 }
+
+export type { LocationOption, CascadingFilterOptions, CacheEntry } from '../types/locationCategory';

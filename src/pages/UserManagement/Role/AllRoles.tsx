@@ -97,12 +97,12 @@ const AllRoles: React.FC = () => {
     {
       key: 'srNo',
       header: 'S. No.',
-      render: (it: Role & { srNo: number }) => it.srNo,
+      render: (it: allRoleType & { srNo: number }) => it.srNo,
       className: 'text-left whitespace-nowrap'
     },
-    { key: 'name', header: 'Name', render: (it: Role) => it.name, className: 'max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap' },
-    { key: 'description', header: 'Description', render: (it: Role) => it.description, className: 'max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap' },
-  ] as Column<Role>[]);
+    { key: 'name', header: 'Name', render: (it: allRoleType) => it.name, className: 'max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap' },
+    { key: 'description', header: 'Description', render: (it: allRoleType) => it.description, className: 'max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap' },
+  ] as Column<allRoleType>[]);
 
   return (
     <div className="flex-1 w-full max-w-full overflow-x-hidden">
@@ -140,11 +140,11 @@ const AllRoles: React.FC = () => {
             startIndex={(currentPage - 1) * itemsPerPage}
             loading={loading}
             desktopOnMobile={true}
-            keyExtractor={(it: Role) => it.id}
+            keyExtractor={(it: allRoleType) => it.id}
             columns={columns}
-            onEdit={(it: Role) => handleEdit(it.id)}
-            onView={(it: Role) => handleView(it.id)}
-            onDelete={(it: Role) => handleDelete(it.id)}
+            onEdit={(it: allRoleType) => handleEdit(it.id)}
+            onView={(it: allRoleType) => handleView(it.id)}
+            onDelete={(it: allRoleType) => handleDelete(it.id)}
             editPermissionSlug="roles.edit"
             viewPermissionSlug="roles.view"
             deletePermissionSlug="roles.delete"

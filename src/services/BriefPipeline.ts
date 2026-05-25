@@ -331,6 +331,8 @@ export async function deleteBrief(id: string): Promise<void> {
   }
 }
 
+export type { BriefItem, BriefStatus } from '../types/briefPipline';
+
 export default {
   listBriefs,
   getBrief,

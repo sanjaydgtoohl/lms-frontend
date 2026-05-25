@@ -41,4 +41,6 @@ export const updateBriefStatus = async (briefId: string | number, briefStatusId:
   }
 };
 
+export type { BriefStatusItem, BriefStatusResponse } from '../types/brief';
+
 export default fetchBriefStatuses;

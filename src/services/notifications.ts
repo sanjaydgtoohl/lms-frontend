@@ -207,3 +207,5 @@ export async function clearAllNotifications(): Promise<void> {
 export async function markAllNotificationsRead(): Promise<void> {
   await apiClient.post('/notifications/read-all');
 }
+
+export type { NotificationItem, NotificationListResponse, NotificationTab, NotificationCategory } from '../types/notification';

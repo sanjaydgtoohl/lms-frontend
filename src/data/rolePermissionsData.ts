@@ -237,4 +237,6 @@ export const rolePermissionsData: Module[] = [
   },
 ];
 
+export type { Permission, Submodule, Module } from '../types/permission';
+
 export default rolePermissionsData;

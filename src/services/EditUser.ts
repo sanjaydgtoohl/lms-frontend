@@ -126,3 +126,5 @@ export async function updateUserDetails(
     throw error;
   }
 }
+
+export type { EditUserDetail, EditUserPayload } from '../types/edit';
