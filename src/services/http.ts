@@ -51,8 +51,16 @@ class Http {
         if (config.headers?.['Content-Type']) {
           delete config.headers['Content-Type'];
         }
-      } else if (config.headers && !config.headers['Content-Type']) {
-        config.headers['Content-Type'] = 'application/json';
+      } else {
+        const method = String(config.method || 'get').toLowerCase();
+        const hasBody = config.data != null && config.data !== '';
+        if (!hasBody && (method === 'get' || method === 'head')) {
+          if (config.headers?.['Content-Type']) {
+            delete config.headers['Content-Type'];
+          }
+        } else if (config.headers && !config.headers['Content-Type']) {
+          config.headers['Content-Type'] = 'application/json';
+        }
       }
 
       return config;

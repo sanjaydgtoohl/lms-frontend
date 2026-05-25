@@ -98,6 +98,7 @@ export const ENDPOINTS = {
     CREATE: '/miss-campaigns',
     UPDATE: (id: string | number) => `/miss-campaigns/${id}`,
     DELETE: (id: string | number) => `/miss-campaigns/${id}`,
+    EXPORT: '/miss-campaigns/export',
   },
   MEETINGS: {
     LIST: '/meetings',

@@ -1,6 +1,11 @@
 import { handleApiError } from '../utils/apiErrorHandler';
 import { apiClient } from '../utils/apiClient';
 import { API_BASE_URL } from '../constants';
+import { ENDPOINTS } from '../constants/endpoints';
+import {
+  defaultDatedExportFilename,
+  downloadFileFromUrl,
+} from '../utils/downloadFile';
 
 /** First non-empty trimmed string (API often sends "" or null for missing image fields). */
 function firstNonEmptyString(...candidates: unknown[]): string {
@@ -63,13 +68,49 @@ export interface MissCampaign {
   assignBy?: string;
 }
 
-const ENDPOINTS = {
-  LIST: '/miss-campaigns',
-  DETAIL: (id: string) => `/miss-campaigns/${id}`,
-  CREATE: '/miss-campaigns',
-  UPDATE: (id: string) => `/miss-campaigns/${id}`,
-  DELETE: (id: string) => `/miss-campaigns/${id}`,
-} as const;
+const MISS_CAMPAIGN_ENDPOINTS = ENDPOINTS.MISS_CAMPAIGNS;
+
+function buildMissCampaignListQuery(
+  page?: number,
+  perPage?: number,
+  search?: string,
+  filters?: Record<string, string>
+): URLSearchParams {
+  const params = new URLSearchParams();
+  if (page != null) params.set('page', String(page));
+  if (perPage != null) params.set('per_page', String(perPage));
+  if (search && String(search).trim()) params.set('search', String(search).trim());
+  if (filters) {
+    Object.entries(filters).forEach(([key, value]) => {
+      if (!value || !value.trim()) return;
+      const trimmed = value.trim();
+
+      if (key === 'industry_id') {
+        params.set('industry_id', trimmed);
+        params.set('industry', trimmed);
+      } else if (key === 'lead_source_id') {
+        params.set('lead_source_id', trimmed);
+        params.set('source', trimmed);
+      } else if (key === 'media_type') {
+        params.set('media_type', trimmed);
+        params.set('media_type_id', trimmed);
+      } else {
+        params.set(key, trimmed);
+      }
+    });
+  }
+  return params;
+}
+
+export type MissCampaignExportResult = {
+  file_name: string;
+  file_path?: string;
+  file_url: string;
+  total_records?: number;
+  file_size?: number;
+  mime_type?: string;
+  exported_at?: string;
+};
 
 async function handleResponse<T>(res: any): Promise<T> {
   if (!res || !res.success) {
@@ -339,31 +380,9 @@ export function mapMissCampaignApiToMissCampaign(it: any, idx?: number): MissCam
 */
 
 export async function listMissCampaigns(page = 1, perPage = 10, search?: string, filters?: Record<string, string>): Promise<MissCampaignListResponse> {
-  const params = new URLSearchParams();
-  params.set('page', String(page));
-  params.set('per_page', String(perPage));
-  if (search && String(search).trim()) params.set('search', String(search).trim());
-  if (filters) {
-    Object.entries(filters).forEach(([key, value]) => {
-      if (!value || !value.trim()) return;
-      const trimmed = value.trim();
+  const params = buildMissCampaignListQuery(page, perPage, search, filters);
 
-      if (key === 'industry_id') {
-        params.set('industry_id', trimmed);
-        params.set('industry', trimmed);
-      } else if (key === 'lead_source_id') {
-        params.set('lead_source_id', trimmed);
-        params.set('source', trimmed);
-      } else if (key === 'media_type') {
-        params.set('media_type', trimmed);
-        params.set('media_type_id', trimmed);
-      } else {
-        params.set(key, trimmed);
-      }
-    });
-  }
-
-  const res = await apiClient.get<MissCampaign[]>(`${ENDPOINTS.LIST}?${params.toString()}`);
+  const res = await apiClient.get<MissCampaign[]>(`${MISS_CAMPAIGN_ENDPOINTS.LIST}?${params.toString()}`);
   const items = (res.data || []).map((it: any, idx: number) => mapMissCampaignApiToMissCampaign(it, idx));
 
   return {
@@ -372,8 +391,32 @@ export async function listMissCampaigns(page = 1, perPage = 10, search?: string,
   };
 }
 
+/** Request export from API, then download the generated file from `data.file_url`. */
+export async function exportMissCampaignsExcel(
+  search?: string,
+  filters?: Record<string, string>
+): Promise<void> {
+  const params = buildMissCampaignListQuery(undefined, undefined, search, filters);
+  const query = params.toString();
+  const exportPath = MISS_CAMPAIGN_ENDPOINTS.EXPORT;
+  const endpoint = query ? `${exportPath}?${query}` : exportPath;
+
+  const res = await apiClient.get<MissCampaignExportResult>(endpoint);
+  const exportData = res.data;
+
+  if (!exportData?.file_url) {
+    throw new Error(res.message || 'Export file URL not returned from server');
+  }
+
+  const filename =
+    exportData.file_name ||
+    defaultDatedExportFilename('miss-campaigns', exportData.mime_type);
+
+  await downloadFileFromUrl(exportData.file_url, filename);
+}
+
 export async function getMissCampaign(id: string): Promise<any> {
-  const res = await apiClient.get<any>(ENDPOINTS.DETAIL(id));
+  const res = await apiClient.get<any>(MISS_CAMPAIGN_ENDPOINTS.DETAIL(id));
   if (!res || !res.success) {
     const error = new Error((res && (res.message || 'Request failed')) || 'Request failed');
     try { handleApiError(error); } catch { 
@@ -386,7 +429,7 @@ export async function getMissCampaign(id: string): Promise<any> {
 }
 
 export async function deleteMissCampaign(id: string): Promise<void> {
-  const res = await apiClient.delete<unknown>(ENDPOINTS.DELETE(id));
+  const res = await apiClient.delete<unknown>(MISS_CAMPAIGN_ENDPOINTS.DELETE(id));
   await handleResponse<unknown>(res);
 }
 
@@ -395,3 +438,4 @@ export type PreLeadListResponse = MissCampaignListResponse;
 export const listPreLeads = listMissCampaigns;
 export const getPreLead = getMissCampaign;
 export const deletePreLead = deleteMissCampaign;
+export const exportPreLeadsExcel = exportMissCampaignsExcel;

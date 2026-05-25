@@ -23,6 +23,7 @@ import {
   deleteMissCampaign,
   getMissCampaign,
   mapMissCampaignApiToMissCampaign,
+  exportMissCampaignsExcel,
   type MissCampaign
 } from '../../services/View';
 import { apiClient } from '../../utils/apiClient';
@@ -30,6 +31,7 @@ import { listChildUsers } from '../../api/lookups';
 import { usePermissions } from '../../hooks/SidebarMenuHooks';
 import { IoIosArrowBack } from 'react-icons/io';
 import TableHeader from '../../components/ui/TableHeader';
+import ExportExcelButton from '../../components/ui/ExportExcelButton';
 import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '../../redux/store';
 import { setUnreadCount, setNotifications } from '../../redux/slices/notificationSlice';
@@ -524,6 +526,11 @@ const View: React.FC = () => {
     setCurrentPage(1); // Reset to first page when filtering
   };
 
+  const handleExportExcel = useCallback(
+    () => exportMissCampaignsExcel(searchQuery, activeFilters),
+    [searchQuery, activeFilters]
+  );
+
   const filterOptions = [
     {
       key: 'industry_id',
@@ -744,6 +751,7 @@ const View: React.FC = () => {
               onFilterChange={handleFilterChange}
               appliedFilters={activeFilters}
             >
+              <ExportExcelButton fetchExport={handleExportExcel} />
               <SearchBar delay={0} placeholder="Search Pre Lead" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
             </TableHeader>
 

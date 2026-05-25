@@ -41,12 +41,97 @@ class EnhancedApiClient {
     this.baseURL = baseURL;
   }
 
-  private getAuthHeaders(): HeadersInit {
+  private getAuthHeaders(includeJsonContentType = true): HeadersInit {
     const token = getAccessToken();
     return {
-      'Content-Type': 'application/json',
+      ...(includeJsonContentType ? { 'Content-Type': 'application/json' } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
+  }
+
+  private buildUrl(endpoint: string): string {
+    return `${this.baseURL}${endpoint}`;
+  }
+
+  private async parseErrorResponse(response: Response): Promise<string> {
+    const contentType = response.headers.get('content-type')?.toLowerCase() ?? '';
+    if (contentType.includes('json')) {
+      try {
+        const data = await response.json();
+        return data?.message || `Request failed with status ${response.status}`;
+      } catch {
+        return `Request failed with status ${response.status}`;
+      }
+    }
+
+    try {
+      const text = await response.text();
+      return text.trim() || `Request failed with status ${response.status}`;
+    } catch {
+      return `Request failed with status ${response.status}`;
+    }
+  }
+
+  /** Download binary/text export files (CSV, Excel) — no JSON Content-Type on GET. */
+  async getBlob(endpoint: string, config: RequestConfig = {}): Promise<Response> {
+    const {
+      skipAuth = false,
+      timeout = this.defaultTimeout,
+      headers: extraHeaders,
+      ...fetchConfig
+    } = config;
+
+    const url = this.buildUrl(endpoint);
+    const headers: Record<string, string> = {
+      Accept:
+        'text/csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, application/octet-stream, */*',
+      ...(extraHeaders as Record<string, string> | undefined),
+    };
+
+    if (!skipAuth) {
+      const token = getAccessToken();
+      if (token) headers.Authorization = `Bearer ${token}`;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    try {
+      let response = await fetch(url, {
+        ...fetchConfig,
+        method: 'GET',
+        headers,
+        signal: controller.signal,
+      });
+
+      if (response.status === 401 && !skipAuth) {
+        const refreshed = await this.handleTokenRefresh();
+        if (refreshed) {
+          const newToken = getAccessToken();
+          if (newToken) headers.Authorization = `Bearer ${newToken}`;
+          response = await fetch(url, {
+            ...fetchConfig,
+            method: 'GET',
+            headers,
+            signal: controller.signal,
+          });
+        } else {
+          this.forceLogoutAndRedirect();
+          throw new Error('Session expired. Unable to refresh token.');
+        }
+      }
+
+      if (!response.ok) {
+        const message = await this.parseErrorResponse(response.clone());
+        const error = new Error(message);
+        (error as Error & { statusCode?: number }).statusCode = response.status;
+        throw error;
+      }
+
+      return response;
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
 
   private isRetryableError(statusCode?: number): boolean {
@@ -105,7 +190,8 @@ class EnhancedApiClient {
 
     const url = `${this.baseURL}${endpoint}`;
     const isFormDataBody = (fetchConfig as any).body instanceof FormData;
-    const baseAuthHeaders = this.getAuthHeaders();
+    const hasJsonBody = fetchConfig.body != null && fetchConfig.body !== '' && !isFormDataBody;
+    const baseAuthHeaders = this.getAuthHeaders(hasJsonBody && !isFormDataBody);
 
     if (isFormDataBody) {
       delete (baseAuthHeaders as any)['Content-Type'];
