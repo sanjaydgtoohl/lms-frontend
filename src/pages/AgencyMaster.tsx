@@ -1,3 +1,10 @@
+/**
+ * @file AgencyMaster.tsx
+ * @description Agency master data list, create, view, and edit.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useEffect } from 'react';
 import Table, { type Column } from '../components/ui/Table';
 

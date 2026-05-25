@@ -1,3 +1,10 @@
+/**
+ * @file DesignationMaster.tsx
+ * @description Designation master data list, create, view, and edit.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import Pagination from '../components/ui/Pagination';
 import { motion } from 'framer-motion';

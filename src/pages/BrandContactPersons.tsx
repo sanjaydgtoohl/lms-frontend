@@ -1,3 +1,10 @@
+/**
+ * @file BrandContactPersons.tsx
+ * @description Contact persons for a selected brand master record.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Mail, Phone, MapPin, Flag, Calendar } from 'lucide-react';

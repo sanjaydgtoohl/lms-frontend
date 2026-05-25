@@ -1,3 +1,10 @@
+/**
+ * @file CreateAgencyForm.tsx
+ * @description Form to create or update an agency master record.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useEffect, useRef, useState } from 'react';
 import { listAgencyTypes, listAgencyClients, createGroupAgency } from '../services';
 import { motion } from 'framer-motion';

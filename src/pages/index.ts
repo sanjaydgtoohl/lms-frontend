@@ -1,3 +1,10 @@
+/**
+ * @file index.ts
+ * @description Barrel exports for top-level application pages.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 export { default as LoginCard } from './Auth/LoginCard';
 export { default as Dashboard } from './Dashboard';
 export { default as SalesDashboard } from './Dashboard/SalesDashboard';

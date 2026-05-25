@@ -1,3 +1,10 @@
+/**
+ * @file AllRoles.tsx
+ * @description Roles list and management.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useEffect, useState } from 'react';
 import Table, { type Column } from '../../../components/ui/Table';
 import Pagination from '../../../components/ui/Pagination';

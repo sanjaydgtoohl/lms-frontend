@@ -1,3 +1,10 @@
+/**
+ * @file PlanHistory.tsx
+ * @description Plan revision history for a brief.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useEffect } from 'react';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';

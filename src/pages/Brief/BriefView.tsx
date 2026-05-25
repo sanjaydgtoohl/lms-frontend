@@ -1,3 +1,10 @@
+/**
+ * @file BriefView.tsx
+ * @description Brief detail and summary view.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React from 'react';
 
 interface Person {

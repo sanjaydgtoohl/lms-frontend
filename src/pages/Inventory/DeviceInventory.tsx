@@ -1,3 +1,10 @@
+/**
+ * @file DeviceInventory.tsx
+ * @description Device inventory list, import, export, and CRUD.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Filter } from 'lucide-react';
 import Pagination from '../../components/ui/Pagination';

@@ -1,3 +1,10 @@
+/**
+ * @file MeetingDone.tsx
+ * @description Completed-meeting leads pipeline view.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FiFilter } from 'react-icons/fi';
 import LeadList from './LeadList';

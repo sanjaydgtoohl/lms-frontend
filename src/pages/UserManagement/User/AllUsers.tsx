@@ -1,3 +1,10 @@
+/**
+ * @file AllUsers.tsx
+ * @description Users list and management.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import TableHeader from '../../../components/ui/TableHeader';
 import React, { useEffect, useState } from 'react';
 import Table, { type Column } from '../../../components/ui/Table';

@@ -1,3 +1,10 @@
+/**
+ * @file LeadSource.tsx
+ * @description Lead source master data list, create, view, and edit.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import Pagination from '../components/ui/Pagination';

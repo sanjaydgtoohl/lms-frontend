@@ -1,3 +1,10 @@
+/**
+ * @file IndustryMaster.tsx
+ * @description Industry master data list, create, view, and edit.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import Table, { type Column } from '../components/ui/Table';
 import CreateIndustryForm from './CreateIndustryForm';

@@ -1,3 +1,9 @@
+/**
+ * @file Profile.tsx
+ * @description Authenticated user profile view and settings.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
 
 import React, { useEffect, useState } from 'react';
 import { getUserProfile } from '../services/Profile';

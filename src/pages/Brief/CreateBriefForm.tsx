@@ -1,3 +1,10 @@
+/**
+ * @file CreateBriefForm.tsx
+ * @description Form to create a new brief record.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import Table from '../../components/ui/Table';
 import DatePicker from 'react-datepicker';

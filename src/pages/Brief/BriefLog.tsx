@@ -1,3 +1,10 @@
+/**
+ * @file BriefLog.tsx
+ * @description Brief activity log and plan history navigation.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import { updatePlannerStatus } from '../../services/UpdatePlannerStatus';
 
 import React, { useState, useMemo, useEffect } from 'react';

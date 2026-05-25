@@ -1,3 +1,10 @@
+/**
+ * @file AllLeads.tsx
+ * @description All leads listing with filters, actions, and pagination.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useRef, useEffect } from 'react';
 import Table, { type Column } from '../../components/ui/Table';
 import AssignDropdown from '../../components/ui/AssignDropdown';

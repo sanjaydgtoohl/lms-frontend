@@ -1,3 +1,10 @@
+/**
+ * @file BriefPipeline.tsx
+ * @description Brief pipeline list, create, view, and edit workflows.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import CreateBriefForm from './CreateBriefForm';
 import { apiClient } from '../../utils/apiClient';

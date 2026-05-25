@@ -1,3 +1,10 @@
+/**
+ * @file LoginCard.tsx
+ * @description Login screen with credentials and session bootstrap.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';

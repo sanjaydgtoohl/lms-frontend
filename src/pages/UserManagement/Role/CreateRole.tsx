@@ -1,3 +1,10 @@
+/**
+ * @file CreateRole.tsx
+ * @description Create a new role with permission assignment.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';

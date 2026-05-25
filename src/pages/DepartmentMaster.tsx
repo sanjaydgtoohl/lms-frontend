@@ -1,3 +1,10 @@
+/**
+ * @file DepartmentMaster.tsx
+ * @description Department master data list, create, view, and edit.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import { /*Loader2,*/ } from 'lucide-react';
 import { motion } from 'framer-motion';

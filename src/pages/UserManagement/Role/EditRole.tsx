@@ -1,3 +1,10 @@
+/**
+ * @file EditRole.tsx
+ * @description Edit role details and permissions.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useEffect } from 'react';
 import { updateRoleById } from '../../../services/EditRole';
 import { motion } from 'framer-motion';

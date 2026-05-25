@@ -1,3 +1,10 @@
+/**
+ * @file ViewUser.tsx
+ * @description View user account details.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MasterFormHeader } from '../../../components/ui';

@@ -1,3 +1,10 @@
+/**
+ * @file CreateSourceForm.tsx
+ * @description Form to create or update a lead source master record.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';

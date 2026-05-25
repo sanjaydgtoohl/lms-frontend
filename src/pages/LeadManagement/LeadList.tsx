@@ -1,3 +1,10 @@
+/**
+ * @file LeadList.tsx
+ * @description Shared lead list table, filters, and row actions.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import Table, { type Column } from '../../components/ui/Table';
 import AssignDropdown from '../../components/ui/AssignDropdown';

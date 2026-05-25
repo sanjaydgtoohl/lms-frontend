@@ -1,3 +1,10 @@
+/**
+ * @file CreateBrandForm.tsx
+ * @description Form to create or update a brand master record.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MasterFormHeader, SelectField, MultiSelectDropdown } from '../components/ui';

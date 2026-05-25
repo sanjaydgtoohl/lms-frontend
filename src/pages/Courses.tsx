@@ -1,3 +1,10 @@
+/**
+ * @file Courses.tsx
+ * @description Courses listing and management page.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React from 'react';
 
 const Courses: React.FC = () => {
