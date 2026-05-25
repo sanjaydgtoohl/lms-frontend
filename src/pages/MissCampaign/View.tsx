@@ -37,11 +37,9 @@ const View: React.FC = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-
   const [campaigns, setCampaigns] = useState<MissCampaign[]>([]);
   const [loading, setLoading] = useState(false);
   const [totalItems, setTotalItems] = useState(0);
-
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
   const [industryOptions, setIndustryOptions] = useState<{ value: string; label: string }[]>([]);
@@ -610,6 +608,7 @@ const View: React.FC = () => {
         onConfirm={confirmDelete}
       />
       {showCreate ? (
+        
         <Create inline onClose={() => navigate('/pre-lead/view')} onSave={handleSave} />
       ) : viewItem ? (
         <>
@@ -726,10 +725,10 @@ const View: React.FC = () => {
         />
       ) : (
         <>
-          {hasPermission('miss-campaign.create') && (
-            <MasterHeader onCreateClick={handleCreate} createButtonLabel="Create Pre Lead" />
+          {(hasPermission('miss-campaigns.create')) && (
+            <MasterHeader onCreateClick={handleCreate} createButtonLabel="Create Pre Lead" createPermissionSlug="miss-campaigns.create" />
           )}
-
+         
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
             {/* Table Header */}
             <TableHeader

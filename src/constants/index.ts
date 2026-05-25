@@ -130,46 +130,7 @@ export const VALIDATION_MESSAGES = {
   PHONE_INVALID: 'Please enter a valid phone number',
 } as const;
 
-// API Endpoints
-export const API_ENDPOINTS = {
-  AUTH: {
-    LOGIN: '/auth/login',
-    REGISTER: '/auth/register',
-    LOGOUT: '/auth/logout',
-    REFRESH: '/auth/refresh',
-    PROFILE: '/auth/profile',
-  },
-  PERMISSION: {
-    ALL_TREE: '/permissions/all-permission-tree',
-    LIST: '/permissions',
-    CREATE: '/permissions',
-    DETAIL: (id: string) => `/permissions/${id}`,
-    UPDATE: (id: string) => `/permissions/${id}`,
-    DELETE: (id: string) => `/permissions/${id}`,
-  },
-  ROLE: {
-    LIST: '/roles',
-    CREATE: '/roles',
-    VIEW: '/roles',
-    DETAIL: (id: string) => `/roles/${id}`,
-    UPDATE: (id: string) => `/roles/${id}`,
-    DELETE: (id: string) => `/roles/${id}`,
-  },
-  COURSES: {
-    LIST: '/courses',
-    CREATE: '/courses',
-    DETAIL: (id: string) => `/courses/${id}`,
-    UPDATE: (id: string) => `/courses/${id}`,
-    DELETE: (id: string) => `/courses/${id}`,
-    ENROLL: (id: string) => `/courses/${id}/enroll`,
-  },
-  USERS: {
-    LIST: '/users',
-    DETAIL: (id: string) => `/users/${id}`,
-    UPDATE: (id: string) => `/users/${id}`,
-    DELETE: (id: string) => `/users/${id}`,
-  },
-} as const;
+export { ENDPOINTS, API_ENDPOINTS } from './endpoints';
 
 // Theme Configuration
 export const THEME_CONFIG = {
