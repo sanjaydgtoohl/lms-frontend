@@ -130,6 +130,17 @@ export async function getPermissionTree(): Promise<unknown> {
   return assertSuccess(res);
 }
 
+/** Permission tree nodes for role create/edit screens */
+export async function listPermissionTreeNodes(): Promise<unknown[]> {
+  const data = await getPermissionTree();
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === 'object') {
+    const nested = (data as { data?: unknown }).data;
+    if (Array.isArray(nested)) return nested;
+  }
+  return [];
+}
+
 export async function listParentPermissions(): Promise<Permission[]> {
   const res = await apiClient.get<Permission[]>(ENDPOINTS.PERMISSIONS.LIST_FLAT);
   return (res.data || []) as Permission[];

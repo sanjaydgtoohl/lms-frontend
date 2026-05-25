@@ -26,6 +26,7 @@ import {
   type MissCampaign
 } from '../../services/View';
 import { apiClient } from '../../utils/apiClient';
+import { listChildUsers } from '../../api/lookups';
 import { usePermissions } from '../../hooks/SidebarMenuHooks';
 import { IoIosArrowBack } from 'react-icons/io';
 import TableHeader from '../../components/ui/TableHeader';
@@ -273,9 +274,8 @@ const View: React.FC = () => {
   useEffect(() => {
     const fetchAssignToOptions = async () => {
       try {
-        const res = await apiClient.get('/profile/child-users?per_page=1000');
-        const users = Array.isArray(res.data) ? res.data : [];
-        setAssignToOptions(users.map((u: any) => ({ id: u.id, name: u.name })));
+        const users = await listChildUsers(1000);
+        setAssignToOptions(users.map((u) => ({ id: u.id, name: u.name })));
       } catch (err) {
         console.error('Failed to fetch assign to users:', err);
       }

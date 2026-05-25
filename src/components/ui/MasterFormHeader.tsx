@@ -1,33 +1,13 @@
 import React from 'react';
-import Breadcrumb from './Breadcrumb';
-import Button from './Button';
-import { FaAngleLeft } from 'react-icons/fa';
+import PageBackHeader from './PageBackHeader';
 
 interface MasterFormHeaderProps {
   onBack: () => void;
   title: string;
 }
 
-const MasterFormHeader: React.FC<MasterFormHeaderProps> = ({ 
-  onBack,
-  title
-}) => {
-  return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-      <div className="flex items-center gap-3">
-        <Breadcrumb />
-        {/* keep title available for accessibility/screen-readers but don't render visibly to avoid duplication */}
-        <span style={{ display: 'none' }}>{title}</span>
-      </div>
-      <Button
-        onClick={onBack}
-        className="flex items-center space-x-2 px-4 py-2"
-      >
-        <FaAngleLeft className="w-4 h-4" />
-        <span className="text-sm text-white">Go Back</span>
-      </Button>
-    </div>
-  );
-};
+const MasterFormHeader: React.FC<MasterFormHeaderProps> = ({ onBack, title }) => (
+  <PageBackHeader onBack={onBack} title={title} />
+);
 
 export default MasterFormHeader;

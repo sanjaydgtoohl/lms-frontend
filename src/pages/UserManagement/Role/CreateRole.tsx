@@ -8,11 +8,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ROUTES, API_ENDPOINTS } from '../../../constants';
+import { ROUTES } from '../../../constants';
 import { MasterFormHeader } from '../../../components/ui';
 import SweetAlert from '../../../utils/SweetAlert';
 import { createRole as apiCreateRole } from '../../../services/CreateRole';
-import http from '../../../services/http';
+import { listPermissionTreeNodes } from '../../../api/rbac';
 import PermissionTree from '../../../components/ui/PermissionTree';
 import type { RbacFormPageProps } from '../../../types/pages/forms.types';
 
@@ -35,9 +35,9 @@ const CreateRole: React.FC<RbacFormPageProps> = ({ mode = 'create', initialData 
       try {
         setPermissionLoading(true);
         setPermissionError('');
-        const response = await http.get(API_ENDPOINTS.PERMISSION.ALL_TREE);
-        if (response.data && response.data.success && Array.isArray(response.data.data)) {
-          setPermissionTreeData(response.data.data);
+        const nodes = await listPermissionTreeNodes();
+        if (nodes.length > 0) {
+          setPermissionTreeData(nodes);
         } else {
           setPermissionError('Failed to load permissions');
         }

@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import CreateBriefForm from './CreateBriefForm';
-import { apiClient } from '../../utils/apiClient';
+import { listChildUsers } from '../../api/lookups';
 import { usePermissions } from '../../hooks/SidebarMenuHooks';
 import MasterView from '../../components/ui/MasterView';
 import Pagination from '../../components/ui/Pagination';
@@ -218,9 +218,8 @@ const BriefPipeline: React.FC = () => {
     const loadUsers = async () => {
       try {
         // Request a large page size to avoid truncation
-        const res = await apiClient.get('/profile/child-users?page=1&per_page=1000');
-        const users = Array.isArray(res.data) ? res.data : [];
-        setAssignToOptions(users.map((u: any) => ({ id: u.id, name: u.name })));
+        const users = await listChildUsers(1000);
+        setAssignToOptions(users.map((u) => ({ id: u.id, name: u.name })));
       } catch {
         setAssignToOptions([]);
       }

@@ -14,7 +14,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../redux/store';
 import { loginUser } from '../../redux/slices/authSlice';
 import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '../../constants';
+import { ROUTES, BRAND } from '../../constants';
+import { BrandLogo } from '../../components/brand';
 import { extractErrorMessage } from '../../utils/extractErrorMessage';
 import { AlertCircle, ShieldCheck } from 'lucide-react';
 
@@ -99,16 +100,14 @@ export default function LoginCard() {
 
       <div className="login-shell relative z-20 mx-auto flex min-h-dvh w-full max-w-6xl flex-col lg:flex-row lg:items-center lg:justify-between lg:gap-12 px-4 py-10 sm:px-6 lg:px-10">
         <section className="login-brand-panel flex flex-col items-center text-center lg:items-start lg:text-left lg:flex-1 lg:py-8">
-          <div className="login-logo-wrap">
-            <img src="/logo.png" alt="DGTOOL" className="login-logo" />
-          </div>
+          <BrandLogo variant="login" />
 
           <p className="login-tagline mt-5">
-            A <span className="login-tagline-accent">MOBIYOUNG</span> PRODUCT
+            A <span className="login-tagline-accent">{BRAND.companyName.toUpperCase()}</span> PRODUCT
           </p>
 
           <h1 className="login-headline mt-8 hidden lg:block">
-            Lead Management
+            {BRAND.appTitle.replace(' System', '')}
             <span className="login-headline-accent"> System</span>
           </h1>
 
@@ -176,7 +175,7 @@ export default function LoginCard() {
           </form>
 
           <p className="login-footer-note">
-            © {new Date().getFullYear()} Mobiyoung. All rights reserved.
+            {BRAND.copyright()}
           </p>
         </section>
       </div>

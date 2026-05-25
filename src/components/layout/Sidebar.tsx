@@ -3,12 +3,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import LogoutIcon from '../../assets/icons/LogoutIcon';
-import logoUrl from '../../assets/logo.svg';
-import { useTheme } from '../../hooks/useTheme';
-import { ROUTES } from '../../constants';
-
-const LOGO_LIGHT = logoUrl;
-const LOGO_DARK = '/logo-white.png';
+import { BrandLogo } from '../brand';
 import type { NavigationItem } from '../../services/Side';
 import { useSelector, useDispatch } from 'react-redux';
 import type { AppDispatch, RootState } from '../../redux/store';
@@ -20,26 +15,6 @@ interface SidebarProps {
   mobileOpen?: boolean;
   onCloseMobile?: () => void;
 }
-
-const SidebarLogo: React.FC<{ collapsed?: boolean }> = ({ collapsed }) => {
-  const { theme, isDark } = useTheme();
-  const logoSrc = isDark ? LOGO_DARK : LOGO_LIGHT;
-
-  return (
-    <Link
-      to={ROUTES.DASHBOARD}
-      className={`app-sidebar-logo sidebar-logo-item ${collapsed ? 'app-sidebar-logo--collapsed justify-center px-2' : ''}`}
-      aria-label="Go to dashboard"
-    >
-      <img
-        key={theme}
-        src={logoSrc}
-        alt="DGTOOHL 360"
-        className="app-sidebar-logo-img transition-opacity duration-200"
-      />
-    </Link>
-  );
-};
 
 const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false, onCloseMobile }) => {
   const dispatch = useDispatch<AppDispatch>();
@@ -262,7 +237,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
         ref={popupRef}
       >
         <div className="app-sidebar-topbar">
-          <SidebarLogo />
+          <BrandLogo variant="sidebar" />
         </div>
         <nav className="app-sidebar-nav">{navigationItems.map((item) => renderNavigationItem(item))}</nav>
         <div className="app-sidebar-footer">
@@ -285,7 +260,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
   return (
       <aside className={sidebarClasses}>
       <div className="app-sidebar-topbar">
-        <SidebarLogo collapsed={isCollapsed} />
+        <BrandLogo variant="sidebar" collapsed={isCollapsed} />
       </div>
 
       <nav className="app-sidebar-nav hide-scrollbar">

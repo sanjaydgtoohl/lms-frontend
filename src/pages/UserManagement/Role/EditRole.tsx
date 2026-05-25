@@ -9,10 +9,10 @@ import React, { useState, useEffect } from 'react';
 import { updateRoleById } from '../../../services/EditRole';
 import { motion } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ROUTES, API_ENDPOINTS } from '../../../constants';
+import { ROUTES } from '../../../constants';
 import { MasterFormHeader } from '../../../components/ui';
 import SweetAlert from '../../../utils/SweetAlert';
-import http from '../../../services/http';
+import { getRole, listPermissionTreeNodes } from '../../../api/rbac';
 import PermissionTree from '../../../components/ui/PermissionTree';
 
 
@@ -44,28 +44,22 @@ const EditRole: React.FC = () => {
       setPermissionError('');
       try {
         // Fetch permission tree
-        const permResponse = await http.get(API_ENDPOINTS.PERMISSION.ALL_TREE);
-        if (permResponse.data && permResponse.data.success && Array.isArray(permResponse.data.data)) {
-          setPermissionTreeData(permResponse.data.data);
+        const nodes = await listPermissionTreeNodes();
+        if (nodes.length > 0) {
+          setPermissionTreeData(nodes);
         } else {
           setPermissionError('Failed to load permissions');
         }
 
-        // Fetch role data by ID
         if (id) {
-          const numericId = id.replace(/[^\d]/g, '');
-          const roleResponse = await http.get(`${API_ENDPOINTS.ROLE.VIEW}/${numericId}`);
-          const roleJson = roleResponse.data;
-          if (roleJson && roleJson.success && roleJson.data) {
-            setForm({
-              name: roleJson.data.name || '',
-              description: roleJson.data.description || '',
-              parentPermission: roleJson.data.parentPermission || '',
-            });
-            // If permissions are stored as array of IDs
-            if (Array.isArray(roleJson.data.permissions)) {
-              setSelectedPermissionIds(roleJson.data.permissions);
-            }
+          const roleData = (await getRole(id)) as unknown as Record<string, unknown>;
+          setForm({
+            name: String(roleData.name ?? ''),
+            description: String(roleData.description ?? ''),
+            parentPermission: String(roleData.parentPermission ?? ''),
+          });
+          if (Array.isArray(roleData.permissions)) {
+            setSelectedPermissionIds(roleData.permissions as number[]);
           }
         }
       } catch (error: any) {

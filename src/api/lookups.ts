@@ -100,3 +100,21 @@ export async function createLeadType(payload: {
   );
   return assertSuccess(res);
 }
+
+export async function listIndustriesFlat(): Promise<
+  Array<{ id: number | string; name: string }>
+> {
+  const res = await apiClient.get<Array<{ id: number | string; name: string }>>(
+    ENDPOINTS.MASTER.INDUSTRIES.LIST_FLAT
+  );
+  return (res.data || []) as Array<{ id: number | string; name: string }>;
+}
+
+export async function listMediaTypes(): Promise<
+  Array<{ id: number | string; name: string }>
+> {
+  const res = await apiClient.get<Array<{ id: number | string; name: string }>>(
+    ENDPOINTS.MEDIA_TYPES.LIST
+  );
+  return (res.data || []) as Array<{ id: number | string; name: string }>;
+}

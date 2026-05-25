@@ -2,10 +2,16 @@ import { ENDPOINTS } from '../constants/endpoints';
 import {
   apiClient,
   assertSuccess,
+  buildPaginationQuery,
+  extractListItems,
   extractNumericId,
+  mapToSelectOptions,
   normalizeApiDate,
   stripIdPrefix,
+  type SelectOption,
 } from './client';
+
+export type { SelectOption };
 import type { AppUser, UserListResponse } from '../types/user/user.types';
 
 export type { AppUser, UserListResponse };
@@ -152,6 +158,43 @@ export async function updateUser(id: string, payload: Partial<AppUser>): Promise
 export async function deleteUser(id: string): Promise<void> {
   const res = await apiClient.delete(ENDPOINTS.USERS.DELETE(extractNumericId(id)));
   await assertSuccess(res);
+}
+
+/** Dropdown options for user create/edit forms */
+export async function listRolesForSelect(perPage = 100): Promise<SelectOption[]> {
+  const res = await apiClient.get(
+    `${ENDPOINTS.ROLES.LIST}${buildPaginationQuery(1, perPage)}`
+  );
+  return mapToSelectOptions(extractListItems(res), {
+    idKeys: ['id', 'role_id'],
+    labelKeys: ['name', 'title', 'role'],
+  });
+}
+
+export async function listZonesForSelect(): Promise<SelectOption[]> {
+  const res = await apiClient.get(ENDPOINTS.GEO.ZONES.LIST);
+  return mapToSelectOptions(extractListItems(res), {
+    idKeys: ['id', 'value', 'zone'],
+    labelKeys: ['name', 'zone', 'label'],
+  });
+}
+
+export async function listOrganisationsForSelect(): Promise<SelectOption[]> {
+  const res = await apiClient.get(ENDPOINTS.ORGANISATIONS.LIST);
+  return mapToSelectOptions(extractListItems(res), {
+    idKeys: ['id', 'organisation_id', 'value'],
+    labelKeys: ['name', 'organisation_name', 'label'],
+  });
+}
+
+export async function listManagersForSelect(perPage = 100): Promise<SelectOption[]> {
+  const res = await apiClient.get(
+    `${ENDPOINTS.USERS.LIST}${buildPaginationQuery(1, perPage)}`
+  );
+  return mapToSelectOptions(extractListItems(res), {
+    idKeys: ['id', 'user_id'],
+    labelKeys: ['name', 'full_name', 'display_name', 'email'],
+  });
 }
 
 export default {

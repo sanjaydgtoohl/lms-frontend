@@ -147,11 +147,18 @@ export const ENDPOINTS = {
     },
     INDUSTRIES: {
       LIST: '/industries',
+      LIST_FLAT: '/industries/list',
       DETAIL: (id: string | number) => `/industries/${encodeURIComponent(String(id))}`,
       CREATE: '/industries',
       UPDATE: (id: string | number) => `/industries/${encodeURIComponent(String(id))}`,
       DELETE: (id: string | number) => `/industries/${encodeURIComponent(String(id))}`,
     },
+  },
+  ORGANISATIONS: {
+    LIST: '/organisations/list',
+  },
+  MEDIA_TYPES: {
+    LIST: '/media-types',
   },
   GEO: {
     ZONES: {

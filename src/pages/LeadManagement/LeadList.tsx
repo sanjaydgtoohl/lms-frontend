@@ -27,7 +27,7 @@ import type { Lead, UserOption } from '../../types/AllLeadtype';
 import type { LeadListPageProps } from '../../types/pages/lead-list.types';
 
 import { getCallStatuses } from '../../services/CallStatus';
-import { apiClient } from '../../utils/apiClient';
+import { listChildUsers } from '../../api/lookups';
 import http from '../../services/http';
 import SweetAlert from '../../utils/SweetAlert';
 import TableHeader from '../../components/ui/TableHeader';
@@ -119,9 +119,8 @@ const LeadList: React.FC<LeadListPageProps> = ({
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        const res = await apiClient.get('/profile/child-users');
-        const users = Array.isArray(res.data) ? res.data : [];
-        setAssignToOptions(users.map((u: any) => ({ id: u.id, name: u.name })));
+        const users = await listChildUsers();
+        setAssignToOptions(users.map((u) => ({ id: u.id, name: u.name })));
       } catch {
         setAssignToOptions([]);
       }

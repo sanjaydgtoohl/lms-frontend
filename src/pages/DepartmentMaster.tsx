@@ -32,26 +32,7 @@ import TableHeader from '../components/ui/TableHeader';
 
 import type { DepartmentTableRow } from '../types/master/master.types';
 
-// Helpers to parse API date strings like "19-11-2025 10:35:57"
-const parseApiDateToISO = (s?: string) => {
-	if (!s) return '';
-	const m = String(s).trim().match(/^(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2})(?::(\d{2}))?$/);
-	if (!m) return s;
-	const [, dd, mm, yyyy, hh, min, sec] = m;
-	return `${yyyy}-${mm}-${dd}T${hh}:${min}:${sec || '00'}`;
-};
-
-const formatDisplayDate = (s?: string) => {
-	if (!s) return '-';
-	try {
-		const iso = parseApiDateToISO(s);
-		const d = new Date(iso);
-		if (isNaN(d.getTime())) return String(s);
-		return d.toLocaleString();
-	} catch {
-		return String(s);
-	}
-};
+import { formatDisplayDate } from '../utils/masterDate';
 
 // Inline CreateDepartmentForm (keeps behavior local and matches BrandMaster usage)
 const CreateDepartmentForm: React.FC<{

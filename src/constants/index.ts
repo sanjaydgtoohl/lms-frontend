@@ -9,6 +9,7 @@ const rawEnv =
 export const API_BASE_URL = String(rawEnv).trim().replace(/\/+$|\s+$/g, '');
 
 export { ROUTES, ROUTE_SEGMENTS } from './routes';
+export { BRAND } from './brand';
 
 export const CALL_STATUS_OPTIONS = [
   "Busy",

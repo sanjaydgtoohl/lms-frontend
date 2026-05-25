@@ -87,3 +87,48 @@ export function stripIdPrefix(id: string): string {
 export function extractNumericId(id: string): string {
   return String(id).replace(/\D/g, '');
 }
+
+/** Normalize list payloads from varied API response shapes */
+export function extractListItems<T = Record<string, unknown>>(payload: unknown): T[] {
+  if (!payload) return [];
+  if (Array.isArray(payload)) return payload as T[];
+  const root = payload as Record<string, unknown>;
+  if (Array.isArray(root.data)) return root.data as T[];
+  const nested = root.data as Record<string, unknown> | undefined;
+  if (nested) {
+    for (const key of ['data', 'items', 'roles', 'users']) {
+      if (Array.isArray(nested[key])) return nested[key] as T[];
+    }
+  }
+  for (const key of ['roles', 'users', 'items']) {
+    if (Array.isArray(root[key])) return root[key] as T[];
+  }
+  return [];
+}
+
+export interface SelectOption {
+  label: string;
+  value: string;
+}
+
+export function mapToSelectOptions(
+  items: Record<string, unknown>[],
+  config: { idKeys?: string[]; labelKeys?: string[] }
+): SelectOption[] {
+  const idKeys = config.idKeys ?? ['id', 'value'];
+  const labelKeys = config.labelKeys ?? ['name', 'title', 'label'];
+  return items
+    .map((it) => {
+      const rawId =
+        idKeys.map((k) => it[k]).find((v) => v != null && v !== '') ?? '';
+      const numeric = String(rawId).replace(/[^0-9]/g, '') || String(rawId);
+      const label = labelKeys
+        .map((k) => it[k])
+        .find((v) => v != null && String(v).trim() !== '');
+      return {
+        label: String(label ?? ''),
+        value: String(numeric),
+      };
+    })
+    .filter((o) => o.label && o.value);
+}

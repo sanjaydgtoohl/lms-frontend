@@ -19,8 +19,8 @@ import { ROUTES } from '../../constants';
 import { listLeads, updateLead, deleteLead } from '../../services/AllLeads';
 import SweetAlert from '../../utils/SweetAlert';
 import { assignUserToLead } from '../../services/leadAssignTo';
-import { apiClient } from '../../utils/apiClient';
 import { getCallStatuses, updateCallStatus } from '../../services/CallStatus';
+import { listChildUsers } from '../../api/lookups';
 import { usePermissions } from '../../hooks/SidebarMenuHooks';
 import TableHeader from '../../components/ui/TableHeader';
 import { useDispatch } from 'react-redux';
@@ -62,9 +62,8 @@ const AllLeads: React.FC = () => {
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        const res = await apiClient.get('/profile/child-users?per_page=1000');
-        const users = Array.isArray(res.data) ? res.data : [];
-        setAssignToOptions(users.map((u: any) => ({ id: u.id, name: u.name })));
+        const users = await listChildUsers(1000);
+        setAssignToOptions(users.map((u) => ({ id: u.id, name: u.name })));
       } catch {
         setAssignToOptions([]);
       }
