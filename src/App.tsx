@@ -8,15 +8,18 @@
 
 import ErrorBoundary from './components/ui/ErrorBoundary';
 import { SidebarMenuProvider } from './context/SidebarMenuContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { AppRoutes } from './routes';
 
 function App() {
   return (
-    <ErrorBoundary>
-      <SidebarMenuProvider>
-        <AppRoutes />
-      </SidebarMenuProvider>
-    </ErrorBoundary>
+    <ThemeProvider>
+      <ErrorBoundary>
+        <SidebarMenuProvider>
+          <AppRoutes />
+        </SidebarMenuProvider>
+      </ErrorBoundary>
+    </ThemeProvider>
   );
 }
 

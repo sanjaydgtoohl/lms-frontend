@@ -1,5 +1,5 @@
 import PptxGenJS from 'pptxgenjs';
-import logoUrl from '../assets/DGTOOHL 360.svg';
+import logoUrl from '../assets/logo.svg';
 import type { DeviceData } from '../types/inventory.types';
 
 const SLIDE_BACKGROUND = 'F7F8FA';

@@ -1,87 +1,83 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { debounce } from 'lodash';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import ErrorBoundary from '../ui/ErrorBoundary';
 import NotificationPopup from '../ui/NotificationPopup';
 import { useUiStore, useUiActions } from '../../store/ui';
-import { debounce } from 'lodash';
+import type { AppDispatch, RootState } from '../../redux/store';
+import { setCollapsed, toggleSidebar } from '../../redux/slices/sidebarSlice';
 
 const Layout: React.FC = () => {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const dispatch = useDispatch<AppDispatch>();
+  const isCollapsed = useSelector((state: RootState) => state.sidebar.isCollapsed);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const notification = useUiStore((s) => s.notification);
   const { hideNotification } = useUiActions();
 
-  // Handle responsive sidebar
   useEffect(() => {
     const handleResize = debounce(() => {
-      // Mobile breakpoint (max-width: 768px)
       const mobile = window.innerWidth <= 1023;
       setIsMobile(mobile);
 
-      // Keep the existing desktop collapse behaviour for >= 1024px
       if (window.innerWidth < 1024) {
-        setSidebarCollapsed(true);
+        dispatch(setCollapsed(true));
       } else {
-        setSidebarCollapsed(false);
+        dispatch(setCollapsed(false));
       }
 
-      // Close mobile sidebar when resizing to desktop/tablet
       if (!mobile) setMobileSidebarOpen(false);
-    }, 200); // Debounce to limit executions
+    }, 200);
 
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [dispatch]);
 
-  const toggleSidebar = () => {
-    setSidebarCollapsed(!sidebarCollapsed);
+  const handleSidebarToggle = () => {
+    if (isMobile) {
+      setMobileSidebarOpen((v) => !v);
+    } else {
+      dispatch(toggleSidebar());
+    }
   };
 
-  const toggleMobileSidebar = () => {
-    setMobileSidebarOpen((v) => !v);
-  };
-
+  const mainOffset = isMobile ? '' : isCollapsed ? 'lg:pl-[4rem]' : 'lg:pl-64';
 
   return (
-    <>
-      <div className="min-h-screen bg-gray-50 flex">
-        {/* Sidebar (desktop) and mobile variant */}
-        <Sidebar
-          isCollapsed={sidebarCollapsed}
-          onToggle={toggleSidebar}
-          isMobile={isMobile}
-          mobileOpen={mobileSidebarOpen}
-          onCloseMobile={() => setMobileSidebarOpen(false)}
+    <div className="app-shell flex min-h-screen">
+      <Sidebar
+        isMobile={isMobile}
+        mobileOpen={mobileSidebarOpen}
+        onCloseMobile={() => setMobileSidebarOpen(false)}
+      />
+
+      <div className={`flex flex-1 flex-col min-h-0 w-full transition-[padding] duration-300 ease-in-out ${mainOffset}`}>
+        <Header
+          onSidebarToggle={handleSidebarToggle}
+          sidebarCollapsed={isCollapsed}
+          isMobileLayout={isMobile}
         />
-        
-        {/* Main Content Area */}
-        <div className={`flex-1 flex flex-col min-h-0 transition-all duration-300 ${sidebarCollapsed ? 'lg:pl-64' : 'lg:pl-64'} w-full`}>
-          {/* Header */}
-          <Header showHamburger={isMobile} onHamburgerClick={toggleMobileSidebar} />
 
-          {/* Main Content */}
-          <main className="flex-1 overflow-auto w-full min-h-dvh overflow-x-hidden px-3 sm:px-4 md:px-5 lg:px-6 py-5 sm:py-4 md:py-5 lg:py-6">
-            <ErrorBoundary>
-              <Outlet />
-            </ErrorBoundary>
-          </main>
-        </div>
-
-        {/* Mobile transparent overlay (captures outside taps to close mobile sidebar). No blackout. */}
-        {isMobile && mobileSidebarOpen && (
-          <div
-            className="fixed inset-0 z-30"
-            onClick={() => setMobileSidebarOpen(false)}
-            aria-hidden
-          />
-        )}
+        <main className="app-main-content">
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
+        </main>
       </div>
 
-      {/* Global Notification Popup */}
+      {isMobile && mobileSidebarOpen && (
+        <button
+          type="button"
+          className="app-mobile-overlay"
+          onClick={() => setMobileSidebarOpen(false)}
+          aria-label="Close menu"
+        />
+      )}
+
       <NotificationPopup
         isOpen={notification.isOpen}
         onClose={hideNotification}
@@ -90,7 +86,7 @@ const Layout: React.FC = () => {
         title={notification.title}
         duration={notification.type === 'error' ? 7000 : 5000}
       />
-    </>
+    </div>
   );
 };
 

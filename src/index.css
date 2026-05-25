@@ -40,8 +40,9 @@ button,
   line-height: 1.5;
   font-weight: 400;
 
-  /* LMS Color Palette */
+  /* LMS / DGTOOL 360° brand palette */
   --primary: #007B83;
+  --accent: #f26222;
   --btn-bg: #4C98FD;
   --btn-bg-hover: #3C87E6;
   --background: #FAFAFA;
@@ -267,6 +268,7 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  background-color: var(--shell-bg, #f1f5f9);
 }
 
 html {
@@ -395,9 +397,18 @@ button[data-btn-label="Update"]:hover {
   }
 } */
 
-/* Primary button helper class used by React Button component and utility buttons */
+/* Primary button — logo orange #f26222 */
 .btn-primary {
-  @apply bg-orange-500 hover:bg-black text-white border-0 flex items-center justify-center space-x-2 py-2 px-4 text-sm; 
+  background-color: var(--brand-accent, #f26222) !important;
+  @apply text-white border-0 flex items-center justify-center space-x-2 py-2 px-4 text-sm;
+}
+
+.btn-primary:hover {
+  background-color: var(--brand-accent-hover, #d9551c) !important;
+}
+
+html.dark {
+  color-scheme: dark;
 }
  
 /* Ensure icons inside primary buttons match the white text color
@@ -408,6 +419,13 @@ button[data-btn-label="Update"]:hover {
   color: #ffffff;
   fill: #ffffff ;
   stroke: #ffffff;
+}
+
+/* Header/sidebar icons must stay visible (not inherit btn-primary fill) */
+.app-icon-btn svg:not(.btn-primary svg),
+.app-theme-toggle svg {
+  fill: none;
+  stroke: currentColor;
 }
 
 @layer utilities {
