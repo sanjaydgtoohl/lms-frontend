@@ -8,73 +8,7 @@ const rawEnv =
   '/api/v1';
 export const API_BASE_URL = String(rawEnv).trim().replace(/\/+$|\s+$/g, '');
 
-// Routes
-export const ROUTES = {
-  HOME: '/',
-  LOGIN: '/login',
-  REGISTER: '/register',
-  DASHBOARD: '/dashboard',
-  COURSES: '/courses',
-  PROFILE: '/profile',
-  SETTINGS: '/settings',
-  NOTIFICATIONS: '/notifications',
-  // LMS Routes
-  LEAD_SOURCE: '/lead-source',
-  LEAD_MANAGEMENT: '/lead-management',
-  LEAD: {
-    ROOT: '/lead-management',
-    CREATE: '/lead-management/create',
-    EDIT: (id: string) => `/lead-management/edit/${id}`,
-    DETAIL: (id: string) => `/lead-management/${id}`,
-    MEETING_SCHEDULE: '/meeting-schedule',
-  },
-  BRIEF: {
-    ROOT: '/brief',
-    PIPELINE: '/brief/Brief_Pipeline',
-    CREATE: '/brief/create',
-    LOG: '/brief/log',
-    PLAN_HISTORY: (id: string) => `/brief/plan-history/${id}`,
-    EDIT: (id: string) => `/brief/${id}/edit`,
-    DETAIL: (id: string) => `/brief/${id}`,
-  },
-  MISS_CAMPAIGN: {
-    ROOT: '/pre-lead',
-    VIEW: '/pre-lead/view',
-    CREATE: '/pre-lead/create',
-    EDIT: (id: string) => `/pre-lead/view/${id}/edit`,
-    DETAIL: (id: string) => `/pre-lead/view/${id}`,
-  },
-  CAMPAIGN_MANAGEMENT: '/campaign-management',
-  FINANCE: '/finance',
-  USER_MANAGEMENT: '/user-management',
-  PERMISSION: {
-    ROOT: '/user-management/permission',
-    CREATE: '/user-management/permission/create',
-    EDIT: (id: string) => `/user-management/permission/edit/${id}`,
-    DETAIL: (id: string) => `/user-management/permission/${id}`,
-  },
-  ROLE: {
-    ROOT: '/user-management/role',
-    CREATE: '/user-management/role/create',
-    EDIT: (id: string) => `/user-management/role/edit/${id}`,
-    DETAIL: (id: string) => `/user-management/role/${id}`,
-  },
-  USER: {
-    ROOT: '/user-management/user',
-    CREATE: '/user-management/user/create',
-    EDIT: (id: string) => `/user-management/user/edit/${id}`,
-    DETAIL: (id: string) => `/user-management/user/${id}`,
-  },
-  // Master Data Routes
-  BRAND_MASTER: '/master/brand',
-  BRAND_CONTACTS: (id: string) => `/master/brand/${id}/contacts`,
-  AGENCY_MASTER: '/master/agency',
-  AGENCY_CONTACTS: (id: string) => `/master/agency/${id}/contacts`,
-  DEPARTMENT_MASTER: '/master/department',
-  DESIGNATION_MASTER: '/master/designation',
-  INDUSTRY_MASTER: '/master/industry',
-  SOURCE_MASTER: '/master/source',
-} as const;
+export { ROUTES, ROUTE_SEGMENTS } from './routes';
 
 export const CALL_STATUS_OPTIONS = [
   "Busy",
