@@ -25,7 +25,7 @@ import type { MasterFormWithSaveProps } from '../../types/pages/forms.types';
 
 const CreateBriefForm: React.FC<MasterFormWithSaveProps> = ({ onClose, onSave, initialData, mode = 'create' }) => {
   useEffect(() => {
-    console.log('CreateBriefForm initialData:', initialData);
+    
   }, [initialData]);
   const [form, setForm] = useState({
     briefId: '',

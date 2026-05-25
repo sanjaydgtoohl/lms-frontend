@@ -138,7 +138,7 @@ const PlanSubmission: React.FC = () => {
                   <span className="text-gray-600">{brief?.name || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Sales Person:</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Planner:</span>
                   <span className="text-gray-600">{brief?.assigned_user?.name || '-'}</span>
                 </div>
                 <div>

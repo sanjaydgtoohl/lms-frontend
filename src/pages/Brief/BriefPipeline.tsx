@@ -145,8 +145,8 @@ const BriefPipeline: React.FC = () => {
               item.submissionTime = `${hh}:${min}`;
             }
           } catch { 
-// no need to action
-}
+          // no need to action
+          }
         }
         return item;
       };
@@ -161,6 +161,7 @@ const BriefPipeline: React.FC = () => {
         try {
           setLoading(true);
           const single = await getBrief(id);
+          
           if (!mounted) return;
           setEditItem(single ? patchSubmissionFields(single) : null);
           setViewItem(null);
@@ -463,6 +464,7 @@ const BriefPipeline: React.FC = () => {
       ) : viewItem ? (
         <MasterView item={viewItem} onClose={() => navigate(ROUTES.BRIEF.PIPELINE)} />
       ) : editItem ? (
+       
         <CreateBriefForm
           inline
           mode="edit"

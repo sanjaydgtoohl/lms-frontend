@@ -814,10 +814,12 @@ const View: React.FC = () => {
                 ] as Column<MissCampaign>[])}
                 onEdit={(it: MissCampaign) => handleEdit(it.id)}
                 onView={(it: MissCampaign) => handleView(it.id)}
-                onDelete={(it: MissCampaign) => handleDelete(it.id, it.productName || it.brandName)}
-                editPermissionSlug="miss-campaign.edit"
-                viewPermissionSlug="miss-campaign.view"
-                deletePermissionSlug="miss-campaign.delete"
+                onDelete={(it: MissCampaign) => handleDelete(it.id)}
+                editPermissionSlug="miss-campaigns.edit"
+                viewPermissionSlug="miss-campaigns.view"
+                deletePermissionSlug="miss-campaigns.delete"
+                uploadPermissionSlug="miss-campaigns.upload"
+                
               />
             </div>
           </div>

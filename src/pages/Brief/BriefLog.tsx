@@ -404,6 +404,11 @@ const BriefLog: React.FC = () => {
             onEdit={(item: BriefLogItem) => handleEdit(item)}
             onView={(item: BriefLogItem) => navigate(ROUTES.BRIEF.PLAN_HISTORY((item.brief_id || item.id).toString()))}
             onUpload={(item: BriefLogItem) => navigate(`/brief/plan-submission/${item.brief_id || item.id}`)}
+            editPermissionSlug="brief.edit"
+            viewPermissionSlug="brief.view"
+            deletePermissionSlug="brief.delete"
+            uploadPermissionSlug="brief.upload"
+            onBriefCreation={(item: BriefLogItem) => navigate(`/brief/plan-submission/${item.brief_id || item.id}`)}
           />
         </div>
       </div>
