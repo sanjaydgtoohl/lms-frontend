@@ -2,13 +2,13 @@
  * Enhanced API Client with retry logic and token refresh via Redux state.
  */
 
-import { API_BASE_URL, API_ENDPOINTS } from '../constants';
-import http from '../services/http';
+import { API_BASE_URL } from '../constants';
 import {
   getAccessToken,
   getRefreshToken,
   persistAuthTokens,
 } from '../services/auth/tokenStorage';
+import { parseRefreshResponse, postRefreshToken } from '../services/auth/refreshAccessToken';
 
 export interface RequestConfig extends RequestInit {
   retries?: number;
@@ -75,25 +75,18 @@ class EnhancedApiClient {
       const refreshToken = getRefreshToken();
       if (!refreshToken) return false;
 
-      const resp = await http.post(
-        API_ENDPOINTS.AUTH.REFRESH,
-        { refresh_token: refreshToken },
-        { skipAuth: true } as any
-      );
-      const data = resp.data;
+      const resp = await postRefreshToken(refreshToken);
+      const parsed = parseRefreshResponse(resp.data, refreshToken);
 
-      if (data?.success && data.data?.token) {
-        persistAuthTokens({
-          token: data.data.token,
-          expiresIn: data.data.expires_in || 3600,
-          refreshToken:
-            data.data.refresh_token || data.data.refreshToken || refreshToken,
-          refreshExpiresIn: data.data.refresh_expires_in,
-        });
-        return true;
-      }
+      if (!parsed) return false;
 
-      return false;
+      persistAuthTokens({
+        token: parsed.accessToken,
+        expiresIn: parsed.expiresIn,
+        refreshToken: parsed.refreshToken,
+        refreshExpiresIn: parsed.refreshExpiresIn,
+      });
+      return true;
     } catch (error) {
       console.error('Token refresh failed:', error);
       return false;

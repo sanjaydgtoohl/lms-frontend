@@ -6,6 +6,7 @@ import {
   getRefreshToken,
   persistAuthTokens,
 } from './auth/tokenStorage';
+import { parseRefreshResponse, postRefreshToken } from './auth/refreshAccessToken';
 
 type RetryableRequestConfig = InternalAxiosRequestConfig & {
   _retry?: boolean;
@@ -84,36 +85,25 @@ class Http {
               return Promise.reject(error);
             }
 
-            this.refreshPromise = this.instance
-              .post(
-                API_ENDPOINTS.AUTH.REFRESH,
-                { refresh_token: refreshToken },
-                { skipAuth: true } as RetryableRequestConfig
-              )
+            this.refreshPromise = postRefreshToken(refreshToken)
               .then((resp: AxiosResponse<any>) => {
-                const data = resp.data;
-                if (data?.success && data.data?.token) {
-                  const access = data.data.token;
-                  const refreshFromResp =
-                    data.data.refresh_token || data.data.refreshToken || refreshToken;
-                  const expiresIn = data.data.expires_in || 3600;
-                  const refreshExpiresIn = data.data.refresh_expires_in || 7 * 24 * 3600;
-
-                  persistAuthTokens({
-                    token: access,
-                    expiresIn,
-                    refreshToken: refreshFromResp,
-                    refreshExpiresIn,
-                  });
-
-                  const freshToken = getAccessToken() || access;
-                  this.requestQueue.forEach((cb) => cb(freshToken));
-                  this.requestQueue = [];
-                  return freshToken;
+                const parsed = parseRefreshResponse(resp.data, refreshToken);
+                if (!parsed) {
+                  this.clearSessionAndRedirect();
+                  throw new Error('Refresh failed');
                 }
 
-                this.clearSessionAndRedirect();
-                throw new Error('Refresh failed');
+                persistAuthTokens({
+                  token: parsed.accessToken,
+                  expiresIn: parsed.expiresIn,
+                  refreshToken: parsed.refreshToken,
+                  refreshExpiresIn: parsed.refreshExpiresIn,
+                });
+
+                const freshToken = getAccessToken() || parsed.accessToken;
+                this.requestQueue.forEach((cb) => cb(freshToken));
+                this.requestQueue = [];
+                return freshToken;
               })
               .catch((err) => {
                 this.clearSessionAndRedirect();

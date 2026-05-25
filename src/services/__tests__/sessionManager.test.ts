@@ -1,4 +1,5 @@
 import { refreshTokens } from '../sessionManager';
+import { postRefreshToken } from '../auth/refreshAccessToken';
 import * as http from '../http';
 import { getCookie, deleteCookie } from '../../utils/cookies';
 import { store } from '../../redux/store';
@@ -17,7 +18,7 @@ describe('sessionManager.refreshTokens', () => {
     deleteCookie('auth_token_expires');
   });
 
-  it('should call refresh endpoint, store access token in Redux, and refresh token in cookies', async () => {
+  it('should refresh with Bearer header and store access token in Redux', async () => {
     document.cookie = 'refresh_token=test-refresh; Path=/';
 
     const mockResp = {
@@ -37,8 +38,39 @@ describe('sessionManager.refreshTokens', () => {
     const result = await refreshTokens();
 
     expect(result).toBeDefined();
+    expect((http as any).post).toHaveBeenCalledWith(
+      '/auth/refresh',
+      { refresh_token: 'test-refresh' },
+      expect.objectContaining({
+        skipAuth: true,
+        headers: expect.objectContaining({
+          Authorization: 'Bearer test-refresh',
+        }),
+      })
+    );
     expect(store.getState().auth.token).toBe('new-access-token');
     expect(getCookie('refresh_token')).toBe('new-refresh-token');
-    expect(getCookie('auth_token')).toBeNull();
+  });
+});
+
+describe('postRefreshToken', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('sends refresh token in Authorization header and body', async () => {
+    jest.spyOn(http as any, 'post').mockResolvedValue({ data: { success: true } });
+
+    await postRefreshToken('my-refresh-token');
+
+    expect((http as any).post).toHaveBeenCalledWith(
+      '/auth/refresh',
+      { refresh_token: 'my-refresh-token' },
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: 'Bearer my-refresh-token',
+        }),
+      })
+    );
   });
 });

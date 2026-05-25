@@ -1,11 +1,10 @@
-import { API_ENDPOINTS } from '../constants';
-import http from './http';
 import { getTokenExpiresAt } from './auth/tokenStorage';
 import {
   clearAuthTokens,
   getRefreshToken,
   persistAuthTokens,
 } from './auth/tokenStorage';
+import { parseRefreshResponse, postRefreshToken } from './auth/refreshAccessToken';
 
 let refreshTimer: number | null = null;
 let refreshInProgress = false;
@@ -45,36 +44,22 @@ export async function refreshTokens() {
     const refreshToken = getRefreshToken();
     if (!refreshToken) throw new Error('No refresh token');
 
-    const resp = await http.post(
-      API_ENDPOINTS.AUTH.REFRESH,
-      { refresh_token: refreshToken },
-      { skipAuth: true } as any
-    );
+    const resp = await postRefreshToken(refreshToken);
+    const parsed = parseRefreshResponse(resp.data, refreshToken);
 
-    const data = resp.data;
-    if (data && data.success && data.data) {
-      const access = data.data.token;
-      const refresh =
-        (data.data as any).refresh_token ||
-        (data.data as any).refreshToken ||
-        refreshToken;
-      const expiresIn = data.data.expires_in || 3600;
-      const refreshExpiresIn = (data.data as any).refresh_expires_in || 7 * 24 * 3600;
-
-      if (access) {
-        persistAuthTokens({
-          token: access,
-          expiresIn,
-          refreshToken: refresh,
-          refreshExpiresIn,
-        });
-      }
-
-      scheduleRefresh();
-      return data.data;
+    if (!parsed) {
+      throw new Error('Refresh failed');
     }
 
-    throw new Error('Refresh failed');
+    persistAuthTokens({
+      token: parsed.accessToken,
+      expiresIn: parsed.expiresIn,
+      refreshToken: parsed.refreshToken,
+      refreshExpiresIn: parsed.refreshExpiresIn,
+    });
+
+    scheduleRefresh();
+    return resp.data?.data;
   } finally {
     refreshInProgress = false;
   }
