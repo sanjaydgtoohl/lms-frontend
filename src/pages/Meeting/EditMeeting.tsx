@@ -1,3 +1,10 @@
+/**
+ * @file EditMeeting.tsx
+ * @description Edit an existing meeting record.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Breadcrumb from '../../components/ui/Breadcrumb';

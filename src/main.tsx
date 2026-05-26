@@ -1,9 +1,13 @@
 import { createRoot } from 'react-dom/client'
+import { initTheme } from './hooks/useTheme'
 import './index.css'
+import './styles/shell-theme.css'
 import './table.css'
 import './darkmode.css'
 import './email.css'
 import App from './App.tsx'
+
+initTheme()
 
 import { Provider } from "react-redux";
 import { store } from "./redux/store";

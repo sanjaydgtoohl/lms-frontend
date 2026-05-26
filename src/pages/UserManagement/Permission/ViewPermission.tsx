@@ -1,22 +1,22 @@
+/**
+ * @file ViewPermission.tsx
+ * @description View permission details.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MasterFormHeader, PermissionDenied } from '../../../components/ui';
 import { ROUTES } from '../../../constants';
 import { getPermission } from '../../../services/AllPermissions';
-
-interface Permission {
-  id: string;
-  name: string;
-  display_name?: string;
-  description?: string;
-}
+import type { PermissionDetailView } from '../../../types/user/rbac.types';
 
 const ViewPermission: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
-  const [permission, setPermission] = useState<Permission | null>(null);
+  const [permission, setPermission] = useState<PermissionDetailView | null>(null);
 
   useEffect(() => {
     const fetchPermission = async () => {

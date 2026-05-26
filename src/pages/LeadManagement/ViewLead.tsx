@@ -1,3 +1,10 @@
+/**
+ * @file ViewLead.tsx
+ * @description Read-only lead detail view.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, Mail, Phone, MapPin, User, Briefcase, Calendar, Flag, Building2, Globe, Hash, Building, Map, Tag, Layers, ArrowUpCircle, UserCheck } from 'lucide-react';

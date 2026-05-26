@@ -1,3 +1,10 @@
+/**
+ * @file CreateLead.tsx
+ * @description Create new lead form and submission flow.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useEffect } from 'react';
 import LeadManagementSection from '../../components/forms/CreateLead/LeadManagementSection';
 import ContactPersonsCard from '../../components/forms/CreateLead/ContactPersonsCard';

@@ -8,73 +8,8 @@ const rawEnv =
   '/api/v1';
 export const API_BASE_URL = String(rawEnv).trim().replace(/\/+$|\s+$/g, '');
 
-// Routes
-export const ROUTES = {
-  HOME: '/',
-  LOGIN: '/login',
-  REGISTER: '/register',
-  DASHBOARD: '/dashboard',
-  COURSES: '/courses',
-  PROFILE: '/profile',
-  SETTINGS: '/settings',
-  NOTIFICATIONS: '/notifications',
-  // LMS Routes
-  LEAD_SOURCE: '/lead-source',
-  LEAD_MANAGEMENT: '/lead-management',
-  LEAD: {
-    ROOT: '/lead-management',
-    CREATE: '/lead-management/create',
-    EDIT: (id: string) => `/lead-management/edit/${id}`,
-    DETAIL: (id: string) => `/lead-management/${id}`,
-    MEETING_SCHEDULE: '/meeting-schedule',
-  },
-  BRIEF: {
-    ROOT: '/brief',
-    PIPELINE: '/brief/Brief_Pipeline',
-    CREATE: '/brief/create',
-    LOG: '/brief/log',
-    PLAN_HISTORY: (id: string) => `/brief/plan-history/${id}`,
-    EDIT: (id: string) => `/brief/${id}/edit`,
-    DETAIL: (id: string) => `/brief/${id}`,
-  },
-  MISS_CAMPAIGN: {
-    ROOT: '/miss-campaign',
-    VIEW: '/miss-campaign/view',
-    CREATE: '/miss-campaign/create',
-    EDIT: (id: string) => `/miss-campaign/view/${id}/edit`,
-    DETAIL: (id: string) => `/miss-campaign/view/${id}`,
-  },
-  CAMPAIGN_MANAGEMENT: '/campaign-management',
-  FINANCE: '/finance',
-  USER_MANAGEMENT: '/user-management',
-  PERMISSION: {
-    ROOT: '/user-management/permission',
-    CREATE: '/user-management/permission/create',
-    EDIT: (id: string) => `/user-management/permission/edit/${id}`,
-    DETAIL: (id: string) => `/user-management/permission/${id}`,
-  },
-  ROLE: {
-    ROOT: '/user-management/role',
-    CREATE: '/user-management/role/create',
-    EDIT: (id: string) => `/user-management/role/edit/${id}`,
-    DETAIL: (id: string) => `/user-management/role/${id}`,
-  },
-  USER: {
-    ROOT: '/user-management/user',
-    CREATE: '/user-management/user/create',
-    EDIT: (id: string) => `/user-management/user/edit/${id}`,
-    DETAIL: (id: string) => `/user-management/user/${id}`,
-  },
-  // Master Data Routes
-  BRAND_MASTER: '/master/brand',
-  BRAND_CONTACTS: (id: string) => `/master/brand/${id}/contacts`,
-  AGENCY_MASTER: '/master/agency',
-  AGENCY_CONTACTS: (id: string) => `/master/agency/${id}/contacts`,
-  DEPARTMENT_MASTER: '/master/department',
-  DESIGNATION_MASTER: '/master/designation',
-  INDUSTRY_MASTER: '/master/industry',
-  SOURCE_MASTER: '/master/source',
-} as const;
+export { ROUTES, ROUTE_SEGMENTS } from './routes';
+export { BRAND } from './brand';
 
 export const CALL_STATUS_OPTIONS = [
   "Busy",
@@ -116,11 +51,8 @@ export const COURSE_STATUS = {
   ARCHIVED: 'archived',
 } as const;
 
-// Local Storage Keys
+// Storage Keys (theme only — auth tokens live in Redux + refresh cookie)
 export const STORAGE_KEYS = {
-  AUTH_TOKEN: 'auth_token',
-  REFRESH_TOKEN: 'refresh_token',
-  USER_DATA: 'user_data',
   THEME: 'theme',
 } as const;
 
@@ -133,46 +65,7 @@ export const VALIDATION_MESSAGES = {
   PHONE_INVALID: 'Please enter a valid phone number',
 } as const;
 
-// API Endpoints
-export const API_ENDPOINTS = {
-  AUTH: {
-    LOGIN: '/auth/login',
-    REGISTER: '/auth/register',
-    LOGOUT: '/auth/logout',
-    REFRESH: '/auth/refresh',
-    PROFILE: '/auth/profile',
-  },
-  PERMISSION: {
-    ALL_TREE: '/permissions/all-permission-tree',
-    LIST: '/permissions',
-    CREATE: '/permissions',
-    DETAIL: (id: string) => `/permissions/${id}`,
-    UPDATE: (id: string) => `/permissions/${id}`,
-    DELETE: (id: string) => `/permissions/${id}`,
-  },
-  ROLE: {
-    LIST: '/roles',
-    CREATE: '/roles',
-    VIEW: '/roles',
-    DETAIL: (id: string) => `/roles/${id}`,
-    UPDATE: (id: string) => `/roles/${id}`,
-    DELETE: (id: string) => `/roles/${id}`,
-  },
-  COURSES: {
-    LIST: '/courses',
-    CREATE: '/courses',
-    DETAIL: (id: string) => `/courses/${id}`,
-    UPDATE: (id: string) => `/courses/${id}`,
-    DELETE: (id: string) => `/courses/${id}`,
-    ENROLL: (id: string) => `/courses/${id}/enroll`,
-  },
-  USERS: {
-    LIST: '/users',
-    DETAIL: (id: string) => `/users/${id}`,
-    UPDATE: (id: string) => `/users/${id}`,
-    DELETE: (id: string) => `/users/${id}`,
-  },
-} as const;
+export { ENDPOINTS, API_ENDPOINTS } from './endpoints';
 
 // Theme Configuration
 export const THEME_CONFIG = {

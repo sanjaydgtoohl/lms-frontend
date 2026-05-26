@@ -1,60 +1,39 @@
-import { useSidebarMenu } from "../../hooks/SidebarMenuHooks";
-import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ChevronRight } from "lucide-react";
-import LogoutIcon from "../../assets/icons/LogoutIcon";
-import HelpIcon from "../../assets/icons/HelpIcon";
-import logoUrl from "../../assets/DGTOOHL 360.svg";
-
-// Use the NavigationItem type from Side.ts for consistency
-import type { NavigationItem } from "../../services/Side";
-// import { usePermissions } from '../../hooks/SidebarMenuHooks';
-
-
-import { useSelector, useDispatch } from "react-redux";
-import type { AppDispatch, RootState } from "../../redux/store";
-import { toggleExpandedItem, setExpandedItems } from "../../redux/slices/sidebarSlice";
-import { logoutUser } from "../../redux/slices/authSlice";
+import { useSidebarMenu } from '../../hooks/SidebarMenuHooks';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { ChevronRight } from 'lucide-react';
+import LogoutIcon from '../../assets/icons/LogoutIcon';
+import { BrandLogo } from '../brand';
+import type { NavigationItem } from '../../services/Side';
+import { useSelector, useDispatch } from 'react-redux';
+import type { AppDispatch, RootState } from '../../redux/store';
+import { toggleExpandedItem, setExpandedItems } from '../../redux/slices/sidebarSlice';
+import { logoutUser } from '../../redux/slices/authSlice';
 
 interface SidebarProps {
-  isCollapsed: boolean
-  onToggle: () => void
-  isMobile: boolean
-  mobileOpen: boolean
-  onCloseMobile: () => void
+  isMobile?: boolean;
+  mobileOpen?: boolean;
+  onCloseMobile?: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false, onCloseMobile }) => {
-  const dispatch = useDispatch<AppDispatch>()
-
+  const dispatch = useDispatch<AppDispatch>();
   const location = useLocation();
   const navigate = useNavigate();
+  const isCollapsed = useSelector((state: RootState) => state.sidebar.isCollapsed);
+  const expandedItems = useSelector((state: RootState) => state.sidebar.expandedItems);
+  const { sidebarMenu: navigationItems } = useSidebarMenu();
+  const [showMobilePopup, setShowMobilePopup] = useState(false);
+  const popupRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = async () => {
     try {
-      await dispatch(logoutUser()).unwrap(); // unwrap throws if rejected
-      navigate("/login"); // redirect after logout
+      await dispatch(logoutUser()).unwrap();
+      navigate('/login');
     } catch (error) {
-      console.error("Logout failed:", error);
+      console.error('Logout failed:', error);
     }
   };
-
-
-  const isCollapsed = useSelector(
-    (state: RootState) => state.sidebar.isCollapsed
-  );
-
-  const expandedItems = useSelector(
-    (state: RootState) => state.sidebar.expandedItems
-  );
-
-
-  // Use sidebar data from context instead of fetching separately
-  const { sidebarMenu: navigationItems } = useSidebarMenu();
-
-  // const [expandedItems, setExpandedItems] = useState<string[]>([]);
-  const [showMobilePopup, setShowMobilePopup] = useState(false);
-  const popupRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -62,354 +41,244 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, mobileOpen = false,
         setShowMobilePopup(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   useEffect(() => {
     if (!isMobile) return;
-
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && onCloseMobile) {
-        onCloseMobile();
-      }
+      if (e.key === 'Escape' && onCloseMobile) onCloseMobile();
     };
-
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [isMobile, onCloseMobile]);
 
-  // Navigation items are now provided dynamically from `src/services/Sidebar.ts`.
-  // The `navigationItems` identifier is imported from that module.
+  const routeAliases = useMemo<Record<string, string>>(
+    () => ({
+      '/lead-management/create': '/lead-management/all-leads',
+      '/user-management/permission/create': '/user-management/permission',
+      '/user-management/role/create': '/user-management/role',
+      '/user-management/user/create': '/user-management/user',
+      '/brief/plan-submission': '/brief/log',
+    }),
+    []
+  );
 
-  // Toggle expansion for a parent item. When expanding a parent,
-  // collapse others so only one parent menu is open at a time.
-  const toggleExpanded = (itemName: string) => {
-    dispatch(toggleExpandedItem(itemName));
-  };
-
-  // Route aliases map specific routes to the navigation path that should be
-  // considered active. This lets us treat `/lead-management/create` as if the
-  // user is on `/lead-management/all-leads` so the sidebar highlights the
-  // All Leads item while the Create Lead page is open.
-  const routeAliases = useMemo<Record<string, string>>(() => ({
-    "/lead-management/create": "/lead-management/all-leads",
-    "/user-management/permission/create": "/user-management/permission",
-    "/user-management/role/create": "/user-management/role",
-    "/user-management/user/create": "/user-management/user",
-    "/brief/plan-submission": "/brief/log",
-  }), []);
-
-  const getEffectivePath = useCallback((pathname: string) => {
-
-    if (pathname.match(/^\/user-management\/(permission|role|user)\/edit\//)) {
-      const match = pathname.match(/^\/user-management\/(\w+)\/edit\//);
-      if (match) {
-        return `/user-management/${match[1]}`;
+  const getEffectivePath = useCallback(
+    (pathname: string) => {
+      if (pathname.match(/^\/user-management\/(permission|role|user)\/edit\//)) {
+        const match = pathname.match(/^\/user-management\/(\w+)\/edit\//);
+        if (match) return `/user-management/${match[1]}`;
       }
-    }
+      if (pathname.match(/^\/lead-management\/edit\//)) return '/lead-management/all-leads';
+      if (pathname.match(/^\/lead-management\/\d+$/)) return '/lead-management/all-leads';
+      if (pathname.match(/^\/brief\/edit-submitted-plan\//)) return '/brief/log';
+      if (pathname.match(/^\/brief\/plan-history\//)) return '/brief/log';
+      if (pathname.match(/^\/brief\/plan-submission\//)) return '/brief/log';
+      if (
+        pathname.match(
+          /^\/brief\/(?!create|log|Brief_Pipeline|plan-history|plan-submission|edit-submitted-plan)[^/]+$/
+        )
+      ) {
+        return '/brief/Brief_Pipeline';
+      }
+      return routeAliases[pathname] ?? pathname;
+    },
+    [routeAliases]
+  );
 
-    if (pathname.match(/^\/lead-management\/edit\//)) {
-      return "/lead-management/all-leads";
-    }
-
-    if (pathname.match(/^\/lead-management\/\d+$/)) {
-      return "/lead-management/all-leads";
-    }
-
-    if (pathname.match(/^\/brief\/edit-submitted-plan\//)) {
-      return "/brief/log";
-    }
-
-    if (pathname.match(/^\/brief\/plan-history\//)) {
-      return "/brief/log";
-    }
-
-    if (pathname.match(/^\/brief\/plan-submission\//)) {
-      return "/brief/log";
-    }
-
-    if (pathname.match(/^\/brief\/(?!create|log|Brief_Pipeline|plan-history|plan-submission|edit-submitted-plan)[^/]+$/)) {
-      return "/brief/Brief_Pipeline";
-    }
-
-    return routeAliases[pathname] ?? pathname;
-
-  }, [routeAliases]);
-
-  // Treat a path as active when the effective pathname is exactly the path
-  // or when the effective pathname is a nested route under that path.
   const isActive = (path: string) => {
     const effective = getEffectivePath(location.pathname);
-    return effective === path || effective.startsWith(path + "/");
+    return effective === path || effective.startsWith(path + '/');
   };
 
   const isParentActive = (item: NavigationItem) => {
     if (item.path) return isActive(item.path);
-    if (item.children)
-      return item.children.some((child) => child.path && isActive(child.path));
+    if (item.children) return item.children.some((child) => child.path && isActive(child.path));
     return false;
   };
 
-  // Ensure parent menus (like "Master Data") are expanded when any of their
-  // child routes are active. This makes the menu remain open on refresh when
-  // a master page (e.g. /master/agency) is loaded directly.
   useEffect(() => {
     const effectivePath = getEffectivePath(location.pathname);
-
     const activeParents = navigationItems
-      .filter((item) =>
-        item.children &&
-        item.children.some((child) => {
-          if (!child.path) return false;
-          return effectivePath === child.path || effectivePath.startsWith(child.path + "/");
-        })
+      .filter(
+        (item) =>
+          item.children &&
+          item.children.some((child) => {
+            if (!child.path) return false;
+            return effectivePath === child.path || effectivePath.startsWith(child.path + '/');
+          })
       )
-      .map((item) => item.name.toLowerCase().replace(/\s+/g, "-"));
+      .map((item) => item.name.toLowerCase().replace(/\s+/g, '-'));
 
-    // Always expand Pre Lead on /pre-lead/create
-    if (location.pathname === "/pre-lead/create") {
+    if (location.pathname === '/pre-lead/create') {
       const missCampaignSlug = navigationItems
-        .find(item => item.name === "Pre Lead")
+        .find((item) => item.name === 'Pre Lead')
         ?.name.toLowerCase()
-        .replace(/\s+/g, "-");
-
+        .replace(/\s+/g, '-');
       if (missCampaignSlug && !activeParents.includes(missCampaignSlug)) {
         activeParents.push(missCampaignSlug);
       }
     }
-
     dispatch(setExpandedItems(activeParents));
   }, [location.pathname, navigationItems, dispatch, getEffectivePath]);
 
+  const toggleExpanded = (itemName: string) => {
+    dispatch(toggleExpandedItem(itemName));
+  };
+
   const renderNavigationItem = (item: NavigationItem, level = 0) => {
     const hasChildren = item.children && item.children.length > 0;
-    const slug = item.name.toLowerCase().replace(/\s+/g, "-");
+    const slug = item.name.toLowerCase().replace(/\s+/g, '-');
     const isExpanded = expandedItems.includes(slug);
     const isItemActive = isParentActive(item);
     const IconComponent = item.icon;
 
-    // Custom highlight for Pre Lead, Live Campaign, Brief, and Brief Request
-    const isMissCampaignRoute = location.pathname === "/pre-lead/create";
-    const isMissCampaign = item.name === "Pre Lead";
-    const isLiveCampaign = item.name === "Live Campaign";
-    const isBriefCreateRoute = location.pathname === "/brief/create";
-    const isBriefRoute = location.pathname.startsWith("/brief");
-    const isBrief = item.name.trim() === "Brief" || item.name.trim() === "Brief ";
-    // Highlight parent and child when on /miss-campaign/create or /brief/create
-    const highlightClass =
+    const isMissCampaignRoute = location.pathname === '/pre-lead/create';
+    const isMissCampaign = item.name === 'Pre Lead';
+    const isLiveCampaign = item.name === 'Live Campaign';
+    const isBriefCreateRoute = location.pathname === '/brief/create';
+    const isBriefRoute = location.pathname.startsWith('/brief');
+    const isBrief = item.name.trim() === 'Brief' || item.name.trim() === 'Brief ';
+
+    const active =
       (isMissCampaignRoute && (isMissCampaign || isLiveCampaign)) ||
-        ((isBriefRoute || isBriefCreateRoute) && isBrief) ||
-        isItemActive
-        ? "border-l-4 border-orange-500 text-orange-500 bg-transparent active-menu"
-        : "border-l-4 border-transparent hover:bg-orange-50 hover:text-orange-500 transition-all duration-200";
+      ((isBriefRoute || isBriefCreateRoute) && isBrief) ||
+      isItemActive;
+
+    const navClass = [
+      'app-nav-item',
+      level > 0 ? 'app-nav-item--child' : '',
+      active ? 'app-nav-item--active' : '',
+      isCollapsed && !isMobile ? 'justify-center px-2' : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
 
     const handleCardClick = () => {
       if (hasChildren) {
-        if (isCollapsed && item.name === "Master Data") {
+        if (isCollapsed && item.name === 'Master Data') {
           setShowMobilePopup(!showMobilePopup);
         } else {
           toggleExpanded(slug);
         }
       } else if (item.path) {
         navigate(item.path);
+        if (isMobile && onCloseMobile) onCloseMobile();
       }
     };
 
     return (
       <div key={item.name}>
-        <div
-          className={`sidebar-menu-item flex items-center justify-between px-4 py-3 text-sm font-medium cursor-pointer rounded-sm transition-all duration-200 ease-in-out
-            ${level > 0 ? "ml-6" : ""}
-            ${highlightClass}
-            ${isCollapsed ? "px-2 justify-center" : ""}
-          `}
-          onClick={handleCardClick}
-        >
-          <div
-            className={`flex items-center w-full ${isCollapsed ? "justify-center" : ""
-              }`} >
-
-            {/* Show icon_file image if present, else fallback to icon component */}
+        <div className={navClass} onClick={handleCardClick} title={isCollapsed ? item.name : undefined}>
+          <div className={`flex min-w-0 flex-1 items-center ${isCollapsed && !isMobile ? 'justify-center' : 'gap-2.5'}`}>
             {item.icon_file ? (
               <img
                 src={item.icon_file}
-                alt={item.name}
-                className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] object-contain ${isCollapsed ? "" : "mr-2.5"}`}
-                style={{ display: "inline-block" }}
+                alt=""
+                className="h-4 w-4 shrink-0 object-contain opacity-80"
               />
             ) : (
-              IconComponent && (
-                <IconComponent
-                  className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-gray-800${isCollapsed ? "" : "mr-2.5"}`}
-                />
-              )
+              IconComponent && <IconComponent className="h-4 w-4 shrink-0 opacity-80" />
             )}
-            {!isCollapsed && <span className="text-gray-800">{item.name}</span>}
+            {(!isCollapsed || isMobile) && <span className="truncate">{item.name}</span>}
           </div>
 
-          {hasChildren && !isCollapsed && (
-            <div className="ml-auto">
-              <ChevronRight
-                className={`
-                  shrink-0 w-4 h-4 text-[var(--text-secondary)]
-                  transition-transform duration-300
-                  ${isExpanded ? "rotate-90" : ""}
-                `}
-              />
-            </div>
+          {hasChildren && (!isCollapsed || isMobile) && (
+            <ChevronRight
+              className={`h-4 w-4 shrink-0 text-[var(--text-nav-muted)] transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}
+            />
           )}
         </div>
 
-        {/* Mobile Popup Menu */}
-        {hasChildren && isCollapsed && showMobilePopup && item.name === "Master Data" && (
+        {hasChildren && isCollapsed && showMobilePopup && item.name === 'Master Data' && (
           <div
             ref={popupRef}
-            className="fixed left-16 top-0 mt-12 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 min-w-[200px]"
+            className="app-dropdown fixed left-[4.25rem] top-14 z-50 min-w-[200px] py-1"
           >
             {item.children?.map((child) => (
               <Link
                 key={child.name}
-                to={child.path || ""}
-                className="flex items-center px-4 py-2 text-sm text-gray-800 hover:bg-orange-50"
-                onClick={() => {
-                  setShowMobilePopup(false);
-                }}
+                to={child.path || ''}
+                className="flex items-center gap-2 px-4 py-2.5 text-sm text-[var(--text-nav)] hover:bg-[var(--nav-hover)]"
+                onClick={() => setShowMobilePopup(false)}
               >
-                {/* Show icon_file image if present, else fallback to icon component */}
                 {child.icon_file ? (
-                  <img
-                    src={child.icon_file}
-                    alt={child.name}
-                    className="w-4 h-4 mr-2 object-contain"
-                    style={{ display: "inline-block" }}
-                  />
+                  <img src={child.icon_file} alt="" className="h-4 w-4 object-contain" />
                 ) : (
-                  child.icon && React.createElement(child.icon, {
-                    className: "w-4 h-4 mr-2 text-gray-800",
-                  })
+                  child.icon && <child.icon className="h-4 w-4" />
                 )}
-                <span className="text-gray-800">{child.name}</span>
+                {child.name}
               </Link>
             ))}
           </div>
         )}
 
-        {hasChildren && !isCollapsed && (
+        {hasChildren && (!isCollapsed || isMobile) && (
           <div
-            className={`
-              overflow-hidden transition-all duration-300 ease-in-out
-              ${isExpanded ? "max-h-96 opacity-100 mt-2" : "max-h-0 opacity-0"}
-            `}
+            className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}
           >
-            <div className="space-y-1">
-              {item.children?.map((child) => renderNavigationItem(child, level + 1))}
-            </div>
+            <div className="mt-0.5 space-y-0.5">{item.children?.map((child) => renderNavigationItem(child, level + 1))}</div>
           </div>
         )}
       </div>
     );
   };
 
-  // Mobile variant: icon-only slide-in panel
+  const sidebarWidth = isCollapsed && !isMobile ? 'w-[4rem]' : 'w-64';
+  const sidebarClasses = `app-sidebar sidebar-wrapper flex flex-col fixed left-0 top-0 z-40 h-full transition-all duration-300 ease-in-out ${sidebarWidth}`;
+
   if (isMobile) {
     return (
-      <div
+      <aside
         aria-hidden={!mobileOpen}
-        className={` flex flex-col fixed top-0 left-0 h-full bg-white border-r border-gray-200 shadow-sm transition-transform duration-300 ease-in-out z-40 transform ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} w-64`}
+        className={`${sidebarClasses} ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
         ref={popupRef}
       >
-        {/* Render collapsed (icons-only) content inside */}
-        <div className="flex h-16 items-center px-2">
-          <div className="w-full h-auto object-contain rounded-lg flex items-center ">
-            <img src={logoUrl} alt="LMS logo" />
-          </div>
+        <div className="app-sidebar-topbar">
+          <BrandLogo variant="sidebar" />
         </div>
-
-        <nav className="flex-1 overflow-y-auto py-2 px-1 scrolling-touch">
-          <div className="space-y-1">
-            {navigationItems.map((item) => renderNavigationItem(item))}
-          </div>
-        </nav>
-
-        <div className="border-t border-gray-100 p-2">
-          <div
-            className={`flex items-center px-4 py-3 text-sm font-medium text-gray-800 rounded-lg hover:bg-orange-50 transition-all cursor-pointer`}
-            onClick={() => onCloseMobile && onCloseMobile()}
-          >
-            <HelpIcon className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-gray-800 mr-2.5`} /> Help
-          </div>
-          <div
+        <nav className="app-sidebar-nav">{navigationItems.map((item) => renderNavigationItem(item))}</nav>
+        <div className="app-sidebar-footer">
+          <button
+            type="button"
             onClick={() => {
               handleLogout();
-              if (onCloseMobile) onCloseMobile();
+              onCloseMobile?.();
             }}
-            className="flex items-center px-4 py-3 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-all cursor-pointer"
+            className="app-nav-item w-full text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"
           >
-            <LogoutIcon className="shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-red-600 mr-2.5" /> Logout
-          </div>
+            <LogoutIcon className="h-4 w-4 shrink-0" />
+            <span>Log out</span>
+          </button>
         </div>
-
-      </div>
+      </aside>
     );
   }
 
   return (
-    <div
-      className={`
-        flex flex-col fixed left-0 top-0 h-full bg-white shadow-custom transition-all sidebar-wrapper duration-300 ease-in-out z-30 ${isCollapsed ? "w-16" : "w-64"}
-      `}
-    >
-      {/* Logo Section */}
-      <div className="flex h-16 items-center px-4" style={{ paddingLeft: '9px', paddingRight: '9px' }}>
-        {isCollapsed ? (
-          <div className="w-full flex items-center justify-center">
-            <div className="w-12 h-12 rounded-lg flex items-center justify-center">
-              <img src={logoUrl} alt="LMS logo" style={{ width: 80, height: 80 }} />
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-center w-full">
-            <div className="rounded-lg flex items-center justify-start sidebar-logo-item relatives">
-              <img src={logoUrl} alt="LMS logo" style={{ width: 280, height: 'auto' }} className="default-logo" />
-              <img src='/logo-white.png' alt="LMS logo white" className="dark-theme-logo-white" style={{ width: 280, height: 'auto' }} />
-            </div>
-          </div>
-        )}
+      <aside className={sidebarClasses}>
+      <div className="app-sidebar-topbar">
+        <BrandLogo variant="sidebar" collapsed={isCollapsed} />
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-4 px-2 scrolling-touch">
-        <div className="space-y-1">
-          {navigationItems.map((item) => renderNavigationItem(item))}
-        </div>
+      <nav className="app-sidebar-nav hide-scrollbar">
+        <div className="space-y-0.5">{navigationItems.map((item) => renderNavigationItem(item))}</div>
       </nav>
 
-      {/* Footer Section */}
-      <div className="border-t border-gray-100 p-3 space-y-2">
-        <div
-          className={`flex items-center px-4 py-2.5 text-sm font-medium text-gray-800 rounded-lg hover:bg-orange-50 transition-all cursor-pointer ${isCollapsed ? "px-2 justify-center" : ""
-            }`}
-        >
-          <HelpIcon
-            className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-gray-800 ${isCollapsed ? "" : "mr-2.5"}`}
-          />
-          {!isCollapsed && <span className="text-gray-800">Help</span>}
-        </div>
-
-        <div
+      <div className="app-sidebar-footer">
+        <button
+          type="button"
           onClick={handleLogout}
-          className={`flex items-center px-4 py-2.5 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-all cursor-pointer ${isCollapsed ? "px-2 justify-center" : ""
-            }`}
+          className={`app-nav-item w-full text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30 ${isCollapsed ? 'justify-center px-2' : ''}`}
+          title={isCollapsed ? 'Log out' : undefined}
         >
-          <LogoutIcon className={`shrink-0 w-4 h-4 min-w-[1rem] min-h-[1rem] text-red-600 ${isCollapsed ? "" : "mr-2.5"}`} />
+          <LogoutIcon className="h-4 w-4 shrink-0" />
           {!isCollapsed && <span>Log out</span>}
-        </div>
+        </button>
       </div>
-    </div>
+    </aside>
   );
 };
 

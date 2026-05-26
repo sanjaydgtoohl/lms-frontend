@@ -1,4 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+/**
+ * @file AllLeads.tsx
+ * @description All leads listing with filters, actions, and pagination.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import Table, { type Column } from '../../components/ui/Table';
 import AssignDropdown from '../../components/ui/AssignDropdown';
 import CallStatusDropdown from '../../components/ui/CallStatusDropdown';
@@ -12,8 +19,9 @@ import { ROUTES } from '../../constants';
 import { listLeads, updateLead, deleteLead } from '../../services/AllLeads';
 import SweetAlert from '../../utils/SweetAlert';
 import { assignUserToLead } from '../../services/leadAssignTo';
-import { apiClient } from '../../utils/apiClient';
 import { getCallStatuses, updateCallStatus } from '../../services/CallStatus';
+import { listBrandsFlat, listChildUsers } from '../../api/lookups';
+import { fetchLeadSubSources } from '../../services/ContactPersonsCard';
 import { usePermissions } from '../../hooks/SidebarMenuHooks';
 import TableHeader from '../../components/ui/TableHeader';
 import { useDispatch } from 'react-redux';
@@ -29,11 +37,27 @@ const AllLeads: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
+  const [brandOptions, setBrandOptions] = useState<{ value: string; label: string }[]>([]);
+  const [subSourceOptions, setSubSourceOptions] = useState<{ value: string; label: string }[]>([]);
+  const [assignByOptions, setAssignByOptions] = useState<{ value: string; label: string }[]>([]);
   const itemsPerPage = 15;
   const [leads, setLeads] = useState<AllLeadtype[]>([]);
   const [callStatusOptions, setCallStatusOptions] = useState<CallStatusOption[]>([]);
   const [assignToOptions, setAssignToOptions] = useState<UserOption[]>([]);
   const { hasPermission } = usePermissions();
+  const [loading, setLoading] = useState(false);
+  const [totalItems, setTotalItems] = useState(0);
+
+  // Tooltip state for Comment hover
+  const [tooltipVisible, setTooltipVisible] = useState(false);
+  const [tooltipContent, setTooltipContent] = useState('');
+  const [tooltipLeft, setTooltipLeft] = useState(0);
+  const [tooltipTop, setTooltipTop] = useState(0);
+  const [tooltipPlacement, setTooltipPlacement] = useState<'top' | 'bottom'>('top');
+  const hoverTimeout = useRef<number | null>(null);
+  const tooltipRef = useRef<HTMLDivElement | null>(null);
+
   // Fetch call status options from API
   useEffect(() => {
     const loadCallStatuses = async () => {
@@ -55,26 +79,53 @@ const AllLeads: React.FC = () => {
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        const res = await apiClient.get('/profile/child-users?per_page=1000');
-        const users = Array.isArray(res.data) ? res.data : [];
-        setAssignToOptions(users.map((u: any) => ({ id: u.id, name: u.name })));
+        const users = await listChildUsers(1000);
+        setAssignToOptions(users.map((u) => ({ id: u.id, name: u.name })));
+        setAssignByOptions(
+          users.map((u) => ({ value: String(u.id), label: u.name }))
+        );
       } catch {
         setAssignToOptions([]);
+        setAssignByOptions([]);
       }
     };
     loadUsers();
   }, []);
-  const [loading, setLoading] = useState(false);
-  const [totalItems, setTotalItems] = useState(0);
 
-  // Tooltip state for Comment hover
-  const [tooltipVisible, setTooltipVisible] = useState(false);
-  const [tooltipContent, setTooltipContent] = useState('');
-  const [tooltipLeft, setTooltipLeft] = useState(0);
-  const [tooltipTop, setTooltipTop] = useState(0);
-  const [tooltipPlacement, setTooltipPlacement] = useState<'top' | 'bottom'>('top');
-  const hoverTimeout = useRef<number | null>(null);
-  const tooltipRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const loadBrands = async () => {
+      try {
+        const brands = await listBrandsFlat();
+        setBrandOptions(
+          brands.map((b) => ({ value: String(b.id), label: b.name }))
+        );
+      } catch {
+        setBrandOptions([]);
+      }
+    };
+    loadBrands();
+  }, []);
+
+  useEffect(() => {
+    const loadSubSources = async () => {
+      try {
+        const { data, error } = await fetchLeadSubSources();
+        if (error || !Array.isArray(data)) {
+          setSubSourceOptions([]);
+          return;
+        }
+        setSubSourceOptions(
+          data.map((item: { id: number | string; name: string }) => ({
+            value: String(item.id),
+            label: item.name,
+          }))
+        );
+      } catch {
+        setSubSourceOptions([]);
+      }
+    };
+    loadSubSources();
+  }, []);
 
   const showTooltip = (e: React.MouseEvent, content: string) => {
     if (hoverTimeout.current) {
@@ -264,8 +315,6 @@ const AllLeads: React.FC = () => {
         return { ...lead, callStatus: newStatus };
       })
     );
-    // Optional: Log the change to verify it's being called
-    console.log(`Call status updated for ${leadId} to ${newStatus} — callAttempt incremented`);
 
     // Find the id for the selected call status name
     const selectedOption = callStatusOptions.find(opt => opt.name === newStatus);
@@ -297,7 +346,7 @@ const AllLeads: React.FC = () => {
   const fetchLeads = async () => {
     setLoading(true);
     try {
-      const filters: Record<string, any> = {};
+      const filters: Record<string, any> = { ...activeFilters };
       if (searchQuery) filters.search = searchQuery;
       const resp = await listLeads(currentPage, itemsPerPage, filters);
       const items = (resp.data || []).map((it: any) => ({
@@ -337,7 +386,46 @@ const AllLeads: React.FC = () => {
   useEffect(() => {
     fetchLeads();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, searchQuery]);
+  }, [currentPage, searchQuery, activeFilters]);
+
+  const handleFilterChange = (filters: Record<string, string>) => {
+    setActiveFilters(filters);
+    setCurrentPage(1);
+  };
+
+  const filterOptions = useMemo(
+    () =>
+      [
+        {
+          key: 'brand_id',
+          label: 'Brand Name',
+          options: brandOptions,
+          isMulti: true,
+        },
+        {
+          key: 'lead_sub_source_id',
+          label: 'Sub-source',
+          options: subSourceOptions,
+          isMulti: true,
+        },
+        {
+          key: 'created_by',
+          label: 'Created By',
+          options: assignByOptions,
+          isMulti: true,
+        },
+        {
+          key: 'call_status_id',
+          label: 'Call Status',
+          options: callStatusOptions.map((opt) => ({
+            value: String(opt.id),
+            label: opt.name,
+          })),
+          isMulti: true,
+        },
+      ].filter((option) => option.options.length > 0),
+    [brandOptions, subSourceOptions, assignByOptions, callStatusOptions]
+  );
 
   const columns: Column<AllLeadtype>[] = [
     { key: 'sr', header: 'Id', render: (it: AllLeadtype) => it.id, className: 'text-left whitespace-nowrap' },
@@ -346,7 +434,7 @@ const AllLeads: React.FC = () => {
     { key: 'contactPerson', header: 'Contact Person', render: (it: AllLeadtype) => it.contactPerson || '-', className: 'max-w-[160px] overflow-hidden text-ellipsis whitespace-nowrap' },
     { key: 'phoneNumber', header: 'Phone Number', render: (it: AllLeadtype) => it.phoneNumber || '-', className: 'whitespace-nowrap' },
     { key: 'subSource', header: 'Sub-Source', render: (it: AllLeadtype) => it.subSource || '-', className: 'whitespace-nowrap' },
-    { key: 'assignBy', header: 'Assign By', render: (it: AllLeadtype) => it.assignBy || '-', className: 'whitespace-nowrap' },
+    { key: 'assignBy', header: 'Created By', render: (it: AllLeadtype) => it.assignBy || '-', className: 'whitespace-nowrap' },
     ...(hasPermission('all-lead.assign') ? [{
       key: 'assignTo',
       header: 'Assign To',
@@ -457,11 +545,18 @@ const AllLeads: React.FC = () => {
           showSignInButton={true}
           signInIcon={<FaRegCalendarAlt className="cursor-pointer text-orange-500 hover:text-orange-500 w-4 h-4 sm:w-6 sm:h-6" />}
           onSignInClick={() => navigate(ROUTES.LEAD.MEETING_SCHEDULE)}
+          createPermissionSlug="leads.create"
         />
       )}
+      
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
         {/* Table Header */}
-        <TableHeader title="All Leads">
+        <TableHeader
+          title="All Leads"
+          filterOptions={filterOptions}
+          onFilterChange={handleFilterChange}
+          appliedFilters={activeFilters}
+        >
           <SearchBar
             placeholder="Search leads..."
             delay={250}

@@ -6,13 +6,12 @@ type Props = {
   placeholder?: string;
   className?: string;
   delay?: number;
-  /** Renders inside the left segment of a unified search bar (e.g. filter trigger) */
   filterSlot?: React.ReactNode;
 };
 
 const SearchBar: React.FC<Props> = ({
   onSearch,
-  placeholder = 'Search Brand',
+  placeholder = 'Search…',
   className = '',
   delay = 300,
   filterSlot,
@@ -22,24 +21,20 @@ const SearchBar: React.FC<Props> = ({
 
   const handleChange = (v: string) => {
     setValue(v);
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
+    if (timeoutId) clearTimeout(timeoutId);
 
     if (delay === 0) {
       onSearch(v.trim());
     } else {
-      const newTimeoutId = setTimeout(() => {
-        onSearch(v.trim());
-      }, delay);
+      const newTimeoutId = setTimeout(() => onSearch(v.trim()), delay);
       setTimeoutId(newTimeoutId);
     }
   };
 
-  const inputArea = (
+  const inputEl = (
     <div className="relative min-w-0 flex-1">
-      <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[var(--text-secondary)]">
-        <Search className="w-4 h-4" aria-hidden />
+      <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-[var(--text-secondary)]">
+        <Search className="h-4 w-4" aria-hidden />
       </span>
       <input
         type="search"
@@ -47,27 +42,21 @@ const SearchBar: React.FC<Props> = ({
         onChange={(e) => handleChange(e.target.value)}
         placeholder={placeholder}
         autoComplete="off"
-        className={
-          filterSlot
-            ? 'w-full sm:w-70 md:w-90 min-w-0 px-3 pl-9 py-2 border-0 rounded-r-lg bg-white text-gray-800 focus:outline-none focus:ring-0'
-            : 'w-full sm:w-70 md:w-90 px-3 pl-9 py-2 border border-gray-200 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-black'
-        }
+        className={filterSlot ? 'app-search-input border-0 rounded-none rounded-r-lg' : 'app-search-input'}
       />
     </div>
   );
 
   if (filterSlot) {
     return (
-      <div
-        className={`flex items-stretch overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm focus-within:ring-1 focus-within:ring-black ${className}`}
-      >
-        <div className="flex shrink-0 items-stretch border-r border-gray-200">{filterSlot}</div>
-        {inputArea}
+      <div className={`app-search-bar ${className}`}>
+        <div className="flex shrink-0 items-stretch border-r border-[var(--border-subtle)]">{filterSlot}</div>
+        {inputEl}
       </div>
     );
   }
 
-  return <div className={`flex items-center relative ${className}`}>{inputArea}</div>;
+  return <div className={`relative flex items-center ${className}`}>{inputEl}</div>;
 };
 
 export default SearchBar;

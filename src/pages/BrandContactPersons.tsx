@@ -1,3 +1,10 @@
+/**
+ * @file BrandContactPersons.tsx
+ * @description Contact persons for a selected brand master record.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Mail, Phone, MapPin, Flag, Calendar } from 'lucide-react';
@@ -273,7 +280,7 @@ const BrandContactPersons: React.FC = () => {
                   {contact.leadStatus && (
                     <div>
                       <label className="text-sm font-medium text-gray-600 block mb-2">Lead Status</label>
-                      <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-3 border border-blue-200">
+                      <div className="bg-blue-100 rounded-lg p-3 border border-blue-200">
                         <p className="text-base font-medium text-gray-900">{contact.leadStatus}</p>
                       </div>
                     </div>
@@ -281,7 +288,7 @@ const BrandContactPersons: React.FC = () => {
                   {contact.callStatus && (
                     <div>
                       <label className="text-sm font-medium text-gray-600 block mb-2">Call Status</label>
-                      <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-3 border border-purple-200">
+                      <div className="bg-purple-100 rounded-lg p-3 border border-purple-200">
                         <p className="text-base font-medium text-gray-900">{contact.callStatus}</p>
                       </div>
                     </div>
@@ -296,7 +303,7 @@ const BrandContactPersons: React.FC = () => {
                   <div className="space-y-4">
                     <div>
                       <label className="text-sm font-medium text-gray-600 block mb-2">Assigned User</label>
-                      <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg p-3 border border-orange-200">
+                      <div className="bg-yellow-50 rounded-lg p-3 border border-orange-200">
                         <p className="text-base font-medium text-gray-900">{contact.assignedUser}</p>
                         {contact.assignedUserEmail && (
                           <p className="text-xs text-gray-600 mt-1">{contact.assignedUserEmail}</p>

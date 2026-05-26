@@ -1,3 +1,10 @@
+/**
+ * @file CreateSourceForm.tsx
+ * @description Form to create or update a lead source master record.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -5,14 +12,9 @@ import { Loader2 } from 'lucide-react';
 import { MasterFormHeader, SelectField } from '../components/ui';
 import { createLeadSubSource, fetchLeadSources, type LeadSource } from '../services/CreateSourceForm';
 import SweetAlert from '../utils/SweetAlert';
+import type { CreateSourceFormProps } from '../types/pages/forms.types';
 
-type Props = {
-  onClose: () => void;
-  onSave?: (data: any) => void;
-  inline?: boolean;
-};
-
-const CreateSourceForm: React.FC<Props> = ({ onClose, onSave }) => {
+const CreateSourceForm: React.FC<CreateSourceFormProps> = ({ onClose, onSave }) => {
   const location = useLocation();
   const [source, setSource] = useState('');
   const [subSource, setSubSource] = useState('');

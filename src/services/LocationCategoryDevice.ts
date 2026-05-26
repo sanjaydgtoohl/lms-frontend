@@ -8,6 +8,8 @@ import type { AxiosInstance } from 'axios';
 
 
 const RAW_SSP_BASE_URL =
+  (typeof globalThis !== 'undefined' && (globalThis as any).VITE_SSP_API_BASE_URL) ||
+  String(import.meta.env.VITE_SSP_API_BASE_URL || '').trim() ||
   (typeof globalThis !== 'undefined' && (globalThis as any).VITE_SSP_BASE_URL) ||
   String(import.meta.env.VITE_SSP_BASE_URL || '').trim();
 
@@ -144,7 +146,7 @@ function transformToOptions(data: any): LocationOption[] {
  * Uses local HTTP client routed through Vite proxy
  */
 async function makeApiRequest(endpoint: string, payload: any = {}): Promise<LocationOption[]> {
-  const cacheKey = `POST:${endpoint}:${JSON.stringify(payload)}`;
+  const cacheKey = `${endpoint}:${JSON.stringify(payload)}`;
 
   // Check cache first
   const cached = getFromCache(cacheKey);
@@ -161,25 +163,67 @@ async function makeApiRequest(endpoint: string, payload: any = {}): Promise<Loca
   // Create new request promise
   const requestPromise = (async () => {
     try {
-      const formPayload = new URLSearchParams();
-      Object.entries(payload || {}).forEach(([key, value]) => {
-        if (value === undefined || value === null || value === '') return;
-        if (Array.isArray(value)) {
-          value.forEach((v) => {
-            if (v !== undefined && v !== null && v !== '') {
-              formPayload.append(key, String(v));
-            }
-          });
-          return;
-        }
-        formPayload.append(key, String(value));
+      const buildFormPayload = (): URLSearchParams => {
+        const formPayload = new URLSearchParams();
+        Object.entries(payload || {}).forEach(([key, value]) => {
+          if (value === undefined || value === null || value === '') return;
+          if (Array.isArray(value)) {
+            value.forEach((v) => {
+              if (v !== undefined && v !== null && v !== '') {
+                formPayload.append(key, String(v));
+              }
+            });
+            return;
+          }
+          formPayload.append(key, String(value));
+        });
+        return formPayload;
+      };
+
+      const buildQueryParams = (): Record<string, string | string[]> => {
+        const params: Record<string, string | string[]> = {};
+        Object.entries(payload || {}).forEach(([key, value]) => {
+          if (value === undefined || value === null || value === '') return;
+          if (Array.isArray(value)) {
+            const arr = value
+              .filter((v) => v !== undefined && v !== null && v !== '')
+              .map((v) => String(v));
+            if (arr.length) params[key] = arr;
+            return;
+          }
+          params[key] = String(value);
+        });
+        return params;
+      };
+
+      const queryParams = buildQueryParams();
+      const formPayload = buildFormPayload();
+
+      // Staging/prod can be GET-only while some local setups accept POST.
+      // Use validateStatus to prevent noisy 405 throws during method fallback.
+      let response = await sspApiClient.request({
+        url: endpoint,
+        method: 'get',
+        params: queryParams,
+        validateStatus: () => true,
       });
 
-      const response = await sspApiClient.post(endpoint, formPayload, {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      });
+      if (response.status === 404 || response.status === 405 || response.status === 415) {
+        response = await sspApiClient.request({
+          url: endpoint,
+          method: 'post',
+          data: formPayload,
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          validateStatus: () => true,
+        });
+      }
+
+      if (response.status < 200 || response.status >= 300) {
+        throw new Error(`Request failed (${response.status}) for ${endpoint}`);
+      }
+
       const data = response.data;
       if (!data) {
         throw new Error('No data in response');

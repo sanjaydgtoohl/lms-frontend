@@ -1,3 +1,10 @@
+/**
+ * @file LoginCard.tsx
+ * @description Login screen with credentials and session bootstrap.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -5,9 +12,12 @@ import { Button, Input } from '../../components/ui';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../redux/store';
-import { loginUser, setAuthenticated } from '../../redux/slices/authSlice';
+import { loginUser } from '../../redux/slices/authSlice';
 import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '../../constants';
+import { ROUTES, BRAND } from '../../constants';
+import { BrandLogo } from '../../components/brand';
+import { extractErrorMessage } from '../../utils/extractErrorMessage';
+import { AlertCircle, ShieldCheck } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z
@@ -26,134 +36,149 @@ export default function LoginCard() {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const [loginError, setLoginError] = useState<string | null>(null);
-  
-  // Get loading state from Redux
   const loading = useSelector((state: RootState) => state.auth.loading);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     mode: 'onSubmit',
   });
 
   useEffect(() => {
-    window.particlesJS("particles-js", {
+    if (typeof window.particlesJS !== 'function') return;
+
+    window.particlesJS('particles-js', {
       particles: {
-        number: { value: 80 },
-        color: { value: "#ffffff" },
-        size: { value: 3 },
-        move: { speed: 2 },
+        number: { value: 55, density: { enable: true, value_area: 900 } },
+        color: { value: ['#ffffff', '#fe6000'] },
+        shape: { type: 'circle' },
+        opacity: { value: 0.18, random: true },
+        size: { value: 2.5, random: true },
         line_linked: {
           enable: true,
-          distance: 150,
-          color: "#ffffff"
-        }
-      }
+          distance: 140,
+          color: '#fe6000',
+          opacity: 0.12,
+          width: 1,
+        },
+        move: { enable: true, speed: 1.2, direction: 'none', random: true },
+      },
+      interactivity: {
+        detect_on: 'canvas',
+        events: {
+          onhover: { enable: true, mode: 'grab' },
+          resize: true,
+        },
+        modes: {
+          grab: { distance: 120, line_linked: { opacity: 0.2 } },
+        },
+      },
+      retina_detect: true,
     });
   }, []);
 
-
   const onSubmit = async (data: LoginFormData) => {
     try {
-      // Dispatch Redux loginUser thunk
       await dispatch(loginUser({ email: data.email, password: data.password })).unwrap();
-      dispatch(setAuthenticated(true));
       setLoginError(null);
       navigate(ROUTES.DASHBOARD, { replace: true });
-    } catch (error: any) {
-      if (typeof error === 'string') {
-        setLoginError(error);
-        return;
-      }
-      // Try to extract API error message if present
-      let apiErrorMsg = '';
-      if (error?.response?.data?.errors) {
-        // Try to extract the first error message from errors object
-        const errors = error.response.data.errors;
-        if (typeof errors === 'object') {
-          const firstKey = Object.keys(errors)[0];
-          if (firstKey && Array.isArray(errors[firstKey]) && errors[firstKey][0]) {
-            apiErrorMsg = errors[firstKey][0];
-          }
-        }
-      }
-      setLoginError(apiErrorMsg || error?.message || 'Login failed. Please check your credentials.');
+    } catch (error: unknown) {
+      const message =
+        typeof error === 'string' ? error : extractErrorMessage(error);
+      setLoginError(message || 'Login failed. Please check your credentials.');
     }
   };
 
   return (
-    <>
-      <div className="relative min-h-dvh inset-0 w-full h-full flex items-center justify-center overflow-hidden login-page">
-        <div id="particles-js"></div>
+    <div className="login-page relative min-h-dvh w-full overflow-hidden">
+      <div id="particles-js" className="login-particles" aria-hidden />
+      <div className="login-glow login-glow-left" aria-hidden />
+      <div className="login-glow login-glow-right" aria-hidden />
 
-        <div className="bottom-wave">
-          <img src="/bottom.svg" alt="wabe abs 1" />
-        </div>
+      <div className="login-shell relative z-20 mx-auto flex min-h-dvh w-full max-w-6xl flex-col lg:flex-row lg:items-center lg:justify-between lg:gap-12 px-4 py-10 sm:px-6 lg:px-10">
+        <section className="login-brand-panel flex flex-col items-center text-center lg:items-start lg:text-left lg:flex-1 lg:py-8">
+          <BrandLogo variant="login" />
 
-        {/* Compact Login Card - Desktop Optimized */}
-        <div className="relative login-card-wrapper z-10">
-          {/* Header - Compact & Elegant */}
-          <img src="/logo.png" alt="my logo" />
-
-          <p className="text-gray-300 text-base text-center pt-5 pb-10">
-            BUILT BY MOBIYOUNG
+          <p className="login-tagline mt-5">
+            A <span className="login-tagline-accent">{BRAND.companyName.toUpperCase()}</span> PRODUCT
           </p>
 
-          {/* Inline server error (shown instead of popup for login failures) */}
+          <h1 className="login-headline mt-8 hidden lg:block">
+            {BRAND.appTitle.replace(' System', '')}
+            <span className="login-headline-accent"> System</span>
+          </h1>
+
+          <p className="login-subcopy mt-4 hidden max-w-md text-sm leading-relaxed lg:block">
+            Secure access to leads, briefs, campaigns, and team workflows — built for performance-driven teams.
+          </p>
+
+          <div className="login-trust-row mt-8 hidden items-center gap-2 text-xs text-gray-400 lg:flex">
+            <ShieldCheck className="h-4 w-4 text-[#fe6000]" />
+            <span>Enterprise-grade authentication & role-based access</span>
+          </div>
+        </section>
+
+        <section className="login-card-wrapper mx-auto w-full max-w-[420px] shrink-0 lg:mx-0">
+          <div className="login-card-accent" aria-hidden />
+
+          <div className="login-card-header">
+            <h2 className="login-card-title">Welcome back</h2>
+            <p className="login-card-subtitle">Sign in to continue to your dashboard</p>
+          </div>
+
           {loginError && (
-            <div className="w-full text-center mb-4">
-              <div className="inline-block bg-red-900/60 text-red-100 px-3 py-2 rounded-md text-sm sm:text-base">
-                <span>{loginError.replace(/^Login validation failed:\s*/, '')}</span>
-              </div>
+            <div className="login-error" role="alert">
+              <AlertCircle className="login-error-icon" />
+              <span>{loginError.replace(/^Login validation failed:\s*/, '')}</span>
             </div>
           )}
 
-          {/* Form - Clean & Simple */}
-          <form onSubmit={handleSubmit(onSubmit)} autoComplete="on" className="w-full max-w-sm sm:max-w-md space-y-4 sm:space-y-5">
-            {/* Email */}
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            autoComplete="on"
+            className="login-form space-y-5"
+          >
             <div>
               <Input
                 className="input-item"
                 type="email"
-                placeholder="Please enter your email address"
+                placeholder="name@company.com"
                 label="Email Address"
                 {...register('email')}
                 error={errors.email?.message}
               />
-              {/* Only show a single error message below input, Input component already shows it */}
             </div>
 
-            {/* Password */}
             <div>
               <Input
                 className="input-item"
                 type="password"
-                placeholder="Please enter your password"
+                placeholder="Enter your password"
                 label="Password"
                 {...register('password')}
                 error={errors.password?.message}
               />
-              {/* Validation message below input */}
             </div>
 
-            {/* Login Button */}
             <Button
               type="submit"
               variant="primary"
               size="lg"
               loading={loading}
-              className="login-btn
-              "
+              className="login-btn"
             >
-              Login
+              {loading ? 'Signing in…' : 'Sign in'}
             </Button>
           </form>
-        </div>
+
+          <p className="login-footer-note">
+            {BRAND.copyright()}
+          </p>
+        </section>
       </div>
-    </>
+    </div>
   );
 }

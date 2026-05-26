@@ -1,3 +1,10 @@
+/**
+ * @file PlanHistory.tsx
+ * @description Plan revision history for a brief.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useEffect } from 'react';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
@@ -13,6 +20,7 @@ import { ChevronRight } from 'lucide-react';
 import Swal from 'sweetalert2';
 import FilePreviewModal from '../../components/ui/FilePreviewModal';
 import { IoIosArrowBack } from 'react-icons/io';
+import type { SubmittedPlansListProps } from '../../types/pages/brief-pages.types';
 
 // No mock data, will fetch from API
 
@@ -74,7 +82,7 @@ const PlanHistory: React.FC = () => {
                   <span className="text-gray-600">{brief?.name || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Sales Person:</span>
+                  <span className="text-gray-800 font-semibold inline-block min-w-[120px]">Planner:</span>
                   <span className="text-gray-600">{brief?.assigned_user?.name || '-'}</span>
                 </div>
                 {/* Source field removed: not present in BriefDetail */}
@@ -128,11 +136,6 @@ const PlanHistory: React.FC = () => {
   );
 };
 
-
-interface SubmittedPlansListProps {
-  plans: PlannerHistoryItem[];
-  loading?: boolean;
-}
 
 const SubmittedPlansList: React.FC<SubmittedPlansListProps> = ({ plans = [], loading }) => {
   const [currentPage, setCurrentPage] = useState(1);

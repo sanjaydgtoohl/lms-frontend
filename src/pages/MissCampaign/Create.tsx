@@ -1,3 +1,10 @@
+/**
+ * @file Create.tsx
+ * @description Create pre-lead (miss campaign) record form.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MasterCreateHeader } from '../../components/ui/MasterCreateHeader';
@@ -11,19 +18,9 @@ import { listAttendees } from '../../services/AllUsers';
 import { fetchCurrentUser } from '../../services/Header';
 import SweetAlert from '../../utils/SweetAlert';
 import { quickCreateApi } from '../../services/QuickCreate';
+import type { MissCampaignCreateProps } from '../../types/pages/forms.types';
 
-
-interface CreateProps {
-  inline?: boolean;
-  mode?: 'create' | 'edit';
-  initialData?: Record<string, any>;
-  onClose?: () => void;
-  onSave?: (data: Record<string, any>) => void;
-}
-
-
-
-const Create: React.FC<CreateProps> = ({
+const Create: React.FC<MissCampaignCreateProps> = ({
   inline = false,
   mode = 'create',
   initialData,

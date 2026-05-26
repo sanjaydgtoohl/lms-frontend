@@ -1,3 +1,10 @@
+/**
+ * @file View.tsx
+ * @description Pre-lead list, detail, and inline edit views.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -16,12 +23,15 @@ import {
   deleteMissCampaign,
   getMissCampaign,
   mapMissCampaignApiToMissCampaign,
+  exportMissCampaignsExcel,
   type MissCampaign
 } from '../../services/View';
 import { apiClient } from '../../utils/apiClient';
+import { listChildUsers } from '../../api/lookups';
 import { usePermissions } from '../../hooks/SidebarMenuHooks';
 import { IoIosArrowBack } from 'react-icons/io';
 import TableHeader from '../../components/ui/TableHeader';
+import ExportExcelButton from '../../components/ui/ExportExcelButton';
 import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '../../redux/store';
 import { setUnreadCount, setNotifications } from '../../redux/slices/notificationSlice';
@@ -37,11 +47,9 @@ const View: React.FC = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-
   const [campaigns, setCampaigns] = useState<MissCampaign[]>([]);
   const [loading, setLoading] = useState(false);
   const [totalItems, setTotalItems] = useState(0);
-
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
   const [industryOptions, setIndustryOptions] = useState<{ value: string; label: string }[]>([]);
@@ -268,9 +276,8 @@ const View: React.FC = () => {
   useEffect(() => {
     const fetchAssignToOptions = async () => {
       try {
-        const res = await apiClient.get('/profile/child-users?per_page=1000');
-        const users = Array.isArray(res.data) ? res.data : [];
-        setAssignToOptions(users.map((u: any) => ({ id: u.id, name: u.name })));
+        const users = await listChildUsers(1000);
+        setAssignToOptions(users.map((u) => ({ id: u.id, name: u.name })));
       } catch (err) {
         console.error('Failed to fetch assign to users:', err);
       }
@@ -519,6 +526,11 @@ const View: React.FC = () => {
     setCurrentPage(1); // Reset to first page when filtering
   };
 
+  const handleExportExcel = useCallback(
+    () => exportMissCampaignsExcel(searchQuery, activeFilters),
+    [searchQuery, activeFilters]
+  );
+
   const filterOptions = [
     {
       key: 'industry_id',
@@ -610,6 +622,7 @@ const View: React.FC = () => {
         onConfirm={confirmDelete}
       />
       {showCreate ? (
+        
         <Create inline onClose={() => navigate('/pre-lead/view')} onSave={handleSave} />
       ) : viewItem ? (
         <>
@@ -726,10 +739,10 @@ const View: React.FC = () => {
         />
       ) : (
         <>
-          {hasPermission('miss-campaign.create') && (
-            <MasterHeader onCreateClick={handleCreate} createButtonLabel="Create Pre Lead" />
+          {(hasPermission('miss-campaigns.create')) && (
+            <MasterHeader onCreateClick={handleCreate} createButtonLabel="Create Pre Lead" createPermissionSlug="miss-campaigns.create" />
           )}
-
+         
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
             {/* Table Header */}
             <TableHeader
@@ -738,6 +751,7 @@ const View: React.FC = () => {
               onFilterChange={handleFilterChange}
               appliedFilters={activeFilters}
             >
+              <ExportExcelButton fetchExport={handleExportExcel} />
               <SearchBar delay={0} placeholder="Search Pre Lead" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
             </TableHeader>
 
@@ -790,7 +804,7 @@ const View: React.FC = () => {
                           <img
                             src={it.proof}
                             alt="Proof"
-                            className="h-16 w-16 object-cover rounded border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow"
+                            className="h-16 w-16 object-cover rounded border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow !bg-white p-2"
                             onClick={() => openImageModal(it.proof)}
                           />
                         ) : (
@@ -808,10 +822,12 @@ const View: React.FC = () => {
                 ] as Column<MissCampaign>[])}
                 onEdit={(it: MissCampaign) => handleEdit(it.id)}
                 onView={(it: MissCampaign) => handleView(it.id)}
-                onDelete={(it: MissCampaign) => handleDelete(it.id, it.productName || it.brandName)}
-                editPermissionSlug="miss-campaign.edit"
-                viewPermissionSlug="miss-campaign.view"
-                deletePermissionSlug="miss-campaign.delete"
+                onDelete={(it: MissCampaign) => handleDelete(it.id)}
+                editPermissionSlug="miss-campaigns.edit"
+                viewPermissionSlug="miss-campaigns.view"
+                deletePermissionSlug="miss-campaigns.delete"
+                uploadPermissionSlug="miss-campaigns.upload"
+                
               />
             </div>
           </div>

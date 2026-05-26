@@ -1,3 +1,10 @@
+/**
+ * @file LeadList.tsx
+ * @description Shared lead list table, filters, and row actions.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import Table, { type Column } from '../../components/ui/Table';
 import AssignDropdown from '../../components/ui/AssignDropdown';
@@ -16,15 +23,12 @@ import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '../../redux/store';
 import { setUnreadCount, setNotifications, incrementUnreadCount } from '../../redux/slices/notificationSlice';
 import { getUnreadNotificationCount, listNotifications } from '../../services/notifications';
-import type { Lead } from '../../types/AllLeadtype';
-
-interface UserOption {
-  id: number | string;
-  name: string;
-}
+import type { Lead, UserOption } from '../../types/AllLeadtype';
+import type { LeadListPageProps } from '../../types/pages/lead-list.types';
 
 import { getCallStatuses } from '../../services/CallStatus';
-import { apiClient } from '../../utils/apiClient';
+import { listBrandsFlat, listChildUsers } from '../../api/lookups';
+import { fetchLeadSubSources } from '../../services/ContactPersonsCard';
 import http from '../../services/http';
 import SweetAlert from '../../utils/SweetAlert';
 import TableHeader from '../../components/ui/TableHeader';
@@ -94,17 +98,9 @@ const deletePermissionMap: Record<string, string> = {
   'Brief': 'leads-b.delete',
 };
 
-interface Props {
-  title: string;
-  filterStatus?: string; // if not provided, show all
-  extraStatuses?: string[];
-  permissionStatus?: string;
-  headerActions?: React.ReactNode;
-}
-
 const EMPTY_EXTRA_STATUSES: string[] = [];
 
-const LeadList: React.FC<Props> = ({
+const LeadList: React.FC<LeadListPageProps> = ({
   title,
   filterStatus = 'All',
   extraStatuses = EMPTY_EXTRA_STATUSES,
@@ -124,24 +120,69 @@ const LeadList: React.FC<Props> = ({
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        const res = await apiClient.get('/profile/child-users');
-        const users = Array.isArray(res.data) ? res.data : [];
-        setAssignToOptions(users.map((u: any) => ({ id: u.id, name: u.name })));
+        const users = await listChildUsers();
+        setAssignToOptions(users.map((u) => ({ id: u.id, name: u.name })));
+        setAssignByOptions(
+          users.map((u) => ({ value: String(u.id), label: u.name }))
+        );
       } catch {
         setAssignToOptions([]);
+        setAssignByOptions([]);
       }
     };
     loadUsers();
   }, []);
+
+  useEffect(() => {
+    const loadBrands = async () => {
+      try {
+        const brands = await listBrandsFlat();
+        setBrandOptions(
+          brands.map((b) => ({ value: String(b.id), label: b.name }))
+        );
+      } catch {
+        setBrandOptions([]);
+      }
+    };
+    loadBrands();
+  }, []);
+
+  useEffect(() => {
+    const loadSubSources = async () => {
+      try {
+        const { data, error } = await fetchLeadSubSources();
+        if (error || !Array.isArray(data)) {
+          setSubSourceOptions([]);
+          return;
+        }
+        setSubSourceOptions(
+          data.map((item: { id: number | string; name: string }) => ({
+            value: String(item.id),
+            label: item.name,
+          }))
+        );
+      } catch {
+        setSubSourceOptions([]);
+      }
+    };
+    loadSubSources();
+  }, []);
   // Call status options will be fetched from API
-  const [callStatusOptions, setCallStatusOptions] = useState<string[]>([]);
+  const [callStatusOptions, setCallStatusOptions] = useState<Array<{ id: number | string; name: string }>>([]);
 
   // Fetch call status options from API
   useEffect(() => {
     const loadCallStatuses = async () => {
       try {
         const resp = await getCallStatuses();
-        const options = Array.isArray(resp) ? resp.map((item: any) => item.name).filter(Boolean) : [];
+        const options = Array.isArray(resp)
+          ? resp
+            .map((item: { id?: number | string; name?: string }) => ({
+              id: item.id ?? '',
+              name: item.name ?? '',
+            }))
+            .filter((item) => item.id && item.name)
+          : [];
         setCallStatusOptions(options);
       } catch {
         setCallStatusOptions([]);
@@ -151,6 +192,10 @@ const LeadList: React.FC<Props> = ({
   }, []);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
+  const [brandOptions, setBrandOptions] = useState<{ value: string; label: string }[]>([]);
+  const [subSourceOptions, setSubSourceOptions] = useState<{ value: string; label: string }[]>([]);
+  const [assignByOptions, setAssignByOptions] = useState<{ value: string; label: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const itemsPerPage = 10;
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -184,15 +229,15 @@ const LeadList: React.FC<Props> = ({
           statusesToFetch.map((status) => {
             const statusId = statusIdMap[status] || undefined;
             return statusId
-              ? listLeadsByStatus(statusId, currentPage, itemsPerPage)
-              : listLeadsByStatus(status, currentPage, itemsPerPage);
+              ? listLeadsByStatus(statusId, currentPage, itemsPerPage, activeFilters)
+              : listLeadsByStatus(status, currentPage, itemsPerPage, activeFilters);
           })
         );
         response = {
           data: responses.flatMap((res) => res.data || [])
         };
       } else {
-        response = await listLeads(currentPage, itemsPerPage);
+        response = await listLeads(currentPage, itemsPerPage, activeFilters);
       }
 
       const transformedLeads = response.data.map((item: any) => ({
@@ -229,15 +274,15 @@ const LeadList: React.FC<Props> = ({
     } finally {
       setLoading(false);
     }
-  }, [filterStatus, normalizedExtraStatuses, currentPage, itemsPerPage]); // <- Add all external dependencies here
+  }, [filterStatus, normalizedExtraStatuses, currentPage, itemsPerPage, activeFilters]);
 
   useEffect(() => {
     fetchLeads();
-  }, [currentPage, filterStatus, fetchLeads]); // ✅ added fetchLeads
+  }, [currentPage, filterStatus, fetchLeads]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterStatus, extraStatusesKey]);
+  }, [filterStatus, extraStatusesKey, activeFilters]);
 
   // Tooltip state for Comment hover
   const [tooltipVisible, setTooltipVisible] = useState(false);
@@ -445,15 +490,13 @@ const LeadList: React.FC<Props> = ({
         setLoading(true);
         // Find call status id from name
         let callStatusId: number | undefined;
-        if (Array.isArray(callStatusOptions) && callStatusOptions.length > 0 && typeof callStatusOptions[0] === 'object') {
-          // If callStatusOptions is array of objects {id, name}
-          const selected = (callStatusOptions as any[]).find((opt: any) => opt.name === newStatus);
-          callStatusId = selected?.id;
-        } else {
+        const selected = callStatusOptions.find((opt) => opt.name === newStatus);
+        callStatusId = selected?.id != null ? Number(selected.id) : undefined;
+        if (!callStatusId) {
           // Fallback: fetch from API
           const resp = await getCallStatuses();
           const found = Array.isArray(resp) ? resp.find((item: any) => item.name === newStatus) : undefined;
-          callStatusId = found?.id;
+          callStatusId = found?.id != null ? Number(found.id) : undefined;
         }
         if (!callStatusId) {
           SweetAlert.showWarning('Invalid call status');
@@ -533,7 +576,7 @@ const LeadList: React.FC<Props> = ({
           {hasPermission(callStatusPermissionMap[permissionKey] || callStatusPermissionMap.All) ? (
             <CallStatusDropdown
               value={(it.callStatus && it.callStatus !== 'N/A') ? it.callStatus : ''}
-              options={callStatusOptions}
+              options={callStatusOptions.map((opt) => opt.name)}
               onChange={(newStatus) => handleCallStatusChange(it.id, newStatus)}
               onConfirm={handleCallStatusConfirm}
             />
@@ -574,6 +617,45 @@ const LeadList: React.FC<Props> = ({
     },
   ] as Column<Lead>[]);
 
+  const handleFilterChange = (filters: Record<string, string>) => {
+    setActiveFilters(filters);
+    setCurrentPage(1);
+  };
+
+  const filterOptions = useMemo(
+    () =>
+      [
+        {
+          key: 'brand_id',
+          label: 'Brand Name',
+          options: brandOptions,
+          isMulti: true,
+        },
+        {
+          key: 'lead_sub_source_id',
+          label: 'Sub-source',
+          options: subSourceOptions,
+          isMulti: true,
+        },
+        {
+          key: 'created_by',
+          label: 'Created By',
+          options: assignByOptions,
+          isMulti: true,
+        },
+        {
+          key: 'call_status_id',
+          label: 'Call Status',
+          options: callStatusOptions.map((opt) => ({
+            value: String(opt.id),
+            label: opt.name,
+          })),
+          isMulti: true,
+        },
+      ].filter((option) => option.options.length > 0),
+    [brandOptions, subSourceOptions, assignByOptions, callStatusOptions]
+  );
+
   return (
     <div className="flex-1 w-full max-w-full overflow-x-hidden">
       {hasPermission(createPermissionMap[permissionKey] || createPermissionMap.All) && (
@@ -583,12 +665,18 @@ const LeadList: React.FC<Props> = ({
           showSignInButton={true}
           signInIcon={<FaRegCalendarAlt className="cursor-pointer text-orange-500 hover:text-orange-500 w-4 h-4 sm:w-6 sm:h-6" />}
           onSignInClick={() => navigate(ROUTES.LEAD.MEETING_SCHEDULE)}
+          createPermissionSlug={createPermissionMap[permissionKey] }
         />
       )}
       
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
         {/* Table Header */}
-        <TableHeader title={title}>
+        <TableHeader
+          title={title}
+          filterOptions={filterOptions}
+          onFilterChange={handleFilterChange}
+          appliedFilters={activeFilters}
+        >
          {headerActions}
          <SearchBar
               placeholder="Search leads..."

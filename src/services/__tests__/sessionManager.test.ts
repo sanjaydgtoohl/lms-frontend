@@ -1,43 +1,69 @@
 import { refreshTokens } from '../sessionManager';
+import { postRefreshToken } from '../auth/refreshAccessToken';
 import * as http from '../http';
 import { getCookie, deleteCookie } from '../../utils/cookies';
+import { store } from '../../redux/store';
+import { injectAuthStore } from '../../redux/authTokenBridge';
 
 describe('sessionManager.refreshTokens', () => {
-  afterEach(() => {
-    jest.restoreAllMocks();
-    // clear cookies set during tests
-    deleteCookie('auth_token');
-    deleteCookie('refresh_token');
-    deleteCookie('auth_token_expires');
-    deleteCookie('refresh_token_expires');
+  beforeAll(() => {
+    injectAuthStore(store);
   });
 
-  it('should call refresh endpoint and set cookies when refresh token valid', async () => {
-    // Arrange: set a refresh token cookie
+  afterEach(() => {
+    jest.restoreAllMocks();
+    deleteCookie('refresh_token');
+    deleteCookie('refresh_token_expires');
+    deleteCookie('auth_token');
+    deleteCookie('auth_token_expires');
+  });
+
+  it('uses expires_in from API and stores expiry in Redux', async () => {
     document.cookie = 'refresh_token=test-refresh; Path=/';
+    const before = Date.now();
 
     const mockResp = {
       data: {
         success: true,
         data: {
           token: 'new-access-token',
-          refreshToken: 'new-refresh-token',
-          expires_in: 120, // seconds
-          refresh_expires_in: 300,
+          refresh_token: 'new-refresh-token',
+          expires_in: 3600,
+          token_type: 'bearer',
         },
       },
     };
 
-  jest.spyOn(http as any, 'post').mockResolvedValue(mockResp);
+    jest.spyOn(http as any, 'post').mockResolvedValue(mockResp);
 
-    // Act
-    const result = await refreshTokens();
+    await refreshTokens();
 
-    // Assert
-    expect(result).toBeDefined();
-    expect(getCookie('auth_token')).toBe('new-access-token');
+    const auth = store.getState().auth;
+    expect(auth.token).toBe('new-access-token');
+    expect(auth.expiresIn).toBe(3600);
+    expect(auth.tokenExpiresAt).toBeGreaterThanOrEqual(before + 3600 * 1000 - 1000);
     expect(getCookie('refresh_token')).toBe('new-refresh-token');
-    const expires = getCookie('auth_token_expires');
-    expect(expires).not.toBeNull();
+  });
+});
+
+describe('postRefreshToken', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('sends refresh token in Authorization header and body', async () => {
+    jest.spyOn(http as any, 'post').mockResolvedValue({ data: { success: true } });
+
+    await postRefreshToken('my-refresh-token');
+
+    expect((http as any).post).toHaveBeenCalledWith(
+      '/auth/refresh',
+      { refresh_token: 'my-refresh-token' },
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: 'Bearer my-refresh-token',
+        }),
+      })
+    );
   });
 });

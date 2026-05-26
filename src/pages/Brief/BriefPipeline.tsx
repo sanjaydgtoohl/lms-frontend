@@ -1,6 +1,13 @@
+/**
+ * @file BriefPipeline.tsx
+ * @description Brief pipeline list, create, view, and edit workflows.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import CreateBriefForm from './CreateBriefForm';
-import { apiClient } from '../../utils/apiClient';
+import { listChildUsers } from '../../api/lookups';
 import { usePermissions } from '../../hooks/SidebarMenuHooks';
 import MasterView from '../../components/ui/MasterView';
 import Pagination from '../../components/ui/Pagination';
@@ -23,6 +30,7 @@ import { setUnreadCount, setNotifications } from '../../redux/slices/notificatio
 import { getUnreadNotificationCount, listNotifications } from '../../services/notifications';
 import FilePreviewModal from '../../components/ui/FilePreviewModal';
 import { Eye } from 'lucide-react';
+import type { UserOption } from '../../types/lead/lead.types';
 
 type Brief = ServiceBriefItem;
 
@@ -137,8 +145,8 @@ const BriefPipeline: React.FC = () => {
               item.submissionTime = `${hh}:${min}`;
             }
           } catch { 
-// no need to action
-}
+          // no need to action
+          }
         }
         return item;
       };
@@ -153,6 +161,7 @@ const BriefPipeline: React.FC = () => {
         try {
           setLoading(true);
           const single = await getBrief(id);
+          
           if (!mounted) return;
           setEditItem(single ? patchSubmissionFields(single) : null);
           setViewItem(null);
@@ -205,15 +214,13 @@ const BriefPipeline: React.FC = () => {
 
 
   // Assign To options state and effect (fetch from API)
-  interface UserOption { id: number | string; name: string; }
   const [assignToOptions, setAssignToOptions] = useState<UserOption[]>([]);
   useEffect(() => {
     const loadUsers = async () => {
       try {
         // Request a large page size to avoid truncation
-        const res = await apiClient.get('/profile/child-users?page=1&per_page=1000');
-        const users = Array.isArray(res.data) ? res.data : [];
-        setAssignToOptions(users.map((u: any) => ({ id: u.id, name: u.name })));
+        const users = await listChildUsers(1000);
+        setAssignToOptions(users.map((u) => ({ id: u.id, name: u.name })));
       } catch {
         setAssignToOptions([]);
       }
@@ -457,6 +464,7 @@ const BriefPipeline: React.FC = () => {
       ) : viewItem ? (
         <MasterView item={viewItem} onClose={() => navigate(ROUTES.BRIEF.PIPELINE)} />
       ) : editItem ? (
+       
         <CreateBriefForm
           inline
           mode="edit"
@@ -478,6 +486,7 @@ const BriefPipeline: React.FC = () => {
                 { label: 'Brief', path: ROUTES.BRIEF.ROOT },
                 { label: 'Brief Pipeline', isActive: true }
               ]}
+              createPermissionSlug="brief.create"
             />
           )}
 

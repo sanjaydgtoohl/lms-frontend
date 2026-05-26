@@ -1,3 +1,10 @@
+/**
+ * @file DepartmentMaster.tsx
+ * @description Department master data list, create, view, and edit.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import { /*Loader2,*/ } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -23,32 +30,9 @@ import { usePermissions } from '../hooks/SidebarMenuHooks';
 import TableHeader from '../components/ui/TableHeader';
 
 
-interface Department {
-	id: string;
-	name: string;
-	dateTime: string;
-}
+import type { DepartmentTableRow } from '../types/master/master.types';
 
-// Helpers to parse API date strings like "19-11-2025 10:35:57"
-const parseApiDateToISO = (s?: string) => {
-	if (!s) return '';
-	const m = String(s).trim().match(/^(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2})(?::(\d{2}))?$/);
-	if (!m) return s;
-	const [, dd, mm, yyyy, hh, min, sec] = m;
-	return `${yyyy}-${mm}-${dd}T${hh}:${min}:${sec || '00'}`;
-};
-
-const formatDisplayDate = (s?: string) => {
-	if (!s) return '-';
-	try {
-		const iso = parseApiDateToISO(s);
-		const d = new Date(iso);
-		if (isNaN(d.getTime())) return String(s);
-		return d.toLocaleString();
-	} catch {
-		return String(s);
-	}
-};
+import { formatDisplayDate } from '../utils/masterDate';
 
 // Inline CreateDepartmentForm (keeps behavior local and matches BrandMaster usage)
 const CreateDepartmentForm: React.FC<{
@@ -156,7 +140,7 @@ const DepartmentMaster: React.FC = () => {
 	const [confirmLoading, setConfirmLoading] = useState(false);
 
 	// Store departments in state fetched from API
-	const [departments, setDepartments] = useState<Department[]>([]);
+	const [departments, setDepartments] = useState<DepartmentTableRow[]>([]);
 	const [totalItems, setTotalItems] = useState(0);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -217,11 +201,11 @@ const DepartmentMaster: React.FC = () => {
 		setCurrentPage(page);
 	};
 
-	const [viewItem, setViewItem] = useState<Department | null>(null);
-	const [editItem, setEditItem] = useState<Department | null>(null);
+	const [viewItem, setViewItem] = useState<DepartmentTableRow | null>(null);
+	const [editItem, setEditItem] = useState<DepartmentTableRow | null>(null);
 	const [activeEditId, setActiveEditId] = useState<string>('');
 
-	const departmentsRef = useRef<Department[]>([]);
+	const departmentsRef = useRef<DepartmentTableRow[]>([]);
 	departmentsRef.current = departments;
 
 	const refresh = async (page = currentPage, search = searchQuery) => {
@@ -233,7 +217,7 @@ const DepartmentMaster: React.FC = () => {
 			const perPageToFetch = search ? 1000 : itemsPerPage; // Fetch all when searching
 
 			const resp = await listDepartments(pageToFetch, perPageToFetch);
-			let mapped: Department[] = resp.data.map((it: ApiDepartment) => ({
+			let mapped: DepartmentTableRow[] = resp.data.map((it: ApiDepartment) => ({
 				id: String(it.id),
 				name: it.name,
 				dateTime: it.created_at || '',
@@ -344,7 +328,7 @@ const DepartmentMaster: React.FC = () => {
 			})
 			.catch(() => {
 				if (cancelled) return;
-				const found = departmentsRef.current.find((d: Department) => d.id === id) || null;
+				const found = departmentsRef.current.find((d: DepartmentTableRow) => d.id === id) || null;
 				setViewItem(found);
 			});
 
@@ -359,7 +343,7 @@ const DepartmentMaster: React.FC = () => {
 				const idToUpdate = activeEditId || String(updated.id || '').trim();
 				if (!idToUpdate) throw new Error('Department id is missing');
 				await updateDepartment(idToUpdate, { name: updated.name });
-				setDepartments(prev => prev.map(d => (d.id === idToUpdate ? { ...d, name: updated.name } as Department : d)));
+				setDepartments(prev => prev.map(d => (d.id === idToUpdate ? { ...d, name: updated.name } as DepartmentTableRow : d)));
 				SweetAlert.showUpdateSuccess();
 			} catch (e: any) {
 				SweetAlert.showError(e?.message || 'Failed to update department');
@@ -392,6 +376,7 @@ const DepartmentMaster: React.FC = () => {
 						createButtonLabel="Create Department"
 						showBreadcrumb={true}
 						showCreateButton={hasPermission('department.create')}
+						createPermissionSlug="department.create"
 					/>
 					<div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-4">
 						{/* Table Header */}

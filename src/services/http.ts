@@ -1,14 +1,22 @@
 import axios from 'axios';
-import type { AxiosResponse, AxiosInstance } from 'axios';
+import type { AxiosResponse, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import { API_BASE_URL, API_ENDPOINTS } from '../constants';
-import { getCookie, setCookie, deleteCookie } from '../utils/cookies';
+import {
+  getAccessToken,
+  getRefreshToken,
+  persistAuthTokens,
+} from './auth/tokenStorage';
+import { parseRefreshResponse, postRefreshToken } from './auth/refreshAccessToken';
 
-// Single axios instance used across the app. Interceptors attach the latest token
-// from cookies and will attempt a refresh when a 401 is encountered.
+type RetryableRequestConfig = InternalAxiosRequestConfig & {
+  _retry?: boolean;
+  skipAuth?: boolean;
+};
+
 class Http {
   instance: AxiosInstance;
   isRefreshing = false;
-  refreshPromise: Promise<any> | null = null;
+  refreshPromise: Promise<string | null> | null = null;
   requestQueue: Array<(token: string | null) => void> = [];
 
   private notifyUnauthorizedSession() {
@@ -19,111 +27,92 @@ class Http {
 
   private clearClientAuthState() {
     this.notifyUnauthorizedSession();
-    // Zustand state clearing is now handled by Redux listening to auth:force-logout event
-
-    try {
-      localStorage.removeItem('auth-storage');
-    } catch (error) {
-      console.error('Error clearing auth storage:', error);
-    }
   }
 
   constructor() {
     this.instance = axios.create({
       baseURL: API_BASE_URL,
       withCredentials: true,
-      // Do not set Content-Type here; set it conditionally below
     });
-    // Interceptor to set Content-Type only for non-FormData requests
-    this.instance.interceptors.request.use((config: any) => {
-      const token = getCookie('auth_token');
-      if (token && config.headers) {
-        config.headers['Authorization'] = `Bearer ${token}`;
+
+    this.instance.interceptors.request.use((config: RetryableRequestConfig) => {
+      if (!config.skipAuth) {
+        const token = getAccessToken();
+        if (token && config.headers) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
       }
-      // Only set Content-Type if not uploading FormData
-      if (config.data && typeof config.data === 'object' && config.data.constructor && config.data.constructor.name === 'FormData') {
-        // Let browser/axios set the correct Content-Type for FormData
-        if (config.headers && config.headers['Content-Type']) {
+
+      if (
+        config.data &&
+        typeof config.data === 'object' &&
+        config.data.constructor?.name === 'FormData'
+      ) {
+        if (config.headers?.['Content-Type']) {
           delete config.headers['Content-Type'];
         }
       } else {
-        if (config.headers && !config.headers['Content-Type']) {
+        const method = String(config.method || 'get').toLowerCase();
+        const hasBody = config.data != null && config.data !== '';
+        if (!hasBody && (method === 'get' || method === 'head')) {
+          if (config.headers?.['Content-Type']) {
+            delete config.headers['Content-Type'];
+          }
+        } else if (config.headers && !config.headers['Content-Type']) {
           config.headers['Content-Type'] = 'application/json';
         }
       }
+
       return config;
     });
 
     this.instance.interceptors.response.use(
       (res: AxiosResponse) => res,
       async (error: any) => {
-        const originalRequest = (error.config as any) as { _retry?: boolean } & Record<string, any>;
+        const originalRequest = error.config as RetryableRequestConfig;
         const status = error?.response?.status;
         const requestUrl = String(originalRequest?.url || '');
         const isRefreshRequest = requestUrl.includes(API_ENDPOINTS.AUTH.REFRESH);
-     
+        const isLoginRequest = requestUrl.includes(API_ENDPOINTS.AUTH.LOGIN);
+
         if (status === 401 && isRefreshRequest) {
           this.requestQueue.forEach((cb) => cb(null));
           this.requestQueue = [];
           return Promise.reject(error);
         }
 
-        if (status === 401 && !originalRequest._retry) {
+        if (status === 401 && !originalRequest._retry && !isLoginRequest) {
           originalRequest._retry = true;
 
           if (!this.isRefreshing) {
             this.isRefreshing = true;
-            const refreshToken = getCookie('refresh_token');
+            const refreshToken = getRefreshToken();
 
             if (!refreshToken) {
-              // No refresh token -> clear session
               this.clearSessionAndRedirect();
               return Promise.reject(error);
             }
 
-            // Call refresh endpoint
-            this.refreshPromise = this.instance
-              .post(API_ENDPOINTS.AUTH.REFRESH, { refresh_token: refreshToken })
+            this.refreshPromise = postRefreshToken(refreshToken)
               .then((resp: AxiosResponse<any>) => {
-                const data = resp.data;
-                if (data && data.success && data.data) {
-                  const access = data.data.token;
-                  // Only update refresh if present in response
-                  const expiresIn = data.data.expires_in;
-                  const now = Date.now();
-                  if (access) {
-                    setCookie('auth_token', access, { expires: expiresIn, secure: true, sameSite: 'Lax' });
-                    setCookie('auth_token_expires', String(now + expiresIn * 1000), { expires: expiresIn, secure: true, sameSite: 'Lax' });
-                  }
-                  // If refresh token is present in response under either key, update it; otherwise, keep the old one
-                  const refreshFromResp = (data.data as any).refresh_token || (data.data as any).refreshToken || null;
-                  if (refreshFromResp) {
-                    const refreshExpiresIn = (data.data as any).refresh_expires_in || 7 * 24 * 3600;
-                    setCookie('refresh_token', refreshFromResp, { expires: refreshExpiresIn, secure: true, sameSite: 'Lax' });
-                    setCookie('refresh_token_expires', String(now + refreshExpiresIn * 1000), { expires: refreshExpiresIn, secure: true, sameSite: 'Lax' });
-                  } else {
-                    // Re-save the old refresh_token and its expiry to preserve TTL
-                    const oldRefresh = getCookie('refresh_token');
-                    const oldRefreshExp = getCookie('refresh_token_expires');
-                    if (oldRefresh && oldRefreshExp) {
-                      const remainingMs = parseInt(oldRefreshExp, 10) - now;
-                      const remainingSec = Math.max(Math.floor(remainingMs / 1000), 1);
-                      setCookie('refresh_token', oldRefresh, { expires: remainingSec, secure: true, sameSite: 'Lax' });
-                      setCookie('refresh_token_expires', oldRefreshExp, { expires: remainingSec, secure: true, sameSite: 'Lax' });
-                    }
-                  }
-
-                  // Get fresh token from cookies to ensure latest value
-                  const freshToken = getCookie('auth_token');
-                  // Drain queue with fresh token from cookie
-                  this.requestQueue.forEach((cb) => cb(freshToken || access));
-                  this.requestQueue = [];
-                  return freshToken || access;
+                const parsed = parseRefreshResponse(resp.data, refreshToken);
+                if (!parsed) {
+                  this.clearSessionAndRedirect();
+                  throw new Error('Refresh failed');
                 }
 
-                // Refresh failed
-                this.clearSessionAndRedirect();
-                throw new Error('Refresh failed');
+                persistAuthTokens({
+                  token: parsed.token,
+                  expiresIn: parsed.expiresIn,
+                  tokenExpiresAt: parsed.tokenExpiresAt,
+                  refreshToken: parsed.refreshToken,
+                  refreshExpiresIn: parsed.refreshExpiresIn,
+                });
+
+                const freshToken = getAccessToken() || parsed.token;
+                this.requestQueue.forEach((cb) => cb(freshToken));
+                this.requestQueue = [];
+                return freshToken;
               })
               .catch((err) => {
                 this.clearSessionAndRedirect();
@@ -135,7 +124,6 @@ class Http {
               });
           }
 
-          // queue the request until refresh resolves
           return new Promise((resolve, reject) => {
             this.requestQueue.push((token: string | null) => {
               if (!token) {
@@ -143,10 +131,9 @@ class Http {
                 return;
               }
               if (originalRequest.headers) {
-                originalRequest.headers['Authorization'] = `Bearer ${token}`;
+                originalRequest.headers.Authorization = `Bearer ${token}`;
               }
-              // call axios with any to avoid strict typing mismatch
-              resolve((this.instance as any)(originalRequest));
+              resolve(this.instance(originalRequest));
             });
           });
         }
@@ -157,19 +144,10 @@ class Http {
   }
 
   clearSessionAndRedirect() {
-    deleteCookie('auth_token');
-    deleteCookie('refresh_token');
-    deleteCookie('auth_token_expires');
-    deleteCookie('refresh_token_expires');
     this.clearClientAuthState();
   }
 
   autoLogoutDueToMissingToken() {
-    // Clear all auth-related cookies
-    deleteCookie('auth_token');
-    deleteCookie('refresh_token');
-    deleteCookie('auth_token_expires');
-    deleteCookie('refresh_token_expires');
     this.clearClientAuthState();
   }
 }

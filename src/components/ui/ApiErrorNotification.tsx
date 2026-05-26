@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Bell } from 'lucide-react';
-import { useUiStore } from '../../store/ui';
+import { useUiStore, useUiActions } from '../../store/ui';
 
 const ApiErrorNotification: React.FC = () => {
-  const { errorList, clearErrors } = useUiStore();
+  const errorList = useUiStore((s) => s.errorList);
+  const { clearErrors } = useUiActions();
   const [open, setOpen] = useState(false);
   const hasErrors = errorList.length > 0;
 

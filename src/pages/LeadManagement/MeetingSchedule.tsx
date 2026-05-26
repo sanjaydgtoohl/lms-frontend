@@ -1,3 +1,10 @@
+/**
+ * @file MeetingSchedule.tsx
+ * @description Schedule a meeting for a selected lead.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useEffect } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';

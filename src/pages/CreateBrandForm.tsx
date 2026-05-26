@@ -1,3 +1,10 @@
+/**
+ * @file CreateBrandForm.tsx
+ * @description Form to create or update a brand master record.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MasterFormHeader, SelectField, MultiSelectDropdown } from '../components/ui';
@@ -11,22 +18,7 @@ import type { Industry } from '../services/CreateIndustryForm';
 import { apiClient } from '../utils/apiClient';
 import { updateBrand } from '../services/BrandMaster';
 import SweetAlert from '../utils/SweetAlert';
-
-type Props = {
-  onClose: () => void;
-  inline?: boolean;
-  initialData?: Record<string, any>;
-  mode?: 'create' | 'edit';
-};
-
-type CitySelectProps = {
-  state: string;
-  value: string;
-  onChange: (val: string) => void;
-  // optional: when parent has a preselected city name (from postal API) that may not exist
-  // in the fetched list, provide it so the select can show it as an option.
-  preselectedCityName?: string;
-};
+import type { CitySelectProps, MasterInlineFormProps } from '../types/pages/forms.types';
 
 const CitySelect: React.FC<CitySelectProps> = ({ state, value, onChange, preselectedCityName }) => {
   const [cities, setCities] = useState<{ id: string | number; name: string }[]>([]);
@@ -93,7 +85,7 @@ const CitySelect: React.FC<CitySelectProps> = ({ state, value, onChange, presele
   );
 };
 
-const CreateBrandForm: React.FC<Props> = ({ onClose, initialData, mode = 'create' }) => {
+const CreateBrandForm: React.FC<MasterInlineFormProps> = ({ onClose, initialData, mode = 'create' }) => {
   // ...existing code...
   // ...existing code...
   const [form, setForm] = useState({
