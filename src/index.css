@@ -790,6 +790,30 @@ html.dark {
   @apply bg-gray-200 px-4 py-2 rounded-lg text-sm hover:bg-gray-300;
 }
 
+/* Shared data table + filter toolbar (Table / TableHeader) */
+.lms-table-header .app-search-bar,
+.lms-table-header > div > div > .relative.flex.items-center {
+  width: 100%;
+}
+
+.lms-data-table-wrap {
+  -webkit-overflow-scrolling: touch;
+}
+
+.lms-data-table {
+  @apply w-full text-sm;
+}
+
+.lms-data-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.lms-data-table tbody td {
+  vertical-align: middle;
+}
+
 
 
 .btn-delete {

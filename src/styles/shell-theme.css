@@ -510,6 +510,16 @@
   border-color: var(--table-border) !important;
 }
 
+.dark .lms-data-table thead th {
+  background-color: var(--table-header-bg) !important;
+  color: var(--table-header-text) !important;
+}
+
+.dark .lms-table-header {
+  background-color: color-mix(in srgb, var(--table-header-bg) 40%, transparent);
+  border-color: var(--table-border) !important;
+}
+
 .dark table tbody tr:hover,
 .dark tr.transition-colors:hover {
   background-color: var(--table-row-hover) !important;
