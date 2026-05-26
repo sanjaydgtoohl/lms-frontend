@@ -752,7 +752,7 @@ const View: React.FC = () => {
               appliedFilters={activeFilters}
             >
               <SearchBar
-                className="w-full min-w-[12rem] sm:w-56 shrink-0"
+                className="w-full"
                 delay={0}
                 placeholder="Search Pre Lead"
                 onSearch={(q: string) => {
@@ -761,8 +761,8 @@ const View: React.FC = () => {
                 }}
               />
               <ExportExcelButton
-                className="shrink-0"
-                buttonClassName="btn-primary !bg-gray-800 inline-flex items-center whitespace-nowrap shrink-0"
+                className="w-full sm:w-auto"
+                buttonClassName="btn-primary !bg-gray-800 w-full sm:w-auto"
                 fetchExport={handleExportExcel}
               />
             </TableHeader>

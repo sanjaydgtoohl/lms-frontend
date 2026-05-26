@@ -256,9 +256,9 @@ const TableHeader: React.FC<PageHeaderProps> = ({
                     {title}
                 </h2>
 
-                <div className="flex min-w-0 flex-col flex-wrap items-stretch gap-2 sm:flex-row sm:items-center sm:justify-end">
+                <div className="lms-table-header__toolbar flex w-full min-w-0 flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
                     {showFilterButton && (
-                        <div className="relative shrink-0 whitespace-nowrap" ref={filterRef}>
+                        <div className="relative w-full shrink-0 sm:w-auto" ref={filterRef}>
                             <button
                                 type="button"
                                 onClick={() => {
@@ -267,7 +267,7 @@ const TableHeader: React.FC<PageHeaderProps> = ({
                                         return !open;
                                     });
                                 }}
-                                className={`inline-flex h-9 items-center gap-2 !rounded-lg !border !px-3 !py-0 text-sm font-medium !shadow-none transition-colors focus:!outline-none focus-visible:!ring-2 focus-visible:!ring-orange-400/40 ${
+                                className={`inline-flex h-9 w-full items-center justify-center gap-2 whitespace-nowrap !rounded-lg !border !px-3 !py-0 text-sm font-medium !shadow-none transition-colors focus:!outline-none focus-visible:!ring-2 focus-visible:!ring-orange-400/40 sm:w-auto sm:justify-start ${
                                     hasActiveFilters
                                         ? '!border-orange-300 !bg-orange-50 !text-orange-700'
                                         : '!border-gray-200 !bg-white !text-gray-700 hover:!bg-gray-50'
@@ -287,7 +287,7 @@ const TableHeader: React.FC<PageHeaderProps> = ({
                     )}
 
                     {children && (
-                        <div className="lms-table-header__actions flex min-w-0 w-full flex-row flex-wrap items-center justify-end gap-2 whitespace-nowrap sm:w-auto">
+                        <div className="lms-table-header__actions flex w-full min-w-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-2">
                             {children}
                         </div>
                     )}
