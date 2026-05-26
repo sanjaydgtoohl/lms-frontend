@@ -278,7 +278,7 @@ const LeadList: React.FC<LeadListPageProps> = ({
 
   useEffect(() => {
     fetchLeads();
-  }, [currentPage, filterStatus, fetchLeads]); // ✅ added fetchLeads
+  }, [currentPage, filterStatus, fetchLeads]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -665,6 +665,7 @@ const LeadList: React.FC<LeadListPageProps> = ({
           showSignInButton={true}
           signInIcon={<FaRegCalendarAlt className="cursor-pointer text-orange-500 hover:text-orange-500 w-4 h-4 sm:w-6 sm:h-6" />}
           onSignInClick={() => navigate(ROUTES.LEAD.MEETING_SCHEDULE)}
+          createPermissionSlug={createPermissionMap[permissionKey] }
         />
       )}
       

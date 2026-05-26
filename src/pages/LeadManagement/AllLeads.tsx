@@ -46,6 +46,18 @@ const AllLeads: React.FC = () => {
   const [callStatusOptions, setCallStatusOptions] = useState<CallStatusOption[]>([]);
   const [assignToOptions, setAssignToOptions] = useState<UserOption[]>([]);
   const { hasPermission } = usePermissions();
+  const [loading, setLoading] = useState(false);
+  const [totalItems, setTotalItems] = useState(0);
+
+  // Tooltip state for Comment hover
+  const [tooltipVisible, setTooltipVisible] = useState(false);
+  const [tooltipContent, setTooltipContent] = useState('');
+  const [tooltipLeft, setTooltipLeft] = useState(0);
+  const [tooltipTop, setTooltipTop] = useState(0);
+  const [tooltipPlacement, setTooltipPlacement] = useState<'top' | 'bottom'>('top');
+  const hoverTimeout = useRef<number | null>(null);
+  const tooltipRef = useRef<HTMLDivElement | null>(null);
+
   // Fetch call status options from API
   useEffect(() => {
     const loadCallStatuses = async () => {
@@ -114,17 +126,6 @@ const AllLeads: React.FC = () => {
     };
     loadSubSources();
   }, []);
-  const [loading, setLoading] = useState(false);
-  const [totalItems, setTotalItems] = useState(0);
-
-  // Tooltip state for Comment hover
-  const [tooltipVisible, setTooltipVisible] = useState(false);
-  const [tooltipContent, setTooltipContent] = useState('');
-  const [tooltipLeft, setTooltipLeft] = useState(0);
-  const [tooltipTop, setTooltipTop] = useState(0);
-  const [tooltipPlacement, setTooltipPlacement] = useState<'top' | 'bottom'>('top');
-  const hoverTimeout = useRef<number | null>(null);
-  const tooltipRef = useRef<HTMLDivElement | null>(null);
 
   const showTooltip = (e: React.MouseEvent, content: string) => {
     if (hoverTimeout.current) {
@@ -314,8 +315,6 @@ const AllLeads: React.FC = () => {
         return { ...lead, callStatus: newStatus };
       })
     );
-    // Optional: Log the change to verify it's being called
-    console.log(`Call status updated for ${leadId} to ${newStatus} — callAttempt incremented`);
 
     // Find the id for the selected call status name
     const selectedOption = callStatusOptions.find(opt => opt.name === newStatus);
@@ -546,8 +545,10 @@ const AllLeads: React.FC = () => {
           showSignInButton={true}
           signInIcon={<FaRegCalendarAlt className="cursor-pointer text-orange-500 hover:text-orange-500 w-4 h-4 sm:w-6 sm:h-6" />}
           onSignInClick={() => navigate(ROUTES.LEAD.MEETING_SCHEDULE)}
+          createPermissionSlug="leads.create"
         />
       )}
+      
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
         {/* Table Header */}
         <TableHeader

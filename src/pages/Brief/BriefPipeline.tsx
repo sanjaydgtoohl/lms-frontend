@@ -486,6 +486,7 @@ const BriefPipeline: React.FC = () => {
                 { label: 'Brief', path: ROUTES.BRIEF.ROOT },
                 { label: 'Brief Pipeline', isActive: true }
               ]}
+              createPermissionSlug="brief.create"
             />
           )}
 
