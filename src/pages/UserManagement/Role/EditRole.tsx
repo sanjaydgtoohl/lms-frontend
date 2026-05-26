@@ -12,6 +12,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
 import { MasterFormHeader } from '../../../components/ui';
 import SweetAlert from '../../../utils/SweetAlert';
+import { extractNumericId } from '../../../api/client';
 import { getRole, listPermissionTreeNodes } from '../../../api/rbac';
 import PermissionTree from '../../../components/ui/PermissionTree';
 
@@ -50,9 +51,10 @@ const EditRole: React.FC = () => {
         } else {
           setPermissionError('Failed to load permissions');
         }
-
+        
         if (id) {
-          const roleData = (await getRole(id)) as unknown as Record<string, unknown>;
+          const roleId = parseInt(extractNumericId(id), 10);
+          const roleData = (await getRole(String(roleId))) as unknown as Record<string, unknown>;
           setForm({
             name: String(roleData.name ?? ''),
             description: String(roleData.description ?? ''),
@@ -100,10 +102,11 @@ const EditRole: React.FC = () => {
         ...form,
         permission: selectedPermissionIds, // key must be 'permission' (not 'permissions')
       } as Record<string, any>;
-      if (id) payload.id = id;
-      // Make API call to update role
-      const numericId = id ? id.replace(/[^\d]/g, '') : '';
-      await updateRoleById(numericId, payload);
+      if (id) {
+        const roleId = parseInt(extractNumericId(id), 10);
+        payload.id = roleId;
+        await updateRoleById(roleId, payload);
+      }
       SweetAlert.showUpdateSuccess();
       setTimeout(() => {
         navigate(ROUTES.ROLE.ROOT);
