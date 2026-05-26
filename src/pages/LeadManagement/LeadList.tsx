@@ -5,7 +5,7 @@
  * @date 2026-05-25
  */
 
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Table, { type Column } from '../../components/ui/Table';
 import AssignDropdown from '../../components/ui/AssignDropdown';
 import CallStatusDropdown from '../../components/ui/CallStatusDropdown';
@@ -106,6 +106,8 @@ const LeadList: React.FC<LeadListPageProps> = ({
   extraStatuses = EMPTY_EXTRA_STATUSES,
   permissionStatus,
   headerActions,
+  filterExtras,
+  extraFilterActive = false,
 }) => {
   const dispatch = useDispatch<AppDispatch>();
   const permissionKey = permissionStatus || filterStatus || 'All';
@@ -283,54 +285,6 @@ const LeadList: React.FC<LeadListPageProps> = ({
   useEffect(() => {
     setCurrentPage(1);
   }, [filterStatus, extraStatusesKey, activeFilters]);
-
-  // Tooltip state for Comment hover
-  const [tooltipVisible, setTooltipVisible] = useState(false);
-  const [tooltipContent, setTooltipContent] = useState('');
-  const [tooltipLeft, setTooltipLeft] = useState(0);
-  const [tooltipTop, setTooltipTop] = useState(0);
-  const [tooltipPlacement, setTooltipPlacement] = useState<'top' | 'bottom'>('top');
-  const hoverTimeout = useRef<number | null>(null);
-  const tooltipRef = useRef<HTMLDivElement | null>(null);
-
-  const showTooltip = (e: React.MouseEvent, content: string) => {
-    if (hoverTimeout.current) {
-      window.clearTimeout(hoverTimeout.current);
-      hoverTimeout.current = null;
-    }
-    const target = e.currentTarget as HTMLElement;
-    const rect = target.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const preferTop = rect.top > 140;
-    const left = Math.max(12, Math.min(window.innerWidth - 12, centerX));
-    const top = preferTop ? Math.max(12, rect.top - 8) : Math.min(window.innerHeight - 12, rect.bottom + 8);
-
-    setTooltipContent(content);
-    setTooltipLeft(left);
-    setTooltipTop(top);
-    setTooltipPlacement(preferTop ? 'top' : 'bottom');
-    setTooltipVisible(true);
-  };
-
-  const hideTooltip = () => {
-    if (hoverTimeout.current) window.clearTimeout(hoverTimeout.current);
-    hoverTimeout.current = window.setTimeout(() => {
-      setTooltipVisible(false);
-      hoverTimeout.current = null;
-    }, 100);
-  };
-
-  const onTooltipEnter = () => {
-    if (hoverTimeout.current) {
-      window.clearTimeout(hoverTimeout.current);
-      hoverTimeout.current = null;
-    }
-    setTooltipVisible(true);
-  };
-
-  const onTooltipLeave = () => {
-    hideTooltip();
-  };
 
   // Filter leads by search query (local search across a few fields)
   const filteredLeads = leads.filter((l) => {
@@ -535,16 +489,19 @@ const LeadList: React.FC<LeadListPageProps> = ({
   // Status is rendered as a non-clickable pill (same as AllLeads)
 
   const columns = ([
-    { key: 'sr', header: 'Id', render: (it: Lead) => `#${it.id}`, className: 'text-left whitespace-nowrap' },
-    { key: 'agencyName', header: 'Agency Name', render: (it: Lead) => it.agencyName || '-', className: 'max-w-[180px] overflow-hidden text-ellipsis whitespace-nowrap' },
-    { key: 'brandName', header: 'Brand Name', render: (it: Lead) => it.brandName || '-', className: 'max-w-[180px] overflow-hidden text-ellipsis whitespace-nowrap' },
-    { key: 'contactPerson', header: 'Contact Person', render: (it: Lead) => it.contactPerson || '-', className: 'max-w-[160px] overflow-hidden text-ellipsis whitespace-nowrap' },
-    { key: 'phoneNumber', header: 'Phone Number', render: (it: Lead) => it.phoneNumber || '-', className: 'whitespace-nowrap' },
-    { key: 'subSource', header: 'Sub-Source', render: (it: Lead) => it.subSource || '-', className: 'whitespace-nowrap' },
-    { key: 'assignBy', header: 'Assign By', render: (it: Lead) => it.assignBy || '-', className: 'whitespace-nowrap' },
+    { key: 'sr', header: 'Id', minWidth: 72, maxWidth: 96, render: (it: Lead) => `#${it.id}` },
+    { key: 'agencyName', header: 'Agency Name', minWidth: 120, maxWidth: 180, render: (it: Lead) => it.agencyName || '-' },
+    { key: 'brandName', header: 'Brand Name', minWidth: 120, maxWidth: 180, render: (it: Lead) => it.brandName || '-' },
+    { key: 'contactPerson', header: 'Contact Person', minWidth: 120, maxWidth: 160, render: (it: Lead) => it.contactPerson || '-' },
+    { key: 'phoneNumber', header: 'Phone Number', minWidth: 120, maxWidth: 140, render: (it: Lead) => it.phoneNumber || '-' },
+    { key: 'subSource', header: 'Sub-Source', minWidth: 100, maxWidth: 140, render: (it: Lead) => it.subSource || '-' },
+    { key: 'assignBy', header: 'Assign By', minWidth: 110, maxWidth: 150, render: (it: Lead) => it.assignBy || '-' },
     ...(hasPermission(assignPermissionMap[permissionKey] || assignPermissionMap.All) ? [{
       key: 'assignTo',
       header: 'Assign To',
+      minWidth: 160,
+      maxWidth: 200,
+      allowOverflow: true,
       render: (it: Lead) => (
         <AssignDropdown
           value={it.assignTo ?? ''}
@@ -553,67 +510,49 @@ const LeadList: React.FC<LeadListPageProps> = ({
           onConfirm={handleAssignConfirm}
           context="lead"
         />
-      ), 
-      className: 'min-w-[140px]',
+      ),
     } as Column<Lead>] : []),
-    { key: 'dateTime', header: 'Date & Time', render: (it: Lead) => it.dateTime || '-', className: 'whitespace-nowrap' },
+    { key: 'dateTime', header: 'Date & Time', minWidth: 130, maxWidth: 170, render: (it: Lead) => it.dateTime || '-' },
     {
       key: 'status',
       header: 'Status',
+      minWidth: 120,
+      maxWidth: 160,
+      allowOverflow: true,
       render: (it: Lead) => (
         <StatusPill
           label={it.status ?? '-'}
           color={statusColors[it.status ?? ''] || '#6b7280'}
         />
       ),
-      className: 'whitespace-nowrap'
     },
     {
       key: 'callStatus',
       header: 'Call Status',
+      minWidth: 170,
+      maxWidth: 200,
+      allowOverflow: true,
       render: (it: Lead) => (
-        <div className="min-w-[160px]">
-          {hasPermission(callStatusPermissionMap[permissionKey] || callStatusPermissionMap.All) ? (
-            <CallStatusDropdown
-              value={(it.callStatus && it.callStatus !== 'N/A') ? it.callStatus : ''}
-              options={callStatusOptions.map((opt) => opt.name)}
-              onChange={(newStatus) => handleCallStatusChange(it.id, newStatus)}
-              onConfirm={handleCallStatusConfirm}
-            />
-          ) : (
-            <span>{it.callStatus || 'N/A'}</span>
-          )}
-        </div>
+        hasPermission(callStatusPermissionMap[permissionKey] || callStatusPermissionMap.All) ? (
+          <CallStatusDropdown
+            value={(it.callStatus && it.callStatus !== 'N/A') ? it.callStatus : ''}
+            options={callStatusOptions.map((opt) => opt.name)}
+            onChange={(newStatus) => handleCallStatusChange(it.id, newStatus)}
+            onConfirm={handleCallStatusConfirm}
+          />
+        ) : (
+          <span className="block truncate">{it.callStatus || 'N/A'}</span>
+        )
       ),
-      className: 'min-w-[160px]',
     },
-    { key: 'followUp', header: 'Follow-Up / Meeting Type', render: (it: Lead) => it.dateTime || '-', className: 'whitespace-nowrap' },
-    { key: 'callAttempt', header: 'Call Attempt', render: (it: Lead) => it.callAttempt ? String(it.callAttempt) : '-', className: 'whitespace-nowrap' },
+    { key: 'followUp', header: 'Follow-Up / Meeting Type', minWidth: 140, maxWidth: 200, render: (it: Lead) => it.dateTime || '-' },
+    { key: 'callAttempt', header: 'Call Attempt', minWidth: 90, maxWidth: 110, render: (it: Lead) => (it.callAttempt ? String(it.callAttempt) : '-') },
     {
       key: 'comment',
       header: 'Comment',
-      render: (it: Lead) => (
-        <div
-          className="cursor-help max-w-[220px]"
-          onMouseEnter={(e) => showTooltip(e, it.comment ?? '-')}
-          onMouseLeave={() => hideTooltip()}
-        >
-          <div
-            className="text-sm text-gray-800"
-            style={{
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              overflowWrap: 'break-word'
-            }}
-          >
-            {it.comment || '-'}
-          </div>
-        </div>
-      ),
-      className: 'max-w-[220px]'
+      minWidth: 140,
+      maxWidth: 220,
+      render: (it: Lead) => it.comment || '-',
     },
   ] as Column<Lead>[]);
 
@@ -657,7 +596,7 @@ const LeadList: React.FC<LeadListPageProps> = ({
   );
 
   return (
-    <div className="flex-1 w-full max-w-full overflow-x-hidden">
+    <div className="flex-1 w-full max-w-full min-w-0">
       {hasPermission(createPermissionMap[permissionKey] || createPermissionMap.All) && (
         <MasterHeader
           onCreateClick={handleCreateLead}
@@ -669,16 +608,19 @@ const LeadList: React.FC<LeadListPageProps> = ({
         />
       )}
       
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+      <div className="overflow-visible bg-white rounded-lg border border-gray-200 shadow-sm">
         {/* Table Header */}
         <TableHeader
           title={title}
           filterOptions={filterOptions}
           onFilterChange={handleFilterChange}
           appliedFilters={activeFilters}
+          filterExtras={filterExtras}
+          extraFilterActive={extraFilterActive}
         >
          {headerActions}
          <SearchBar
+              className="w-full"
               placeholder="Search leads..."
               delay={250}
               onSearch={(q: string) => {
@@ -724,22 +666,6 @@ const LeadList: React.FC<LeadListPageProps> = ({
         onConfirm={confirmDelete}
       />
 
-      {/* Tooltip popup for full comment text */}
-      {tooltipVisible && (
-        <div
-          ref={tooltipRef}
-          onMouseEnter={onTooltipEnter}
-          onMouseLeave={onTooltipLeave}
-          role="tooltip"
-          aria-hidden={!tooltipVisible}
-          style={{ left: tooltipLeft, top: tooltipTop }}
-          className={`fixed z-50 transform -translate-x-1/2 ${tooltipPlacement === 'top' ? '-translate-y-full' : 'translate-y-0'}`}
-        >
-          <div className="bg-white border border-gray-200 rounded-lg shadow-md p-3 max-w-[48ch] text-sm text-gray-800">
-            {tooltipContent}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

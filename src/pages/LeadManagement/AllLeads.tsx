@@ -5,7 +5,7 @@
  * @date 2026-05-25
  */
 
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Table, { type Column } from '../../components/ui/Table';
 import AssignDropdown from '../../components/ui/AssignDropdown';
 import CallStatusDropdown from '../../components/ui/CallStatusDropdown';
@@ -48,15 +48,6 @@ const AllLeads: React.FC = () => {
   const { hasPermission } = usePermissions();
   const [loading, setLoading] = useState(false);
   const [totalItems, setTotalItems] = useState(0);
-
-  // Tooltip state for Comment hover
-  const [tooltipVisible, setTooltipVisible] = useState(false);
-  const [tooltipContent, setTooltipContent] = useState('');
-  const [tooltipLeft, setTooltipLeft] = useState(0);
-  const [tooltipTop, setTooltipTop] = useState(0);
-  const [tooltipPlacement, setTooltipPlacement] = useState<'top' | 'bottom'>('top');
-  const hoverTimeout = useRef<number | null>(null);
-  const tooltipRef = useRef<HTMLDivElement | null>(null);
 
   // Fetch call status options from API
   useEffect(() => {
@@ -126,46 +117,6 @@ const AllLeads: React.FC = () => {
     };
     loadSubSources();
   }, []);
-
-  const showTooltip = (e: React.MouseEvent, content: string) => {
-    if (hoverTimeout.current) {
-      window.clearTimeout(hoverTimeout.current);
-      hoverTimeout.current = null;
-    }
-    const target = e.currentTarget as HTMLElement;
-    const rect = target.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const preferTop = rect.top > 140;
-    const left = Math.max(12, Math.min(window.innerWidth - 12, centerX));
-    const top = preferTop ? Math.max(12, rect.top - 8) : Math.min(window.innerHeight - 12, rect.bottom + 8);
-
-    setTooltipContent(content);
-    setTooltipLeft(left);
-    setTooltipTop(top);
-    setTooltipPlacement(preferTop ? 'top' : 'bottom');
-    setTooltipVisible(true);
-  };
-
-  const hideTooltip = () => {
-    if (hoverTimeout.current) window.clearTimeout(hoverTimeout.current);
-    hoverTimeout.current = window.setTimeout(() => {
-      setTooltipVisible(false);
-      hoverTimeout.current = null;
-    }, 100);
-  };
-
-  const onTooltipEnter = () => {
-    if (hoverTimeout.current) {
-      window.clearTimeout(hoverTimeout.current);
-      hoverTimeout.current = null;
-    }
-    setTooltipVisible(true);
-  };
-
-  const onTooltipLeave = () => {
-    hideTooltip();
-  };
-  // no external open state needed for call status dropdowns (self-contained)
 
   // Use API paginated data directly
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -500,28 +451,9 @@ const AllLeads: React.FC = () => {
     {
       key: 'comment',
       header: 'Comment',
-      render: (it: AllLeadtype) => (
-        <div
-          className="cursor-help max-w-[220px]"
-          onMouseEnter={(e) => showTooltip(e, it.comment || '-')}
-          onMouseLeave={() => hideTooltip()}
-        >
-          <div
-            className="text-sm text-gray-800"
-            style={{
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              overflowWrap: 'break-word'
-            }}
-          >
-            {it.comment || '-'}
-          </div>
-        </div>
-      ),
-      className: 'max-w-[220px]'
+      minWidth: 140,
+      maxWidth: 220,
+      render: (it: AllLeadtype) => it.comment || '-',
     },
   ];
 
@@ -558,6 +490,7 @@ const AllLeads: React.FC = () => {
           appliedFilters={activeFilters}
         >
           <SearchBar
+            className="w-full"
             placeholder="Search leads..."
             delay={250}
             onSearch={(q: string) => {
@@ -594,22 +527,6 @@ const AllLeads: React.FC = () => {
         onPageChange={(p: number) => setCurrentPage(p)}
       />
 
-      {/* Tooltip popup for full comment text */}
-      {tooltipVisible && (
-        <div
-          ref={tooltipRef}
-          onMouseEnter={onTooltipEnter}
-          onMouseLeave={onTooltipLeave}
-          role="tooltip"
-          aria-hidden={!tooltipVisible}
-          style={{ left: tooltipLeft, top: tooltipTop }}
-          className={`fixed z-50 transform -translate-x-1/2 ${tooltipPlacement === 'top' ? '-translate-y-full' : 'translate-y-0'}`}
-        >
-          <div className="bg-white border border-gray-200 rounded-lg shadow-md p-3 max-w-[48ch] text-sm text-gray-800">
-            {tooltipContent}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

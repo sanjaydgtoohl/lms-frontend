@@ -5,8 +5,7 @@
  * @date 2026-05-25
  */
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { FiFilter } from 'react-icons/fi';
+import React, { useMemo, useState } from 'react';
 import LeadList from './LeadList';
 import {
   MEETING_PIPELINE_STATUS_OPTIONS,
@@ -15,20 +14,6 @@ import {
 
 const MeetingDone: React.FC = () => {
   const [selectedStatuses, setSelectedStatuses] = useState<MeetingPipelineStatus[]>([]);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const filterRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!filterRef.current) return;
-      if (!filterRef.current.contains(event.target as Node)) {
-        setIsFilterOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const toggleStatus = (status: MeetingPipelineStatus) => {
     setSelectedStatuses((prev) =>
@@ -56,51 +41,39 @@ const MeetingDone: React.FC = () => {
     };
   }, [selectedStatuses]);
 
+  const extraFilterActive =
+    selectedStatuses.length > 0 &&
+    selectedStatuses.length < MEETING_PIPELINE_STATUS_OPTIONS.length;
+
+  const filterExtras = (
+    <>
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+        Meeting status
+      </p>
+      <div className="space-y-2">
+        {MEETING_PIPELINE_STATUS_OPTIONS.map((status) => (
+          <label key={status} className="flex items-center gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              className="h-4 w-4 accent-orange-600"
+              checked={selectedStatuses.includes(status)}
+              onChange={() => toggleStatus(status)}
+            />
+            {status}
+          </label>
+        ))}
+      </div>
+    </>
+  );
+
   return (
     <LeadList
       title="Meetings"
       filterStatus={leadListFilters.filterStatus}
       extraStatuses={leadListFilters.extraStatuses}
       permissionStatus="Meeting Done"
-      headerActions={
-        <div className="relative" ref={filterRef}>
-          <button
-            type="button"
-            onClick={() => setIsFilterOpen((prev) => !prev)}
-            className={`!px-3 !py-2 !border !border-gray-200 !text-sm font-medium transition !shadow-none focus:!outline-none focus:!ring-0 focus-visible:!outline-none focus-visible:!ring-0 ${
-              isFilterOpen
-                ? '!bg-orange-600 !text-white hover:bg-orange-700'
-                : '!bg-white !text-gray-700 hover:!bg-gray-50'
-            }`}
-          >
-            <span className="inline-flex items-center gap-x-2">
-              <FiFilter className="h-4 w-4" />
-              Filter
-            </span>
-          </button>
-
-          {isFilterOpen && (
-            <div className="absolute right-0 z-20 mt-2 w-56 rounded-md border border-gray-200 bg-white p-3 shadow-lg">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Filter By Status
-              </p>
-              <div className="space-y-2">
-                {MEETING_PIPELINE_STATUS_OPTIONS.map((status) => (
-                  <label key={status} className="flex items-center gap-2 text-sm text-gray-700">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 accent-orange-600"
-                      checked={selectedStatuses.includes(status)}
-                      onChange={() => toggleStatus(status)}
-                    />
-                    {status}
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      }
+      filterExtras={filterExtras}
+      extraFilterActive={extraFilterActive}
     />
   );
 };

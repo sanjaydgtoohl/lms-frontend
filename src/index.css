@@ -790,6 +790,51 @@ html.dark {
   @apply bg-gray-200 px-4 py-2 rounded-lg text-sm hover:bg-gray-300;
 }
 
+/* Shared data table + filter toolbar (Table / TableHeader) */
+.lms-table-header .app-search-bar,
+.lms-table-header > div > div > .relative.flex.items-center {
+  width: 100%;
+}
+
+.lms-data-table-wrap {
+  -webkit-overflow-scrolling: touch;
+}
+
+.lms-data-table {
+  @apply text-sm;
+}
+
+.lms-data-table tbody td {
+  vertical-align: middle;
+}
+
+.lms-table-cell {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.lms-table-cell__text {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lms-table-cell--interactive {
+  max-width: 100%;
+}
+
+.lms-table-actions-col {
+  position: sticky;
+  right: 0;
+  z-index: 5;
+  box-shadow: -6px 0 12px -8px rgba(15, 23, 42, 0.2);
+}
+
+.lms-data-table thead .lms-table-actions-col {
+  z-index: 6;
+}
+
 
 
 .btn-delete {
