@@ -188,7 +188,7 @@ const BrandMaster: React.FC = () => {
   }, [currentPage, itemsPerPage, searchQuery, isListRoute]);
 
   const handlePageChange = (page: number) => setCurrentPage(page);
-
+  console.log("isCreateRoute ",isCreateRoute);
   return (
     <div className="flex-1 w-full max-w-full overflow-x-hidden">
       <ConfirmDialog
@@ -230,6 +230,7 @@ const BrandMaster: React.FC = () => {
             createButtonLabel="Create Brand"
             showBreadcrumb={true}
             showCreateButton={hasPermission('brand.create')}
+            createPermissionSlug="brand.create"
           />
 
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-4">

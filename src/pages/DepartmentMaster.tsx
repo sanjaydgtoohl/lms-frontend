@@ -376,6 +376,7 @@ const DepartmentMaster: React.FC = () => {
 						createButtonLabel="Create Department"
 						showBreadcrumb={true}
 						showCreateButton={hasPermission('department.create')}
+						createPermissionSlug="department.create"
 					/>
 					<div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-4">
 						{/* Table Header */}

@@ -271,6 +271,7 @@ const AgencyMaster: React.FC = () => {
             createButtonLabel="Create Agency"
             showBreadcrumb={true}
             showCreateButton={hasPermission('agency.create')}
+            createPermissionSlug="agency.create"
           />
 
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-4">

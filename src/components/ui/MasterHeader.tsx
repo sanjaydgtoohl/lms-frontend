@@ -34,7 +34,6 @@ const MasterHeader: React.FC<MasterHeaderProps> = ({
   createPermissionSlug,
 }) => {
   const { hasPermission } = usePermissions();
-
   const canCreate = !createPermissionSlug ? false : hasPermission(createPermissionSlug);
   
   return (

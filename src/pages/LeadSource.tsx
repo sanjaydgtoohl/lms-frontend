@@ -331,6 +331,7 @@ const LeadSource: React.FC = () => {
             createButtonLabel="Create Source"
             showBreadcrumb={true}
             showCreateButton={hasPermission('source.create')}
+            createPermissionSlug="source.create"
           />
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-4">
             {/* Table Header */}

@@ -437,6 +437,7 @@ const DesignationMaster: React.FC = () => {
             createButtonLabel="Create Designation"
             showBreadcrumb={true}
             showCreateButton={hasPermission('designation.create')}
+            createPermissionSlug="designation.create"
           />
 
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-4">

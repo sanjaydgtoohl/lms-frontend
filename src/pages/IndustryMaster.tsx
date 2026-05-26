@@ -303,6 +303,7 @@ const IndustryMaster: React.FC = () => {
             createButtonLabel="Create Industry"
             showBreadcrumb={true}
             showCreateButton={hasPermission('industry.create')}
+            createPermissionSlug="industry.create"
           />
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-4">
             {/* Table Header */}
