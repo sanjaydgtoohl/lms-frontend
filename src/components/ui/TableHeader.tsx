@@ -256,9 +256,9 @@ const TableHeader: React.FC<PageHeaderProps> = ({
                     {title}
                 </h2>
 
-                <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+                <div className="flex min-w-0 flex-col flex-wrap items-stretch gap-2 sm:flex-row sm:items-center sm:justify-end">
                     {showFilterButton && (
-                        <div className="relative shrink-0" ref={filterRef}>
+                        <div className="relative shrink-0 whitespace-nowrap" ref={filterRef}>
                             <button
                                 type="button"
                                 onClick={() => {
@@ -287,7 +287,7 @@ const TableHeader: React.FC<PageHeaderProps> = ({
                     )}
 
                     {children && (
-                        <div className="min-w-0 w-full sm:w-auto sm:min-w-[12rem] sm:max-w-xs">
+                        <div className="lms-table-header__actions flex min-w-0 w-full flex-row flex-wrap items-center justify-end gap-2 whitespace-nowrap sm:w-auto">
                             {children}
                         </div>
                     )}
