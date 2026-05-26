@@ -51,7 +51,7 @@ const ExportExcelButton: React.FC<ExportExcelButtonProps> = ({
         type="button"
         onClick={handleClick}
         disabled={disabled || exporting}
-        className={buttonClassName}
+        className={`inline-flex items-center whitespace-nowrap shrink-0 ${buttonClassName}`}
         aria-label={ariaLabel ?? 'Export data as Excel'}
         aria-busy={exporting}
       >
