@@ -14,6 +14,10 @@ export type Column<T> = {
   hideOnMobile?: boolean;
   /** optional className for the column cells */
   className?: string;
+  /** optional className for the header cell only */
+  headerClassName?: string;
+  /** minimum width for column (px number or CSS value) */
+  minWidth?: number | string;
 };
 
 interface TableProps<T> {
@@ -47,11 +51,16 @@ const Table = <T,>(props: TableProps<T>) => {
   // responsive padding classes used for cells/headers; compact mode reduces padding further
   // small screens get compact padding while larger screens keep desktop spacing
   const headerPadClass = compact
-    ? 'px-3 py-1.5 lg:px-5 lg:py-2'
-    : 'px-3 py-2 lg:px-5 lg:py-3.5';
+    ? 'px-3 py-2 lg:px-4'
+    : 'px-4 py-2.5 lg:px-5';
   const cellPadClass = compact
-    ? 'px-3 py-2 lg:px-5 lg:py-3'
-    : 'px-3 py-2 lg:px-5 lg:py-3';
+    ? 'px-3 py-2.5 lg:px-4'
+    : 'px-4 py-3 lg:px-5';
+
+  const colMinWidth = (col: Column<T>) =>
+    col.minWidth != null
+      ? { minWidth: typeof col.minWidth === 'number' ? `${col.minWidth}px` : col.minWidth }
+      : undefined;
 
   // Always show table structure, even when loading or empty
   const hasData = data && data.length > 0;
@@ -60,28 +69,31 @@ const Table = <T,>(props: TableProps<T>) => {
   return (
     <>
       {/* Desktop Table View */}
-      <div className={`${desktopOnMobile ? 'block' : 'hidden lg:block'} overflow-x-auto overflow-y-visible`}>
-        <div className="relative">
-          <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-100">
+      <div className={`lms-data-table-wrap ${desktopOnMobile ? 'block' : 'hidden lg:block'} overflow-x-auto overflow-y-visible`}>
+        <div className="relative min-w-0">
+          <table className="lms-data-table min-w-full border-separate border-spacing-0">
+          <thead>
             <tr>
               {columns.map(col => (
                 <th
                   key={String(col.key)}
-                  className={`${headerPadClass} text-left text-sm font-semibold text-black tracking-wider border-b border-gray-200 whitespace-nowrap truncate ${col.className || ''}`}
-                  style={{ maxWidth: 220 }}
+                  className={`${headerPadClass} text-left text-xs font-semibold uppercase tracking-wide text-[#007b83] bg-slate-50 border-b border-gray-200 whitespace-nowrap ${col.headerClassName || ''}`}
+                  style={colMinWidth(col)}
                 >
                   {typeof col.header === 'string' ? toTitleCase(col.header) : col.header}
                 </th>
               ))}
               {showActions && (
-                <th className={`${headerPadClass}text-left text-sm font-semibold text-black tracking-wider border-b border-gray-200 whitespace-nowrap truncate`} style={{ maxWidth: 220 }}>
+                <th
+                  className={`${headerPadClass} text-center text-xs font-semibold uppercase tracking-wide text-[#007b83] bg-slate-50 border-b border-gray-200 whitespace-nowrap sticky right-0 z-[1]`}
+                  style={{ minWidth: 88 }}
+                >
                   {toTitleCase('Actions')}
                 </th>
               )}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white">
             {loading ? (
               <tr>
                 <td colSpan={columns.length + (showActions ? 1 : 0)} className={`${cellPadClass} py-20`}>
@@ -117,13 +129,13 @@ const Table = <T,>(props: TableProps<T>) => {
               data.map((item, index) => (
                 <tr
                   key={keyExtractor ? keyExtractor(item, index) : (String((item as Record<string, unknown>).id) || String(index))}
-                  className="hover:bg-gray-50 transition-colors duration-150 border-gray-200"
+                  className="group border-b border-gray-100 hover:bg-slate-50/80 transition-colors duration-150"
                 >
                     {columns.map(col => (
                     <td
                       key={col.key}
-                      className={`${cellPadClass} whitespace-nowrap text-sm text-gray-700 ${col.className || ''}`}
-                      style={{ maxWidth: 320 }}
+                      className={`${cellPadClass} text-sm text-gray-800 align-middle ${col.className || ''}`}
+                      style={colMinWidth(col)}
                     >
                           {(() => {
                             // Get the raw output from renderer or default extractor
@@ -157,7 +169,7 @@ const Table = <T,>(props: TableProps<T>) => {
                     </td>
                   ))}
                   {showActions && (
-                    <td className={`${cellPadClass} whitespace-nowrap text-center text-sm relative`}>
+                    <td className={`${cellPadClass} whitespace-nowrap text-center text-sm relative bg-white sticky right-0 group-hover:bg-slate-50/80`}>
                       <div className="flex justify-center">
                         <ActionMenu
                           isLast={index === data.length - 1}

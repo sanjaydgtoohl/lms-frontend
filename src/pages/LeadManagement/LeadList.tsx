@@ -106,6 +106,8 @@ const LeadList: React.FC<LeadListPageProps> = ({
   extraStatuses = EMPTY_EXTRA_STATUSES,
   permissionStatus,
   headerActions,
+  filterExtras,
+  extraFilterActive = false,
 }) => {
   const dispatch = useDispatch<AppDispatch>();
   const permissionKey = permissionStatus || filterStatus || 'All';
@@ -545,6 +547,7 @@ const LeadList: React.FC<LeadListPageProps> = ({
     ...(hasPermission(assignPermissionMap[permissionKey] || assignPermissionMap.All) ? [{
       key: 'assignTo',
       header: 'Assign To',
+      minWidth: 150,
       render: (it: Lead) => (
         <AssignDropdown
           value={it.assignTo ?? ''}
@@ -553,8 +556,8 @@ const LeadList: React.FC<LeadListPageProps> = ({
           onConfirm={handleAssignConfirm}
           context="lead"
         />
-      ), 
-      className: 'min-w-[140px]',
+      ),
+      className: 'min-w-[150px]',
     } as Column<Lead>] : []),
     { key: 'dateTime', header: 'Date & Time', render: (it: Lead) => it.dateTime || '-', className: 'whitespace-nowrap' },
     {
@@ -571,6 +574,7 @@ const LeadList: React.FC<LeadListPageProps> = ({
     {
       key: 'callStatus',
       header: 'Call Status',
+      minWidth: 170,
       render: (it: Lead) => (
         <div className="min-w-[160px]">
           {hasPermission(callStatusPermissionMap[permissionKey] || callStatusPermissionMap.All) ? (
@@ -657,7 +661,7 @@ const LeadList: React.FC<LeadListPageProps> = ({
   );
 
   return (
-    <div className="flex-1 w-full max-w-full overflow-x-hidden">
+    <div className="flex-1 w-full max-w-full min-w-0">
       {hasPermission(createPermissionMap[permissionKey] || createPermissionMap.All) && (
         <MasterHeader
           onCreateClick={handleCreateLead}
@@ -669,16 +673,19 @@ const LeadList: React.FC<LeadListPageProps> = ({
         />
       )}
       
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+      <div className="overflow-visible bg-white rounded-lg border border-gray-200 shadow-sm">
         {/* Table Header */}
         <TableHeader
           title={title}
           filterOptions={filterOptions}
           onFilterChange={handleFilterChange}
           appliedFilters={activeFilters}
+          filterExtras={filterExtras}
+          extraFilterActive={extraFilterActive}
         >
          {headerActions}
          <SearchBar
+              className="w-full"
               placeholder="Search leads..."
               delay={250}
               onSearch={(q: string) => {

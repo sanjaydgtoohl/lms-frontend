@@ -5,9 +5,11 @@
  * @date 2026-05-25
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import EyeIcon from '../../assets/icons/EyeIcon';
+import { Eye } from 'lucide-react';
+import Table, { type Column } from '../../components/ui/Table';
+import { ROUTES } from '../../constants';
 import {
   getLatestTwoBriefs,
   getRecentActivities,
@@ -21,7 +23,67 @@ import {
   getBriefCountByPriority,
 } from '../../services/SalesDashboard';
 
-// New Leads will be fetched from API
+type DashboardTab = 'new' | 'brief' | 'follow' | 'meeting';
+
+const DASHBOARD_TABS: { id: DashboardTab; label: string }[] = [
+  { id: 'new', label: 'Leads' },
+  { id: 'brief', label: 'Brief' },
+  { id: 'follow', label: 'Follow Up' },
+  { id: 'meeting', label: 'Meeting Scheduled' },
+];
+
+const dash = (value: unknown) => (value == null || value === '' ? '-' : String(value));
+
+const TypeBadge = ({ label }: { label: string }) => (
+  <span className="inline-flex px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-800 text-xs font-medium whitespace-nowrap">
+    {label}
+  </span>
+);
+
+const getBrandName = (row: { brand?: { name?: string }; agency?: { name?: string } }) =>
+  dash(row.brand?.name ?? row.agency?.name);
+
+const getMobile = (row: { mobile_number?: { number?: string }[] }) => {
+  const first = row.mobile_number?.[0]?.number;
+  return dash(first);
+};
+
+const LEAD_COLUMNS: Column<any>[] = [
+  { key: 'type', header: 'Type', render: () => <TypeBadge label="Brand" /> },
+  { key: 'brand', header: 'Brand Name', render: (l) => getBrandName(l) },
+  { key: 'name', header: 'Contact Person', render: (l) => dash(l.name) },
+  { key: 'email', header: 'Email', className: 'max-w-[200px] truncate', render: (l) => dash(l.email) },
+  { key: 'priority', header: 'Priority', render: (l) => dash((l.priority as { name?: string })?.name) },
+  { key: 'call_status', header: 'Call Status', render: (l) => dash((l.call_status_relation as { name?: string })?.name) },
+  { key: 'lead_status', header: 'Lead Status', render: (l) => dash((l.lead_status_relation as { name?: string })?.name) },
+  { key: 'call_attempt', header: 'Call Attempts', render: (l) => dash(l.call_attempt) },
+];
+
+const LEAD_FOLLOW_COLUMNS: Column<any>[] = [
+  {
+    key: 'type',
+    header: 'Type',
+    render: (l) => <TypeBadge label={String(l.type ?? 'Lead')} />,
+  },
+  { key: 'name', header: 'Contact Person', render: (l) => dash(l.name) },
+  { key: 'brand', header: 'Brand Name', render: (l) => getBrandName(l) },
+  { key: 'email', header: 'Email', className: 'max-w-[200px] truncate', render: (l) => dash(l.email) },
+  { key: 'mobile', header: 'Mobile', render: (l) => getMobile(l) },
+  { key: 'priority', header: 'Priority', render: (l) => dash((l.priority as { name?: string })?.name) },
+  { key: 'call_status', header: 'Call Status', render: (l) => dash((l.call_status_relation as { name?: string })?.name) },
+  { key: 'lead_status', header: 'Lead Status', render: (l) => dash((l.lead_status_relation as { name?: string })?.name) },
+  { key: 'call_attempt', header: 'Call Attempts', render: (l) => dash(l.call_attempt) },
+];
+
+const BRIEF_COLUMNS: Column<any>[] = [
+  { key: 'type', header: 'Type', render: () => <TypeBadge label="Brief" /> },
+  { key: 'name', header: 'Brief Name', render: (b) => dash(b.name) },
+  { key: 'brand', header: 'Brand Name', render: (b) => dash((b.brand as { name?: string })?.name) },
+  { key: 'product_name', header: 'Product', render: (b) => dash(b.product_name) },
+  { key: 'budget', header: 'Budget', render: (b) => (b.budget != null ? `₹${b.budget}` : '-') },
+  { key: 'brief_status', header: 'Brief Status', render: (b) => dash((b.brief_status as { name?: string })?.name) },
+  { key: 'contact', header: 'Contact Person', render: (b) => dash((b.contact_person as { name?: string })?.name) },
+];
 
 const SalesDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -108,8 +170,6 @@ const SalesDashboard: React.FC = () => {
     }
   }, [selectedPriorityLeadId]);
 
-  // ...existing code...
-
   useEffect(() => {
     function handleClickOutside(event: MouseEvent | TouchEvent) {
       const target = event.target as Node;
@@ -137,7 +197,57 @@ const SalesDashboard: React.FC = () => {
     };
   }, [isPriorityDropdownOpenLead, isPriorityDropdownOpenBrief]);
 
-  // (Using mock data; no API calls in this implementation)
+  const { tableData, tableColumns } = useMemo(() => {
+    switch (activeTab) {
+      case 'brief':
+        return { tableData: briefs, tableColumns: BRIEF_COLUMNS };
+      case 'follow':
+        return { tableData: followUpLeads, tableColumns: LEAD_FOLLOW_COLUMNS };
+      case 'meeting':
+        return { tableData: meetingLeads, tableColumns: LEAD_FOLLOW_COLUMNS };
+      default:
+        return { tableData: leads, tableColumns: LEAD_COLUMNS };
+    }
+  }, [activeTab, leads, briefs, followUpLeads, meetingLeads]);
+
+  const handleViewAll = () => {
+    navigate(activeTab === 'brief' ? ROUTES.BRIEF.PIPELINE : ROUTES.LEAD.ALL);
+  };
+
+  const handleRowView = useCallback(
+    (item: { id?: string | number }) => {
+      const rowId = String(item.id ?? '');
+      if (activeTab === 'brief') {
+        navigate(ROUTES.BRIEF.EDIT(rowId));
+      } else {
+        navigate(ROUTES.LEAD.EDIT(rowId));
+      }
+    },
+    [activeTab, navigate],
+  );
+
+  const tableColumnsWithView = useMemo<Column<any>[]>(
+    () => [
+      ...tableColumns,
+      {
+        key: 'view',
+        header: 'View',
+        className: 'text-center',
+        render: (item) => (
+          <button
+            type="button"
+            onClick={() => handleRowView(item)}
+            className="inline-flex items-center justify-center w-8 h-8 !p-0 border-0 !bg-transparent rounded-full hover:!bg-orange-50 transition-colors"
+            title={activeTab === 'brief' ? 'View Brief' : 'View Lead'}
+            aria-label={activeTab === 'brief' ? 'View brief' : 'View lead'}
+          >
+            <Eye className="w-5 h-5 shrink-0 !text-orange-700" strokeWidth={2} />
+          </button>
+        ),
+      },
+    ],
+    [tableColumns, activeTab, handleRowView],
+  );
 
   return (
     <div className="space-y-6">
@@ -217,339 +327,38 @@ const SalesDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Tabs and leads list */}
-      <div className="border-b border-gray-200 pb-4">
-        <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
-          <div className="flex items-center flex-wrap gap-1 md:gap-2 bg-white rounded-lg overflow-x-auto border border-gray-200 sm:p-1 tabs-wrapper">
-            <span
-              onClick={() => setActiveTab('new')}
-              className={`px-3 md:px-4 py-2 rounded-lg cursor-pointer font-medium text-xs md:text-sm transition-all duration-300 whitespace-nowrap ${activeTab === 'new' ? 'bg-black text-white shadow' : 'text-gray-600 bg-gray-100 md:bg-white hover:bg-gray-200'}`}
-            >Leads</span>
-            <span
-              onClick={() => setActiveTab('brief')}
-              className={`px-3 md:px-4 py-2 rounded-lg cursor-pointer font-medium text-xs md:text-sm transition-all  whitespace-nowrap ${activeTab === 'brief' ? 'bg-black text-white shadow' : 'text-gray-600 bg-gray-100 md:bg-white hover:bg-gray-200'}`}
-            >Brief</span>
-            <span
-              onClick={() => setActiveTab('follow')}
-              className={`px-3 md:px-4 py-2 rounded-lg cursor-pointer font-medium text-xs md:text-sm transition-all  whitespace-nowrap ${activeTab === 'follow' ? 'bg-black text-white shadow' : 'text-gray-600 bg-gray-100 md:bg-white hover:bg-gray-200'}`}
-            >Follow Up</span>
-            <span
-              onClick={() => setActiveTab('meeting')}
-              className={`px-3 md:px-4 py-2 rounded-lg cursor-pointer font-medium text-xs md:text-sm transition-all  whitespace-nowrap ${activeTab === 'meeting' ? 'bg-black text-white shadow' : 'text-gray-600 bg-gray-100 md:bg-white hover:bg-gray-200'}`}
-            >Meeting Scheduled</span>
-          </div>
-          <a
-            className="a-tag-button"
-            onClick={() => {
-              if (activeTab === 'brief') {
-                navigate('/brief/Brief_Pipeline');
-              } else {
-                navigate('/lead-management/all-leads');
-              }
-            }}
-          >
+      {/* Tabs and data table */}
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 pt-4 border-b border-gray-200">
+          <nav className="flex gap-0 overflow-x-auto -mb-px" aria-label="Dashboard tabs">
+            {DASHBOARD_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-orange-500 text-orange-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+          <button type="button" className="a-tag-button shrink-0 self-start sm:self-center sm:mb-3" onClick={handleViewAll}>
             View All
-          </a>
+          </button>
         </div>
 
-        <div className="space-y-2 md:space-y-3">
-          {activeTab === 'new' && leads.map(l => (
-            <div key={l.id} className="flex flex-row flex-wrap items-center justify-between bg-white rounded-lg p-3 gap-2 md:gap-0 overflow-x-auto dashboard-tab-section border border-gray-200">
-
-              <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-x-3 sm:gap-8 overflow-x-auto overflow-y-hidden tabs-wrapper">
-
-                <div className="px-2 md:px-3 py-1 rounded-full bg-orange-200 text-orange-800 font-semibold text-xs whitespace-nowrap inline-block">
-                  Brand
-                </div>
-
-                <div className="text-xs flex sm:flex-col whitespace-nowrap">
-                  <span className="font-semibold text-gray-500 min-w-[100px] sm:min-w-[90px]">Brand Name</span>
-                  <span className="text-gray-700">{l.brand?.name || '-'}</span>
-                </div>
-
-                <div className="text-xs flex sm:flex-col whitespace-nowrap">
-                  <span className="font-semibold text-gray-500 min-w-[100px] sm:min-w-[90px]">Contact Person</span>
-                  <span className="text-gray-700">{l.name || '-'}</span>
-                </div>
-
-                <div className="text-xs flex sm:flex-col whitespace-nowrap">
-                  <span className="font-semibold text-gray-500 min-w-[100px] sm:min-w-[90px]">Email</span>
-                  <span className="text-gray-700 text-ellipsis overflow-hidden max-w-xs">{l.email}</span>
-                </div>
-
-                <div className="text-xs flex sm:flex-col whitespace-nowrap">
-                  <span className="font-semibold text-gray-500 min-w-[100px] sm:min-w-[90px]">Priority</span>
-                  <span className="text-gray-700">{l.priority?.name || '-'}</span>
-                </div>
-
-                <div className="text-xs flex sm:flex-col whitespace-nowrap">
-                  <span className="font-semibold text-gray-500 min-w-[100px] sm:min-w-[90px]">Call Status</span>
-                  <span className="text-gray-700">{l.call_status_relation?.name || '-'}</span>
-                </div>
-
-                <div className="text-xs flex sm:flex-col whitespace-nowrap">
-                  <span className="font-semibold text-gray-500 min-w-[100px] sm:min-w-[90px]">Lead Status</span>
-                  <span className="text-gray-700">{l.lead_status_relation?.name || '-'}</span>
-                </div>
-
-                <div className="text-xs flex sm:flex-col whitespace-nowrap">
-                  <span className="font-semibold text-gray-500 min-w-[100px] sm:min-w-[90px]">Call Attempts</span>
-                  <span className="text-gray-700">{l.call_attempt}</span>
-                </div>
-
-              </div>
-              <div className="flex items-center gap-4 flex-shrink-0">
-                <span
-                  className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer"
-                  onClick={() => navigate(`/lead-management/edit/${l.id}`)}
-                  title="Edit Lead"
-                >
-                  <EyeIcon className="w-5 h-5 text-orange-800" />
-                </span>
-              </div>
-            </div>
-          ))}
-          {activeTab === 'brief' && briefs.map(b => (
-            <div key={b.id} className="flex flex-row flex-wrap items-center justify-between bg-white rounded-lg p-3 gap-2 md:gap-0 overflow-x-auto dashboard-tab-section border border-gray-200">
-
-              <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-x-3 sm:gap-8 overflow-x-auto overflow-y-hidden tabs-wrapper">
-
-                <div className="px-2 md:px-3 py-1 rounded-full bg-orange-200 text-orange-800 font-semibold text-xs whitespace-nowrap">
-                  Brief
-                </div>
-
-                <div className="text-xs flex sm:flex-col whitespace-nowrap">
-                  <span className="font-semibold text-gray-500 min-w-[100px] sm:min-w-[90px]">
-                    Brief Name
-                  </span>
-                  <span className="text-gray-700">{b.name}</span>
-                </div>
-
-                <div className="text-xs flex sm:flex-col whitespace-nowrap">
-                  <span className="font-semibold text-gray-500 min-w-[100px] sm:min-w-[90px]">
-                    Brand Name
-                  </span>
-                  <span className="text-gray-700">{b.brand?.name || '-'}</span>
-                </div>
-
-                <div className="text-xs flex sm:flex-col whitespace-nowrap">
-                  <span className="font-semibold text-gray-500 min-w-[100px] sm:min-w-[90px]">
-                    Product
-                  </span>
-                  <span className="text-gray-700">{b.product_name}</span>
-                </div>
-
-                <div className="text-xs flex sm:flex-col whitespace-nowrap">
-                  <span className="font-semibold text-gray-500 min-w-[100px] sm:min-w-[90px]">
-                    Budget
-                  </span>
-                  <span className="text-gray-700">₹{b.budget}</span>
-                </div>
-
-                <div className="text-xs flex sm:flex-col whitespace-nowrap">
-                  <span className="font-semibold text-gray-500 min-w-[100px] sm:min-w-[90px]">
-                    Brief Status
-                  </span>
-                  <span className="text-xs rounded px-2 py-0.5 text-black">
-                    {b.brief_status?.name}
-                  </span>
-                </div>
-
-                <div className="text-xs flex sm:flex-col whitespace-nowrap">
-                  <span className="font-semibold text-gray-500 min-w-[100px] sm:min-w-[90px]">
-                    Contact Person
-                  </span>
-                  <span className="text-gray-700">{b.contact_person?.name || '-'}</span>
-                </div>
-
-              </div>
-
-              <div className="flex items-center gap-4 flex-shrink-0">
-                <span
-                  className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer"
-                  onClick={() => navigate(`/brief/${b.id}/edit`)}
-                  title="View Brief"
-                >
-                  <EyeIcon className="w-5 h-5 text-orange-800" />
-                </span>
-              </div>
-
-            </div>
-          ))}
-          {activeTab === 'follow' && followUpLeads.map(f => (
-            <div key={f.id} className="flex flex-row flex-wrap items-center justify-between bg-white rounded-lg p-3 gap-2 md:gap-0 overflow-x-auto dashboard-tab-section border border-gray-200">
-
-              <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-x-3 sm:gap-8 overflow-x-auto overflow-y-hidden tabs-wrapper">
-
-                <div className="px-2 md:px-3 py-1 rounded-full bg-orange-200 text-orange-800 font-semibold text-xs whitespace-nowrap">
-                  {f.type}
-                </div>
-
-                <div className="text-xs flex sm:flex-col whitespace-nowrap">
-                  <span className="font-semibold text-gray-500 min-w-[100px] sm:min-w-[90px]">
-                    Contact Person Name
-                  </span>
-                  <span className="text-gray-700">{f.name}</span>
-                </div>
-
-                <div className="text-xs flex sm:flex-col whitespace-nowrap">
-                  <span className="font-semibold text-gray-500 min-w-[100px] sm:min-w-[90px]">
-                    Brand Name
-                  </span>
-                  <span className="text-gray-700">
-                    {f.brand ? f.brand.name : f.agency ? f.agency.name : '-'}
-                  </span>
-                </div>
-
-                <div className="text-xs flex sm:flex-col whitespace-nowrap">
-                  <span className="font-semibold text-gray-500 min-w-[100px] sm:min-w-[90px]">
-                    Email
-                  </span>
-                  <span className="text-gray-700 text-ellipsis overflow-hidden max-w-xs">
-                    {f.email}
-                  </span>
-                </div>
-
-                <div className="text-xs flex sm:flex-col whitespace-nowrap">
-                  <span className="font-semibold text-gray-500 min-w-[100px] sm:min-w-[90px]">
-                    Mobile
-                  </span>
-                  <span className="text-gray-700">
-                    {f.mobile_number && f.mobile_number.length > 0
-                      ? f.mobile_number[0].number
-                      : '-'}
-                  </span>
-                </div>
-
-                <div className="text-xs flex sm:flex-col whitespace-nowrap">
-                  <span className="font-semibold text-gray-500 min-w-[100px] sm:min-w-[90px]">
-                    Priority
-                  </span>
-                  <span className="text-gray-700">{f.priority?.name || '-'}</span>
-                </div>
-
-                <div className="text-xs flex sm:flex-col whitespace-nowrap">
-                  <span className="font-semibold text-gray-500 min-w-[100px] sm:min-w-[90px]">
-                    Call Status
-                  </span>
-                  <span className="text-gray-700">{f.call_status_relation?.name || '-'}</span>
-                </div>
-
-                <div className="text-xs flex sm:flex-col whitespace-nowrap">
-                  <span className="font-semibold text-gray-500 min-w-[100px] sm:min-w-[90px]">
-                    Lead Status
-                  </span>
-                  <span className="text-gray-700">{f.lead_status_relation?.name || '-'}</span>
-                </div>
-
-                <div className="text-xs flex sm:flex-col whitespace-nowrap">
-                  <span className="font-semibold text-gray-500 min-w-[100px] sm:min-w-[90px]">
-                    Call Attempts
-                  </span>
-                  <span className="text-gray-700">{f.call_attempt}</span>
-                </div>
-
-              </div>
-
-              <div className="flex items-center gap-4 flex-shrink-0">
-                <span
-                  className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer"
-                  onClick={() => navigate(`/lead-management/edit/${f.id}`)}
-                  title="Edit Lead"
-                >
-                  <EyeIcon className="w-5 h-5 text-orange-800" />
-                </span>
-              </div>
-
-            </div>
-          ))}
-          {activeTab === 'meeting' && meetingLeads.map(m => (
-            <div key={m.id} className="flex flex-row flex-wrap items-center justify-between bg-white rounded-lg p-3 gap-2 md:gap-0 overflow-x-auto dashboard-tab-section border border-gray-200">
-
-              <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-x-3 sm:gap-8 overflow-x-auto overflow-y-hidden tabs-wrapper">
-
-                <div className="px-2 md:px-3 py-1 rounded-full bg-orange-200 text-orange-800 font-semibold text-xs whitespace-nowrap">
-                  {m.type}
-                </div>
-
-                <div className="text-xs flex sm:flex-col whitespace-nowrap">
-                  <span className="font-semibold text-gray-500 min-w-[100px] sm:min-w-[90px]">
-                    Contact Person Name
-                  </span>
-                  <span className="text-gray-700">{m.name}</span>
-                </div>
-
-                <div className="text-xs flex sm:flex-col whitespace-nowrap">
-                  <span className="font-semibold text-gray-500 min-w-[100px] sm:min-w-[90px]">
-                    Brand Name
-                  </span>
-                  <span className="text-gray-700">
-                    {m.brand ? m.brand.name : m.agency ? m.agency.name : '-'}
-                  </span>
-                </div>
-
-                <div className="text-xs flex sm:flex-col whitespace-nowrap">
-                  <span className="font-semibold text-gray-500 min-w-[100px] sm:min-w-[90px]">
-                    Email
-                  </span>
-                  <span className="text-gray-700 text-ellipsis overflow-hidden max-w-xs">
-                    {m.email}
-                  </span>
-                </div>
-
-                <div className="text-xs flex sm:flex-col whitespace-nowrap">
-                  <span className="font-semibold text-gray-500 min-w-[100px] sm:min-w-[90px]">
-                    Mobile
-                  </span>
-                  <span className="text-gray-700">
-                    {m.mobile_number && m.mobile_number.length > 0
-                      ? m.mobile_number[0].number
-                      : '-'}
-                  </span>
-                </div>
-
-                <div className="text-xs flex sm:flex-col whitespace-nowrap">
-                  <span className="font-semibold text-gray-500 min-w-[100px] sm:min-w-[90px]">
-                    Priority
-                  </span>
-                  <span className="text-gray-700">{m.priority?.name || '-'}</span>
-                </div>
-
-                <div className="text-xs flex sm:flex-col whitespace-nowrap">
-                  <span className="font-semibold text-gray-500 min-w-[100px] sm:min-w-[90px]">
-                    Call Status
-                  </span>
-                  <span className="text-gray-700">{m.call_status_relation?.name || '-'}</span>
-                </div>
-
-                <div className="text-xs flex sm:flex-col whitespace-nowrap">
-                  <span className="font-semibold text-gray-500 min-w-[100px] sm:min-w-[90px]">
-                    Lead Status
-                  </span>
-                  <span className="text-gray-700">{m.lead_status_relation?.name || '-'}</span>
-                </div>
-
-                <div className="text-xs flex sm:flex-col whitespace-nowrap">
-                  <span className="font-semibold text-gray-500 min-w-[100px] sm:min-w-[90px]">
-                    Call Attempts
-                  </span>
-                  <span className="text-gray-700">{m.call_attempt}</span>
-                </div>
-
-              </div>
-
-              <div className="flex items-center gap-4 flex-shrink-0">
-                <span
-                  className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer"
-                  onClick={() => navigate(`/lead-management/edit/${m.id}`)}
-                  title="Edit Lead"
-                >
-                  <EyeIcon className="w-5 h-5 text-orange-800" />
-                </span>
-              </div>
-
-            </div>
-          ))}
+        <div className="overflow-x-auto">
+          <Table
+            data={tableData}
+            columns={tableColumnsWithView}
+            compact
+            desktopOnMobile
+            keyExtractor={(item, index) => String(item.id ?? index)}
+          />
         </div>
       </div>
 

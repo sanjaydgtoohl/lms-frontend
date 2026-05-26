@@ -558,6 +558,7 @@ const AllLeads: React.FC = () => {
           appliedFilters={activeFilters}
         >
           <SearchBar
+            className="w-full"
             placeholder="Search leads..."
             delay={250}
             onSearch={(q: string) => {
