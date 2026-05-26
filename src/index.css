@@ -791,9 +791,18 @@ html.dark {
 }
 
 /* Shared data table + filter toolbar (Table / TableHeader) */
-.lms-table-header .app-search-bar,
-.lms-table-header > div > div > .relative.flex.items-center {
+.lms-table-header__actions .app-search-bar,
+.lms-table-header__actions > .relative.flex.items-center {
   width: 100%;
+  min-width: 12rem;
+  max-width: 14rem;
+}
+
+@media (min-width: 640px) {
+  .lms-table-header__actions .app-search-bar,
+  .lms-table-header__actions > .relative.flex.items-center {
+    width: 14rem;
+  }
 }
 
 .lms-data-table-wrap {

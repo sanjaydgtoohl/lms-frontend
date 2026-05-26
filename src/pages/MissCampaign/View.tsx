@@ -751,8 +751,20 @@ const View: React.FC = () => {
               onFilterChange={handleFilterChange}
               appliedFilters={activeFilters}
             >
-              <ExportExcelButton fetchExport={handleExportExcel} />
-              <SearchBar delay={0} placeholder="Search Pre Lead" onSearch={(q: string) => { setSearchQuery(q); setCurrentPage(1); }} />
+              <SearchBar
+                className="w-full min-w-[12rem] sm:w-56 shrink-0"
+                delay={0}
+                placeholder="Search Pre Lead"
+                onSearch={(q: string) => {
+                  setSearchQuery(q);
+                  setCurrentPage(1);
+                }}
+              />
+              <ExportExcelButton
+                className="shrink-0"
+                buttonClassName="btn-primary !bg-gray-800 inline-flex items-center whitespace-nowrap shrink-0"
+                fetchExport={handleExportExcel}
+              />
             </TableHeader>
 
 
