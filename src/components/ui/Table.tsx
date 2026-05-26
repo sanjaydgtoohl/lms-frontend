@@ -2,6 +2,7 @@ import React from 'react';
 import ActionMenu from './ActionMenu';
 import { Loader2 } from 'lucide-react';
 import { toTitleCase } from '../../utils';
+import { TableTextCell, useTableCellTooltip } from './TableCellTooltip';
 
 export type Column<T> = {
   /** unique key for the column */
@@ -18,6 +19,12 @@ export type Column<T> = {
   headerClassName?: string;
   /** minimum width for column (px number or CSS value) */
   minWidth?: number | string;
+  /** maximum width for column (px number or CSS value) */
+  maxWidth?: number | string;
+  /** allow dropdowns/menus to extend outside the cell (default false) */
+  allowOverflow?: boolean;
+  /** disable 150-char truncation + hover tooltip for plain text (default false) */
+  disableTooltip?: boolean;
 };
 
 interface TableProps<T> {
@@ -47,6 +54,7 @@ interface TableProps<T> {
 
 const Table = <T,>(props: TableProps<T>) => {
   const { data, columns, startIndex = 0, loading = false, onEdit, onView, onDelete, onUpload, onChat, onCreateMeeting, onBriefCreation, editPermissionSlug, viewPermissionSlug, deletePermissionSlug, uploadPermissionSlug, keyExtractor, compact = false, desktopOnMobile = true } = props;
+  const { show: showCellTooltip, hide: hideCellTooltip, TooltipLayer } = useTableCellTooltip();
 
   // responsive padding classes used for cells/headers; compact mode reduces padding further
   // small screens get compact padding while larger screens keep desktop spacing
@@ -57,10 +65,67 @@ const Table = <T,>(props: TableProps<T>) => {
     ? 'px-3 py-2.5 lg:px-4'
     : 'px-4 py-3 lg:px-5';
 
-  const colMinWidth = (col: Column<T>) =>
-    col.minWidth != null
-      ? { minWidth: typeof col.minWidth === 'number' ? `${col.minWidth}px` : col.minWidth }
-      : undefined;
+  const toCssSize = (value: number | string) =>
+    typeof value === 'number' ? `${value}px` : value;
+
+  const colStyle = (col: Column<T>): React.CSSProperties => {
+    const style: React.CSSProperties = {};
+    if (col.minWidth != null) style.minWidth = toCssSize(col.minWidth);
+    if (col.maxWidth != null) style.maxWidth = toCssSize(col.maxWidth);
+    return style;
+  };
+
+  const renderCellInner = (content: React.ReactNode, col: Column<T>) => {
+    if (col.allowOverflow || React.isValidElement(content)) {
+      return <div className="lms-table-cell lms-table-cell--interactive">{content}</div>;
+    }
+
+    const text = content === null || content === undefined ? '' : String(content);
+
+    if (col.disableTooltip) {
+      return (
+        <div className="lms-table-cell">
+          <span className="lms-table-cell__text">{text}</span>
+        </div>
+      );
+    }
+
+    return (
+      <TableTextCell
+        text={text}
+        onShow={showCellTooltip}
+        onHide={hideCellTooltip}
+      />
+    );
+  };
+
+  const extractCellContent = (col: Column<T>, item: T): React.ReactNode => {
+    const extracted = col.render
+      ? col.render(item)
+      : (() => {
+          const raw = String((item as Record<string, unknown>)[col.key] ?? '-');
+          if (raw === '-' || /^[#\d]/.test(raw) || /\d{2}[-/.]\d{2}[-/.]\d{2,4}/.test(raw)) {
+            return raw;
+          }
+          return toTitleCase(raw);
+        })();
+
+    if (React.isValidElement(extracted)) return extracted;
+
+    if (extracted === null || extracted === undefined) return '';
+
+    if (typeof extracted === 'object') {
+      const value = extracted as { name?: string };
+      if (value && 'name' in value) return String(value.name ?? '');
+      try {
+        return String(JSON.stringify(extracted));
+      } catch {
+        return String(extracted);
+      }
+    }
+
+    return extracted;
+  };
 
   // Always show table structure, even when loading or empty
   const hasData = data && data.length > 0;
@@ -68,25 +133,28 @@ const Table = <T,>(props: TableProps<T>) => {
 
   return (
     <>
+      {TooltipLayer}
       {/* Desktop Table View */}
       <div className={`lms-data-table-wrap ${desktopOnMobile ? 'block' : 'hidden lg:block'} overflow-x-auto overflow-y-visible`}>
         <div className="relative min-w-0">
-          <table className="lms-data-table min-w-full border-separate border-spacing-0">
+          <table className="lms-data-table w-max min-w-full border-collapse">
           <thead>
             <tr>
               {columns.map(col => (
                 <th
                   key={String(col.key)}
                   className={`${headerPadClass} text-left text-xs font-semibold uppercase tracking-wide text-[#007b83] bg-slate-50 border-b border-gray-200 whitespace-nowrap ${col.headerClassName || ''}`}
-                  style={colMinWidth(col)}
+                  style={colStyle(col)}
                 >
-                  {typeof col.header === 'string' ? toTitleCase(col.header) : col.header}
+                  <span className="block truncate">
+                    {typeof col.header === 'string' ? toTitleCase(col.header) : col.header}
+                  </span>
                 </th>
               ))}
               {showActions && (
                 <th
-                  className={`${headerPadClass} text-center text-xs font-semibold uppercase tracking-wide text-[#007b83] bg-slate-50 border-b border-gray-200 whitespace-nowrap sticky right-0 z-[1]`}
-                  style={{ minWidth: 88 }}
+                  className={`${headerPadClass} lms-table-actions-col text-center text-xs font-semibold uppercase tracking-wide text-[#007b83] bg-slate-50 border-b border-l border-gray-200 whitespace-nowrap`}
+                  style={{ minWidth: 96, width: 96 }}
                 >
                   {toTitleCase('Actions')}
                 </th>
@@ -134,42 +202,16 @@ const Table = <T,>(props: TableProps<T>) => {
                     {columns.map(col => (
                     <td
                       key={col.key}
-                      className={`${cellPadClass} text-sm text-gray-800 align-middle ${col.className || ''}`}
-                      style={colMinWidth(col)}
+                      className={`${cellPadClass} text-sm text-gray-800 align-middle border-b border-gray-100 ${
+                        col.allowOverflow ? 'overflow-visible' : 'overflow-hidden'
+                      } ${col.className || ''}`}
+                      style={colStyle(col)}
                     >
-                          {(() => {
-                            // Get the raw output from renderer or default extractor
-                            const extracted = col.render
-                              ? col.render(item)
-                              : (() => {
-                                const raw = String((item as Record<string, unknown>)[col.key] ?? '-');
-                                // Don't title-case obvious codes, numbers, or hashes
-                               if (raw === '-' || /^[#\d]/.test(raw) || /\d{2}[-/.]\d{2}[-/.]\d{2,4}/.test(raw)) return raw;
-                                return toTitleCase(raw);
-                              })();
-
-                            // If renderer returned a valid React element, render it directly
-                            if (React.isValidElement(extracted)) return extracted;
-
-                            // Defensive handling for plain objects (avoid React child error)
-                            if (extracted === null || extracted === undefined) return '';
-                            if (typeof extracted === 'object') {
-                              // Prefer common `name` field when available
-                              const _ex: any = extracted as any;
-                              if (_ex && 'name' in _ex) return String(_ex.name ?? '');
-                              try {
-                                return String(JSON.stringify(extracted));
-                              } catch {
-                                return String(extracted);
-                              }
-                            }
-
-                            return extracted;
-                          })()}
+                      {renderCellInner(extractCellContent(col, item), col)}
                     </td>
                   ))}
                   {showActions && (
-                    <td className={`${cellPadClass} whitespace-nowrap text-center text-sm relative bg-white sticky right-0 group-hover:bg-slate-50/80`}>
+                    <td className={`${cellPadClass} lms-table-actions-col whitespace-nowrap text-center text-sm relative border-b border-l border-gray-100 bg-white group-hover:bg-slate-50/80`}>
                       <div className="flex justify-center">
                         <ActionMenu
                           isLast={index === data.length - 1}

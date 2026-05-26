@@ -520,6 +520,15 @@
   border-color: var(--table-border) !important;
 }
 
+.dark .lms-table-actions-col {
+  background-color: var(--card-bg, #1a2220) !important;
+  border-color: var(--table-border) !important;
+}
+
+.dark .lms-data-table tbody tr.group:hover .lms-table-actions-col {
+  background-color: var(--table-row-hover) !important;
+}
+
 .dark table tbody tr:hover,
 .dark tr.transition-colors:hover {
   background-color: var(--table-row-hover) !important;

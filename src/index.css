@@ -801,17 +801,38 @@ html.dark {
 }
 
 .lms-data-table {
-  @apply w-full text-sm;
-}
-
-.lms-data-table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 2;
+  @apply text-sm;
 }
 
 .lms-data-table tbody td {
   vertical-align: middle;
+}
+
+.lms-table-cell {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.lms-table-cell__text {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lms-table-cell--interactive {
+  max-width: 100%;
+}
+
+.lms-table-actions-col {
+  position: sticky;
+  right: 0;
+  z-index: 5;
+  box-shadow: -6px 0 12px -8px rgba(15, 23, 42, 0.2);
+}
+
+.lms-data-table thead .lms-table-actions-col {
+  z-index: 6;
 }
 
 
