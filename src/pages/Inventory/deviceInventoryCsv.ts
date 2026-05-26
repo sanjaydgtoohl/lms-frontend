@@ -1,3 +1,10 @@
+/**
+ * @file deviceInventoryCsv.ts
+ * @description CSV parse and export helpers for device inventory.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import type { CsvColumn } from '../../components/ui/ExportCsvButton';
 import type { DeviceData } from '../../types/inventory.types';
 

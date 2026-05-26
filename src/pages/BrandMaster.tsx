@@ -1,3 +1,10 @@
+/**
+ * @file BrandMaster.tsx
+ * @description Brand master data list, create, view, and edit.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import CreateBrandForm from './CreateBrandForm';
 import MasterView from '../components/ui/MasterView';
@@ -11,34 +18,16 @@ import { matchesQuery } from '../utils/index.tsx';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import AgenciesModal from '../components/ui/AgenciesModal';
 import { deleteBrand } from '../services/BrandMaster';
-import { listBrands, getBrand, type BrandItem as ServiceBrandItem } from '../services/BrandMaster';
+import { listBrands, getBrand } from '../services/BrandMaster';
+import type { BrandItem } from '../types/master/master.types';
 import { usePermissions } from '../hooks/SidebarMenuHooks';
 
 import SweetAlert from '../utils/SweetAlert';
 import TableHeader from '../components/ui/TableHeader.tsx';
 
-type Brand = ServiceBrandItem;
+type Brand = BrandItem;
 
-// Helpers to parse API date strings like "19-11-2025 10:35:57"
-const parseApiDateToISO = (s?: string) => {
-  if (!s) return '';
-  const m = String(s).trim().match(/^(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2})(?::(\d{2}))?$/);
-  if (!m) return s;
-  const [, dd, mm, yyyy, hh, min, sec] = m;
-  return `${yyyy}-${mm}-${dd}T${hh}:${min}:${sec || '00'}`;
-};
-
-const formatDisplayDate = (s?: string) => {
-  if (!s) return '-';
-  try {
-    const iso = parseApiDateToISO(s);
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return String(s);
-    return d.toLocaleString();
-  } catch {
-    return String(s);
-  }
-};
+import { formatDisplayDate } from '../utils/masterDate';
 
 const BrandMaster: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -199,7 +188,7 @@ const BrandMaster: React.FC = () => {
   }, [currentPage, itemsPerPage, searchQuery, isListRoute]);
 
   const handlePageChange = (page: number) => setCurrentPage(page);
-
+  console.log("isCreateRoute ",isCreateRoute);
   return (
     <div className="flex-1 w-full max-w-full overflow-x-hidden">
       <ConfirmDialog
@@ -241,6 +230,7 @@ const BrandMaster: React.FC = () => {
             createButtonLabel="Create Brand"
             showBreadcrumb={true}
             showCreateButton={hasPermission('brand.create')}
+            createPermissionSlug="brand.create"
           />
 
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-4">

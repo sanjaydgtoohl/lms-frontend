@@ -1,3 +1,10 @@
+/**
+ * @file index.ts
+ * @description Barrel exports for user management (RBAC) pages.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 export { default as AllPermissions } from './Permission/AllPermissions';
 export { default as CreatePermission } from './Permission/CreatePermission';
 export { default as EditPermission } from './Permission/EditPermission';

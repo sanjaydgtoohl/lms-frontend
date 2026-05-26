@@ -1,15 +1,18 @@
+/**
+ * @file CreateIndustryForm.tsx
+ * @description Form to create or update an industry master record.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { MasterFormHeader } from '../components/ui';
 import { createIndustry } from '../services/IndustryMaster';
 import { showSuccess, showError } from '../utils/notifications';
+import type { CreateIndustryFormProps } from '../types/pages/forms.types';
 
-type Props = {
-  onClose: () => void;
-  onSave?: (data: any) => void;
-};
-
-const CreateIndustryForm: React.FC<Props> = ({ onClose, onSave }) => {
+const CreateIndustryForm: React.FC<CreateIndustryFormProps> = ({ onClose, onSave }) => {
   const [name, setName] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);

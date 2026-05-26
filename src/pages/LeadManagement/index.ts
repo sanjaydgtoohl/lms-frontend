@@ -1,3 +1,10 @@
+/**
+ * @file index.ts
+ * @description Barrel exports for lead management pages.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import AllLeads from './AllLeads';
 import CreateLead from './CreateLead';
 import EditLead from './EditLead';

@@ -1,12 +1,14 @@
 // components/PageHeader.tsx
 import { Filter, X } from "lucide-react";
 import SelectField from "./SelectField";
+import MultiSelectDropdown from "./MultiSelectDropdown";
 import React, { useState, useRef, useEffect } from "react";
 
 interface FilterOption {
     key: string;
     label: string;
     options: { value: string; label: string }[];
+    isMulti?: boolean;
 }
 
 interface PageHeaderProps {
@@ -16,6 +18,12 @@ interface PageHeaderProps {
     onFilterChange?: (filters: Record<string, string>) => void;
     appliedFilters?: Record<string, string>;
 }
+
+const parseFilterValues = (value?: string): string[] =>
+    value ? value.split(',').map((v) => v.trim()).filter(Boolean) : [];
+
+const serializeFilterValues = (values: string[]): string =>
+    values.filter(Boolean).join(',');
 
 const TableHeader: React.FC<PageHeaderProps> = ({
     title,
@@ -58,7 +66,16 @@ const TableHeader: React.FC<PageHeaderProps> = ({
         };
     }, []);
 
-    const hasActiveFilters = Object.keys(appliedFilters).length > 0;
+    const hasActiveFilters = Object.keys(appliedFilters).some(
+        (key) => parseFilterValues(appliedFilters[key]).length > 0
+    );
+
+    const activeFilterCount = Object.values(appliedFilters).reduce(
+        (count, value) => count + (parseFilterValues(value).length > 0 ? 1 : 0),
+        0
+    );
+
+    const hasMultiselectFilters = filterOptions.some((filter) => filter.isMulti);
 
     return (
         <div className="bg-gray-50 px-3 md:px-5 py-3 md:py-4 border-b border-gray-200">
@@ -81,13 +98,13 @@ const TableHeader: React.FC<PageHeaderProps> = ({
                                 Filters
                                 {hasActiveFilters && (
                                     <span className="bg-orange-600 text-white text-xs w-5 leading-none flex justify-center items-center aspect-square rounded-full">
-                                        {Object.keys(appliedFilters).length}
+                                        {activeFilterCount}
                                     </span>
                                 )}
                             </button>
 
                             {showFilters && (
-                                <div className="absolute left-0 sm:right-0 top-full mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                                <div className={`absolute left-0 sm:right-0 top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 ${hasMultiselectFilters ? 'w-80' : 'w-64'}`}>
                                     <div className="p-4">
                                         <div className="flex items-center justify-between mb-3">
                                             <h3 className="text-sm font-medium text-gray-900">Filters</h3>
@@ -103,38 +120,68 @@ const TableHeader: React.FC<PageHeaderProps> = ({
                                         </div>
 
                                         <div className="space-y-3">
-                                            {filterOptions.map((filter) => (
+                                            {filterOptions.map((filter) => {
+                                                const isMulti = Boolean(filter.isMulti);
+                                                const selectedValues = parseFilterValues(appliedFilters[filter.key]);
+
+                                                return (
                                                 <div key={filter.key} className="relative">
                                                     <label className="block text-xs font-medium text-gray-700 mb-1">
                                                         {filter.label}
                                                     </label>
 
                                                     <div className="relative">
-                                                        <SelectField
-                                                            name={filter.key}
-                                                            value={appliedFilters[filter.key] || ''}
-                                                            onChange={(value) =>
-                                                                handleFilterChange(filter.key, String(value))
-                                                            }
-                                                            options={filter.options}
-                                                            placeholder={`Search or select ${filter.label}`}
-                                                            searchable={true}
-                                                            inputClassName="border-gray-200 focus:ring-blue-500 pr-8"
-                                                            className="w-full"
-                                                        />
+                                                        {isMulti ? (
+                                                            <MultiSelectDropdown
+                                                                name={filter.key}
+                                                                value={selectedValues}
+                                                                onChange={(vals) =>
+                                                                    handleFilterChange(
+                                                                        filter.key,
+                                                                        serializeFilterValues(vals)
+                                                                    )
+                                                                }
+                                                                options={filter.options}
+                                                                placeholder={`Select ${filter.label}`}
+                                                                inputClassName="border-gray-200 focus:ring-blue-500"
+                                                                className="w-full"
+                                                                horizontalScroll
+                                                            />
+                                                        ) : (
+                                                            <>
+                                                                <SelectField
+                                                                    name={filter.key}
+                                                                    value={appliedFilters[filter.key] || ''}
+                                                                    onChange={(value) => {
+                                                                        const single = Array.isArray(value)
+                                                                            ? (value[0] ?? '')
+                                                                            : value;
+                                                                        handleFilterChange(filter.key, String(single));
+                                                                    }}
+                                                                    options={filter.options}
+                                                                    placeholder={`Select ${filter.label}`}
+                                                                    searchable={false}
+                                                                    isMulti={false}
+                                                                    autoCloseOnSelect={true}
+                                                                    inputClassName="border-gray-200 focus:ring-blue-500 pr-8"
+                                                                    className="w-full"
+                                                                />
 
-                                                        {/* ✅ Remove single filter icon */}
-                                                        {appliedFilters[filter.key] && (
-                                                            <button
-                                                                onClick={() => handleFilterChange(filter.key, '')}
-                                                                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500"
-                                                            >
-                                                                <X className="w-4 h-4" />
-                                                            </button>
+                                                                {appliedFilters[filter.key] && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleFilterChange(filter.key, '')}
+                                                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500"
+                                                                    >
+                                                                        <X className="w-4 h-4" />
+                                                                    </button>
+                                                                )}
+                                                            </>
                                                         )}
                                                     </div>
                                                 </div>
-                                            ))}
+                                            );
+                                            })}
                                         </div>
                                     </div>
                                 </div>

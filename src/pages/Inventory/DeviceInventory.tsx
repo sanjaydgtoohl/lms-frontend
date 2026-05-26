@@ -1,3 +1,10 @@
+/**
+ * @file DeviceInventory.tsx
+ * @description Device inventory list, import, export, and CRUD.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Filter } from 'lucide-react';
 import Pagination from '../../components/ui/Pagination';
@@ -15,39 +22,68 @@ import {
 } from '../../services/DeviceInventory';
 import { DEVICE_INVENTORY_CSV_COLUMNS } from './deviceInventoryCsv';
 
+const DEFAULT_APPLIED_LOCATION = {
+  country: 'India',
+  state: '',
+  city: '',
+  zoneArea: '',
+  subZoneArea: '',
+  pincode: '',
+  arterialRoute: '',
+  modeOfMedia: '',
+  publisher: '',
+  mainCategory: '',
+  categorySub: '',
+  category: '',
+  locationType: '',
+  orientation: '',
+  resolution: '',
+  screenLocation: '',
+  stretch: '',
+  property: '',
+};
+
 const DeviceInventory: React.FC = () => {
   const navigate = useNavigate();
   const filterAnchorRef = useRef<HTMLButtonElement>(null);
   const [data, setData] = useState<DeviceData[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
-  const [appliedLocation, setAppliedLocation] = useState({
-    country: 'India',
-    state: '',
-    city: '',
-    zoneArea: '',
-    subZoneArea: '',
-    pincode: '',
-    arterialRoute: '',
-    modeOfMedia: '',
-    publisher: '',
-    mainCategory: '',
-    categorySub: '',
-    category: '',
-    locationType: '',
-    orientation: '',
-    resolution: '',
-    screenLocation: '',
-    stretch: '',
-    property: '',
-  });
+  const [appliedLocation, setAppliedLocation] = useState(DEFAULT_APPLIED_LOCATION);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(false);
 
+  const getInventoryFilters = useCallback(
+    () => ({
+      search: searchQuery?.trim() ? searchQuery.trim() : undefined,
+      country: appliedLocation.country?.trim() || undefined,
+      state: appliedLocation.state.trim() || undefined,
+      city: appliedLocation.city.trim() || undefined,
+      zone: appliedLocation.zoneArea?.trim() || undefined,
+      subZoneArea: appliedLocation.subZoneArea?.trim() || undefined,
+      pincode: appliedLocation.pincode.trim() || undefined,
+      arterialRoute: appliedLocation.arterialRoute.trim() || undefined,
+      modeOfMedia: appliedLocation.modeOfMedia?.trim() || undefined,
+      publisher: appliedLocation.publisher.trim() || undefined,
+      mainCategory: appliedLocation.mainCategory.trim() || undefined,
+      categorySub: appliedLocation.categorySub.trim() || undefined,
+      category: appliedLocation.category.trim() || undefined,
+      locationType: appliedLocation.locationType.trim() || undefined,
+      orientation: appliedLocation.orientation.trim() || undefined,
+      resolution: appliedLocation.resolution.trim() || undefined,
+      screenLocation: appliedLocation.screenLocation.trim() || undefined,
+      stretch: appliedLocation.stretch.trim() || undefined,
+      property: appliedLocation.property.trim() || undefined,
+    }),
+    [searchQuery, appliedLocation]
+  );
+
   const hasActiveLocationFilter = Boolean(
-    Object.entries(appliedLocation).some(([, value]) => {
+    Object.entries(appliedLocation).some(([key, value]) => {
+      // "India" is the default country and should not mark filter as active.
+      if (key === 'country' && value.trim() === DEFAULT_APPLIED_LOCATION.country) return false;
       const trimmed = value.trim();
       if (!trimmed) return false;
       return true;
@@ -57,47 +93,9 @@ const DeviceInventory: React.FC = () => {
   const exportFetchRows = useCallback(
     () =>
       fetchAllDeviceInventoryRows({
-        search: searchQuery?.trim() ? searchQuery.trim() : undefined,
-        country: appliedLocation.country?.trim() || undefined,
-        state: appliedLocation.state.trim() || undefined,
-        city: appliedLocation.city.trim() || undefined,
-        zone: appliedLocation.zoneArea?.trim() || undefined,
-        subZoneArea: appliedLocation.subZoneArea?.trim() || undefined,
-        pincode: appliedLocation.pincode.trim() || undefined,
-        arterialRoute: appliedLocation.arterialRoute.trim() || undefined,
-        modeOfMedia: appliedLocation.modeOfMedia.trim() || undefined,
-        publisher: appliedLocation.publisher.trim() || undefined,
-        mainCategory: appliedLocation.mainCategory.trim() || undefined,
-        categorySub: appliedLocation.categorySub.trim() || undefined,
-        category: appliedLocation.category.trim() || undefined,
-        locationType: appliedLocation.locationType.trim() || undefined,
-        orientation: appliedLocation.orientation.trim() || undefined,
-        resolution: appliedLocation.resolution.trim() || undefined,
-        screenLocation: appliedLocation.screenLocation.trim() || undefined,
-        stretch: appliedLocation.stretch.trim() || undefined,
-        property: appliedLocation.property.trim() || undefined,
+        ...getInventoryFilters(),
       }),
-    [
-      searchQuery,
-      appliedLocation.country,
-      appliedLocation.state,
-      appliedLocation.city,
-      appliedLocation.zoneArea,
-      appliedLocation.subZoneArea,
-      appliedLocation.pincode,
-      appliedLocation.arterialRoute,
-      appliedLocation.modeOfMedia,
-      appliedLocation.publisher,
-      appliedLocation.mainCategory,
-      appliedLocation.categorySub,
-      appliedLocation.category,
-      appliedLocation.locationType,
-      appliedLocation.orientation,
-      appliedLocation.resolution,
-      appliedLocation.screenLocation,
-      appliedLocation.stretch,
-      appliedLocation.property,
-    ]
+    [getInventoryFilters]
   );
 
   const totalPages = useMemo(() => {
@@ -114,34 +112,21 @@ const DeviceInventory: React.FC = () => {
     setCurrentPage(next);
   };
 
+  const fetchInventory = useCallback(async () => {
+    const res = await listDeviceInventory({
+      page: currentPage,
+      per_page: itemsPerPage,
+      ...getInventoryFilters(),
+    });
+    return res;
+  }, [currentPage, itemsPerPage, getInventoryFilters]);
+
   useEffect(() => {
     let alive = true;
-    (async () => {
+    const load = async () => {
       try {
         setLoading(true);
-        const res = await listDeviceInventory({
-          page: currentPage,
-          per_page: itemsPerPage,
-          search: searchQuery?.trim() ? searchQuery.trim() : undefined,
-          country: appliedLocation.country.trim() || undefined,
-          state: appliedLocation.state.trim() || undefined,
-          city: appliedLocation.city.trim() || undefined,
-          zone: appliedLocation.zoneArea.trim() || undefined,
-          subZoneArea: appliedLocation.subZoneArea.trim() || undefined,
-          pincode: appliedLocation.pincode.trim() || undefined,
-          arterialRoute: appliedLocation.arterialRoute.trim() || undefined,
-          modeOfMedia: appliedLocation.modeOfMedia?.trim() || undefined,
-          publisher: appliedLocation.publisher.trim() || undefined,
-          mainCategory: appliedLocation.mainCategory.trim() || undefined,
-          categorySub: appliedLocation.categorySub.trim() || undefined,
-          category: appliedLocation.category.trim() || undefined,
-          locationType: appliedLocation.locationType.trim() || undefined,
-          orientation: appliedLocation.orientation.trim() || undefined,
-          resolution: appliedLocation.resolution.trim() || undefined,
-          screenLocation: appliedLocation.screenLocation.trim() || undefined,
-          stretch: appliedLocation.stretch.trim() || undefined,
-          property: appliedLocation.property.trim() || undefined,
-        });
+        const res = await fetchInventory();
         if (!alive) return;
         setData(Array.isArray(res.data) ? res.data : []);
         setTotalItems(Number(res.total_records || 0));
@@ -150,37 +135,15 @@ const DeviceInventory: React.FC = () => {
         setData([]);
         setTotalItems(0);
       } finally {
-        if (alive) {
-          setLoading(false);
-        }
+        if (alive) setLoading(false);
       }
-    })();
+    };
+
+    load();
     return () => {
       alive = false;
     };
-  }, [
-    currentPage,
-    itemsPerPage,
-    searchQuery,
-    appliedLocation.country,
-    appliedLocation.state,
-    appliedLocation.city,
-    appliedLocation.zoneArea,
-    appliedLocation.subZoneArea,
-    appliedLocation.pincode,
-    appliedLocation.arterialRoute,
-    appliedLocation.modeOfMedia,
-    appliedLocation.publisher,
-    appliedLocation.mainCategory,
-    appliedLocation.categorySub,
-    appliedLocation.category,
-    appliedLocation.locationType,
-    appliedLocation.orientation,
-    appliedLocation.resolution,
-    appliedLocation.screenLocation,
-    appliedLocation.stretch,
-    appliedLocation.property,
-  ]);
+  }, [fetchInventory]);
 
   return (
     <div className="flex-1 w-full max-w-full overflow-x-hidden">
@@ -216,7 +179,7 @@ const DeviceInventory: React.FC = () => {
                     aria-haspopup="dialog"
                     aria-label="Filter by state and city"
                     className={`flex h-full min-h-[2.5rem] items-center justify-center px-3 py-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2 ${hasActiveLocationFilter
-                        ? 'text-indigo-600'
+                        ? 'text-gray-500'
                         : 'text-gray-500 hover:text-gray-800'
                       }`}
                   >
@@ -237,26 +200,7 @@ const DeviceInventory: React.FC = () => {
                   setCurrentPage(1);
                 }}
                 onReset={() => {
-                  setAppliedLocation({
-                    country: 'India',
-                    state: '',
-                    city: '',
-                    zoneArea: '',
-                    subZoneArea: '',
-                    pincode: '',
-                    arterialRoute: '',
-                    modeOfMedia: '',
-                    publisher: '',
-                    mainCategory: '',
-                    categorySub: '',
-                    category: '',
-                    locationType: '',
-                    orientation: '',
-                    resolution: '',
-                    screenLocation: '',
-                    stretch: '',
-                    property: '',
-                  });
+                  setAppliedLocation(DEFAULT_APPLIED_LOCATION);
                   setCurrentPage(1);
                 }}
               />
@@ -306,31 +250,43 @@ const DeviceInventory: React.FC = () => {
             { key: 'illumination', header: 'illumination', render: (item) => item.illumination || '' },
             {
               key: 'old_device_image', header: 'Old Device Image', render: (item) => (
-                <img
-                  src={item.old_device_image || undefined}
-                  alt="Old Device"
-                  className="w-16 h-16 object-cover rounded-md border border-gray-200"
-                />
+                item.old_device_image ? (
+                  <img
+                    src={item.old_device_image}
+                    alt="Old Device"
+                    className="w-16 h-16 object-cover rounded-md border border-gray-200"
+                  />
+                ) : (
+                  <span className="text-xs text-gray-500">N/A</span>
+                )
               )
             },
             {
               key: 'device_image', header: 'Device Image', render: (item) => (
-                <img
-                  src={item.device_image || undefined}
-                  alt="Device"
-                  className="w-16 h-16 object-cover rounded-md border border-gray-200"
-                />
+                item.device_image ? (
+                  <img
+                    src={item.device_image}
+                    alt="Device"
+                    className="w-16 h-16 object-cover rounded-md border border-gray-200"
+                  />
+                ) : (
+                  <span className="text-xs text-gray-500">N/A</span>
+                )
               )
             },
             {
               key: 'aws_device_image', header: 'AWS Device Image', render: (item) => (
-                <a href={item.aws_device_image || undefined} target="_blank" rel="noopener noreferrer">
-                  <img
-                    src={item.aws_device_image || undefined}
-                    alt="AWS Device"
-                    className="w-16 h-16 object-cover rounded-md border border-gray-200"
-                  />
-                </a>
+                item.aws_device_image ? (
+                  <a href={item.aws_device_image} target="_blank" rel="noopener noreferrer">
+                    <img
+                      src={item.aws_device_image}
+                      alt="AWS Device"
+                      className="w-16 h-16 object-cover rounded-md border border-gray-200"
+                    />
+                  </a>
+                ) : (
+                  <span className="text-xs text-gray-500">N/A</span>
+                )
               )
             },
             {

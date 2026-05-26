@@ -190,6 +190,7 @@ export async function listBriefs(page = 1, perPage = 10, search?: string): Promi
 
 export async function getBrief(id: string): Promise<BriefItem> {
   const res = await apiClient.get<any>(ENDPOINTS.DETAIL(id));
+  
   const json = res;
   if (!json || !json.success) {
     const message = (json && (json.message || 'Request failed')) || 'Request failed';
@@ -302,6 +303,8 @@ export async function getBrief(id: string): Promise<BriefItem> {
     attachmentUrl: String(attachmentUrlVal || ''),
     attachmentName: String(attachmentNameVal || ''),
     dateTime: String(raw['created_at'] ?? raw['date_time'] ?? raw['dateTime'] ?? ''),
+    campaignStartDate : String(raw['campaign_start_date'] ?? ''),
+    campaignEndDate : String(raw['campaign_end_date'] ?? ''),
     _raw: raw,
   } as BriefItem;
 }

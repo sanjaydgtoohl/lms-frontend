@@ -1,22 +1,25 @@
+/**
+ * @file CreateUser.tsx
+ * @description Create a new application user.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
 import { MasterFormHeader, MultiSelectDropdown, SelectField } from '../../../components/ui';
-import { apiClient } from '../../../utils/apiClient';
 import { createUser, updateUser } from '../../../services/CreateUser';
+import { useUserFormLookups } from '../../../hooks/useUserFormLookups';
 import SweetAlert from '../../../utils/SweetAlert';
-
-type Props = {
-  mode?: 'create' | 'edit';
-  initialData?: Record<string, any>;
-};
+import type { RbacFormPageProps } from '../../../types/pages/forms.types';
 
 // roleOptions will be fetched from the API
 
 // status removed — backend doesn't require a status field from the frontend
 
-const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
+const CreateUser: React.FC<RbacFormPageProps> = ({ mode = 'create', initialData }) => {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     name: '',
@@ -30,19 +33,21 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
     origination: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [roleOptions, setRoleOptions] = useState<Array<{ label: string; value: string }>>([]);
-  const [rolesLoading, setRolesLoading] = useState(false);
-  const [rolesError, setRolesError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [managerOptions, setManagerOptions] = useState<Array<{ label: string; value: string }>>([]);
-  const [managersLoading, setManagersLoading] = useState(false);
-  const [managersError, setManagersError] = useState<string | null>(null);
-    const [zoneOptions, setZoneOptions] = useState<Array<{ label: string; value: string }>>([]);
-  const [zoneLoading, setZoneLoading] = useState(false);
-  const [originationOptions, setOriginationOptions] = useState<Array<{ label: string; value: string }>>([]);
-  const [originationLoading, setOriginationLoading] = useState(false);
+  const {
+    roleOptions,
+    zoneOptions,
+    originationOptions,
+    managerOptions,
+    rolesLoading,
+    zoneLoading,
+    originationLoading,
+    managersLoading,
+    rolesError,
+    managersError,
+  } = useUserFormLookups();
 
   useEffect(() => {
     if (initialData) {
@@ -77,172 +82,6 @@ const CreateUser: React.FC<Props> = ({ mode = 'create', initialData }) => {
       }));
     }
   }, [initialData]);
-
-  useEffect(() => {
-    let mounted = true;
-
-    const loadRoles = async () => {
-      setRolesLoading(true);
-      setRolesError(null);
-      try {
-        // Request a reasonably large page so we get all roles in one go
-        const resp = await apiClient.get<any>('/roles?per_page=100');
-
-        // resp may be the api wrapper with `data` or direct array/object depending on server
-        // Try a few common shapes to extract the array of items
-        let items: any[] = [];
-        if (!resp) items = [];
-        else if (Array.isArray((resp as any).data)) items = (resp as any).data;
-        else if (Array.isArray((resp as any).data?.data)) items = (resp as any).data.data;
-        else if (Array.isArray((resp as any).data?.items)) items = (resp as any).data.items;
-        else if (Array.isArray((resp as any).data?.roles)) items = (resp as any).data.roles;
-        else if (Array.isArray((resp as any).roles)) items = (resp as any).roles;
-        else if (Array.isArray((resp as any).data?.data?.data)) items = (resp as any).data.data.data;
-        else if (Array.isArray((resp as any))) items = (resp as any);
-        else items = [];
-
-        const opts = items.map((it: any) => {
-          // Prefer numeric id if available; strip non-digits if server returns decorated ids
-          const rawId = it.id ?? it.role_id ?? it.value ?? '';
-          const numeric = String(rawId).replace(/[^0-9]/g, '') || String(rawId);
-          return {
-            label: it.name ?? it.title ?? it.role ?? String(it.label ?? ''),
-            value: String(numeric),
-          };
-        });
-
-        if (mounted) {
-          setRoleOptions(opts);
-        }
-      } catch (err: any) {
-        console.error('Failed to load roles', err);
-        if (mounted) setRolesError(err?.message || 'Failed to load roles');
-      } finally {
-        if (mounted) setRolesLoading(false);
-      }
-    };
-
-    loadRoles();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let mounted = true;
-
-    const loadZones = async () => {
-      setZoneLoading(true);
-      try {
-        const resp = await apiClient.get<any>('/zones');
-        let items: any[] = [];
-        if (Array.isArray((resp as any)?.data)) items = (resp as any).data;
-        else if (Array.isArray((resp as any)?.data?.data)) items = (resp as any).data.data;
-        else if (Array.isArray(resp as any)) items = resp as any;
-
-        const opts = items.map((it: any) => ({
-          label: String(it.name ?? it.zone ?? it.label ?? ''),
-          value: String(it.id ?? it.value ?? it.zone ?? ''),
-        })).filter((it) => it.label && it.value);
-
-        if (mounted) setZoneOptions(opts);
-      } catch (err) {
-        console.error('Failed to load zones', err);
-        if (mounted) setZoneOptions([]);
-      } finally {
-        if (mounted) setZoneLoading(false);
-      }
-    };
-
-    loadZones();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let mounted = true;
-
-    const loadOrganisations = async () => {
-      setOriginationLoading(true);
-      try {
-        const resp = await apiClient.get<any>('/organisations/list');
-        let items: any[] = [];
-        if (Array.isArray((resp as any)?.data)) items = (resp as any).data;
-        else if (Array.isArray((resp as any)?.data?.data)) items = (resp as any).data.data;
-        else if (Array.isArray(resp as any)) items = resp as any;
-
-        const opts = items.map((it: any) => ({
-          label: String(it.name ?? it.organisation_name ?? it.label ?? ''),
-          value: String(it.id ?? it.value ?? it.organisation_id ?? ''),
-        })).filter((it) => it.label && it.value);
-
-        if (mounted) setOriginationOptions(opts);
-      } catch (err) {
-        console.error('Failed to load organisations', err);
-        if (mounted) setOriginationOptions([]);
-      } finally {
-        if (mounted) setOriginationLoading(false);
-      }
-    };
-
-    loadOrganisations();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let mounted = true;
-
-    const loadManagers = async () => {
-      setManagersLoading(true);
-      setManagersError(null);
-      try {
-        // Request a reasonably large page so we get all users in one go
-        const resp = await apiClient.get<any>('/users?per_page=100');
-
-        // resp may be the api wrapper with `data` or direct array/object depending on server
-        // Try a few common shapes to extract the array of items
-        let items: any[] = [];
-        if (!resp) items = [];
-        else if (Array.isArray((resp as any).data)) items = (resp as any).data;
-        else if (Array.isArray((resp as any).data?.data)) items = (resp as any).data.data;
-        else if (Array.isArray((resp as any).data?.items)) items = (resp as any).data.items;
-        else if (Array.isArray((resp as any).data?.users)) items = (resp as any).data.users;
-        else if (Array.isArray((resp as any).users)) items = (resp as any).users;
-        else if (Array.isArray((resp as any).data?.data?.data)) items = (resp as any).data.data.data;
-        else if (Array.isArray((resp as any))) items = (resp as any);
-        else items = [];
-
-        const opts = items.map((it: any) => {
-          // Prefer numeric id if available; strip non-digits if server returns decorated ids
-          const rawId = it.id ?? it.user_id ?? it.value ?? '';
-          const numeric = String(rawId).replace(/[^0-9]/g, '') || String(rawId);
-          return {
-            label: it.name ?? it.full_name ?? it.email ?? String(it.label ?? ''),
-            value: String(numeric),
-          };
-        });
-
-        if (mounted) {
-          setManagerOptions(opts);
-        }
-      } catch (err: any) {
-        console.error('Failed to load managers', err);
-        if (mounted) setManagersError(err?.message || 'Failed to load managers');
-      } finally {
-        if (mounted) setManagersLoading(false);
-      }
-    };
-
-    loadManagers();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;

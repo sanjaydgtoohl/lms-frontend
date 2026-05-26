@@ -1,3 +1,10 @@
+/**
+ * @file CreatePermission.tsx
+ * @description Create a new permission.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -6,13 +13,9 @@ import { MasterFormHeader, SelectField } from '../../../components/ui';
 import SweetAlert from '../../../utils/SweetAlert';
 import { createPermission, updatePermission } from '../../../services/CreatePermission';
 import { fetchParentPermissions } from '../../../services/ParentPermissions';
+import type { RbacFormPageProps } from '../../../types/pages/forms.types';
 
-type Props = {
-  mode?: 'create' | 'edit';
-  initialData?: Record<string, any>;
-};
-
-const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => {
+const CreatePermission: React.FC<RbacFormPageProps> = ({ mode = 'create', initialData }) => {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     displayName: '',
@@ -119,7 +122,7 @@ const CreatePermission: React.FC<Props> = ({ mode = 'create', initialData }) => 
 
       if (mode === 'edit' && initialData?.id) {
         // Update existing permission
-        await updatePermission(initialData.id, payload);
+        await updatePermission(String(initialData.id), payload);
         SweetAlert.showUpdateSuccess();
       } else {
         // Create new permission

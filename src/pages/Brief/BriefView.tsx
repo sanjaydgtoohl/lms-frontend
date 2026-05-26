@@ -1,42 +1,12 @@
+/**
+ * @file BriefView.tsx
+ * @description Brief detail and summary view.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React from 'react';
-
-interface Person {
-  id?: number;
-  name?: string;
-  email?: string;
-}
-
-interface Lookup {
-  id?: number;
-  name?: string;
-}
-
-interface BriefShape {
-  id?: number;
-  uuid?: string;
-  name?: string;
-  product_name?: string;
-  mode_of_campaign?: string;
-  media_type?: string;
-  budget?: string | number;
-  comment?: string;
-  submission_date?: string;
-  brief_status?: Lookup;
-  priority?: Lookup;
-  contact_person?: Person;
-  brand?: Lookup;
-  agency?: Lookup;
-  assigned_user?: Person;
-  created_by_user?: Person;
-  created_at?: string;
-  updated_at?: string;
-}
-
-interface BriefViewProps {
-  brief: BriefShape;
-  onClose?: () => void;
-  onEdit?: (id?: number) => void;
-}
+import type { BriefViewProps } from '../../types/brief/brief.types';
 
 const formatDate = (iso?: string) => {
   if (!iso) return '-';

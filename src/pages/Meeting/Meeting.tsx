@@ -1,3 +1,10 @@
+/**
+ * @file Meeting.tsx
+ * @description Meeting pipeline list, create, and detail views.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useEffect } from 'react';
 import { fetchMeetings } from '../../services/Meeting';
 import type { Meeting as ApiMeeting } from '../../services/Meeting';

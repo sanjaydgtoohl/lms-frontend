@@ -1,3 +1,10 @@
+/**
+ * @file EditUser.tsx
+ * @description Edit user profile, role, and status.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';

@@ -3,8 +3,9 @@ import sidebarReducer from "./slices/sidebarSlice";
 import authReducer from "./slices/authSlice";
 import notificationReducer from "./slices/notificationSlice";
 import permissionsReducer from "./slices/permissionsSlice";
-import { forceLogout } from "./slices/authSlice";
-
+import uiReducer from "./slices/uiSlice";
+import { injectAuthStore } from "./authTokenBridge";
+import sessionManager from "../services/sessionManager";
 
 export const store = configureStore({
   reducer: {
@@ -12,15 +13,18 @@ export const store = configureStore({
     auth: authReducer,
     notifications: notificationReducer,
     permissions: permissionsReducer,
+    ui: uiReducer,
   },
 });
+
+injectAuthStore(store);
 
 if (typeof window !== "undefined") {
   const globalWindow = window as Window & { __authEventListenerRegistered?: boolean };
 
   if (!globalWindow.__authEventListenerRegistered) {
     window.addEventListener("auth:force-logout", () => {
-      store.dispatch(forceLogout());
+      sessionManager.clearAuthSession();
     });
     globalWindow.__authEventListenerRegistered = true;
   }

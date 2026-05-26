@@ -27,11 +27,11 @@ function parseProxyUrl(rawUrl: string, fallbackUrl: string): { target: string; b
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  const apiBaseUrl = String(env.VITE_API_BASE_URL || 'https://www.api.jiggle.safebima.com/api/v1').trim()
+  const apiBaseUrl = String(env.VITE_API_BASE_URL || 'https://www.api.dev.lms.dgtoohl.com/api/v1').trim()
   const sspApiBaseUrl = String(env.VITE_SSP_API_BASE_URL || 'https://ssp.dgtoohl.com/api').trim()
   const remoteImagesBaseUrl = String(env.VITE_REMOTE_IMAGES_BASE_URL || 'https://d2nljoxssb7y4b.cloudfront.net').trim()
 
-  const apiProxy = parseProxyUrl(apiBaseUrl, 'https://www.api.jiggle.safebima.com/api/v1')
+  const apiProxy = parseProxyUrl(apiBaseUrl, 'https://www.api.dev.lms.dgtoohl.com/api/v1')
   const sspApiProxy = parseProxyUrl(sspApiBaseUrl, 'https://ssp.dgtoohl.com/api')
   const remoteImagesProxy = parseProxyUrl(remoteImagesBaseUrl, 'https://d2nljoxssb7y4b.cloudfront.net')
 
@@ -56,18 +56,6 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: true,
           rewrite: (path) => path.replace(/^\/remote-images/, remoteImagesProxy.basePath || ''),
-        },
-        '/ssp-api': {
-          target: 'https://ssp.dgtoohl.com',
-          changeOrigin: true,
-         secure: false, 
-         rewrite: (path) => path.replace(/^\/ssp-api/, '/api'),
-        },
-        '/remote-images': {
-          target: 'https://d2nljoxssb7y4b.cloudfront.net',
-          changeOrigin: true,
-          secure: true,
-          rewrite: (path) => path.replace(/^\/remote-images/, ''),
         },
       },
     },

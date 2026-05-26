@@ -1,3 +1,10 @@
+/**
+ * @file SalesDashboard.tsx
+ * @description Sales role dashboard with leads, briefs, and KPI widgets.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import EyeIcon from '../../assets/icons/EyeIcon';

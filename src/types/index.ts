@@ -1,4 +1,17 @@
-// User Types
+// Domain types — import from '@/types' or '@/types/lead', etc.
+
+export * from './common/api.types';
+export * from './auth/auth.types';
+export * from './user/user.types';
+export * from './user/rbac.types';
+export * from './lead/lead.types';
+export * from './master/master.types';
+export * from './brief/brief.types';
+export * from './pages';
+export * from './inventory.types';
+export * from './inventory/device.types';
+
+// Legacy LMS scaffold types (kept for backward compatibility)
 export interface User {
   id: string;
   email: string;
@@ -10,19 +23,6 @@ export interface User {
   updatedAt: string;
 }
 
-// Auth Types
-export interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-export interface AuthResponse {
-  token: string;
-  refreshToken: string;
-  token_type: string;
-  expires_in: number;
-}
-
 export interface AuthState {
   user: User | null;
   token: string | null;
@@ -31,7 +31,6 @@ export interface AuthState {
   isLoading: boolean;
 }
 
-// Course Types
 export interface Course {
   id: string;
   title: string;
@@ -41,7 +40,7 @@ export interface Course {
   modules: Module[];
   thumbnail?: string;
   price: number;
-  duration: number; // in hours
+  duration: number;
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   status: 'draft' | 'published' | 'archived';
   createdAt: string;
@@ -65,24 +64,14 @@ export interface Lesson {
   title: string;
   content: string;
   videoUrl?: string;
-  duration: number; // in minutes
+  duration: number;
   order: number;
   isCompleted?: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
-// API Response Types
-export interface ApiResponse<T> {
-  success: boolean;
-  message: string;
-  meta: {
-    timestamp: string;
-    status_code: number;
-  };
-  data: T;
-}
-
+/** @deprecated Use PaginatedList from common/api.types */
 export interface PaginatedResponse<T> {
   data: T[];
   pagination: {
@@ -93,7 +82,6 @@ export interface PaginatedResponse<T> {
   };
 }
 
-// Form Types
 export interface FormField {
   name: string;
   label: string;
@@ -103,7 +91,6 @@ export interface FormField {
   options?: { value: string; label: string }[];
 }
 
-// UI Component Types
 export interface ButtonProps {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'master' | 'transparent' | 'priority';
   size?: 'sm' | 'md' | 'lg';
@@ -118,9 +105,9 @@ export interface InputProps {
   type?: 'text' | 'email' | 'password' | 'number';
   placeholder?: string;
   value?: string;
-  onChange?: any;
-  onBlur?: any;
-  ref?: any;
+  onChange?: unknown;
+  onBlur?: unknown;
+  ref?: unknown;
   name?: string;
   min?: string | number;
   max?: string | number;
@@ -130,17 +117,18 @@ export interface InputProps {
   label?: string;
 }
 
-// Error Types
 export interface ApiError {
   message: string;
   code: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
 }
 
-// Navigation Types
 export interface NavigationItem {
   label: string;
   path: string;
   icon?: string;
   children?: NavigationItem[];
 }
+
+// Re-export auth types under legacy names
+export type { LoginCredentials, AuthResponse } from './auth/auth.types';

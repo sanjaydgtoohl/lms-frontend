@@ -1,3 +1,10 @@
+/**
+ * @file CreateBriefForm.tsx
+ * @description Form to create a new brief record.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import Table from '../../components/ui/Table';
 import DatePicker from 'react-datepicker';
@@ -14,19 +21,11 @@ import SweetAlert from '../../utils/SweetAlert';
 import { apiClient } from '../../utils/apiClient';
 import FilePreviewModal from '../../components/ui/FilePreviewModal';
 import { Eye } from 'lucide-react';
-// Dropdown UI uses SelectField component
+import type { MasterFormWithSaveProps } from '../../types/pages/forms.types';
 
-type Props = {
-  onClose: () => void;
-  onSave?: (data: any) => void;
-  inline?: boolean;
-  initialData?: Record<string, any>;
-  mode?: 'create' | 'edit';
-};
-
-const CreateBriefForm: React.FC<Props> = ({ onClose, onSave, initialData, mode = 'create' }) => {
+const CreateBriefForm: React.FC<MasterFormWithSaveProps> = ({ onClose, onSave, initialData, mode = 'create' }) => {
   useEffect(() => {
-    console.log('CreateBriefForm initialData:', initialData);
+    
   }, [initialData]);
   const [form, setForm] = useState({
     briefId: '',

@@ -1,173 +1,175 @@
 @import "tailwindcss";
 
+/**
+ * Dark theme overrides — aligned with DGTOOL 360° logo
+ * (#f26222 orange, #007b83 teal, #171b1a charcoal)
+ * Core tokens live in shell-theme.css; this file handles legacy Tailwind classes.
+ */
 
-.dark .bg-white {
-    @apply bg-gray-800 hover:!bg-none ;
+/* Shell surfaces (do not override app-sidebar gradient from shell-theme) */
+.dark .header-bg.bg-gray-50,
+.dark .sidebar-wrapper.bg-white {
+  background-color: var(--surface-muted) !important;
 }
 
-.dark .bg-gray-100, .dark .bg-gray-50, .dark .agency-edit-wrapper, .dark .agency-edit-outer {
-    @apply bg-gray-800 hover:!bg-none ;
+.dark .app-header {
+  background: var(--header-bg) !important;
+  border-bottom-color: var(--border-subtle) !important;
 }
 
-.dark .header-bg.bg-gray-50, .dark .sidebar-wrapper.bg-white {
-    @apply bg-gray-900 hover:!bg-none ;
+.dark .agency-edit-wrapper,
+.dark .agency-edit-outer {
+  background-color: var(--surface) !important;
+  border-color: var(--border-subtle) !important;
 }
 
-.dark .border-gray-200, .dark .border-gray-100, .dark .agency-edit-outer {  
-    @apply !border-gray-600 focus:!border-gray-100 focus:ring-0;
+/* Logo — height controlled by .app-sidebar-topbar in shell-theme.css */
+.app-sidebar-logo.sidebar-logo-item {
+  position: relative;
 }
 
- .dark .text-gray-700, .dark .text-gray-800, .dark .text-gray-900 , .dark .text-gray-600 , .dark .text-black, .dark h3 , .dark .text-gray-500{
-    @apply !text-white;
- }
-
- .sidebar-logo-item img {
-    @apply absolute left-0 w-auto !h-[30px] object-contain;
- }
-
-/* Default: show normal logo, hide white logo */
-.sidebar-logo-item img.dark-theme-logo-white {
-  @apply opacity-0 hidden;
+.app-sidebar-logo-img,
+.sidebar-logo-item img {
+  position: relative;
+  left: auto;
+  width: auto;
+  object-fit: contain;
+  filter: none !important;
 }
 
-/* Dark mode: show white logo, hide default logo */
-.dark .sidebar-logo-item img.dark-theme-logo-white {
-  @apply opacity-100 block;
+.dark .app-sidebar-logo-img {
+  display: block !important;
+  opacity: 1 !important;
 }
 
-.dark .sidebar-logo-item img.default-logo {
-  @apply opacity-0;
+/* Navigation (legacy + app-nav) */
+.dark .sidebar-menu-item:hover,
+.dark .app-nav-item:hover {
+  background-color: var(--nav-hover) !important;
 }
 
-
-.dark .bg-indigo-600 {
-  @apply bg-white;
+.dark .active-menu,
+.dark .app-nav-item--active {
+  background-color: var(--nav-active-bg) !important;
+  color: var(--nav-active-text) !important;
+  border-left-color: var(--brand-accent) !important;
 }
 
-.dark .process-item.bg-gray-100 {
-  @apply bg-gray-700;
+.dark .sidebar-menu-item img:not(.app-sidebar-logo-img) {
+  filter: brightness(0) saturate(100%) invert(92%);
+  opacity: 0.9;
 }
 
-.dark .sidebar-menu-item {
-  @apply hover:!bg-gray-800;
-}
-
-.dark .active-menu {
-  @apply !bg-gray-800;
-}
-
-.dark .shadow-custom {
-box-shadow:  9px 9px 18px #1b2533,
-             -9px -9px 18px #212d3f;
-}
-
-
-.dark .tabs-wrapper span.bg-black {
-  @apply bg-orange-500;
-}
-
-
-.dark .pagination-btn  {
-  @apply bg-gray-700 text-white;
-}
-
-.dark .icon-button {
-  @apply bg-gray-700 text-white;
-}
-
-
-.dark .text-blue-700, .dark .text-blue-400  {
-  @apply text-white;
-}
-
-
-.dark .breadcrumb-wrapper ol li a {
-  @apply !text-white;
-}
-
-
-.dark tr.transition-colors {
-  @apply hover:bg-gray-800;
-} 
- 
-
+/* Status / badge chips — subtle tints, not saturated blocks */
 .dark .bg-orange-100 {
- @apply bg-gray-700 hover:bg-orange-500 ; 
+  background-color: rgba(242, 98, 34, 0.2) !important;
+  color: #f5c4a8 !important;
 }
 
-.dark .badge-item {
-  @apply !text-white;
+.dark .border-orange-200 {
+  border-color: rgba(242, 98, 34, 0.35) !important;
+}
+
+.dark .bg-blue-50,
+.dark .border-blue-200 {
+  background-color: rgba(0, 123, 131, 0.15) !important;
+  border-color: rgba(0, 123, 131, 0.35) !important;
+  color: var(--text-primary) !important;
+}
+
+.dark .bg-green-50,
+.dark .border-green-200 {
+  background-color: rgba(0, 123, 131, 0.12) !important;
+  border-color: rgba(94, 189, 169, 0.35) !important;
+}
+
+.dark .bg-green-100 {
+  background-color: rgba(94, 189, 169, 0.2) !important;
+  border-color: rgba(94, 189, 169, 0.4) !important;
 }
 
 .dark .bg-yellow-100 {
-  @apply bg-yellow-600;
+  background-color: rgba(242, 98, 34, 0.18) !important;
+  color: #f5d0a8 !important;
 }
- 
 
+.dark .bg-purple-100 {
+  background-color: rgba(0, 123, 131, 0.15) !important;
+  border-color: rgba(0, 123, 131, 0.3) !important;
+}
+
+.dark .badge-item {
+  color: var(--text-primary) !important;
+}
+
+/* Forms */
+.dark input:not(.login-card-wrapper input),
+.dark .app-input,
+.dark .app-search-input,
+.dark .select-dropdown .hover-input {
+  background-color: var(--input-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--input-border) !important;
+}
+
+.dark input::placeholder,
+.dark .app-input::placeholder,
+.dark .app-search-input::placeholder {
+  color: var(--text-nav-muted) !important;
+}
+
+.dark .select-dropdown .hover-input:hover {
+  background-color: var(--surface-elevated) !important;
+}
+
+.dark .app-dropdown {
+  background-color: var(--surface-elevated) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+/* Dividers */
 .dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
-  @apply border-gray-700;
+  border-color: var(--table-border) !important;
 }
 
 @layer utilities {
   .dark .divide-gray-200 {
     :where(& > :not(:last-child)) {
-      border-color: var(--color-gray-700);
+      border-color: var(--table-border);
     }
   }
 }
 
-.dark thead.bg-gray-100 {
-  @apply bg-gray-900; 
-}
-
-
-.dark .btn-primary {
-  @apply hover:bg-orange-600;
-}
-
-
-button.cancel-btn {
-  @apply bg-gray-200 hover:bg-gray-300
-}
-
-.dark button.cancel-btn {
-  @apply bg-gray-700;
-}
-
-.dark input {
-  @apply bg-gray-800 text-white border-gray-700 placeholder:!text-gray-400;
-}
-
-.dark .select-dropdown .hover-input {
-  @apply hover:!bg-gray-700 text-sm placeholder:!text-white;
-}
-
-.dark .bg-orange-100, .dark .border-orange-200 {
-  @apply bg-orange-500 border-orange-300;
-}
-
-.dark .bg-blue-50, .dark .border-blue-200 {
-  @apply bg-blue-500 border-blue-300;
-}
-
-.dark .bg-green-50, .dark .border-green-200 {
-  @apply bg-green-500 border-green-300;
-}
-
-.dark .sidebar-menu-item img {
-  filter: brightness(0) saturate(100%) invert(1);
-}
-
-
-.dark svg.text-orange-800 {
-  @apply !text-white;
-}
-
-
-.dark .text-yellow-800 {
-  @apply text-white;
-}
-
+/* Misc legacy text utilities */
+.dark .text-blue-700,
+.dark .text-blue-400,
 .dark .text-blue-600 {
-  @apply text-white;
-} 
+  color: var(--brand-primary-light) !important;
+}
+
+.dark .text-green-600,
+.dark .text-yellow-800,
+.dark svg.text-orange-800 {
+  color: var(--text-primary) !important;
+}
+
+.dark .bg-indigo-600 {
+  background-color: var(--brand-primary) !important;
+}
+
+.dark .process-item.bg-gray-100 {
+  background-color: var(--surface-elevated) !important;
+}
+
+/* Notification bell */
+.dark .app-icon-btn svg.app-notification-bell {
+  color: var(--brand-accent) !important;
+  stroke: var(--brand-accent) !important;
+  fill: none !important;
+  opacity: 1 !important;
+}
+
+.dark .app-icon-btn:hover .app-notification-bell {
+  color: var(--brand-accent-hover) !important;
+  stroke: var(--brand-accent-hover) !important;
+}

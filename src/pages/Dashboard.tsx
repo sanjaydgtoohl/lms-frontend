@@ -1,3 +1,10 @@
+/**
+ * @file Dashboard.tsx
+ * @description Main dashboard with stats, pending assignments, and meetings overview.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useEffect } from 'react';
 import { Users, FileCheck, BarChart3, X, Check } from 'lucide-react';
 import Pagination from '../components/ui/Pagination';

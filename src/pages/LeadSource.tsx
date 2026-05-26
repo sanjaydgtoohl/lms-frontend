@@ -1,3 +1,10 @@
+/**
+ * @file LeadSource.tsx
+ * @description Lead source master data list, create, view, and edit.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import Pagination from '../components/ui/Pagination';
@@ -324,6 +331,7 @@ const LeadSource: React.FC = () => {
             createButtonLabel="Create Source"
             showBreadcrumb={true}
             showCreateButton={hasPermission('source.create')}
+            createPermissionSlug="source.create"
           />
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-4">
             {/* Table Header */}

@@ -1,5 +1,6 @@
 import PptxGenJS from 'pptxgenjs';
-import logoUrl from '../assets/DGTOOHL 360.svg';
+import logoUrl from '../assets/logo.svg';
+import { BRAND } from '../constants/brand';
 import type { DeviceData } from '../types/inventory.types';
 
 const SLIDE_BACKGROUND = 'F7F8FA';
@@ -19,7 +20,7 @@ const RIGHT_PANEL_WIDTH = 4.35;
 const PANEL_HEIGHT = 4.4;
 const HEADER_TITLE = 'Device Inventory Report';
 
-const brandLogoSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 60"><rect width="260" height="60" rx="12" fill="#0F4C81"/><text x="20" y="38" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#FFFFFF">DGTOOHL360</text><text x="20" y="52" font-family="Arial, sans-serif" font-size="12" fill="#D9E7FF">LMS</text></svg>`;
+const brandLogoSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 60"><rect width="260" height="60" rx="12" fill="#0F4C81"/><text x="20" y="38" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#FFFFFF">${BRAND.productShort}</text><text x="20" y="52" font-family="Arial, sans-serif" font-size="12" fill="#D9E7FF">LMS</text></svg>`;
 
 const placeholderSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480"><rect width="640" height="480" rx="24" fill="#F1F5F9"/><rect x="128" y="96" width="384" height="232" rx="16" fill="#E2E8F0"/><path d="M208 320h224a16 16 0 0 1 16 16v24H192v-24a16 16 0 0 1 16-16Z" fill="#CBD5E1"/><text x="320" y="360" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#64748B" text-anchor="middle">No Image Available</text></svg>`;
 const PLACEHOLDER_IMAGE = `data:image/svg+xml;base64,${window.btoa(unescape(encodeURIComponent(placeholderSvg)))}`;
@@ -153,8 +154,8 @@ const formatDetailText = (rows: Array<{ label: string; value: string }>) =>
 
 export async function generateDeviceInventoryPptx(devices: DeviceData[]): Promise<void> {
   const pptx = new PptxGenJS();
-  pptx.author = 'DGTOOHL360 LMS';
-  pptx.company = 'DGTOOHL360';
+  pptx.author = BRAND.exportAuthor;
+  pptx.company = BRAND.exportCompany;
   pptx.title = 'Device Inventory Report';
   pptx.layout = 'LAYOUT_WIDE';
 
@@ -291,7 +292,7 @@ export async function generateDeviceInventoryPptx(devices: DeviceData[]): Promis
     slide.addText(
       [
         {
-          text: 'Generated from DGTOOHL360 LMS',
+          text: BRAND.exportFooter,
           options: { fontSize: 10, color: TEXT_SECONDARY, fontFace: 'Arial' },
         },
         {

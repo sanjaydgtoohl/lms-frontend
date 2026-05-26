@@ -1,3 +1,10 @@
+/**
+ * @file DesignationMaster.tsx
+ * @description Designation master data list, create, view, and edit.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import Pagination from '../components/ui/Pagination';
 import { motion } from 'framer-motion';
@@ -20,34 +27,9 @@ import {
 import SweetAlert from '../utils/SweetAlert';
 import { usePermissions } from '../hooks/SidebarMenuHooks';
 import TableHeader from '../components/ui/TableHeader';
+import type { DesignationTableRow } from '../types/master/master.types';
 
-
-interface Designation {
-  id: string;
-  name: string;
-  dateTime: string;
-}
-
-// Helpers to parse API date strings like "19-11-2025 10:35:57"
-const parseApiDateToISO = (s?: string) => {
-  if (!s) return '';
-  const m = String(s).trim().match(/^(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2})(?::(\d{2}))?$/);
-  if (!m) return s;
-  const [, dd, mm, yyyy, hh, min, sec] = m;
-  return `${yyyy}-${mm}-${dd}T${hh}:${min}:${sec || '00'}`;
-};
-
-const formatDisplayDate = (s?: string) => {
-  if (!s) return '-';
-  try {
-    const iso = parseApiDateToISO(s);
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return String(s);
-    return d.toLocaleString();
-  } catch {
-    return String(s);
-  }
-};
+import { formatDisplayDate } from '../utils/masterDate';
 
 // Inline CreateDesignationForm component
 const CreateDesignationForm: React.FC<{
@@ -149,7 +131,7 @@ const DesignationMaster: React.FC = () => {
   const { hasPermission } = usePermissions();
 
   // Store designations in state fetched from API
-  const [designations, setDesignations] = useState<Designation[]>([]);
+  const [designations, setDesignations] = useState<DesignationTableRow[]>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -245,12 +227,12 @@ const DesignationMaster: React.FC = () => {
     setCurrentPage(page);
   };
 
-  const [viewItem, setViewItem] = useState<Designation | null>(null);
-  const [editItem, setEditItem] = useState<Designation | null>(null);
+  const [viewItem, setViewItem] = useState<DesignationTableRow | null>(null);
+  const [editItem, setEditItem] = useState<DesignationTableRow | null>(null);
   const [activeEditId, setActiveEditId] = useState<string>('');
   const updateInFlightRef = useRef(false);
 
-  const designationsRef = useRef<Designation[]>([]);
+  const designationsRef = useRef<DesignationTableRow[]>([]);
   designationsRef.current = designations;
 
   const refresh = async (page = currentPage, search = searchQuery) => {
@@ -262,7 +244,7 @@ const DesignationMaster: React.FC = () => {
       const perPageToFetch = search ? 1000 : itemsPerPage;
 
       const resp = await listDesignations(pageToFetch, perPageToFetch);
-      let mapped: Designation[] = resp.data.map((it: ApiDesignation) => ({
+      let mapped: DesignationTableRow[] = resp.data.map((it: ApiDesignation) => ({
         id: String(it.id),
         name: String(it.name ?? it.title ?? ''),
         dateTime: it.created_at || '',
@@ -368,7 +350,7 @@ const DesignationMaster: React.FC = () => {
       })
       .catch(() => {
         if (cancelled) return;
-        const found = designationsRef.current.find((d: Designation) => d.id === id) || null;
+        const found = designationsRef.current.find((d: DesignationTableRow) => d.id === id) || null;
         setViewItem(found);
       });
 
@@ -455,6 +437,7 @@ const DesignationMaster: React.FC = () => {
             createButtonLabel="Create Designation"
             showBreadcrumb={true}
             showCreateButton={hasPermission('designation.create')}
+            createPermissionSlug="designation.create"
           />
 
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-4">

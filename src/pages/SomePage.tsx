@@ -1,3 +1,10 @@
+/**
+ * @file SomePage.tsx
+ * @description Placeholder or sample page component.
+ * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
+ * @date 2026-05-25
+ */
+
 import MasterForm from '../components/ui/MasterForm';
 
 const SomePage = () => {

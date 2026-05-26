@@ -1,6 +1,11 @@
-import { API_ENDPOINTS } from '../constants';
-import { getCookie, setCookie, deleteCookie } from '../utils/cookies';
-import http from './http';
+import { getTokenExpiresAt } from './auth/tokenStorage';
+import {
+  clearAuthTokens,
+  getRefreshToken,
+  persistAuthTokens,
+} from './auth/tokenStorage';
+import { parseRefreshResponse, postRefreshToken } from './auth/refreshAccessToken';
+import { getRefreshDelayMs } from './auth/tokenExpiry';
 
 let refreshTimer: number | null = null;
 let refreshInProgress = false;
@@ -15,27 +20,18 @@ function clearTimer() {
 export async function scheduleRefresh() {
   clearTimer();
 
-  const expires = getCookie('auth_token_expires');
-  if (!expires) return;
+  const expiresAt = getTokenExpiresAt();
+  if (!expiresAt) return;
 
-  const expiryMs = parseInt(expires, 10);
-  const now = Date.now();
-
-  // schedule 5 minutes (300000 ms) before expiry
-  const msBeforeRefresh = expiryMs - now - 5 * 60 * 1000;
-
-  const timeout = Math.max(msBeforeRefresh, 0);
+  const timeout = getRefreshDelayMs(expiresAt);
 
   refreshTimer = window.setTimeout(async () => {
     try {
       await refreshTokens();
     } catch {
-      // refresh failed — clear session (http interceptor will redirect)
-      deleteCookie('auth_token');
-      deleteCookie('refresh_token');
-      deleteCookie('auth_token_expires');
-      deleteCookie('refresh_token_expires');
-      window.location.href = '/login';
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('auth:force-logout'));
+      }
     }
   }, timeout);
 }
@@ -43,42 +39,28 @@ export async function scheduleRefresh() {
 export async function refreshTokens() {
   if (refreshInProgress) return;
   refreshInProgress = true;
-  
+
   try {
-    const refreshToken = getCookie('refresh_token');
+    const refreshToken = getRefreshToken();
     if (!refreshToken) throw new Error('No refresh token');
 
-    // If backend expects token in header, uncomment below and comment body
-    // const resp = await http.post(API_ENDPOINTS.AUTH.REFRESH, {}, {
-    //   headers: { Authorization: `Bearer ${refreshToken}` }
-    // });
+    const resp = await postRefreshToken(refreshToken);
+    const parsed = parseRefreshResponse(resp.data, refreshToken);
 
-    // Default: send in body using `refresh_token` key expected by backend
-    const resp = await http.post(API_ENDPOINTS.AUTH.REFRESH, { refresh_token: refreshToken });
-    const data = resp.data;
-    if (data && data.success && data.data) {
-      const now = Date.now();
-      const access = data.data.token;
-      const refresh = (data.data as any).refresh_token || (data.data as any).refreshToken || null;
-      const expiresIn = data.data.expires_in;
-      const refreshExpiresIn = data.data.refresh_expires_in || null;
-
-      if (access) {
-        setCookie('auth_token', access, { expires: expiresIn, secure: true, sameSite: 'Lax' });
-        setCookie('auth_token_expires', String(now + expiresIn * 1000), { expires: expiresIn, secure: true, sameSite: 'Lax' });
-      }
-      if (refresh) {
-        const rExp = refreshExpiresIn || 7 * 24 * 3600;
-        setCookie('refresh_token', refresh, { expires: rExp, secure: true, sameSite: 'Lax' });
-        setCookie('refresh_token_expires', String(now + rExp * 1000), { expires: rExp, secure: true, sameSite: 'Lax' });
-      }
-
-      // reschedule
-      scheduleRefresh();
-      return data.data;
+    if (!parsed) {
+      throw new Error('Refresh failed');
     }
 
-    throw new Error('Refresh failed');
+    persistAuthTokens({
+      token: parsed.token,
+      expiresIn: parsed.expiresIn,
+      tokenExpiresAt: parsed.tokenExpiresAt,
+      refreshToken: parsed.refreshToken,
+      refreshExpiresIn: parsed.refreshExpiresIn,
+    });
+
+    scheduleRefresh();
+    return resp.data?.data;
   } finally {
     refreshInProgress = false;
   }
@@ -86,70 +68,33 @@ export async function refreshTokens() {
 
 export function clearSession() {
   clearTimer();
-  deleteCookie('auth_token');
-  deleteCookie('refresh_token');
-  deleteCookie('auth_token_expires');
-  deleteCookie('refresh_token_expires');
+}
+
+export function clearAuthSession() {
+  clearTimer();
+  clearAuthTokens();
 }
 
 export function startSessionFromCookies() {
-  // If auth token exists, schedule the refresh
-  const token = getCookie('auth_token');
-  if (token) scheduleRefresh();
+  scheduleRefresh();
 }
 
-/**
- * Check if token is missing from cookies and trigger auto-logout if needed.
- * This handles the case where cookies are cleared externally or expired.
- */
 export function checkAndHandleMissingToken() {
-  const token = getCookie('auth_token');
-  
-  if (!token) {
-    // Token is missing - auto logout and clear storage
-    console.warn('[sessionManager] Token missing from cookies - triggering auto logout');
-    clearSession();
-    clearLocalStorage();
-    return true; // Token was missing
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('auth:force-logout'));
+    }
+    return true;
   }
-  
-  return false; // Token exists
-}
-
-/**
- * Clear all local storage related to authentication
- * Only removes known auth-related keys, not aggressive wildcard matching
- */
-export function clearLocalStorage() {
-  try {
-    // Only remove these specific auth storage keys
-    const authStorageKeys = [
-      'auth-storage',
-      'auth_token',
-      'refresh_token',
-      'user_info',
-      'permissions',
-      'sidebar_menu'
-    ];
-    
-    authStorageKeys.forEach(key => {
-      try {
-        localStorage.removeItem(key);
-      } catch {
-        // Ignore individual key removal errors
-      }
-    });
-
-  } catch (e) {
-    console.error('Error clearing local storage:', e);
-  }
+  return false;
 }
 
 export default {
   scheduleRefresh,
   refreshTokens,
   clearSession,
+  clearAuthSession,
   startSessionFromCookies,
   checkAndHandleMissingToken,
-  clearLocalStorage,
 };
