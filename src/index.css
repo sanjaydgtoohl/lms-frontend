@@ -791,17 +791,53 @@ html.dark {
 }
 
 /* Shared data table + filter toolbar (Table / TableHeader) */
+.lms-table-header__toolbar {
+  width: 100%;
+}
+
+.lms-table-header__actions {
+  width: 100%;
+}
+
+.lms-table-header__actions > * {
+  width: 100%;
+  min-width: 0;
+}
+
 .lms-table-header__actions .app-search-bar,
 .lms-table-header__actions > .relative.flex.items-center {
   width: 100%;
-  min-width: 12rem;
-  max-width: 14rem;
+  max-width: none;
+}
+
+.lms-table-header__actions button {
+  width: 100%;
+  justify-content: center;
 }
 
 @media (min-width: 640px) {
+  .lms-table-header__toolbar {
+    width: auto;
+  }
+
+  .lms-table-header__actions {
+    width: auto;
+  }
+
+  .lms-table-header__actions > * {
+    width: auto;
+  }
+
   .lms-table-header__actions .app-search-bar,
   .lms-table-header__actions > .relative.flex.items-center {
     width: 14rem;
+    min-width: 12rem;
+    max-width: 14rem;
+  }
+
+  .lms-table-header__actions button {
+    width: auto;
+    justify-content: center;
   }
 }
 
