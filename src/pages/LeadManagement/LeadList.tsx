@@ -124,12 +124,12 @@ const LeadList: React.FC<LeadListPageProps> = ({
       try {
         const users = await listChildUsers();
         setAssignToOptions(users.map((u) => ({ id: u.id, name: u.name })));
-        setAssignByOptions(
+        setUserFilterOptions(
           users.map((u) => ({ value: String(u.id), label: u.name }))
         );
       } catch {
         setAssignToOptions([]);
-        setAssignByOptions([]);
+        setUserFilterOptions([]);
       }
     };
     loadUsers();
@@ -197,7 +197,7 @@ const LeadList: React.FC<LeadListPageProps> = ({
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
   const [brandOptions, setBrandOptions] = useState<{ value: string; label: string }[]>([]);
   const [subSourceOptions, setSubSourceOptions] = useState<{ value: string; label: string }[]>([]);
-  const [assignByOptions, setAssignByOptions] = useState<{ value: string; label: string }[]>([]);
+  const [userFilterOptions, setUserFilterOptions] = useState<{ value: string; label: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const itemsPerPage = 10;
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -495,7 +495,7 @@ const LeadList: React.FC<LeadListPageProps> = ({
     { key: 'contactPerson', header: 'Contact Person', minWidth: 120, maxWidth: 160, render: (it: Lead) => it.contactPerson || '-' },
     { key: 'phoneNumber', header: 'Phone Number', minWidth: 120, maxWidth: 140, render: (it: Lead) => it.phoneNumber || '-' },
     { key: 'subSource', header: 'Sub-Source', minWidth: 100, maxWidth: 140, render: (it: Lead) => it.subSource || '-' },
-    { key: 'assignBy', header: 'Assign By', minWidth: 110, maxWidth: 150, render: (it: Lead) => it.assignBy || '-' },
+    { key: 'assignBy', header: 'Created By', minWidth: 110, maxWidth: 150, render: (it: Lead) => it.assignBy || '-' },
     ...(hasPermission(assignPermissionMap[permissionKey] || assignPermissionMap.All) ? [{
       key: 'assignTo',
       header: 'Assign To',
@@ -579,7 +579,13 @@ const LeadList: React.FC<LeadListPageProps> = ({
         {
           key: 'created_by',
           label: 'Created By',
-          options: assignByOptions,
+          options: userFilterOptions,
+          isMulti: true,
+        },
+        {
+          key: 'current_assign_user',
+          label: 'Assign To',
+          options: userFilterOptions,
           isMulti: true,
         },
         {
@@ -592,7 +598,7 @@ const LeadList: React.FC<LeadListPageProps> = ({
           isMulti: true,
         },
       ].filter((option) => option.options.length > 0),
-    [brandOptions, subSourceOptions, assignByOptions, callStatusOptions]
+    [brandOptions, subSourceOptions, userFilterOptions, callStatusOptions]
   );
 
   return (

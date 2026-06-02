@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Bell, Plus, LogOut, UserRound, Menu, PanelLeft, PanelLeftClose, Check } from 'lucide-react';
 import { Button } from '../ui';
@@ -26,6 +27,19 @@ interface HeaderProps {
   isMobileLayout?: boolean;
 }
 
+type DropdownAnchor = { right: number; top: number };
+
+const DROPDOWN_OFFSET = 8;
+
+const getDropdownAnchor = (el: HTMLElement | null): DropdownAnchor | null => {
+  if (!el) return null;
+  const rect = el.getBoundingClientRect();
+  return {
+    right: Math.round(window.innerWidth - rect.right),
+    top: Math.round(rect.bottom + DROPDOWN_OFFSET),
+  };
+};
+
 const Header: React.FC<HeaderProps> = ({
   onCreateClick,
   createButtonText = 'Create Source',
@@ -45,6 +59,10 @@ const Header: React.FC<HeaderProps> = ({
   const [isMarkingRead, setIsMarkingRead] = useState(false);
   const notificationDropdownRef = React.useRef<HTMLDivElement | null>(null);
   const notificationButtonRef = React.useRef<HTMLButtonElement | null>(null);
+  const userButtonRef = React.useRef<HTMLButtonElement | null>(null);
+  const userMenuDropdownRef = React.useRef<HTMLDivElement | null>(null);
+  const [notificationAnchor, setNotificationAnchor] = useState<DropdownAnchor | null>(null);
+  const [userMenuAnchor, setUserMenuAnchor] = useState<DropdownAnchor | null>(null);
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
 
@@ -88,12 +106,24 @@ const Header: React.FC<HeaderProps> = ({
     }
   };
 
+  const updateNotificationAnchor = useCallback(() => {
+    setNotificationAnchor(getDropdownAnchor(notificationButtonRef.current));
+  }, []);
+
+  const updateUserMenuAnchor = useCallback(() => {
+    setUserMenuAnchor(getDropdownAnchor(userButtonRef.current));
+  }, []);
+
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+      const targetNode = e.target as Node;
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(targetNode) &&
+        !userMenuDropdownRef.current?.contains(targetNode)
+      ) {
         setIsUserMenuOpen(false);
       }
-      const targetNode = e.target as Node;
       if (
         !notificationDropdownRef.current?.contains(targetNode) &&
         !notificationButtonRef.current?.contains(targetNode)
@@ -105,22 +135,60 @@ const Header: React.FC<HeaderProps> = ({
     return () => document.removeEventListener('mousedown', onDocClick);
   }, []);
 
+  useLayoutEffect(() => {
+    if (!isNotificationDropdownOpen) {
+      setNotificationAnchor(null);
+      return;
+    }
+
+    updateNotificationAnchor();
+    window.addEventListener('resize', updateNotificationAnchor);
+    window.addEventListener('scroll', updateNotificationAnchor, true);
+
+    return () => {
+      window.removeEventListener('resize', updateNotificationAnchor);
+      window.removeEventListener('scroll', updateNotificationAnchor, true);
+    };
+  }, [isNotificationDropdownOpen, updateNotificationAnchor]);
+
+  useLayoutEffect(() => {
+    if (!isUserMenuOpen) {
+      setUserMenuAnchor(null);
+      return;
+    }
+
+    updateUserMenuAnchor();
+    window.addEventListener('resize', updateUserMenuAnchor);
+    window.addEventListener('scroll', updateUserMenuAnchor, true);
+
+    return () => {
+      window.removeEventListener('resize', updateUserMenuAnchor);
+      window.removeEventListener('scroll', updateUserMenuAnchor, true);
+    };
+  }, [isUserMenuOpen, updateUserMenuAnchor]);
+
   const handleNotificationClick = () => {
-    setIsNotificationDropdownOpen((prev) => {
-      const next = !prev;
-      if (next) {
-        (async () => {
-          try {
-            const count = await getUnreadNotificationCount();
-            dispatch(setUnreadCount({ module: 'all', count }));
-          } catch (error) {
-            console.error('Failed to refresh notification count:', error);
-          }
-        })();
-        loadRecentNotifications(activeDropdownTab, showUnreadOnly);
+    setIsUserMenuOpen(false);
+    setUserMenuAnchor(null);
+
+    if (isNotificationDropdownOpen) {
+      setIsNotificationDropdownOpen(false);
+      setNotificationAnchor(null);
+      return;
+    }
+
+    setNotificationAnchor(getDropdownAnchor(notificationButtonRef.current));
+    setIsNotificationDropdownOpen(true);
+
+    (async () => {
+      try {
+        const count = await getUnreadNotificationCount();
+        dispatch(setUnreadCount({ module: 'all', count }));
+      } catch (error) {
+        console.error('Failed to refresh notification count:', error);
       }
-      return next;
-    });
+    })();
+    loadRecentNotifications(activeDropdownTab, showUnreadOnly);
   };
 
   const handleUnreadFilterChange = () => {
@@ -218,7 +286,7 @@ const Header: React.FC<HeaderProps> = ({
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <ThemeToggle />
 
-          <div className="relative">
+          <div className="relative w-fit shrink-0">
             <button
               type="button"
               ref={notificationButtonRef}
@@ -239,8 +307,12 @@ const Header: React.FC<HeaderProps> = ({
               )}
             </button>
 
-            {isNotificationDropdownOpen && (
-              <div ref={notificationDropdownRef} className="absolute right-0 top-full z-50 mt-2 w-80 max-w-[90vw]">
+            {isNotificationDropdownOpen && notificationAnchor && createPortal(
+              <div
+                ref={notificationDropdownRef}
+                className="fixed z-[100] w-80 max-w-[min(20rem,calc(100vw-1rem))]"
+                style={{ right: notificationAnchor.right, top: notificationAnchor.top }}
+              >
                 <div className="app-dropdown">
                   <div className="border-b border-[var(--border-subtle)] px-4 py-3">
                     <div className="mb-4 flex items-center justify-between">
@@ -307,16 +379,30 @@ const Header: React.FC<HeaderProps> = ({
                     )}
                   </div>
                 </div>
-              </div>
+              </div>,
+              document.body
             )}
           </div>
 
-          <div className="relative" ref={userMenuRef}>
+          <div className="relative w-fit shrink-0" ref={userMenuRef}>
             <button
               type="button"
+              ref={userButtonRef}
               aria-haspopup="menu"
               aria-expanded={isUserMenuOpen}
-              onClick={() => setIsUserMenuOpen((v) => !v)}
+              onClick={() => {
+                setIsNotificationDropdownOpen(false);
+                setNotificationAnchor(null);
+
+                if (isUserMenuOpen) {
+                  setIsUserMenuOpen(false);
+                  setUserMenuAnchor(null);
+                  return;
+                }
+
+                setUserMenuAnchor(getDropdownAnchor(userButtonRef.current));
+                setIsUserMenuOpen(true);
+              }}
               className="flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--surface-muted)] py-1 pl-1 pr-2 transition-colors hover:border-[var(--brand-primary)] sm:pr-3"
             >
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--brand-primary)] text-sm font-semibold text-white">
@@ -330,8 +416,12 @@ const Header: React.FC<HeaderProps> = ({
               </span>
             </button>
 
-            {isUserMenuOpen && (
-              <div className="absolute right-0 top-full z-50 mt-2 w-72">
+            {isUserMenuOpen && userMenuAnchor && createPortal(
+              <div
+                ref={userMenuDropdownRef}
+                className="fixed z-[100] w-72 max-w-[min(18rem,calc(100vw-1rem))]"
+                style={{ right: userMenuAnchor.right, top: userMenuAnchor.top }}
+              >
                 <div className="app-dropdown" role="menu" aria-label="User menu">
                   <div className="border-b border-[var(--border-subtle)] px-4 py-4">
                     <div className="flex items-center gap-3">
@@ -382,7 +472,8 @@ const Header: React.FC<HeaderProps> = ({
                     </Button>
                   </div>
                 </div>
-              </div>
+              </div>,
+              document.body
             )}
           </div>
 
