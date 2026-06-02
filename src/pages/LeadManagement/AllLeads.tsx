@@ -40,7 +40,7 @@ const AllLeads: React.FC = () => {
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
   const [brandOptions, setBrandOptions] = useState<{ value: string; label: string }[]>([]);
   const [subSourceOptions, setSubSourceOptions] = useState<{ value: string; label: string }[]>([]);
-  const [assignByOptions, setAssignByOptions] = useState<{ value: string; label: string }[]>([]);
+  const [userFilterOptions, setUserFilterOptions] = useState<{ value: string; label: string }[]>([]);
   const itemsPerPage = 15;
   const [leads, setLeads] = useState<AllLeadtype[]>([]);
   const [callStatusOptions, setCallStatusOptions] = useState<CallStatusOption[]>([]);
@@ -72,12 +72,12 @@ const AllLeads: React.FC = () => {
       try {
         const users = await listChildUsers(1000);
         setAssignToOptions(users.map((u) => ({ id: u.id, name: u.name })));
-        setAssignByOptions(
+        setUserFilterOptions(
           users.map((u) => ({ value: String(u.id), label: u.name }))
         );
       } catch {
         setAssignToOptions([]);
-        setAssignByOptions([]);
+        setUserFilterOptions([]);
       }
     };
     loadUsers();
@@ -362,7 +362,13 @@ const AllLeads: React.FC = () => {
         {
           key: 'created_by',
           label: 'Created By',
-          options: assignByOptions,
+          options: userFilterOptions,
+          isMulti: true,
+        },
+        {
+          key: 'current_assign_user',
+          label: 'Assign To',
+          options: userFilterOptions,
           isMulti: true,
         },
         {
@@ -375,7 +381,7 @@ const AllLeads: React.FC = () => {
           isMulti: true,
         },
       ].filter((option) => option.options.length > 0),
-    [brandOptions, subSourceOptions, assignByOptions, callStatusOptions]
+    [brandOptions, subSourceOptions, userFilterOptions, callStatusOptions]
   );
 
   const columns: Column<AllLeadtype>[] = [

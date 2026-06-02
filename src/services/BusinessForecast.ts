@@ -9,7 +9,7 @@ export type BusinessForecastData = {
 
 export async function getBusinessForecast(): Promise<BusinessForecastData> {
   const res = await apiClient.get<BusinessForecastData>('/briefs/business-forecast');
-  console.log('BusinessForecast API raw response:', res);
+  
   if (!res || !res.success) {
     throw new Error(res?.message || 'Failed to fetch business forecast');
   }
