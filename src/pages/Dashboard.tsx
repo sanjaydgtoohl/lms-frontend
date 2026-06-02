@@ -61,7 +61,7 @@ const Dashboard: React.FC = () => {
         if (results[2].status === 'fulfilled') {
           setMeetings(results[2].value.data);
         } else {
-          console.error('Failed to fetch meetings:', results[2].reason);
+          
           setMeetings([]);
         }
 
@@ -71,10 +71,10 @@ const Dashboard: React.FC = () => {
           results[3].value &&
           typeof results[3].value.total_budget === 'number'
         ) {
-          console.log('Business Forecast total_budget:', results[3].value.total_budget);
+          
           setMonthlyRevenue(results[3].value.total_budget);
         } else {
-          console.error('Failed to fetch business forecast:', results[3]);
+          
           setMonthlyRevenue(0);
         }
       } catch (error) {
