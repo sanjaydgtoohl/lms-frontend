@@ -11,47 +11,78 @@ export type { DeviceData };
 
 const INVENTORY_ENDPOINT = '/inventory';
 
+function buildInventoryQueryParams(
+  params: ListDeviceInventoryParams
+): Record<string, string | number> {
+  const query: Record<string, string | number> = {
+    page: params.page ?? 1,
+    per_page: params.per_page ?? 10,
+  };
+
+  const append = (key: string, value?: string) => {
+    const trimmed = value?.trim();
+    if (trimmed) query[key] = trimmed;
+  };
+
+  append('search', params.search);
+  append('country', params.country);
+  append('state', params.state);
+  append('city', params.city);
+  append('zone', params.zone);
+  append('sub_zone_area', params.subZoneArea);
+  append('pincode', params.pincode);
+  append('arterial_route', params.arterialRoute);
+  append('mode_of_media', params.modeOfMedia);
+  append('publisher', params.publisher);
+  append('main_category_name', params.mainCategory);
+  append('sub_category_name', params.categorySub);
+  append('category_name', params.category);
+  append('location_type', params.locationType);
+  append('orientation', params.orientation);
+  append('resolution', params.resolution);
+  append('screen_location', params.screenLocation);
+  append('stretch', params.stretch);
+  append('property', params.property);
+
+  return query;
+}
+
+function normalizeInventoryResponse(json: unknown): DeviceInventoryResponse {
+  const body = (json || {}) as Record<string, unknown>;
+  const ok = body.status === true || body.success === true;
+
+  if (!ok) {
+    const message = String(body.message || body.error || 'Request failed');
+    const error = new Error(message);
+    (error as Error & { responseData?: unknown }).responseData = json;
+    throw error;
+  }
+
+  const meta = (body.meta || {}) as Record<string, unknown>;
+  const pagination = (meta.pagination || {}) as Record<string, unknown>;
+  const rows = Array.isArray(body.data) ? (body.data as DeviceData[]) : [];
+
+  return {
+    status: true,
+    message: String(body.message || ''),
+    total_records: Number(
+      body.total_records ?? pagination.total ?? meta.total ?? rows.length
+    ),
+    current_page: Number(body.current_page ?? pagination.page ?? 1),
+    per_page: Number(body.per_page ?? pagination.limit ?? pagination.per_page ?? 10),
+    data: rows,
+  };
+}
+
 export async function listDeviceInventory(
   params: ListDeviceInventoryParams = {}
 ): Promise<DeviceInventoryResponse> {
   try {
-    // Convert to POST request with body instead of GET with query params
-    const requestBody = {
-      page: params.page ?? 1,
-      per_page: params.per_page ?? 10,
-      ...(params.search ? { search: params.search } : {}),
-      ...(params.state ? { state: params.state } : {}),
-      ...(params.city ? { city: params.city } : {}),
-      ...(params.country ? { country: params.country } : {}),
-      ...(params.zone ? { zone: params.zone } : {}),
-      ...(params.subZoneArea ? { sub_zone_area: params.subZoneArea } : {}),
-      ...(params.pincode ? { pincode: params.pincode } : {}),
-      ...(params.arterialRoute ? { arterial_route: params.arterialRoute } : {}),
-      ...(params.modeOfMedia ? { mode_of_media: params.modeOfMedia } : {}),
-      ...(params.publisher ? { publisher: params.publisher } : {}),
-      ...(params.mainCategory ? { main_category_name: params.mainCategory } : {}),
-      ...(params.categorySub ? { sub_category_name: params.categorySub } : {}),
-      ...(params.category ? { category_name: params.category } : {}),
-      ...(params.locationType ? { location_type: params.locationType } : {}),
-      ...(params.orientation ? { orientation: params.orientation } : {}),
-      ...(params.resolution ? { resolution: params.resolution } : {}),
-      ...(params.screenLocation ? { screen_location: params.screenLocation } : {}),
-      ...(params.stretch ? { stretch: params.stretch } : {}),
-      ...(params.property ? { property: params.property } : {}),
-    };
+    const resp = await sspHttp.get(INVENTORY_ENDPOINT, {
+      params: buildInventoryQueryParams(params),
+    });
 
-    const resp = await sspHttp.get(INVENTORY_ENDPOINT, { params: requestBody });
-
-    const json = resp.data as DeviceInventoryResponse;
-    if (!json || json.status !== true) {
-      const message = (json as any)?.message || (json as any)?.error || 'Request failed';
-      const error = new Error(message);
-      (error as any).statusCode = (resp as any)?.status;
-      (error as any).responseData = json;
-      throw error;
-    }
-
-    return json;
+    return normalizeInventoryResponse(resp.data);
   } catch (error) {
     handleApiError(error);
     throw error;
