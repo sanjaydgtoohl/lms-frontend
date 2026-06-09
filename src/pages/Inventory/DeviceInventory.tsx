@@ -1,8 +1,6 @@
 /**
  * @file DeviceInventory.tsx
- * @description Device inventory list, import, export, and CRUD.
- * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
- * @date 2026-05-25
+ * @description Device inventory list with filters, export, and detail view.
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -14,58 +12,42 @@ import FilterPopup from '../../components/ui/FilterPopup';
 import ExportCsvButton from '../../components/ui/ExportCsvButton';
 import MasterHeader from '../../components/ui/MasterHeader';
 import PPTExport from '../../components/ui/PPTExport';
-import { useNavigate } from 'react-router-dom';
 import {
   fetchAllDeviceInventoryRows,
   listDeviceInventory,
   type DeviceData,
 } from '../../services/DeviceInventory';
 import { DEVICE_INVENTORY_CSV_COLUMNS } from './deviceInventoryCsv';
+import {
+  DEFAULT_APPLIED_LOCATION,
+} from './deviceInventoryConfig.ts';
+import { buildDeviceTableColumns } from './deviceInventoryColumns.tsx';
+import DeviceDetailModal from './DeviceDetailModal';
 
-const DEFAULT_APPLIED_LOCATION = {
-  country: 'India',
-  state: '',
-  city: '',
-  zoneArea: '',
-  subZoneArea: '',
-  pincode: '',
-  arterialRoute: '',
-  modeOfMedia: '',
-  publisher: '',
-  mainCategory: '',
-  categorySub: '',
-  category: '',
-  locationType: '',
-  orientation: '',
-  resolution: '',
-  screenLocation: '',
-  stretch: '',
-  property: '',
-};
+const ITEMS_PER_PAGE = 10;
 
 const DeviceInventory: React.FC = () => {
-  const navigate = useNavigate();
   const filterAnchorRef = useRef<HTMLButtonElement>(null);
   const [data, setData] = useState<DeviceData[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
   const [appliedLocation, setAppliedLocation] = useState(DEFAULT_APPLIED_LOCATION);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [selectedDevice, setSelectedDevice] = useState<DeviceData | null>(null);
 
   const getInventoryFilters = useCallback(
     () => ({
-      search: searchQuery?.trim() ? searchQuery.trim() : undefined,
-      country: appliedLocation.country?.trim() || undefined,
+      search: searchQuery.trim() || undefined,
+      country: appliedLocation.country.trim() || undefined,
       state: appliedLocation.state.trim() || undefined,
       city: appliedLocation.city.trim() || undefined,
-      zone: appliedLocation.zoneArea?.trim() || undefined,
-      subZoneArea: appliedLocation.subZoneArea?.trim() || undefined,
+      zone: appliedLocation.zoneArea.trim() || undefined,
+      subZoneArea: appliedLocation.subZoneArea.trim() || undefined,
       pincode: appliedLocation.pincode.trim() || undefined,
       arterialRoute: appliedLocation.arterialRoute.trim() || undefined,
-      modeOfMedia: appliedLocation.modeOfMedia?.trim() || undefined,
+      modeOfMedia: appliedLocation.modeOfMedia.trim() || undefined,
       publisher: appliedLocation.publisher.trim() || undefined,
       mainCategory: appliedLocation.mainCategory.trim() || undefined,
       categorySub: appliedLocation.categorySub.trim() || undefined,
@@ -80,53 +62,42 @@ const DeviceInventory: React.FC = () => {
     [searchQuery, appliedLocation]
   );
 
-  const hasActiveLocationFilter = Boolean(
-    Object.entries(appliedLocation).some(([key, value]) => {
-      // "India" is the default country and should not mark filter as active.
-      if (key === 'country' && value.trim() === DEFAULT_APPLIED_LOCATION.country) return false;
-      const trimmed = value.trim();
-      if (!trimmed) return false;
-      return true;
-    })
+  const hasActiveLocationFilter = useMemo(
+    () =>
+      Object.entries(appliedLocation).some(([key, value]) => {
+        if (key === 'country' && value.trim() === DEFAULT_APPLIED_LOCATION.country) {
+          return false;
+        }
+        return Boolean(value.trim());
+      }),
+    [appliedLocation]
   );
 
   const exportFetchRows = useCallback(
-    () =>
-      fetchAllDeviceInventoryRows({
-        ...getInventoryFilters(),
-      }),
+    () => fetchAllDeviceInventoryRows(getInventoryFilters()),
     [getInventoryFilters]
   );
 
   const totalPages = useMemo(() => {
-    const pages = Math.ceil(totalItems / itemsPerPage);
+    const pages = Math.ceil(totalItems / ITEMS_PER_PAGE);
     return pages > 0 ? pages : 1;
-  }, [totalItems, itemsPerPage]);
+  }, [totalItems]);
 
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
   }, [currentPage, totalPages]);
 
-  const handlePageChange = (page: number) => {
-    const next = Math.min(totalPages, Math.max(1, page));
-    setCurrentPage(next);
-  };
-
-  const fetchInventory = useCallback(async () => {
-    const res = await listDeviceInventory({
-      page: currentPage,
-      per_page: itemsPerPage,
-      ...getInventoryFilters(),
-    });
-    return res;
-  }, [currentPage, itemsPerPage, getInventoryFilters]);
-
   useEffect(() => {
     let alive = true;
+
     const load = async () => {
       try {
         setLoading(true);
-        const res = await fetchInventory();
+        const res = await listDeviceInventory({
+          page: currentPage,
+          per_page: ITEMS_PER_PAGE,
+          ...getInventoryFilters(),
+        });
         if (!alive) return;
         setData(Array.isArray(res.data) ? res.data : []);
         setTotalItems(Number(res.total_records || 0));
@@ -143,26 +114,43 @@ const DeviceInventory: React.FC = () => {
     return () => {
       alive = false;
     };
-  }, [fetchInventory]);
+  }, [currentPage, getInventoryFilters]);
+
+  const handleViewDetails = useCallback((item: DeviceData) => {
+    setSelectedDevice(item);
+  }, []);
+
+  const columns = useMemo(
+    () => buildDeviceTableColumns(handleViewDetails),
+    [handleViewDetails]
+  );
 
   return (
     <div className="flex-1 w-full max-w-full overflow-x-hidden">
       <MasterHeader
-        onCreateClick={() => navigate('/add-device')}
+        onCreateClick={() => undefined}
         createButtonLabel="Add Device"
-        showBreadcrumb={true}
+        showBreadcrumb
         showCreateButton={false}
         breadcrumbItems={[{ label: 'Device Inventory', path: '/inventory/device' }]}
       />
 
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm device-inventory-outer-section">
-        <div className="bg-gray-50 px-3 md:px-6 py-3 md:py-4 flex flex-row items-center justify-between gap-3 flex-wrap md:flex-nowrap border-b border-gray-200">
-          <h2 className="text-sm md:text-base font-semibold text-gray-900 flex-shrink-0">Device Inventory</h2>
-          <div className="flex w-full min-w-0 items-center justify-end gap-2 sm:w-auto flex-wrap">
+      <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
+        <div className="flex flex-row flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-gray-50 px-3 py-3 md:flex-nowrap md:px-6 md:py-4">
+          <div>
+            <h2 className="text-sm font-semibold text-gray-900 md:text-base">Device Inventory</h2>
+            <p className="mt-0.5 text-xs text-gray-500">
+              {totalItems > 0
+                ? `${totalItems.toLocaleString()} devices found`
+                : 'Browse and filter available inventory devices'}
+            </p>
+          </div>
+
+          <div className="flex w-full min-w-0 flex-wrap items-center justify-end gap-2 sm:w-auto">
             <PPTExport fetchRows={exportFetchRows} />
             <ExportCsvButton<DeviceData>
               fetchRows={exportFetchRows}
-              columns={DEVICE_INVENTORY_CSV_COLUMNS.filter(col => col.key !== 'user_password')}
+              columns={DEVICE_INVENTORY_CSV_COLUMNS}
               filenamePrefix="device-inventory"
               aria-label="Export filtered data as CSV"
             />
@@ -177,17 +165,18 @@ const DeviceInventory: React.FC = () => {
                     onClick={() => setFilterOpen((open) => !open)}
                     aria-expanded={filterOpen}
                     aria-haspopup="dialog"
-                    aria-label="Filter by state and city"
-                    className={`flex h-full min-h-[2.5rem] items-center justify-center px-3 py-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2 ${hasActiveLocationFilter
-                        ? 'text-gray-500'
+                    aria-label="Filter devices"
+                    className={`flex h-full min-h-[2.5rem] items-center justify-center px-3 py-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2 ${
+                      hasActiveLocationFilter
+                        ? 'text-[var(--brand-primary,#007b83)]'
                         : 'text-gray-500 hover:text-gray-800'
-                      }`}
+                    }`}
                   >
                     <Filter className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
                   </button>
                 }
-                onSearch={(q: string) => {
-                  setSearchQuery(q);
+                onSearch={(query) => {
+                  setSearchQuery(query);
                   setCurrentPage(1);
                 }}
               />
@@ -211,155 +200,24 @@ const DeviceInventory: React.FC = () => {
         <Table
           data={data}
           loading={loading}
-          keyExtractor={(it: DeviceData, idx: number) => `${it.device_details_id || it.device_id || 'row'}-${idx}`}
-          columns={[
-            { key: 'device_details_id', header: 'device_details_id', render: (item) => item.device_details_id },
-            { key: 'device_id', header: 'device_id', render: (item) => item.device_id },
-            { key: 'screen_id', header: 'screen_id', render: (item) => item.screen_id },
-            { key: 'device_name', header: 'device_name', render: (item) => item.device_name },
-            { key: 'main_category_name', header: 'main_category_name', render: (item) => item.main_category_name },
-            { key: 'category_name', header: 'category_name', render: (item) => item.category_name },
-            { key: 'sub_category_name', header: 'sub_category_name', render: (item) => item.sub_category_name },
-            { key: 'location_type', header: 'location_type', render: (item) => item.location_type },
-            { key: 'screen_location', header: 'screen_location', render: (item) => item.screen_location },
-            { key: 'latitude', header: 'latitude', render: (item) => item.latitude },
-            { key: 'longitude', header: 'longitude', render: (item) => item.longitude },
-            { key: 'width', header: 'width', render: (item) => item.width || '' },
-            { key: 'height', header: 'height', render: (item) => item.height || '' },
-            { key: 'sq_ft', header: 'sq_ft', render: (item) => item.sq_ft || '' },
-            { key: 'screen_size', header: 'screen_size', render: (item) => item.screen_size },
-            { key: 'total_sq_ft', header: 'total_sq_ft', render: (item) => item.total_sq_ft || '' },
-            { key: 'elevation', header: 'elevation', render: (item) => item.elevation || '' },
-            { key: 'tilt_degree', header: 'tilt_degree', render: (item) => item.tilt_degree || '' },
-            { key: 'orientation', header: 'orientation', render: (item) => item.orientation || '' },
-            { key: 'resolution', header: 'resolution', render: (item) => item.resolution },
-            { key: 'aspect_ratio', header: 'aspect_ratio', render: (item) => item.aspect_ratio },
-            { key: 'monthly_footfall', header: 'monthly_footfall', render: (item) => item.monthly_footfall },
-            { key: 'languages', header: 'languages', render: (item) => item.languages || '' },
-            { key: 'state', header: 'state', render: (item) => item.state },
-            { key: 'city', header: 'city', render: (item) => item.city },
-            { key: 'zone', header: 'zone', render: (item) => item.zone || '' },
-            { key: 'sub_zone_area', header: 'sub_zone_area', render: (item) => item.sub_zone_area || '' },
-            { key: 'pincode', header: 'pincode', render: (item) => item.pincode || '' },
-            { key: 'arterial_route', header: 'arterial_route', render: (item) => item.arterial_route || '' },
-            { key: 'stretch', header: 'stretch', render: (item) => item.stretch || '' },
-            { key: 'property', header: 'property', render: (item) => item.property || '' },
-            { key: 'touchpoint', header: 'touchpoint', render: (item) => item.touchpoint || '' },
-            { key: 'traffic_direction', header: 'traffic_direction', render: (item) => item.traffic_direction || '' },
-            { key: 'mode_of_media', header: 'mode_of_media', render: (item) => item.mode_of_media || '' },
-            { key: 'illumination', header: 'illumination', render: (item) => item.illumination || '' },
-            {
-              key: 'old_device_image', header: 'Old Device Image', render: (item) => (
-                item.old_device_image ? (
-                  <img
-                    src={item.old_device_image}
-                    alt="Old Device"
-                    className="w-16 h-16 object-cover rounded-md border border-gray-200"
-                  />
-                ) : (
-                  <span className="text-xs text-gray-500">N/A</span>
-                )
-              )
-            },
-            {
-              key: 'device_image', header: 'Device Image', render: (item) => (
-                item.device_image ? (
-                  <img
-                    src={item.device_image}
-                    alt="Device"
-                    className="w-16 h-16 object-cover rounded-md border border-gray-200"
-                  />
-                ) : (
-                  <span className="text-xs text-gray-500">N/A</span>
-                )
-              )
-            },
-            {
-              key: 'aws_device_image', header: 'AWS Device Image', render: (item) => (
-                item.aws_device_image ? (
-                  <a href={item.aws_device_image} target="_blank" rel="noopener noreferrer">
-                    <img
-                      src={item.aws_device_image}
-                      alt="AWS Device"
-                      className="w-16 h-16 object-cover rounded-md border border-gray-200"
-                    />
-                  </a>
-                ) : (
-                  <span className="text-xs text-gray-500">N/A</span>
-                )
-              )
-            },
-            {
-              key: 'country', header: 'Country', render: (item) => (
-                <span className="text-sm text-gray-700">{item.country || 'N/A'}</span>
-              )
-            },
-            {
-              key: 'on_field_screen_count', header: 'On Field Screen Count', render: (item) => (
-                <span className="text-sm text-gray-700">{item.on_field_screen_count || 'N/A'}</span>
-              )
-            },
-            { key: 'monday_start_time', header: 'monday_start_time', render: (item) => item.monday_start_time || '' },
-            { key: 'monday_end_time', header: 'monday_end_time', render: (item) => item.monday_end_time || '' },
-            { key: 'tuesday_start_time', header: 'tuesday_start_time', render: (item) => item.tuesday_start_time || '' },
-            { key: 'tuesday_end_time', header: 'tuesday_end_time', render: (item) => item.tuesday_end_time || '' },
-            { key: 'wednesday_start_time', header: 'wednesday_start_time', render: (item) => item.wednesday_start_time || '' },
-            { key: 'wednesday_end_time', header: 'wednesday_end_time', render: (item) => item.wednesday_end_time || '' },
-            { key: 'thursday_start_time', header: 'thursday_start_time', render: (item) => item.thursday_start_time || '' },
-            { key: 'thursday_end_time', header: 'thursday_end_time', render: (item) => item.thursday_end_time || '' },
-            { key: 'friday_start_time', header: 'friday_start_time', render: (item) => item.friday_start_time || '' },
-            { key: 'friday_end_time', header: 'friday_end_time', render: (item) => item.friday_end_time || '' },
-            { key: 'saturday_start_time', header: 'saturday_start_time', render: (item) => item.saturday_start_time || '' },
-            { key: 'saturday_end_time', header: 'saturday_end_time', render: (item) => item.saturday_end_time || '' },
-            { key: 'sunday_start_time', header: 'sunday_start_time', render: (item) => item.sunday_start_time || '' },
-            { key: 'sunday_end_time', header: 'sunday_end_time', render: (item) => item.sunday_end_time || '' },
-            { key: 'daily_impression', header: 'daily_impression', render: (item) => item.daily_impression || '' },
-            { key: 'cost_for_impression', header: 'cost_for_impression', render: (item) => item.cost_for_impression || '' },
-            { key: 'cpi_cost', header: 'cpi_cost', render: (item) => item.cpi_cost || '' },
-            { key: 'facing', header: 'facing', render: (item) => item.facing || '' },
-            { key: 'min_operating_price', header: 'min_operating_price', render: (item) => item.min_operating_price || '' },
-            { key: 'screen_type', header: 'screen_type', render: (item) => item.screen_type || '' },
-            { key: 'loop_timing', header: 'loop_timing', render: (item) => item.loop_timing || '' },
-            { key: 'slot_timing', header: 'slot_timing', render: (item) => item.slot_timing || '' },
-            { key: 'slot_details', header: 'slot_details', render: (item) => item.slot_details || '' },
-            { key: 'spots_day', header: 'spots_day', render: (item) => item.spots_day || '' },
-            { key: 'slot_per_month', header: 'slot_per_month', render: (item) => item.slot_per_month || '' },
-            { key: 'daily_hours_of_loop', header: 'daily_hours_of_loop', render: (item) => item.daily_hours_of_loop || '' },
-            { key: 'cost_per_spot', header: 'cost_per_spot', render: (item) => item.cost_per_spot || '' },
-            { key: 'cost_per_audience_imp', header: 'cost_per_audience_imp', render: (item) => item.cost_per_audience_imp || '' },
-            { key: 'max_traffic', header: 'max_traffic', render: (item) => item.max_traffic || '' },
-            { key: 'status', header: 'status', render: (item) => item.status || '' },
-            { key: 'default_date', header: 'default_date', render: (item) => item.default_date || '' },
-            { key: 'update_date', header: 'update_date', render: (item) => item.update_date || '' },
-            { key: 'email_id', header: 'email_id', render: (item) => item.email_id || '' },
-            { key: 'second_email_id', header: 'second_email_id', render: (item) => item.second_email_id || '' },
-            { key: 'first_name', header: 'first_name', render: (item) => item.first_name || '' },
-            { key: 'last_name', header: 'last_name', render: (item) => item.last_name || '' },
-            { key: 'admin_flag', header: 'admin_flag', render: (item) => item.admin_flag || '' },
-            { key: 'company_name', header: 'company_name', render: (item) => item.company_name || '' },
-            { key: 'user_password', header: 'user_password', render: () => '••••••••' },
-            { key: 'device_limit', header: 'device_limit', render: (item) => item.device_limit || '' },
-            { key: 'expiry_date', header: 'expiry_date', render: (item) => item.expiry_date || '' },
-            { key: 'manager_name', header: 'manager_name', render: (item) => item.manager_name || '' },
-            { key: 'access_type', header: 'access_type', render: (item) => item.access_type || '' },
-            { key: 'markup_applicable', header: 'markup_applicable', render: (item) => item.markup_applicable || '' },
-            { key: 'markup_type', header: 'markup_type', render: (item) => item.markup_type || '' },
-            { key: 'markup_value', header: 'markup_value', render: (item) => item.markup_value || '' },
-            { key: 'code', header: 'code', render: (item) => item.code || '' },
-            { key: 'media_owner', header: 'media_owner', render: (item) => item.media_owner?.name || '' },
-          ]}
+          columns={columns}
+          compact
+          keyExtractor={(item, idx) =>
+            `${item.device_details_id || item.device_id || 'row'}-${idx}`
+          }
         />
 
-        <div className="flex justify-between items-center mt-6 px-3 md:px-6 py-3 md:py-4">
+        <div className="px-3 py-3 md:px-6 md:py-4">
           <Pagination
             currentPage={currentPage}
             totalItems={totalItems}
-            itemsPerPage={itemsPerPage}
-            onPageChange={handlePageChange}
+            itemsPerPage={ITEMS_PER_PAGE}
+            onPageChange={(page) => setCurrentPage(Math.min(totalPages, Math.max(1, page)))}
           />
-
         </div>
       </div>
+
+      <DeviceDetailModal device={selectedDevice} onClose={() => setSelectedDevice(null)} />
     </div>
   );
 };
