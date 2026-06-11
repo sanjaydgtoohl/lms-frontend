@@ -3,33 +3,31 @@
  * Uses local HTTP client with proxy to avoid CORS issues
  */
 
-import axios from 'axios';
+import axios, { AxiosHeaders } from 'axios';
 import type { AxiosInstance } from 'axios';
+import { applySspAuthHeaders, resolveSspBaseUrl } from './sspConfig';
 
-
-const RAW_SSP_BASE_URL =
-  (typeof globalThis !== 'undefined' && (globalThis as any).VITE_SSP_API_BASE_URL) ||
-  String(import.meta.env.VITE_SSP_API_BASE_URL || '').trim() ||
-  (typeof globalThis !== 'undefined' && (globalThis as any).VITE_SSP_BASE_URL) ||
-  String(import.meta.env.VITE_SSP_BASE_URL || '').trim();
-
-const normalizedSspBaseUrl = RAW_SSP_BASE_URL.replace(/\/$/, '');
-const locationApiBaseUrl =
-  normalizedSspBaseUrl && /^https?:\/\//i.test(normalizedSspBaseUrl)
-    ? /\/api$/i.test(normalizedSspBaseUrl)
-      ? normalizedSspBaseUrl
-      : `${normalizedSspBaseUrl}/api`
-    : '/ssp-api';
+const locationApiBaseUrl = resolveSspBaseUrl();
 
 const sspApiClient: AxiosInstance = axios.create({
   baseURL: locationApiBaseUrl,
   timeout: 30000,
-  headers: {
+  headers: AxiosHeaders.from({
     'Content-Type': 'application/json',
-  },
+    ...applySspAuthHeaders(),
+  }),
 });
 
 // Add response interceptor for error handling
+sspApiClient.interceptors.request.use((config) => {
+  const headers = AxiosHeaders.from(config.headers);
+  Object.entries(applySspAuthHeaders()).forEach(([key, value]) => {
+    headers.set(key, value);
+  });
+  config.headers = headers;
+  return config;
+});
+
 sspApiClient.interceptors.response.use(
   (response) => response,
   (error) => {
