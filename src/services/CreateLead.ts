@@ -5,6 +5,7 @@ import { listCities } from './CreateBrandForm';
 import { listZones } from './CreateBrandForm';
 import { listDepartments } from './DepartmentMaster';
 import { listDesignations } from './DesignationMaster';
+import { listChildUsers } from '../api/lookups';
 import { apiClient } from '../utils/apiClient';
 import { handleApiError } from '../utils/apiErrorHandler';
 
@@ -45,7 +46,6 @@ export type CreateLeadResponse = {
 // --- Fetch users for Assign To dropdown ---
 export async function getUsers(): Promise<User[]> {
   try {
-    const { listChildUsers } = await import('../api/lookups');
     const users = await listChildUsers(1000);
     return users as User[];
   } catch (error) {

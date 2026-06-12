@@ -3,6 +3,7 @@ import logoUrl from '../assets/logo.svg';
 import { BRAND } from '../constants/brand';
 import type { DeviceData } from '../types/inventory.types';
 import { loadDeviceImageDataUrl } from './deviceImageLoader';
+import { ensureImageProxyReady } from './registerImageProxy';
 
 const SLIDE_BACKGROUND = 'FFFFFF';
 const DETAIL_CARD_BACKGROUND = 'FFFFFF';
@@ -194,6 +195,7 @@ export async function generateDeviceInventoryPptx(
   pptx.title = 'Device Inventory Report';
   pptx.layout = 'LAYOUT_WIDE';
 
+  await ensureImageProxyReady();
   const logoDataUrl = await getLogoDataUrl();
 
   const contentTop = SLIDE_PADDING + HEADER_BLOCK_HEIGHT;

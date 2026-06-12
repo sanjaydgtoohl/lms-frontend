@@ -1,6 +1,8 @@
 import { API_BASE_URL, API_ENDPOINTS } from '../constants';
 import type { LoginCredentials, AuthResponse, ApiResponse, User, Course } from '../types';
 import http from './http';
+import loginService from './Login';
+import sessionManager from './sessionManager';
 import { handleApiError } from '../utils/apiErrorHandler';
 
 class ApiClient {
@@ -49,7 +51,6 @@ class ApiClient {
   }
 
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const { default: loginService } = await import('./Login');
     return loginService.login(credentials) as Promise<AuthResponse>;
   }
 
@@ -70,7 +71,6 @@ class ApiClient {
   }
 
   async refreshToken(): Promise<AuthResponse> {
-    const { default: sessionManager } = await import('./sessionManager');
     return sessionManager.refreshTokens() as Promise<AuthResponse>;
   }
 

@@ -1,4 +1,5 @@
 import type { DeviceData } from '../types/inventory.types';
+import { ensureImageProxyReady } from './registerImageProxy';
 
 const REMOTE_IMAGES_BASE = String(
   import.meta.env.VITE_REMOTE_IMAGES_BASE_URL || 'https://d2nljoxssb7y4b.cloudfront.net'
@@ -232,6 +233,7 @@ async function loadImageViaElement(url: string): Promise<string> {
 }
 
 async function loadImageDataUrl(rawUrl: string): Promise<string | null> {
+  await ensureImageProxyReady();
   const candidates = buildFetchCandidates(rawUrl);
 
   for (const candidate of candidates) {
