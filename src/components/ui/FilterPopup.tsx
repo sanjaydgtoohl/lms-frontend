@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useId, useState, useRef } from 'react';
+import { IoMdClose } from 'react-icons/io';
 import SelectDropdown from './SelectDropdown';
 import MultiSelectDropdown from './MultiSelectDropdown';
 import {
@@ -1027,9 +1028,19 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
         aria-labelledby={titleId}
         className="fixed left-1/2 top-1/2 z-50 w-[min(100vw-2rem,80rem)] lg:w-[min(70vw-2rem,80rem)] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-gray-200 bg-white p-5 shadow-xl ring-1 ring-black/5 max-h-[calc(100vh-3rem)] overflow-y-auto"
       >
-        <h2 id={titleId} className="text-md font-semibold text-gray-900 mb-4">
-          Filter Inventory
-        </h2>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 id={titleId} className="text-md font-semibold text-gray-900">
+            Filter Inventory
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn-secondary shrink-0"
+            aria-label="Close"
+          >
+            <IoMdClose className="h-5 w-5" />
+          </button>
+        </div>
 
         <div className="space-y-4">
           {sectionsToRender.map((section) => (

@@ -1,17 +1,35 @@
 import { useCallback, useRef, useState } from 'react';
 import { Download } from 'lucide-react';
 import type { DeviceData } from '../../types/inventory.types';
-import { generateDeviceInventoryPptx } from '../../utils/devicePptxExport';
+import {
+  generateDeviceInventoryPptx,
+  type DeviceInventoryPptxProgress,
+} from '../../utils/devicePptxExport';
 import LoadingModal from './LoadingModal';
+import SweetAlert from '../../utils/SweetAlert';
 
 type PPTExportProps = {
   fetchRows: () => Promise<DeviceData[]>;
   className?: string;
 };
 
+function formatProgressMessage(progress: DeviceInventoryPptxProgress): string {
+  const { loaded, total, stage } = progress;
+
+  if (stage === 'images') {
+    return `Loading device images ${loaded} of ${total}…`;
+  }
+  if (stage === 'slides') {
+    return `Building slides ${loaded} of ${total}…`;
+  }
+  return 'Saving PowerPoint file…';
+}
+
 function PPTExport({ fetchRows, className = '' }: PPTExportProps) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [loadingMessage, setLoadingMessage] = useState(
+    'Your PowerPoint export is being created. Device images are being prepared.'
+  );
   const inFlightRef = useRef(false);
 
   const handleExport = useCallback(async () => {
@@ -20,20 +38,37 @@ function PPTExport({ fetchRows, className = '' }: PPTExportProps) {
     }
 
     inFlightRef.current = true;
-    setError(null);
     setLoading(true);
+    setLoadingMessage('Fetching filtered device records…');
 
     try {
       const rows = await fetchRows();
       if (!rows || rows.length === 0) {
-        setError('No records found for the current filters.');
+        await SweetAlert.showError('No device records matched the current filters.', {
+          title: 'No data to export',
+        });
         return;
       }
-      await generateDeviceInventoryPptx(rows);
+
+      setLoadingMessage(`Preparing ${rows.length.toLocaleString()} device slide(s)…`);
+
+      const result = await generateDeviceInventoryPptx(rows, {
+        onProgress: (progress) => {
+          setLoadingMessage(formatProgressMessage(progress));
+        },
+      });
+
+      await SweetAlert.showSuccess({
+        title: 'PPT export ready',
+        text: `${result.exportedCount.toLocaleString()} device slide(s) exported successfully.`,
+        timer: 2500,
+      });
     } catch (err) {
       console.error('PPT export failed:', err);
       const message = err instanceof Error ? err.message : String(err);
-      setError(`Unable to generate the PPT export. ${message}`);
+      await SweetAlert.showError(message, {
+        title: 'PPT export failed',
+      });
     } finally {
       setLoading(false);
       inFlightRef.current = false;
@@ -46,22 +81,17 @@ function PPTExport({ fetchRows, className = '' }: PPTExportProps) {
         type="button"
         onClick={handleExport}
         disabled={loading}
-        className="btn-primary"
-        aria-label="Export device inventory to PPT"
+        className="btn-primary inline-flex items-center whitespace-nowrap shrink-0"
+        aria-label="Export all filtered device inventory to PowerPoint"
         aria-busy={loading}
       >
-        <Download className="text-gray-700 h-4 w-4 mr-2 shrink-0" aria-hidden />
+        <Download className="h-4 w-4 mr-2 shrink-0 text-gray-700" aria-hidden />
         {loading ? 'Exporting PPT…' : 'PPT Export'}
       </button>
-      {error ? (
-        <p role="alert" aria-live="assertive" className="mt-2 text-sm text-red-600">
-          {error}
-        </p>
-      ) : null}
       <LoadingModal
         isOpen={loading}
         title="Generating PPT"
-        message="Your PPT export is being created. Please wait a moment."
+        message={loadingMessage}
       />
     </div>
   );
