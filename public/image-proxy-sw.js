@@ -3,6 +3,8 @@
  * on production (no nginx proxy required).
  */
 const DEFAULT_CDN = 'https://d2nljoxssb7y4b.cloudfront.net';
+const CACHE_NAME = 'remote-images-v1';
+
 let cdnBase = DEFAULT_CDN;
 
 self.addEventListener('message', (event) => {
@@ -29,8 +31,15 @@ self.addEventListener('fetch', (event) => {
   const target = `${cdnBase}${cdnPath}${url.search}`;
 
   event.respondWith(
-    fetch(target).catch(() =>
-      fetch(event.request).catch(() => Response.error())
-    )
+    caches.open(CACHE_NAME).then(async (cache) => {
+      const cached = await cache.match(event.request);
+      if (cached) return cached;
+
+      const response = await fetch(target);
+      if (response.ok) {
+        cache.put(event.request, response.clone());
+      }
+      return response;
+    })
   );
 });

@@ -8,6 +8,24 @@ function sendCdnConfig(worker: ServiceWorker | null | undefined) {
   worker?.postMessage({ type: 'CONFIG', cdn: CDN_BASE });
 }
 
+function waitForServiceWorkerController(timeoutMs = 8000): Promise<void> {
+  if (!('serviceWorker' in navigator) || navigator.serviceWorker.controller) {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve) => {
+    const timer = window.setTimeout(() => resolve(), timeoutMs);
+    navigator.serviceWorker.addEventListener(
+      'controllerchange',
+      () => {
+        window.clearTimeout(timer);
+        resolve();
+      },
+      { once: true }
+    );
+  });
+}
+
 /** Register SW that proxies /remote-images -> CDN (production only). */
 export function ensureImageProxyReady(): Promise<void> {
   if (import.meta.env.DEV || !('serviceWorker' in navigator)) {
@@ -31,8 +49,9 @@ export function ensureImageProxyReady(): Promise<void> {
 
         return navigator.serviceWorker.ready;
       })
-      .then((registration) => {
+      .then(async (registration) => {
         sendCdnConfig(registration.active);
+        await waitForServiceWorkerController();
       })
       .catch((error) => {
         console.warn('Image proxy service worker failed to register:', error);
