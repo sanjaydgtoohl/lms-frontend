@@ -31,7 +31,7 @@ const PANEL_HEIGHT =
 const HEADER_TITLE = 'Device Inventory Report';
 const DETAIL_FONT_SIZE = 9;
 const DETAIL_ROW_HEIGHT = 0.28;
-const IMAGE_BATCH_SIZE = 20;
+const IMAGE_BATCH_SIZE = 4;
 const IMAGE_FETCH_TIMEOUT = 8000;
 
 const brandLogoSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 60"><rect width="260" height="60" rx="12" fill="#0F4C81"/><text x="20" y="38" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#FFFFFF">${BRAND.productShort}</text><text x="20" y="52" font-family="Arial, sans-serif" font-size="12" fill="#D9E7FF">LMS</text></svg>`;
