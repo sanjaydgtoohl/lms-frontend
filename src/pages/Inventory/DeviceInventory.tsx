@@ -9,7 +9,7 @@ import Pagination from '../../components/ui/Pagination';
 import Table from '../../components/ui/Table';
 import SearchBar from '../../components/ui/SearchBar';
 import FilterPopup from '../../components/ui/FilterPopup';
-import ExportCsvButton from '../../components/ui/ExportCsvButton';
+import ExportExcelButton from '../../components/ui/ExportExcelButton';
 import MasterHeader from '../../components/ui/MasterHeader';
 import PPTExport from '../../components/ui/PPTExport';
 import {
@@ -17,7 +17,7 @@ import {
   listDeviceInventory,
   type DeviceData,
 } from '../../services/DeviceInventory';
-import { DEVICE_INVENTORY_CSV_COLUMNS } from './deviceInventoryCsv';
+import { exportDeviceInventoryExcel } from '../../utils/deviceInventoryExcel';
 import {
   DEFAULT_APPLIED_LOCATION,
 } from './deviceInventoryConfig.ts';
@@ -77,6 +77,14 @@ const DeviceInventory: React.FC = () => {
     () => fetchAllDeviceInventoryRows(getInventoryFilters()),
     [getInventoryFilters]
   );
+
+  const handleExportExcel = useCallback(async () => {
+    const rows = await exportFetchRows();
+    if (!rows.length) {
+      throw new Error('No device records matched the current filters.');
+    }
+    exportDeviceInventoryExcel(rows);
+  }, [exportFetchRows]);
 
   const totalPages = useMemo(() => {
     const pages = Math.ceil(totalItems / ITEMS_PER_PAGE);
@@ -148,11 +156,10 @@ const DeviceInventory: React.FC = () => {
 
           <div className="flex w-full min-w-0 flex-wrap items-center justify-end gap-2 sm:w-auto">
             <PPTExport fetchRows={exportFetchRows} />
-            <ExportCsvButton<DeviceData>
-              fetchRows={exportFetchRows}
-              columns={DEVICE_INVENTORY_CSV_COLUMNS}
-              filenamePrefix="device-inventory"
-              aria-label="Export filtered data as CSV"
+            <ExportExcelButton
+              fetchExport={handleExportExcel}
+              label="Excel Export"
+              aria-label="Export filtered device inventory as Excel"
             />
             <div className="relative w-full min-w-0 sm:w-auto">
               <SearchBar

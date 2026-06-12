@@ -1,6 +1,7 @@
 import type { Column } from '../../components/ui/Table';
 import type { DeviceData } from '../../types/inventory.types';
 import { StatusPill } from '../../components/ui';
+import { getDeviceImageDisplayUrl } from '../../utils/deviceImageLoader';
 import { categoryLabel, cellText, locationLabel } from './deviceInventoryConfig.ts';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -67,7 +68,7 @@ export function buildDeviceTableColumns(
       minWidth: 80,
       disableTooltip: true,
       render: (item) => {
-        const src = item.device_image || item.aws_device_image || item.old_device_image;
+        const src = getDeviceImageDisplayUrl(item);
         if (!src) return <span className="text-xs text-gray-400">N/A</span>;
         return (
           <img
