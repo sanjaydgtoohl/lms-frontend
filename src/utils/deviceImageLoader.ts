@@ -1,5 +1,5 @@
 import type { DeviceData } from '../types/inventory.types';
-import { ensureImageProxyReady } from './registerImageProxy';
+import { ensureImageProxyReady, fetchImageViaServiceWorker } from './registerImageProxy';
 
 const REMOTE_IMAGES_BASE = String(
   import.meta.env.VITE_REMOTE_IMAGES_BASE_URL || 'https://d2nljoxssb7y4b.cloudfront.net'
@@ -10,9 +10,35 @@ const IMAGE_PROXY_PREFIX = String(import.meta.env.VITE_IMAGE_BASE_URL || '/remot
   ''
 );
 
-const IMAGE_FETCH_TIMEOUT = 12000;
+const IMAGE_FETCH_TIMEOUT = 45000;
+const MAX_CONCURRENT_IMAGE_LOADS = 4;
 
 const INVALID_IMAGE_VALUES = new Set(['', 'none', 'null', 'undefined', 'n/a']);
+
+const imageDataUrlCache = new Map<string, Promise<string | null>>();
+
+let activeImageLoads = 0;
+const imageLoadQueue: Array<() => void> = [];
+
+function acquireImageLoadSlot(): Promise<void> {
+  if (activeImageLoads < MAX_CONCURRENT_IMAGE_LOADS) {
+    activeImageLoads += 1;
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve) => {
+    imageLoadQueue.push(() => {
+      activeImageLoads += 1;
+      resolve();
+    });
+  });
+}
+
+function releaseImageLoadSlot(): void {
+  activeImageLoads -= 1;
+  const next = imageLoadQueue.shift();
+  if (next) next();
+}
 
 export function resolveDeviceImageCandidates(device: DeviceData): string[] {
   const candidates = [device.device_image, device.aws_device_image, device.old_device_image];
@@ -43,6 +69,31 @@ function getRemoteImagesHost(): string {
   }
 }
 
+function collapseSlashes(path: string): string {
+  return path.replace(/\/+/g, '/');
+}
+
+function stripRemoteImagesPrefix(path: string): string {
+  return path.replace(/^\/?remote-images\//i, '').replace(/^\/+/, '');
+}
+
+/** Convert API image value to an absolute CDN URL. */
+export function resolveCdnImageUrl(rawUrl: string): string {
+  const trimmed = rawUrl.trim();
+  if (!trimmed) return '';
+
+  if (trimmed.startsWith('//')) {
+    return `${window.location.protocol}${trimmed}`;
+  }
+
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+
+  const path = collapseSlashes(stripRemoteImagesPrefix(trimmed.replace(/^\/+/, '')));
+  return `${REMOTE_IMAGES_BASE}/${path}`;
+}
+
 /** Normalize API image paths to a fetchable absolute or same-origin proxy URL. */
 export function normalizeDeviceImageUrl(url: string): string {
   const trimmed = url.trim();
@@ -56,7 +107,8 @@ export function normalizeDeviceImageUrl(url: string): string {
     return trimmed;
   }
 
-  const path = trimmed.replace(/^\/+/, '');
+  const path = collapseSlashes(stripRemoteImagesPrefix(trimmed.replace(/^\/+/, '')));
+
   if (IMAGE_PROXY_PREFIX.startsWith('http')) {
     return `${IMAGE_PROXY_PREFIX}/${path}`;
   }
@@ -68,6 +120,21 @@ function toAbsoluteUrl(url: string): string {
   if (/^https?:\/\//i.test(url)) return url;
   if (url.startsWith('//')) return `${window.location.protocol}${url}`;
   return `${window.location.origin}${url.startsWith('/') ? url : `/${url}`}`;
+}
+
+function isRemoteCdnUrl(url: string): boolean {
+  try {
+    const imageUrl = new URL(url, window.location.origin);
+    const remoteHost = getRemoteImagesHost();
+
+    return (
+      imageUrl.hostname === remoteHost ||
+      imageUrl.hostname.endsWith('.cloudfront.net') ||
+      imageUrl.hostname.includes('amazonaws.com')
+    );
+  } catch {
+    return false;
+  }
 }
 
 /** Build same-origin proxy URL so canvas/export can read pixels without CORS. */
@@ -82,14 +149,10 @@ export function buildDeviceImageFetchUrl(normalizedUrl: string): string {
       return imageUrl.toString();
     }
 
-    const remoteHost = getRemoteImagesHost();
-    const isRemoteAsset =
-      imageUrl.hostname === remoteHost ||
-      imageUrl.hostname.endsWith('.cloudfront.net') ||
-      imageUrl.hostname.includes('amazonaws.com');
-
-    if (isRemoteAsset) {
-      const proxiedPath = `${IMAGE_PROXY_PREFIX}${imageUrl.pathname}${imageUrl.search}`;
+    if (isRemoteCdnUrl(imageUrl.toString())) {
+      const proxiedPath = collapseSlashes(
+        `${IMAGE_PROXY_PREFIX}${imageUrl.pathname}${imageUrl.search}`
+      );
       return toAbsoluteUrl(proxiedPath);
     }
 
@@ -101,18 +164,6 @@ export function buildDeviceImageFetchUrl(normalizedUrl: string): string {
   } catch {
     return toAbsoluteUrl(normalizedUrl);
   }
-}
-
-function buildFetchCandidates(rawUrl: string): string[] {
-  const normalized = normalizeDeviceImageUrl(rawUrl);
-  if (!normalized) return [];
-
-  const proxied = buildDeviceImageFetchUrl(normalized);
-  const remoteAbsolute = /^https?:\/\//i.test(normalized)
-    ? normalized
-    : `${REMOTE_IMAGES_BASE}/${normalized.replace(/^\/+/, '')}`;
-
-  return Array.from(new Set([proxied, normalized, remoteAbsolute].filter(Boolean)));
 }
 
 function inferMimeType(blob: Blob, url: string): string {
@@ -175,13 +226,13 @@ async function blobToDataUrl(blob: Blob, sourceUrl: string): Promise<string> {
   });
 }
 
-async function fetchImageBlob(url: string): Promise<Blob | null> {
+async function fetchImageBlob(url: string, mode: RequestMode = 'cors'): Promise<Blob | null> {
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), IMAGE_FETCH_TIMEOUT);
 
   try {
-    const response = await fetch(url, { signal: controller.signal, credentials: 'same-origin' });
-    if (!response.ok) return null;
+    const response = await fetch(url, { signal: controller.signal, mode });
+    if (mode === 'cors' && !response.ok) return null;
     const blob = await response.blob();
     return blob.size > 0 ? blob : null;
   } catch {
@@ -191,80 +242,86 @@ async function fetchImageBlob(url: string): Promise<Blob | null> {
   }
 }
 
-async function loadImageViaElement(url: string): Promise<string> {
-  return await new Promise((resolve, reject) => {
-    const image = new Image();
-    const isCrossOrigin =
-      /^https?:\/\//i.test(url) && !url.startsWith(window.location.origin);
-
-    if (isCrossOrigin) {
-      image.crossOrigin = 'anonymous';
+async function fetchCdnImageDataUrl(cdnUrl: string): Promise<string | null> {
+  const opaqueBlob = await fetchImageBlob(cdnUrl, 'no-cors');
+  if (opaqueBlob) {
+    try {
+      return await blobToDataUrl(opaqueBlob, cdnUrl);
+    } catch (error) {
+      console.warn('CDN opaque blob conversion failed:', cdnUrl, error);
     }
+  }
 
-    const timeoutId = window.setTimeout(() => {
-      reject(new Error('Image load timeout'));
-    }, IMAGE_FETCH_TIMEOUT);
+  const swDataUrl = await fetchImageViaServiceWorker(cdnUrl);
+  if (swDataUrl) return swDataUrl;
 
-    image.onload = () => {
-      window.clearTimeout(timeoutId);
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width = image.naturalWidth || image.width || 1;
-        canvas.height = image.naturalHeight || image.height || 1;
-        const context = canvas.getContext('2d');
-        if (!context) {
-          reject(new Error('Canvas unavailable'));
-          return;
-        }
-        context.drawImage(image, 0, 0);
-        resolve(canvas.toDataURL('image/jpeg', 0.92));
-      } catch (error) {
-        reject(error);
-      }
-    };
+  return null;
+}
 
-    image.onerror = () => {
-      window.clearTimeout(timeoutId);
-      reject(new Error('Image element failed to load'));
-    };
+async function fetchProxiedImageDataUrl(proxiedUrl: string): Promise<string | null> {
+  const blob = await fetchImageBlob(proxiedUrl, 'cors');
+  if (!blob) return null;
 
-    image.src = url;
-  });
+  try {
+    return await blobToDataUrl(blob, proxiedUrl);
+  } catch (error) {
+    console.warn('Proxied image blob conversion failed:', proxiedUrl, error);
+    return null;
+  }
 }
 
 async function loadImageDataUrl(rawUrl: string): Promise<string | null> {
-  await ensureImageProxyReady();
-  const candidates = buildFetchCandidates(rawUrl);
+  const cdnUrl = resolveCdnImageUrl(rawUrl);
+  if (!cdnUrl) return null;
 
-  for (const candidate of candidates) {
-    const blob = await fetchImageBlob(candidate);
-    if (blob) {
-      try {
-        return await blobToDataUrl(blob, candidate);
-      } catch (error) {
-        console.warn('Device image blob conversion failed:', candidate, error);
-      }
+  const cacheKey = cdnUrl;
+  const cached = imageDataUrlCache.get(cacheKey);
+  if (cached) return cached;
+
+  const loadPromise = (async () => {
+    if (import.meta.env.DEV) {
+      const proxiedUrl = buildDeviceImageFetchUrl(normalizeDeviceImageUrl(rawUrl));
+      const proxiedDataUrl = await fetchProxiedImageDataUrl(proxiedUrl);
+      if (proxiedDataUrl) return proxiedDataUrl;
+    } else {
+      await ensureImageProxyReady();
+
+      const cdnDataUrl = await fetchCdnImageDataUrl(cdnUrl);
+      if (cdnDataUrl) return cdnDataUrl;
+
+      const proxiedUrl = buildDeviceImageFetchUrl(normalizeDeviceImageUrl(rawUrl));
+      const proxiedDataUrl = await fetchProxiedImageDataUrl(proxiedUrl);
+      if (proxiedDataUrl) return proxiedDataUrl;
     }
 
-    try {
-      return await loadImageViaElement(candidate);
-    } catch (error) {
-      console.warn('Device image element load failed:', candidate, error);
-    }
+    return await fetchCdnImageDataUrl(cdnUrl);
+  })();
+
+  imageDataUrlCache.set(cacheKey, loadPromise);
+
+  const result = await loadPromise;
+  if (!result) {
+    imageDataUrlCache.delete(cacheKey);
   }
 
-  return null;
+  return result;
 }
 
 export async function loadDeviceImageDataUrl(device: DeviceData): Promise<string | null> {
-  const candidates = resolveDeviceImageCandidates(device);
+  await acquireImageLoadSlot();
 
-  for (const candidate of candidates) {
-    const dataUrl = await loadImageDataUrl(candidate);
-    if (dataUrl) return dataUrl;
+  try {
+    const candidates = resolveDeviceImageCandidates(device);
+
+    for (const candidate of candidates) {
+      const dataUrl = await loadImageDataUrl(candidate);
+      if (dataUrl) return dataUrl;
+    }
+
+    return null;
+  } finally {
+    releaseImageLoadSlot();
   }
-
-  return null;
 }
 
 /** URL for `<img src>` in the UI (direct CDN when possible). */
@@ -272,10 +329,5 @@ export function getDeviceImageDisplayUrl(device: DeviceData): string | null {
   const raw = resolveDeviceImageUrl(device);
   if (!raw) return null;
 
-  const normalized = normalizeDeviceImageUrl(raw);
-  if (/^https?:\/\//i.test(normalized)) {
-    return normalized;
-  }
-
-  return `${REMOTE_IMAGES_BASE}/${normalized.replace(/^\/+/, '').replace(/^remote-images\//, '')}`;
+  return resolveCdnImageUrl(raw) || null;
 }
