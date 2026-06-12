@@ -6,8 +6,12 @@ import './table.css'
 import './darkmode.css'
 import './email.css'
 import App from './App.tsx'
+import { ensureImageProxyReady } from './utils/registerImageProxy'
 
 initTheme()
+
+// Production: proxy /remote-images via service worker for PPT image export
+void ensureImageProxyReady()
 
 import { Provider } from "react-redux";
 import { store } from "./redux/store";
