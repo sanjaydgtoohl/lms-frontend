@@ -2,6 +2,7 @@ import PptxGenJS from 'pptxgenjs';
 import logoUrl from '../assets/logo.svg';
 import { BRAND } from '../constants/brand';
 import type { DeviceData } from '../types/inventory.types';
+import { loadDeviceImageDataUrl } from './deviceImageLoader';
 
 const SLIDE_BACKGROUND = 'FFFFFF';
 const DETAIL_CARD_BACKGROUND = 'FFFFFF';
@@ -32,13 +33,6 @@ const DETAIL_ROW_HEIGHT = 0.28;
 const IMAGE_BATCH_SIZE = 20;
 const IMAGE_FETCH_TIMEOUT = 8000;
 
-const REMOTE_IMAGES_BASE =
-  import.meta.env.VITE_REMOTE_IMAGES_BASE_URL || 'https://d2nljoxssb7y4b.cloudfront.net';
-const IMAGE_PROXY_PREFIX = String(import.meta.env.VITE_IMAGE_BASE_URL || '/remote-images').replace(
-  /\/$/,
-  ''
-);
-
 const brandLogoSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 60"><rect width="260" height="60" rx="12" fill="#0F4C81"/><text x="20" y="38" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#FFFFFF">${BRAND.productShort}</text><text x="20" y="52" font-family="Arial, sans-serif" font-size="12" fill="#D9E7FF">LMS</text></svg>`;
 
 const placeholderSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480"><rect width="640" height="480" rx="24" fill="#F1F5F9"/><rect x="128" y="96" width="384" height="232" rx="16" fill="#E2E8F0"/><path d="M208 320h224a16 16 0 0 1 16 16v24H192v-24a16 16 0 0 1 16-16Z" fill="#CBD5E1"/><text x="320" y="360" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#64748B" text-anchor="middle">No Image Available</text></svg>`;
@@ -48,14 +42,6 @@ const safeText = (value?: string | null) => (value ? String(value) : 'N/A');
 
 const encodeSvgToDataUrl = (svg: string) =>
   `data:image/svg+xml;base64,${window.btoa(unescape(encodeURIComponent(svg)))}`;
-
-function getRemoteImagesHost(): string {
-  try {
-    return new URL(REMOTE_IMAGES_BASE).hostname;
-  } catch {
-    return 'd2nljoxssb7y4b.cloudfront.net';
-  }
-}
 
 const getLogoDataUrl = async (): Promise<string> => {
   const controller = new AbortController();
@@ -74,170 +60,17 @@ const getLogoDataUrl = async (): Promise<string> => {
   }
 };
 
-const normalizeImageUrl = (url: string): string => {
-  const trimmed = url.trim();
-  if (!trimmed) return '';
-
-  if (trimmed.startsWith('//')) {
-    return `${window.location.protocol}${trimmed}`;
-  }
-
-  if (/^https?:\/\//i.test(trimmed)) {
-    return trimmed;
-  }
-
-  if (trimmed.startsWith('/')) {
-    return `${IMAGE_PROXY_PREFIX}${trimmed}`;
-  }
-
-  return `${IMAGE_PROXY_PREFIX}/${trimmed.replace(/^\//, '')}`;
-};
-
-function resolveDeviceImageUrl(device: DeviceData): string | null {
-  const candidates = [device.aws_device_image, device.device_image, device.old_device_image];
-  for (const candidate of candidates) {
-    const value = candidate?.trim();
-    if (value) return value;
-  }
-  return null;
-}
-
-function buildImageFetchUrl(normalizedUrl: string): string {
-  const origin = window.location.origin;
-
-  try {
-    const imageUrl = new URL(normalizedUrl, origin);
-    if (imageUrl.origin === origin) {
-      return imageUrl.toString();
-    }
-
-    const remoteHost = getRemoteImagesHost();
-    if (
-      imageUrl.hostname === remoteHost ||
-      imageUrl.hostname.endsWith('.cloudfront.net') ||
-      imageUrl.hostname.includes('amazonaws.com')
-    ) {
-      return `${IMAGE_PROXY_PREFIX}${imageUrl.pathname}${imageUrl.search}`;
-    }
-
-    return `${IMAGE_PROXY_PREFIX}${imageUrl.pathname}${imageUrl.search}`;
-  } catch {
-    return normalizedUrl;
-  }
-}
-
-async function blobToJpegDataUrl(blob: Blob): Promise<string> {
-  if (blob.type === 'image/jpeg') {
-    return await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === 'string') resolve(reader.result);
-        else reject(new Error('Failed to read JPEG blob'));
-      };
-      reader.onerror = () => reject(new Error('Failed to read JPEG blob'));
-      reader.readAsDataURL(blob);
-    });
-  }
-
-  if (blob.type === 'image/png') {
-    return await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === 'string') resolve(reader.result);
-        else reject(new Error('Failed to read PNG blob'));
-      };
-      reader.onerror = () => reject(new Error('Failed to read PNG blob'));
-      reader.readAsDataURL(blob);
-    });
-  }
-
-  return await new Promise((resolve, reject) => {
-    const objectUrl = URL.createObjectURL(blob);
-    const image = new Image();
-
-    image.onload = () => {
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width = image.naturalWidth || image.width || 1;
-        canvas.height = image.naturalHeight || image.height || 1;
-        const context = canvas.getContext('2d');
-        if (!context) {
-          reject(new Error('Canvas unavailable'));
-          return;
-        }
-        context.drawImage(image, 0, 0);
-        resolve(canvas.toDataURL('image/jpeg', 0.92));
-      } catch (error) {
-        reject(error);
-      } finally {
-        URL.revokeObjectURL(objectUrl);
-      }
-    };
-
-    image.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
-      reject(new Error('Failed to decode image'));
-    };
-
-    image.src = objectUrl;
-  });
-}
-
 type ImageSource = {
   data: string;
 };
 
-async function fetchImageBlob(url: string): Promise<Blob | null> {
-  const controller = new AbortController();
-  const timeoutId = window.setTimeout(() => controller.abort(), IMAGE_FETCH_TIMEOUT);
-
-  try {
-    const response = await fetch(url, { signal: controller.signal });
-    if (!response.ok) {
-      return null;
-    }
-
-    const blob = await response.blob();
-    return blob.size > 0 ? blob : null;
-  } catch {
-    return null;
-  } finally {
-    window.clearTimeout(timeoutId);
-  }
-}
-
-const getImageSource = async (url: string | undefined | null): Promise<ImageSource> => {
-  if (!url) {
-    return { data: PLACEHOLDER_IMAGE };
+const getImageSource = async (device: DeviceData): Promise<ImageSource> => {
+  const dataUrl = await loadDeviceImageDataUrl(device);
+  if (dataUrl) {
+    return { data: dataUrl };
   }
 
-  const normalizedUrl = normalizeImageUrl(url);
-  if (!normalizedUrl) {
-    return { data: PLACEHOLDER_IMAGE };
-  }
-
-  const proxiedUrl = buildImageFetchUrl(normalizedUrl);
-  const candidates = Array.from(
-    new Set(
-      [proxiedUrl, normalizedUrl].filter((candidate) => Boolean(candidate?.trim()))
-    )
-  );
-
-  for (const fetchUrl of candidates) {
-    const blob = await fetchImageBlob(fetchUrl);
-    if (!blob) {
-      continue;
-    }
-
-    try {
-      const dataUrl = await blobToJpegDataUrl(blob);
-      return { data: dataUrl };
-    } catch (error) {
-      console.warn('PPT image conversion failed:', error, fetchUrl);
-    }
-  }
-
-  console.warn('PPT image fetch failed, using placeholder:', normalizedUrl);
+  console.warn('PPT image fetch failed, using placeholder:', device.device_name);
   return { data: PLACEHOLDER_IMAGE };
 };
 
@@ -335,9 +168,7 @@ async function loadImageSourcesInBatches(
 
   for (let index = 0; index < devices.length; index += IMAGE_BATCH_SIZE) {
     const batch = devices.slice(index, index + IMAGE_BATCH_SIZE);
-    const batchSources = await Promise.all(
-      batch.map((device) => getImageSource(resolveDeviceImageUrl(device)))
-    );
+    const batchSources = await Promise.all(batch.map((device) => getImageSource(device)));
     results.push(...batchSources);
 
     onProgress?.({
