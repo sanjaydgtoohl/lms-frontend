@@ -18,6 +18,44 @@ export type { AppUser, UserListResponse };
 /** @deprecated Use AppUser */
 export type User = AppUser;
 
+function parseOrganisations(it: Record<string, unknown>): AppUser['organisations'] {
+  if (Array.isArray(it.organisations) && it.organisations.length > 0) {
+    return it.organisations
+      .map((org) => {
+        const item = org as Record<string, unknown>;
+        const name = String(
+          item.name ?? item.organisation_name ?? item.label ?? item.title ?? ''
+        ).trim();
+        if (!name) return null;
+        return {
+          id: (item.id ?? item.organisation_id) as number | string | undefined,
+          name,
+        };
+      })
+      .filter((org): org is NonNullable<typeof org> => Boolean(org));
+  }
+
+  const organisationName = it.organisation_name;
+  if (typeof organisationName === 'string' && organisationName.includes(',')) {
+    return organisationName
+      .split(',')
+      .map((name) => name.trim())
+      .filter(Boolean)
+      .map((name) => ({ name }));
+  }
+
+  const singleName = String(
+    (it.origination as { name?: string })?.name ??
+      (it.orientation as { name?: string })?.name ??
+      it.origination ??
+      it.orientation ??
+      it.organisation_name ??
+      ''
+  ).trim();
+
+  return singleName ? [{ name: singleName }] : [];
+}
+
 function mapUserRow(it: Record<string, unknown>, idx: number): AppUser {
   const rawId = it.id ?? idx + 1;
   let idStr = String(rawId);
@@ -59,14 +97,8 @@ function mapUserRow(it: Record<string, unknown>, idx: number): AppUser {
       it.zone_name ??
       ''
   );
-  const origination = String(
-    (it.origination as { name?: string })?.name ??
-      (it.orientation as { name?: string })?.name ??
-      it.origination ??
-      it.orientation ??
-      it.organisation_name ??
-      ''
-  );
+  const organisations = parseOrganisations(it);
+  const origination = organisations.map((org) => org.name).join(', ');
 
   let parentsArray: AppUser['parents'];
   if (Array.isArray(it.parents) && it.parents.length > 0) {
@@ -84,6 +116,7 @@ function mapUserRow(it: Record<string, unknown>, idx: number): AppUser {
     email,
     zone,
     origination,
+    organisations,
     role,
     roles,
     status,

@@ -30,7 +30,7 @@ const CreateUser: React.FC<RbacFormPageProps> = ({ mode = 'create', initialData 
     roles: [] as string[],
     managers: [] as string[],
     zone: '',
-    origination: '',
+    organisations: [] as string[],
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -52,13 +52,35 @@ const CreateUser: React.FC<RbacFormPageProps> = ({ mode = 'create', initialData 
   useEffect(() => {
     if (initialData) {
       const zoneRaw = initialData.zone;
-      const originationRaw = initialData.origination ?? initialData.orientation;
+      const originationRaw =
+        initialData.organisations ??
+        initialData.organisation ??
+        initialData.origination ??
+        initialData.orientation;
       const zoneValue = typeof zoneRaw === 'object' && zoneRaw !== null
         ? String((zoneRaw as any).id ?? (zoneRaw as any).value ?? (zoneRaw as any).zone ?? (zoneRaw as any).name ?? '')
         : String(zoneRaw ?? '');
-      const originationValue = typeof originationRaw === 'object' && originationRaw !== null
-        ? String((originationRaw as any).id ?? (originationRaw as any).value ?? (originationRaw as any).organisation_id ?? (originationRaw as any).name ?? '')
-        : String(originationRaw ?? '');
+      const organisationsValue = Array.isArray(originationRaw)
+        ? originationRaw
+            .map((item: any) =>
+              String(item?.id ?? item?.organisation_id ?? item?.value ?? item?.name ?? item ?? '')
+            )
+            .filter(Boolean)
+        : originationRaw
+          ? [
+              typeof originationRaw === 'object' && originationRaw !== null
+                ? String(
+                    (originationRaw as any).id ??
+                      (originationRaw as any).value ??
+                      (originationRaw as any).organisation_id ??
+                      (originationRaw as any).name ??
+                      ''
+                  )
+                : String(originationRaw),
+            ].filter(Boolean)
+          : initialData.organisation_id
+            ? [String(initialData.organisation_id)]
+            : [];
       // Avoid copying sensitive fields like `email`, `password`, and
       // `password_confirmation` from `initialData` so they are not
       // autofilled when opening the edit form.
@@ -75,7 +97,7 @@ const CreateUser: React.FC<RbacFormPageProps> = ({ mode = 'create', initialData 
           ? initialData.managers.map((m: any) => String(m.id))
           : prev.managers,
         zone: zoneValue || prev.zone,
-        origination: originationValue || prev.origination,
+        organisations: organisationsValue.length > 0 ? organisationsValue : prev.organisations,
         // Ensure password inputs remain empty
         password: '',
         password_confirmation: '',
@@ -111,6 +133,9 @@ const CreateUser: React.FC<RbacFormPageProps> = ({ mode = 'create', initialData 
 
     if (form.phone && !validatePhone(form.phone)) next.phone = 'Please enter a valid phone number';
     if (!form.roles || form.roles.length === 0) next.roles = 'Please select at least one role';
+    if (!form.organisations || form.organisations.length === 0) {
+      next.organisations = 'Please select at least one organisation';
+    }
 
     // Password required on create
     if (mode !== 'edit') {
@@ -131,11 +156,15 @@ const CreateUser: React.FC<RbacFormPageProps> = ({ mode = 'create', initialData 
       setSaving(true);
       const base = { ...form } as Record<string, any>;
       const selectedZone = zoneOptions.find((opt) => opt.value === String(base.zone));
-      const selectedOrganisation = originationOptions.find((opt) => opt.value === String(base.origination));
+      const selectedOrganisations = originationOptions.filter((opt) =>
+        (base.organisations as string[]).includes(opt.value)
+      );
       const zoneId = base.zone ? String(base.zone) : null;
-      const organisationId = base.origination ? String(base.origination) : null;
+      const organisationIds = (base.organisations as string[]).map((id: string) => Number(id));
       const zoneName = selectedZone?.label || null;
-      const organisationName = selectedOrganisation?.label || null;
+      const organisationName = selectedOrganisations.map((opt) => opt.label).join(', ') || null;
+      const primaryOrganisationId =
+        base.organisations && base.organisations.length > 0 ? String(base.organisations[0]) : null;
       // Build payload expected by backend
       const payload: Record<string, any> = {
         name: String(base.name || ''),
@@ -144,10 +173,14 @@ const CreateUser: React.FC<RbacFormPageProps> = ({ mode = 'create', initialData 
         zone: zoneId,
         zone_id: zoneId,
         zone_name: zoneName,
-        origination: organisationId,
-        organisation_id: organisationId,
+        origination: primaryOrganisationId,
+        organisation_id: primaryOrganisationId,
         organisation_name: organisationName,
       };
+
+      if (organisationIds.length > 0) {
+        payload.organisation_ids = organisationIds;
+      }
 
       // roles is array of role ids -> send as role_ids (array)
       if (base.roles && base.roles.length > 0) {
@@ -193,6 +226,7 @@ const CreateUser: React.FC<RbacFormPageProps> = ({ mode = 'create', initialData 
           let mappedKey = k;
           if (k === 'role_ids' || k === 'role_id') mappedKey = 'roles';
           if (k === 'manager_ids' || k === 'manager_id') mappedKey = 'managers';
+          if (k === 'organisation_ids' || k === 'organisation_id' || k === 'origination') mappedKey = 'organisations';
           if (k === 'first_name' || k === 'full_name') mappedKey = 'name';
           if (k === 'name') mappedKey = 'name';
           // take first message if array
@@ -497,19 +531,34 @@ const CreateUser: React.FC<RbacFormPageProps> = ({ mode = 'create', initialData 
 
             {/* Organisations */}
             <div className="col-span-2 sm:col-span-1">
-              <label className="block text-sm text-gray-40 mb-1">Organisations</label>
-              <SelectField
-                name="origination"
-                value={form.origination}
-                onChange={(v) => {
-                  const val = typeof v === 'string' ? v : v[0] ?? '';
-                  setForm((prev) => ({ ...prev, origination: val }));
-                }}
+              <label className="block text-sm text-gray-40 mb-1">
+                Organisations <span className="text-[#FF0000]">*</span>
+              </label>
+              <MultiSelectDropdown
+                name="organisations"
+                placeholder={originationLoading ? 'Loading organisations...' : 'Select organisation(s)'}
                 options={originationOptions}
-                placeholder={originationLoading ? 'Loading organisations...' : 'Select organisation'}
-                inputClassName="border-gray-200 focus:ring-black"
+                value={form.organisations}
+                onChange={(v) => {
+                  setForm((prev) => ({ ...prev, organisations: v }));
+                  setErrors((prev) => ({ ...prev, organisations: '' }));
+                }}
                 disabled={originationLoading}
+                inputClassName={`${errors.organisations ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-black'}`}
+                maxVisibleOptions={2}
               />
+              {errors.organisations && (
+                <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  {errors.organisations}
+                </div>
+              )}
             </div>
 
             {/* Role */}

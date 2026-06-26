@@ -42,6 +42,11 @@ const AllUsers: React.FC = () => {
   const [selectedParentUser, setSelectedParentUser] = useState<any[] | null>(null);
   const [parentUserContextName, setParentUserContextName] = useState('');
 
+  // Organisations modal state
+  const [organisationsModalOpen, setOrganisationsModalOpen] = useState(false);
+  const [selectedOrganisations, setSelectedOrganisations] = useState<Array<{ name: string }>>([]);
+  const [organisationsContextName, setOrganisationsContextName] = useState('');
+
   const fetchUsers = async () => {
     setLoading(true);
     try {
@@ -122,6 +127,21 @@ const AllUsers: React.FC = () => {
     setParentUserModalOpen(false);
     setSelectedParentUser(null);
     setParentUserContextName('');
+  };
+
+  const handleOrganisationsClick = (user: User) => {
+    const organisations = user.organisations ?? (user.origination ? [{ name: user.origination }] : []);
+    if (organisations.length > 0) {
+      setSelectedOrganisations(organisations);
+      setOrganisationsContextName(user.name);
+      setOrganisationsModalOpen(true);
+    }
+  };
+
+  const handleOrganisationsModalClose = () => {
+    setOrganisationsModalOpen(false);
+    setSelectedOrganisations([]);
+    setOrganisationsContextName('');
   };
   // ...existing code...
 
@@ -278,8 +298,33 @@ const AllUsers: React.FC = () => {
     {
       key: 'origination',
       header: 'Organisation',
-      render: (it: User) => it.origination || '-',
-      className: 'max-w-[180px] overflow-hidden text-ellipsis whitespace-nowrap',
+      render: (it: User) => {
+        const organisations =
+          it.organisations ?? (it.origination ? [{ name: it.origination }] : []);
+
+        return (
+          <div
+            className="flex gap-2 justify-start items-center cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => organisations.length > 0 && handleOrganisationsClick(it)}
+          >
+            {organisations.length > 0 ? (
+              <>
+                <span className="inline-flex items-center justify-center h-7 px-3 border border-indigo-300 rounded-full text-xs font-medium leading-tight whitespace-nowrap bg-indigo-50 text-indigo-700 max-w-[140px] overflow-hidden text-ellipsis">
+                  {organisations[0].name}
+                </span>
+                {organisations.length > 1 && (
+                  <span className="inline-flex items-center justify-center h-7 px-2 border border-gray-200 rounded-full text-xs font-medium leading-tight whitespace-nowrap bg-gray-50 text-gray-700">
+                    +{organisations.length - 1}
+                  </span>
+                )}
+              </>
+            ) : (
+              <span className="text-gray-400">-</span>
+            )}
+          </div>
+        );
+      },
+      className: 'text-center max-w-[220px]',
     },
   ] as Column<User>[]);
 
@@ -347,6 +392,14 @@ const AllUsers: React.FC = () => {
             userName={parentUserContextName}
             onClose={handleParentUserModalClose}
             title="Parent User"
+          />
+
+          <RolesModal
+            isOpen={organisationsModalOpen}
+            roles={selectedOrganisations}
+            userName={organisationsContextName}
+            onClose={handleOrganisationsModalClose}
+            title="Organisations"
           />
         </div>
       </div>

@@ -4,12 +4,18 @@ export interface UserParent {
   email?: string;
 }
 
+export interface UserOrganisation {
+  id?: number | string;
+  name: string;
+}
+
 export interface AppUser {
   id: string;
   name: string;
   email?: string;
   zone?: string;
   origination?: string;
+  organisations?: UserOrganisation[];
   role?: string;
   roles?: Array<{ id?: number | string; name?: string; display_name?: string; [key: string]: unknown }>;
   status?: 'Active' | 'Inactive';

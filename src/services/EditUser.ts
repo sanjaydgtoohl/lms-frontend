@@ -10,6 +10,7 @@ export interface EditUserPayload {
   zone_name?: string | null;
   origination?: string | null;
   organisation_id?: string | null;
+  organisation_ids?: number[];
   organisation_name?: string | null;
   password?: string;
   password_confirmation?: string;
@@ -153,6 +154,11 @@ export async function updateUserDetails(
     if (payload.origination !== undefined && payload.origination !== null) formData.append('origination', String(payload.origination));
     if (payload.organisation_id !== undefined && payload.organisation_id !== null) formData.append('organisation_id', String(payload.organisation_id));
     if (payload.organisation_name !== undefined && payload.organisation_name !== null) formData.append('organisation_name', String(payload.organisation_name));
+    if (payload.organisation_ids && Array.isArray(payload.organisation_ids)) {
+      payload.organisation_ids.forEach((organisationId) => {
+        formData.append('organisation_ids[]', String(organisationId));
+      });
+    }
     if (payload.password) formData.append('password', payload.password);
     if (payload.password_confirmation) formData.append('password_confirmation', payload.password_confirmation);
     if (payload.role_ids && Array.isArray(payload.role_ids)) {

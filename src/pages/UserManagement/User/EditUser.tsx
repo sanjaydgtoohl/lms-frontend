@@ -15,6 +15,36 @@ import { apiClient } from '../../../utils/apiClient';
 import { getUserForEdit, updateUserDetails } from '../../../services/EditUser';
 import type { EditUserPayload } from '../../../services/EditUser';
 
+function parseOrganisationsFromUser(user: Record<string, any>): string[] {
+  if (Array.isArray(user.organisations) && user.organisations.length > 0) {
+    return user.organisations
+      .map((item: any) =>
+        String(item?.id ?? item?.organisation_id ?? item?.value ?? item?.name ?? item ?? '')
+      )
+      .filter(Boolean);
+  }
+
+  if (Array.isArray(user.organisation_ids) && user.organisation_ids.length > 0) {
+    return user.organisation_ids.map((id: any) => String(id)).filter(Boolean);
+  }
+
+  const single = String(
+    user.origination?.id ??
+      user.organisation_id ??
+      user.orientation?.id ??
+      user.origination?.value ??
+      user.orientation?.value ??
+      user.origination?.name ??
+      user.orientation?.name ??
+      user.organisation_name ??
+      user.origination ??
+      user.orientation ??
+      ''
+  ).trim();
+
+  return single && single !== 'undefined' && single !== 'null' ? [single] : [];
+}
+
 const EditUser: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -28,7 +58,7 @@ const EditUser: React.FC = () => {
     roles: [] as string[],
     managers: [] as string[],
     zone: '',
-    origination: '',
+    organisations: [] as string[],
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -92,7 +122,7 @@ const EditUser: React.FC = () => {
               : (user.role_id ? [String(user.role_id)] : []),
             managers,
             zone: String((user as any).zone?.id ?? (user as any).zone_id ?? (user as any).zone?.value ?? (user as any).zone?.name ?? (user as any).zone?.zone ?? (user as any).zone_name ?? (user as any).zone ?? ''),
-            origination: String((user as any).origination?.id ?? (user as any).organisation_id ?? (user as any).orientation?.id ?? (user as any).origination?.value ?? (user as any).orientation?.value ?? (user as any).origination?.name ?? (user as any).orientation?.name ?? (user as any).organisation_name ?? (user as any).origination ?? (user as any).orientation ?? ''),
+            organisations: parseOrganisationsFromUser(user as Record<string, any>),
           });
         }
       } catch (error) {
@@ -171,17 +201,23 @@ const EditUser: React.FC = () => {
     }
   }, [zoneOptions, form.zone]);
 
-  // If backend returns organisation as label/name instead of id, remap to option value once options load.
+  // If backend returns organisation as label/name instead of id, remap to option values once options load.
   useEffect(() => {
-    if (!form.origination || originationOptions.length === 0) return;
-    const current = String(form.origination);
-    const hasExactValue = originationOptions.some((opt) => opt.value === current);
-    if (hasExactValue) return;
-    const byLabel = originationOptions.find((opt) => opt.label.toLowerCase() === current.toLowerCase());
-    if (byLabel) {
-      setForm((prev) => ({ ...prev, origination: byLabel.value }));
+    if (!form.organisations.length || originationOptions.length === 0) return;
+
+    const remapped = form.organisations.map((current) => {
+      if (originationOptions.some((opt) => opt.value === current)) return current;
+      const byLabel = originationOptions.find(
+        (opt) => opt.label.toLowerCase() === String(current).toLowerCase()
+      );
+      return byLabel?.value ?? current;
+    });
+
+    const changed = remapped.some((value, index) => value !== form.organisations[index]);
+    if (changed) {
+      setForm((prev) => ({ ...prev, organisations: remapped }));
     }
-  }, [originationOptions, form.origination]);
+  }, [originationOptions, form.organisations]);
 
   useEffect(() => {
     let mounted = true;
@@ -331,6 +367,9 @@ const EditUser: React.FC = () => {
     if (form.phone && !validatePhone(form.phone)) next.phone = 'Please enter a valid phone number';
 
     if (!form.roles || form.roles.length === 0) next.roles = 'Please select at least one role';
+    if (!form.organisations || form.organisations.length === 0) {
+      next.organisations = 'Please select at least one organisation';
+    }
 
     // If editing and password fields provided, ensure confirmation matches
     if (form.password && form.password_confirmation && form.password !== form.password_confirmation) {
@@ -344,11 +383,15 @@ const EditUser: React.FC = () => {
       setSaving(true);
       const base = { ...form } as Record<string, any>;
       const selectedZone = zoneOptions.find((opt) => opt.value === String(base.zone));
-      const selectedOrganisation = originationOptions.find((opt) => opt.value === String(base.origination));
+      const selectedOrganisations = originationOptions.filter((opt) =>
+        (base.organisations as string[]).includes(opt.value)
+      );
       const zoneId = base.zone ? String(base.zone) : null;
-      const organisationId = base.origination ? String(base.origination) : null;
+      const organisationIds = (base.organisations as string[]).map((id: string) => Number(id));
       const zoneName = selectedZone?.label || null;
-      const organisationName = selectedOrganisation?.label || null;
+      const organisationName = selectedOrganisations.map((opt) => opt.label).join(', ') || null;
+      const primaryOrganisationId =
+        base.organisations && base.organisations.length > 0 ? String(base.organisations[0]) : null;
       // Build payload expected by backend
       const payload: EditUserPayload = {
         name: String(base.name || ''),
@@ -356,8 +399,9 @@ const EditUser: React.FC = () => {
         phone: base.phone || null,
         zone: zoneId,
         zone_id: zoneId,
-        origination: organisationId,
-        organisation_id: organisationId,
+        origination: primaryOrganisationId,
+        organisation_id: primaryOrganisationId,
+        organisation_ids: organisationIds,
       };
       (payload as Record<string, any>).zone_name = zoneName;
       (payload as Record<string, any>).organisation_name = organisationName;
@@ -408,6 +452,7 @@ const EditUser: React.FC = () => {
           let mappedKey = k;
           if (k === 'role_ids' || k === 'role_id') mappedKey = 'roles';
           if (k === 'manager_ids' || k === 'manager_id') mappedKey = 'managers';
+          if (k === 'organisation_ids' || k === 'organisation_id' || k === 'origination') mappedKey = 'organisations';
           if (k === 'first_name' || k === 'full_name') mappedKey = 'name';
           if (k === 'name') mappedKey = 'name';
           // take first message if array
@@ -717,19 +762,34 @@ const EditUser: React.FC = () => {
             </div>
 
             <div className="col-span-2 sm:col-span-1">
-              <label className="block text-sm text-gray-600 mb-1">Organisations</label>
-              <SelectField
-                name="origination"
-                value={form.origination}
-                onChange={(v) => {
-                  const val = typeof v === 'string' ? v : v[0] ?? '';
-                  setForm((prev) => ({ ...prev, origination: val }));
-                }}
+              <label className="block text-sm text-gray-600 mb-1">
+                Organisations <span className="text-[#FF0000]">*</span>
+              </label>
+              <MultiSelectDropdown
+                name="organisations"
+                placeholder={originationLoading ? 'Loading organisations...' : 'Select organisation(s)'}
                 options={originationOptions}
-                placeholder={originationLoading ? 'Loading organisations...' : 'Select organisation'}
-                inputClassName="border-gray-200 focus:ring-black"
+                value={form.organisations}
+                onChange={(v) => {
+                  setForm((prev) => ({ ...prev, organisations: v }));
+                  setErrors((prev) => ({ ...prev, organisations: '' }));
+                }}
                 disabled={originationLoading}
+                inputClassName={`${errors.organisations ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-black'}`}
+                maxVisibleOptions={2}
               />
+              {errors.organisations && (
+                <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  {errors.organisations}
+                </div>
+              )}
             </div>
 
             {/* Role */}

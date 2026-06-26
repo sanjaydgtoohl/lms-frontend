@@ -43,6 +43,16 @@ export async function createUser(payload: Record<string, any>): Promise<any> {
     delete body.managers;
   }
 
+  // Normalize organisation fields: backend expects `organisation_ids` as an array
+  if (Array.isArray(body.organisation_ids)) {
+    body.organisation_ids = body.organisation_ids.map((id: any) => Number(id));
+    if (!body.organisation_id && body.organisation_ids.length > 0) {
+      body.organisation_id = String(body.organisation_ids[0]);
+    }
+  } else if (body.organisation_id && !body.organisation_ids) {
+    body.organisation_ids = [Number(body.organisation_id)];
+  }
+
   const res = await apiClient.post<any>(ENDPOINTS.CREATE, body);
   return handleResponse<any>(res);
 }
@@ -71,6 +81,16 @@ export async function updateUser(id: string, payload: Record<string, any>): Prom
     body.manager_ids = body.managers.map((m: any) => Number(m));
     body.is_parent = body.managers.map((m: any) => Number(m));
     delete body.managers;
+  }
+
+  // Normalize organisation fields: backend expects `organisation_ids` as an array
+  if (Array.isArray(body.organisation_ids)) {
+    body.organisation_ids = body.organisation_ids.map((id: any) => Number(id));
+    if (!body.organisation_id && body.organisation_ids.length > 0) {
+      body.organisation_id = String(body.organisation_ids[0]);
+    }
+  } else if (body.organisation_id && !body.organisation_ids) {
+    body.organisation_ids = [Number(body.organisation_id)];
   }
 
   const res = await apiClient.put<any>(ENDPOINTS.UPDATE(cleanId), body);
