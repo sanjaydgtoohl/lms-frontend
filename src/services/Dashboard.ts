@@ -1,5 +1,10 @@
 import { handleApiError } from '../utils/apiErrorHandler';
 import { apiClient } from '../utils/apiClient';
+import {
+  buildDashboardFilterQuery,
+  appendDashboardQueryParams,
+  type DashboardFilterState,
+} from '../utils/dashboardFilters';
 
 export type PendingAssignment = {
   id: number;
@@ -66,9 +71,12 @@ export type MeetingsResponse = {
   data: Meeting[];
 };
 
-export async function getPendingAssignments(): Promise<PendingAssignmentsResponse> {
+export async function getPendingAssignments(
+  filters?: DashboardFilterState
+): Promise<PendingAssignmentsResponse> {
   try {
-    const res = await apiClient.get<PendingAssignment[]>(ENDPOINTS.PENDING_ASSIGNMENTS);
+    const query = filters ? buildDashboardFilterQuery(filters, { includePriority: true }) : '';
+    const res = await apiClient.get<PendingAssignment[]>(`${ENDPOINTS.PENDING_ASSIGNMENTS}${query}`);
     const json = res;
     if (!json || !json.success) {
       const message = (json as any)?.message || (json as any)?.error || 'Request failed';
@@ -141,9 +149,12 @@ export async function getPendingAssignments(): Promise<PendingAssignmentsRespons
   }
 }
 
-export async function getDashboardStats(): Promise<DashboardStatsResponse> {
+export async function getDashboardStats(
+  filters?: DashboardFilterState
+): Promise<DashboardStatsResponse> {
   try {
-    const res = await apiClient.get<DashboardApiResponse>(ENDPOINTS.DASHBOARD_STATS);
+    const query = filters ? buildDashboardFilterQuery(filters, { includePriority: false }) : '';
+    const res = await apiClient.get<DashboardApiResponse>(`${ENDPOINTS.DASHBOARD_STATS}${query}`);
     const json = res;
     if (!json || !json.success) {
       const message = (json as any)?.message || (json as any)?.error || 'Request failed';
@@ -169,9 +180,17 @@ export async function getDashboardStats(): Promise<DashboardStatsResponse> {
   }
 }
 
-export async function getMeetings(): Promise<MeetingsResponse> {
+export async function getMeetings(
+  filters?: DashboardFilterState
+): Promise<MeetingsResponse> {
   try {
-    const res = await apiClient.get<Meeting[]>(ENDPOINTS.MEETINGS);
+    const endpoint = appendDashboardQueryParams(
+      ENDPOINTS.MEETINGS,
+      filters,
+      { per_page: 50 },
+      { includePriority: false }
+    );
+    const res = await apiClient.get<Meeting[]>(endpoint);
     const json = res;
     if (!json || !json.success) {
       const message = (json as any)?.message || (json as any)?.error || 'Request failed';
@@ -181,7 +200,11 @@ export async function getMeetings(): Promise<MeetingsResponse> {
       handleApiError(error);
       throw error;
     }
-    const raw = json.data || [];
+    const raw = Array.isArray(json.data)
+      ? json.data
+      : Array.isArray((json.data as { data?: Meeting[] })?.data)
+        ? (json.data as { data: Meeting[] }).data
+        : [];
 
     const normalized: Meeting[] = (raw || []).map((it: any) => ({
       id: Number(it.id),

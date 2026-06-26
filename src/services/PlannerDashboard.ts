@@ -1,3 +1,10 @@
+import { apiClient } from '../utils/apiClient';
+import { handleApiError } from '../utils/apiErrorHandler';
+import {
+  type DashboardFilterState,
+  withDashboardFilters,
+} from '../utils/dashboardFilters';
+
 export interface PlannerDashboardBrief {
   id: number;
   brief_name: string;
@@ -9,30 +16,6 @@ export interface PlannerDashboardBrief {
   left_time: string;
 }
 
-/**
- * Fetches the latest five assigned briefs for the planner dashboard.
- * @returns Array of latest five briefs
- * @throws Error with API or network message
- */
-export async function getLatestFiveBriefs(): Promise<PlannerDashboardBrief[]> {
-  try {
-    const response = await apiClient.customRequest<PlannerDashboardBrief[]>(
-      '/briefs/latest/five',
-      { method: 'GET' }
-    );
-    if (response?.success && response.data) {
-      return response.data;
-    }
-    throw new Error(response?.message || 'Failed to fetch latest briefs');
-  } catch (error: any) {
-    if (error.response?.data?.message) {
-      throw new Error(error.response.data.message);
-    }
-    throw new Error(error.message || 'An unknown error occurred while fetching latest briefs');
-  }
-}
-import apiClient from './api';
-
 export interface PlannerDashboardCardResponse {
   active_briefs: number;
   closed_briefs: number;
@@ -40,25 +23,36 @@ export interface PlannerDashboardCardResponse {
   average_planning_time_days: number;
 }
 
-/**
- * Fetches planner dashboard card data.
- * @returns PlannerDashboardCardResponse
- * @throws Error with API or network message
- */
-export async function getPlannerDashboardCard(): Promise<PlannerDashboardCardResponse> {
+export async function getLatestFiveBriefs(
+  filters?: DashboardFilterState
+): Promise<PlannerDashboardBrief[]> {
   try {
-    const response = await apiClient.customRequest<PlannerDashboardCardResponse>(
-      '/briefs/planner-dashboard-card',
-      { method: 'GET' }
+    const res = await apiClient.get<PlannerDashboardBrief[]>(
+      withDashboardFilters('/briefs/latest/five', filters, { includePriority: false })
     );
-    if (response?.success && response.data) {
-      return response.data;
+    if (!res || !res.success) {
+      throw new Error(res?.message || 'Failed to fetch latest briefs');
     }
-    throw new Error(response?.message || 'Failed to fetch planner dashboard card data');
-  } catch (error: any) {
-    if (error.response?.data?.message) {
-      throw new Error(error.response.data.message);
+    return res.data;
+  } catch (error) {
+    handleApiError(error);
+    throw error;
+  }
+}
+
+export async function getPlannerDashboardCard(
+  filters?: DashboardFilterState
+): Promise<PlannerDashboardCardResponse> {
+  try {
+    const res = await apiClient.get<PlannerDashboardCardResponse>(
+      withDashboardFilters('/briefs/planner-dashboard-card', filters, { includePriority: false })
+    );
+    if (!res || !res.success) {
+      throw new Error(res?.message || 'Failed to fetch planner dashboard card data');
     }
-    throw new Error(error.message || 'An unknown error occurred while fetching planner dashboard card data');
+    return res.data;
+  } catch (error) {
+    handleApiError(error);
+    throw error;
   }
 }

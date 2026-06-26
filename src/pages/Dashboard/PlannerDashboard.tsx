@@ -1,269 +1,163 @@
 /**
  * @file PlannerDashboard.tsx
  * @description Planner role dashboard with brief submission and plan tasks.
- * @author Sanjay Jangid <sanjay.jangid@dgtoohl.com>
- * @date 2026-05-25
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  RiFileList3Line,
+  RiCheckboxCircleLine,
+  RiTimerLine,
+  RiErrorWarningLine,
+} from 'react-icons/ri';
+import DashboardChartsSection from '../../components/dashboard/DashboardChartsSection';
+import DashboardMetricCard from '../../components/dashboard/DashboardMetricCard';
+import { useApiQuery } from '../../hooks/useApiQuery';
 import { getPlannerDashboardCard, getLatestFiveBriefs } from '../../services/PlannerDashboard';
-import type { PlannerDashboardCardResponse, PlannerDashboardBrief } from '../../services/PlannerDashboard';
+import type { PlannerDashboardBrief } from '../../services/PlannerDashboard';
+import {
+  createDefaultDashboardFilters,
+  serializeDashboardFilters,
+  type DashboardFilterState,
+} from '../../utils/dashboardFilters';
 
+const STATUS_BADGE: Record<string, string> = {
+  approve: 'dashboard-badge dashboard-badge--success',
+  closed: 'dashboard-badge',
+  submission: 'dashboard-badge dashboard-badge--warning',
+  pending: 'dashboard-badge dashboard-badge--warning',
+};
 
-import { RiFileList3Line, RiCheckboxCircleLine, RiTimerLine, RiErrorWarningLine } from "react-icons/ri";
+type PlannerDashboardProps = {
+  embedded?: boolean;
+  filters?: DashboardFilterState;
+};
 
-
-
-const PlannerDashboard: React.FC = () => {
-  // State for latest assigned briefs
+const PlannerDashboard: React.FC<PlannerDashboardProps> = ({ embedded = false, filters: filtersProp }) => {
   const navigate = useNavigate();
-  const [assignedBriefs, setAssignedBriefs] = useState<PlannerDashboardBrief[]>([]);
-  const [briefsLoading, setBriefsLoading] = useState<boolean>(true);
-  const [briefsError, setBriefsError] = useState<string | null>(null);
+  const [localFilters] = useState(createDefaultDashboardFilters);
+  const filters = filtersProp ?? localFilters;
+  const filterKey = serializeDashboardFilters(filters);
 
-  // Dashboard card state
-  const [cardData, setCardData] = useState<PlannerDashboardCardResponse | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: cardData, loading: cardLoading, error: cardError } = useApiQuery(
+    () => getPlannerDashboardCard(filters),
+    [filterKey],
+  );
 
-  useEffect(() => {
-    setLoading(true);
-    setError(null);
-    getPlannerDashboardCard()
-      .then((data) => {
-        setCardData(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message || 'Failed to load dashboard data');
-        setLoading(false);
-      });
-  }, []);
+  const { data: assignedBriefs = [], loading: briefsLoading, error: briefsError } = useApiQuery(
+    () => getLatestFiveBriefs(filters),
+    [filterKey],
+  );
 
-  useEffect(() => {
-    setBriefsLoading(true);
-    setBriefsError(null);
-    getLatestFiveBriefs()
-      .then((data) => {
-        setAssignedBriefs(data);
-        setBriefsLoading(false);
-      })
-      .catch((err) => {
-        setBriefsError(err.message || 'Failed to load assigned briefs');
-        setBriefsLoading(false);
-      });
-  }, []);
+  const renderBriefCard = (brief: PlannerDashboardBrief) => {
+    const statusKey = (brief.status || '').toLowerCase();
+    const budget = brief.budget
+      ? `₹${Number(brief.budget).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
+      : '-';
 
-
-  // Card values from API
-  const activeBriefsCount = cardData?.active_briefs ?? 0;
-  const completedThisMonthCount = cardData?.closed_briefs ?? 0;
-  const avgPlanningTime = cardData?.average_planning_time_days ?? 0;
-  const paginatedBriefs = assignedBriefs;
-  const overdueCount = 0; // Not available from API for assigned briefs
-
-  return (
-    <div className="space-y-6 font-['Inter','Poppins',system-ui,sans-serif]">
-      {/* Top metric cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 lg:gap-4">
-        {loading ? (
-          <>
-            {[1, 2, 3, 4].map((_, i) => (
-              <div
-                key={i}
-                className="bg-white p-3 md:p-4 xl:p-5 2xl:p-6 rounded-2xl border border-gray-200 flex items-center gap-3 shadow animate-pulse"
-              >
-                <div className="w-16 h-16 bg-gray-200 rounded-xl"></div>
-
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-                  <div className="h-6 bg-gray-200 rounded w-1/3"></div>
-                </div>
-              </div>
-            ))}
-          </>
-        ) : error ? (
-          <div className="col-span-4 flex justify-center items-center min-h-[120px]">
-            <span className="text-red-500">{error}</span>
+    return (
+      <div key={brief.id} className="dashboard-planner-brief">
+        <div className="dashboard-planner-brief__meta">
+          <div className="dashboard-planner-brief__id-row">
+            <span className="dashboard-planner-brief__id-label">Brief ID</span>
+            <span className="dashboard-planner-brief__id">#{brief.id}</span>
+            {brief.status ? (
+              <span className={STATUS_BADGE[statusKey] ?? 'dashboard-badge'}>{brief.status}</span>
+            ) : null}
           </div>
-        ) : (
-          <>
-            {/* Card 1 */}
-            <div className="bg-white p-3 md:p-4 xl:p-5 2xl:p-6 rounded-2xl border border-gray-200 flex items-center gap-3 shadow transition-all duration-200">
-              <div className="w-16 h-16 rounded-xl bg-gray-100 flex justify-center items-center border border-gray-200">
-                <div className="text-3xl text-black">
-                  <RiFileList3Line />
-                </div>
-              </div>
-
-              <div>
-                <p className="text-base lg:text-sm font-medium text-gray-700 leading-tight">
-                  Active Briefs
-                </p>
-                <div className="mt-2">
-                  <h3 className="text-xl lg:text-2xl font-semibold">
-                    {activeBriefsCount}
-                  </h3>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 2 */}
-            <div className="bg-white p-3 md:p-4 xl:p-5 2xl:p-6 rounded-2xl border border-gray-200 flex items-center gap-3 shadow transition-all duration-200">
-              <div className="w-16 h-16 rounded-xl bg-gray-100 flex justify-center items-center border border-gray-200">
-                <div className="text-3xl text-black">
-                  <RiCheckboxCircleLine />
-                </div>
-              </div>
-
-              <div>
-                <p className="text-base lg:text-sm font-medium text-gray-700 leading-tight">
-                  Completed Brief
-                </p>
-                <div className="mt-2">
-                  <h3 className="text-xl lg:text-2xl font-semibold">
-                    {completedThisMonthCount}
-                  </h3>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 3 */}
-            <div className="bg-white p-3 md:p-4 xl:p-5 2xl:p-6 rounded-2xl border border-gray-200 flex items-center gap-3 shadow transition-all duration-200">
-              <div className="w-16 h-16 rounded-xl bg-gray-100 flex justify-center items-center border border-gray-200">
-                <div className="text-3xl text-black">
-                  <RiTimerLine />
-                </div>
-              </div>
-
-              <div>
-                <p className="text-base lg:text-sm font-medium text-gray-700 leading-tight">
-                  Avg Planning Time
-                </p>
-                <div className="mt-2">
-                  <h3 className="text-xl lg:text-2xl font-semibold">
-                    {avgPlanningTime} days
-                  </h3>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 4 */}
-            <div className="bg-white p-3 md:p-4 xl:p-5 2xl:p-6 rounded-2xl border border-gray-200 flex items-center gap-3 shadow transition-all duration-200">
-              <div className="w-16 h-16 rounded-xl bg-gray-100 flex justify-center items-center border border-gray-200">
-                <div className="text-3xl text-black">
-                  <RiErrorWarningLine />
-                </div>
-              </div>
-
-              <div>
-                <p className="text-base lg:text-sm font-medium text-gray-700 leading-tight">
-                  Overdue Items
-                </p>
-                <div className="mt-2">
-                  <h3 className="text-xl lg:text-2xl font-semibold">
-                    {overdueCount}
-                  </h3>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* My Assigned Briefs */}
-      <div className="border-t border-gray-200 pt-4 mt-4">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold">My Assigned Briefs</h3>
-          <a
-            className="a-tag-button"
-            onClick={() => navigate('/brief/log')}
-          >
-            View All
-          </a>
+          <p className="dashboard-planner-brief__field">
+            <strong>Product Name:</strong> {brief.product_name || '-'}
+          </p>
+          <p className="dashboard-planner-brief__field">
+            <strong>Brand Name:</strong> {brief.brand_name || '-'}
+          </p>
+          <p className="dashboard-planner-brief__field">
+            <strong>Brief Name:</strong> {brief.brief_name || '-'}
+          </p>
+          <p className="dashboard-planner-brief__field">
+            <strong>Submission:</strong> {brief.submission_date || '-'}
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="dashboard-planner-brief__aside">
+          <span className="dashboard-planner-brief__timer">{brief.left_time || 'No deadline'}</span>
+          <span className="dashboard-planner-brief__budget">{budget}</span>
+          <button
+            type="button"
+            className="icon-button"
+            title="Upload plan"
+            style={{ padding: 0 }}
+            onClick={() => navigate(`/brief/plan-submission/${brief.id}`)}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 9l5-5m0 0l5 5m-5-5v12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="dashboard-content">
+      {cardError ? (
+        <div className="dashboard-error-state">{cardError}</div>
+      ) : (
+        <div className="dashboard-stat-grid">
+          <DashboardMetricCard
+            title="Active Briefs"
+            value={cardData?.active_briefs ?? 0}
+            icon={<RiFileList3Line />}
+            embedded={embedded}
+            loading={cardLoading}
+          />
+          <DashboardMetricCard
+            title="Completed Brief"
+            value={cardData?.closed_briefs ?? 0}
+            icon={<RiCheckboxCircleLine />}
+            embedded={embedded}
+            loading={cardLoading}
+          />
+          <DashboardMetricCard
+            title="Avg Planning Time"
+            value={cardData ? `${cardData.average_planning_time_days} days` : '--'}
+            icon={<RiTimerLine />}
+            embedded={embedded}
+            loading={cardLoading}
+          />
+          <DashboardMetricCard
+            title="Overdue Items"
+            value={0}
+            icon={<RiErrorWarningLine />}
+            embedded={embedded}
+            loading={cardLoading}
+          />
+        </div>
+      )}
+
+      <DashboardChartsSection variant="planner" filters={filters} />
+
+      <div className="dashboard-section-block">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="dashboard-section-block__title mb-0">My Assigned Briefs</h3>
+          <button type="button" className="a-tag-button" onClick={() => navigate('/brief/log')}>
+            View All
+          </button>
+        </div>
+
+        <div className="dashboard-planner-briefs">
           {briefsLoading ? (
-            <div className="flex justify-center items-center h-20 text-gray-500">Loading briefs...</div>
+            <div className="dashboard-empty-state">Loading briefs...</div>
           ) : briefsError ? (
-            <div className="flex justify-center items-center h-20 text-red-500">{briefsError}</div>
-          ) : !Array.isArray(paginatedBriefs) || paginatedBriefs.length === 0 ? (
-            <div className="flex justify-center items-center h-20 text-gray-500">No assigned briefs found.</div>
+            <div className="dashboard-error-state">{briefsError}</div>
+          ) : assignedBriefs.length === 0 ? (
+            <div className="dashboard-empty-state">No assigned briefs found.</div>
           ) : (
-            (paginatedBriefs || []).map(brief => {
-              // Status badge color
-              let statusColor = 'bg-gray-100';
-              const statusText = brief.status || '';
-              if (statusText.toLowerCase() === 'approve') statusColor = 'bg-green-200 text-green-800';
-              else if (statusText.toLowerCase() === 'closed') statusColor = 'bg-gray-300 text-gray-800';
-              else if (statusText.toLowerCase() === 'submission') statusColor = 'bg-yellow-200 text-yellow-800';
-              else if (statusText.toLowerCase() === 'pending') statusColor = 'bg-orange-200 text-orange-800';
-
-              // Budget formatting
-              const budget = brief.budget ? `₹${Number(brief.budget).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '-';
-
-              // Time left formatting (left_time is a string, e.g., '0 days 19 hours 10 minutes left')
-              const timeLeftStr = brief.left_time || '';
-
-              return (
-                <div
-                  key={brief.id}
-                  className="bg-white rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center md:items-stretch p-3 sm:p-4 gap-3 sm:gap-4 border border-gray-200 duration-300"
-                >
-                  {/* Left: Brief Info */}
-                  <div className="flex-1 min-w-0 sm:w-auto md:w-auto">
-                    <div className="flex flex-row items-center gap-1 sm:gap-2 mb-2 sm:mb-1 flex-wrap">
-                      <span className="text-xs text-gray-500">Brief ID</span>
-                      <span className="font-semibold text-blue-700 text-sm cursor-pointer">#{brief.id}</span>
-                      {statusText && (
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium w-fit ${statusColor}`}>{statusText}</span>
-                      )}
-                    </div>
-                    <div className="text-xs sm:text-sm text-gray-700 mb-1 line-clamp-1">
-                      <span className="font-semibold">Product Name :</span> <span className="truncate">{brief.product_name || '-'}</span>
-                    </div>
-                    <div className="text-xs sm:text-sm text-gray-700 mb-1 line-clamp-1">
-                      <span className="font-semibold">Brand Name :</span> <span className="truncate">{brief.brand_name || '-'}</span>
-                    </div>
-                    <div className="text-xs sm:text-sm text-gray-700 mb-1 line-clamp-1">
-                      <span className="font-semibold">Brief Name :</span> <span className="truncate">{brief.brief_name || '-'}</span>
-                    </div>
-                    <div className="text-xs sm:text-sm text-gray-700 mb-1 line-clamp-1">
-                      <span className="font-semibold">Brief Submission Date &amp; Time :</span> <span className="truncate">{brief.submission_date || '-'}</span>
-                    </div>
-                  </div>
-
-                  {/* Right: Time Left & Budget Row, then Submit */}
-                  <div className="flex flex-row md:flex-col items-center md:items-end gap-2 sm:gap-3 sm:w-auto md:w-auto justify-between md:justify-start flex-wrap">
-                    <span className="inline-flex items-center gap-1 px-2 sm:px-3 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full shadow-sm border border-blue-100 flex-1 md:flex-initial justify-center md:justify-start">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span className="truncate text-xs">{timeLeftStr}</span>
-                    </span>
-                    <span className="font-bold text-base sm:text-lg text-gray-900 whitespace-nowrap">{budget}</span>
-                    <button
-                      type="button"
-                      className="icon-button"
-                      title="Upload"
-                      style={{ padding: 0 }}
-                      onClick={() => navigate(`/brief/plan-submission/${brief.id}`)}
-                    >
-                      {/* Upload (arrow up) icon */}
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 9l5-5m0 0l5 5m-5-5v12" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              );
-            })
+            assignedBriefs.map(renderBriefCard)
           )}
         </div>
       </div>
-
     </div>
   );
 };

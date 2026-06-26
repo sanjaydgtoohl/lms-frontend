@@ -19,6 +19,9 @@ export interface AuthUser {
   phone?: string;
   roles?: Array<{ id: string | number; name: string }>;
   avatar?: string;
+  organisation_id?: string | number | null;
+  organisation_ids?: Array<string | number>;
+  organisations?: Array<{ id?: string | number; name?: string }>;
 }
 
 interface AuthState {

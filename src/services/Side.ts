@@ -113,6 +113,24 @@ export function fixPath(url?: string): string | undefined {
 }
 
 /**
+ * Dashboard section/chart permissions control in-page visibility only — not sidebar links.
+ */
+function isDashboardFeaturePermission(name?: string): boolean {
+  if (!name) return false;
+  return name.startsWith('dashboard.') && name !== 'dashboard.read';
+}
+
+function isSidebarNavChild(child: ApiSidebarItem): boolean {
+  if (!child.url || child.url.trim() === '' || child.url === 'javascript:void(0)') {
+    return false;
+  }
+  if (isDashboardFeaturePermission(child.name)) {
+    return false;
+  }
+  return true;
+}
+
+/**
  * Recursively maps API sidebar items to NavigationItem[] for the sidebar.
  * Icons are set to null by default (can be mapped later if needed).
  */
@@ -124,24 +142,39 @@ export function mapMenu(apiItems: ApiSidebarItem[]): NavigationItem[] {
     (item) =>
       !(item.name === '$P' || item.url === 'profile')
   );
-  return filteredItems.map((item) => ({
-    name: item.display_name || item.name || '',
-    path: fixPath(item.url),
-    icon: null, // Set icons as needed
-    icon_file: item.icon_file || undefined,
-    children:
+  return filteredItems.map((item) => {
+    // Dashboard is one page — show a single sidebar link, not feature-permission children.
+    if (item.name === 'menu.dashboard') {
+      return {
+        name: item.display_name || item.name || '',
+        path: fixPath(item.url),
+        icon: null,
+        icon_file: item.icon_file || undefined,
+        children: undefined,
+      };
+    }
+
+    const children =
       item.children && item.children.length > 0
         ? item.children
-            .filter((child) => child.name !== 'brief.assign' && child.name !== 'brief-status.update') // Filter out Assign Brief and Brief Status Update
+            .filter((child) => child.name !== 'brief.assign' && child.name !== 'brief-status.update')
+            .filter(isSidebarNavChild)
             .map((child) => ({
               name: child.display_name || child.name || '',
               path: fixPath(child.url),
               icon: null,
               icon_file: child.icon_file || undefined,
-              // Do NOT map grandchildren
             }))
-        : undefined,
-  }));
+        : undefined;
+
+    return {
+      name: item.display_name || item.name || '',
+      path: fixPath(item.url),
+      icon: null,
+      icon_file: item.icon_file || undefined,
+      children: children && children.length > 0 ? children : undefined,
+    };
+  });
 }
 
 // Example usage:

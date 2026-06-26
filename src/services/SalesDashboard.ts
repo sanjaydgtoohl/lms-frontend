@@ -1,16 +1,25 @@
 import { apiClient } from '../utils/apiClient';
 import { handleApiError } from '../utils/apiErrorHandler';
+import {
+  type DashboardFilterState,
+  withDashboardFilters,
+} from '../utils/dashboardFilters';
 
-// --- Business Forecast and Weightage API ---
+const DASHBOARD_FILTER_OPTIONS = { includePriority: false } as const;
+
 export type BusinessForecastData = {
   total_budget: number;
   total_brief_count: number;
   business_weightage: number;
 };
 
-export async function getBusinessForecast(): Promise<BusinessForecastData> {
+export async function getBusinessForecast(
+  filters?: DashboardFilterState
+): Promise<BusinessForecastData> {
   try {
-    const res = await apiClient.get<BusinessForecastData>('/briefs/business-forecast');
+    const res = await apiClient.get<BusinessForecastData>(
+      withDashboardFilters('/briefs/business-forecast', filters, DASHBOARD_FILTER_OPTIONS)
+    );
     if (!res || !res.success) {
       throw new Error(res?.message || 'Failed to fetch business forecast');
     }
@@ -20,7 +29,7 @@ export async function getBusinessForecast(): Promise<BusinessForecastData> {
     throw error;
   }
 }
-// --- Brief Count by Priority API ---
+
 export type BriefCountByPriorityData = {
   total_briefs: number;
   priority_brief_count: number;
@@ -28,9 +37,14 @@ export type BriefCountByPriorityData = {
   priority_name: string;
 };
 
-export async function getBriefCountByPriority(priorityId: number): Promise<BriefCountByPriorityData> {
+export async function getBriefCountByPriority(
+  priorityId: number,
+  filters?: DashboardFilterState
+): Promise<BriefCountByPriorityData> {
   try {
-    const res = await apiClient.get<BriefCountByPriorityData>(`/priorities/${priorityId}/brief-count`);
+    const res = await apiClient.get<BriefCountByPriorityData>(
+      withDashboardFilters(`/priorities/${priorityId}/brief-count`, filters, DASHBOARD_FILTER_OPTIONS)
+    );
     if (!res || !res.success) {
       throw new Error(res?.message || 'Failed to fetch brief count by priority');
     }
@@ -40,7 +54,7 @@ export async function getBriefCountByPriority(priorityId: number): Promise<Brief
     throw error;
   }
 }
-// --- Lead Count by Priority API ---
+
 export type LeadCountByPriorityData = {
   total_leads: number;
   priority_lead_count: number;
@@ -48,9 +62,14 @@ export type LeadCountByPriorityData = {
   priority_name: string;
 };
 
-export async function getLeadCountByPriority(priorityId: number): Promise<LeadCountByPriorityData> {
+export async function getLeadCountByPriority(
+  priorityId: number,
+  filters?: DashboardFilterState
+): Promise<LeadCountByPriorityData> {
   try {
-    const res = await apiClient.get<LeadCountByPriorityData>(`/priorities/${priorityId}/lead-count`);
+    const res = await apiClient.get<LeadCountByPriorityData>(
+      withDashboardFilters(`/priorities/${priorityId}/lead-count`, filters, DASHBOARD_FILTER_OPTIONS)
+    );
     if (!res || !res.success) {
       throw new Error(res?.message || 'Failed to fetch lead count by priority');
     }
@@ -60,7 +79,7 @@ export async function getLeadCountByPriority(priorityId: number): Promise<LeadCo
     throw error;
   }
 }
-// --- Priority API ---
+
 export type Priority = {
   id: number;
   name: string;
@@ -79,7 +98,7 @@ export async function getPriorities(): Promise<Priority[]> {
     throw error;
   }
 }
-// --- Latest Two Meeting Scheduled Leads API ---
+
 export type MeetingScheduledLead = {
   id: number;
   name: string;
@@ -97,7 +116,7 @@ export type MeetingScheduledLead = {
   created_by_user: { id: number; name: string; email: string };
   assigned_user: { id: number; name: string; email: string };
   priority: { id: number; name: string; slug: string };
-  designation: any;
+  designation: unknown;
   department: { id: number; name: string } | null;
   sub_source: { id: number; name: string };
   country: { id: number; name: string };
@@ -108,9 +127,13 @@ export type MeetingScheduledLead = {
   updated_at: string;
 };
 
-export async function getLatestMeetingScheduledTwoLeads(): Promise<MeetingScheduledLead[]> {
+export async function getLatestMeetingScheduledTwoLeads(
+  filters?: DashboardFilterState
+): Promise<MeetingScheduledLead[]> {
   try {
-    const res = await apiClient.get<MeetingScheduledLead[]>('/leads/latest/meeting-scheduled-two');
+    const res = await apiClient.get<MeetingScheduledLead[]>(
+      withDashboardFilters('/leads/latest/meeting-scheduled-two', filters, DASHBOARD_FILTER_OPTIONS)
+    );
     if (!res || !res.success) {
       throw new Error(res?.message || 'Failed to fetch latest meeting scheduled leads');
     }
@@ -120,7 +143,7 @@ export async function getLatestMeetingScheduledTwoLeads(): Promise<MeetingSchedu
     throw error;
   }
 }
-// --- Latest Two Follow-Up Leads API ---
+
 export type FollowUpLead = {
   id: number;
   name: string;
@@ -138,8 +161,8 @@ export type FollowUpLead = {
   created_by_user: { id: number; name: string; email: string };
   assigned_user: { id: number; name: string; email: string };
   priority: { id: number; name: string; slug: string };
-  designation: any;
-  department: any;
+  designation: unknown;
+  department: unknown;
   sub_source: { id: number; name: string };
   country: { id: number; name: string };
   state: { id: number; name: string };
@@ -149,9 +172,13 @@ export type FollowUpLead = {
   updated_at: string;
 };
 
-export async function getLatestFollowUpTwoLeads(): Promise<FollowUpLead[]> {
+export async function getLatestFollowUpTwoLeads(
+  filters?: DashboardFilterState
+): Promise<FollowUpLead[]> {
   try {
-    const res = await apiClient.get<FollowUpLead[]>('/leads/latest/follow-up-two');
+    const res = await apiClient.get<FollowUpLead[]>(
+      withDashboardFilters('/leads/latest/follow-up-two', filters, DASHBOARD_FILTER_OPTIONS)
+    );
     if (!res || !res.success) {
       throw new Error(res?.message || 'Failed to fetch latest follow-up leads');
     }
@@ -161,7 +188,7 @@ export async function getLatestFollowUpTwoLeads(): Promise<FollowUpLead[]> {
     throw error;
   }
 }
-// --- Latest Two Briefs API ---
+
 export type LatestBrief = {
   id: number;
   name: string;
@@ -210,9 +237,11 @@ export type LatestBrief = {
   updated_at: string;
 };
 
-export async function getLatestTwoBriefs(): Promise<LatestBrief[]> {
+export async function getLatestTwoBriefs(filters?: DashboardFilterState): Promise<LatestBrief[]> {
   try {
-    const res = await apiClient.get<LatestBrief[]>('/briefs/latest/two-briefs');
+    const res = await apiClient.get<LatestBrief[]>(
+      withDashboardFilters('/briefs/latest/two-briefs', filters, DASHBOARD_FILTER_OPTIONS)
+    );
     if (!res || !res.success) {
       throw new Error(res?.message || 'Failed to fetch latest two briefs');
     }
@@ -222,7 +251,7 @@ export async function getLatestTwoBriefs(): Promise<LatestBrief[]> {
     throw error;
   }
 }
-// --- Latest Two Leads API ---
+
 export type LatestLead = {
   id: number;
   name: string;
@@ -253,9 +282,11 @@ export type LatestLead = {
   updated_at: string;
 };
 
-export async function getLatestTwoLeads(): Promise<LatestLead[]> {
+export async function getLatestTwoLeads(filters?: DashboardFilterState): Promise<LatestLead[]> {
   try {
-    const res = await apiClient.get<LatestLead[]>('/leads/latest/two-leads');
+    const res = await apiClient.get<LatestLead[]>(
+      withDashboardFilters('/leads/latest/two-leads', filters, DASHBOARD_FILTER_OPTIONS)
+    );
     if (!res || !res.success) {
       throw new Error(res?.message || 'Failed to fetch latest two leads');
     }
@@ -265,7 +296,7 @@ export async function getLatestTwoLeads(): Promise<LatestLead[]> {
     throw error;
   }
 }
-// --- Recent Activities API ---
+
 export type ActivityLead = {
   id: number;
   name: string;
@@ -275,11 +306,14 @@ export type ActivityLead = {
   call_status: string;
   contact_person_name: string;
   created_at: string;
+  lead_status?: string;
 };
 
-export async function getRecentActivities(): Promise<ActivityLead[]> {
+export async function getRecentActivities(filters?: DashboardFilterState): Promise<ActivityLead[]> {
   try {
-    const res = await apiClient.get<ActivityLead[]>('/leads/activity-leads');
+    const res = await apiClient.get<ActivityLead[]>(
+      withDashboardFilters('/leads/activity-leads', filters, DASHBOARD_FILTER_OPTIONS)
+    );
     if (!res || !res.success) {
       throw new Error(res?.message || 'Failed to fetch recent activities');
     }
@@ -289,7 +323,7 @@ export async function getRecentActivities(): Promise<ActivityLead[]> {
     throw error;
   }
 }
-// --- Recent Briefs API ---
+
 export type BriefStatus = {
   name: string;
   percentage: string;
@@ -312,9 +346,11 @@ export type RecentBrief = {
   brief_status: BriefStatus;
 };
 
-export async function getRecentBriefs(): Promise<RecentBrief[]> {
+export async function getRecentBriefs(filters?: DashboardFilterState): Promise<RecentBrief[]> {
   try {
-    const res = await apiClient.get<RecentBrief[]>('/briefs/recent');
+    const res = await apiClient.get<RecentBrief[]>(
+      withDashboardFilters('/briefs/recent', filters, DASHBOARD_FILTER_OPTIONS)
+    );
     if (!res || !res.success) {
       throw new Error(res?.message || 'Failed to fetch recent briefs');
     }

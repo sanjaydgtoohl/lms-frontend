@@ -181,6 +181,9 @@ export const ENDPOINTS = {
   },
   DASHBOARD: {
     STATS: '/dashboard',
+    CHARTS: '/dashboard/charts',
+    SALES_CHARTS: '/dashboard/sales-charts',
+    PLANNER_CHARTS: '/dashboard/planner-charts',
   },
   NOTIFICATIONS: {
     LIST: '/notifications',

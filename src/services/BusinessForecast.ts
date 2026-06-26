@@ -1,5 +1,9 @@
 
 import { apiClient } from '../utils/apiClient';
+import {
+  buildDashboardFilterQuery,
+  type DashboardFilterState,
+} from '../utils/dashboardFilters';
 
 export type BusinessForecastData = {
   total_budget: number;
@@ -7,8 +11,11 @@ export type BusinessForecastData = {
   business_weightage: number;
 };
 
-export async function getBusinessForecast(): Promise<BusinessForecastData> {
-  const res = await apiClient.get<BusinessForecastData>('/briefs/business-forecast');
+export async function getBusinessForecast(
+  filters?: DashboardFilterState
+): Promise<BusinessForecastData> {
+  const query = filters ? buildDashboardFilterQuery(filters, { includePriority: false }) : '';
+  const res = await apiClient.get<BusinessForecastData>(`/briefs/business-forecast${query}`);
   
   if (!res || !res.success) {
     throw new Error(res?.message || 'Failed to fetch business forecast');
