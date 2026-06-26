@@ -5,7 +5,9 @@ import SweetAlert from '../../utils/SweetAlert';
 
 export type ExportExcelButtonProps = {
   /** Trigger export (e.g. call API and download generated file) */
-  fetchExport: () => Promise<void>;
+  fetchExport?: () => Promise<void>;
+  /** Server-provided download path/URL for the current filters */
+  downloadUrl?: string | null;
   label?: string;
   exportingLabel?: string;
   className?: string;
@@ -16,6 +18,7 @@ export type ExportExcelButtonProps = {
 
 const ExportExcelButton: React.FC<ExportExcelButtonProps> = ({
   fetchExport,
+  downloadUrl,
   label = 'Export Excel',
   exportingLabel = 'Exporting…',
   className = '',
@@ -25,13 +28,22 @@ const ExportExcelButton: React.FC<ExportExcelButtonProps> = ({
 }) => {
   const [exporting, setExporting] = useState(false);
   const inFlight = useRef(false);
+  const canExport = Boolean(fetchExport || downloadUrl);
 
   const handleClick = useCallback(async () => {
-    if (disabled || inFlight.current) return;
+    if (disabled || !canExport || inFlight.current) return;
     inFlight.current = true;
     setExporting(true);
     try {
-      await fetchExport();
+      if (downloadUrl) {
+        const { downloadDeviceInventoryExport } = await import('../../services/DeviceInventory');
+        await downloadDeviceInventoryExport(downloadUrl, 'device-inventory.xlsx');
+        return;
+      }
+
+      if (fetchExport) {
+        await fetchExport();
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to export Excel file';
       try {
@@ -43,14 +55,14 @@ const ExportExcelButton: React.FC<ExportExcelButtonProps> = ({
       inFlight.current = false;
       setExporting(false);
     }
-  }, [disabled, fetchExport]);
+  }, [disabled, canExport, downloadUrl, fetchExport]);
 
   return (
     <div className={className}>
       <button
         type="button"
         onClick={handleClick}
-        disabled={disabled || exporting}
+        disabled={disabled || exporting || !canExport}
         className={`inline-flex items-center whitespace-nowrap shrink-0 ${buttonClassName}`}
         aria-label={ariaLabel ?? 'Export data as Excel'}
         aria-busy={exporting}

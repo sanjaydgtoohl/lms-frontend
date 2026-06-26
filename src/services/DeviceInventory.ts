@@ -71,6 +71,8 @@ function normalizeInventoryResponse(json: unknown): DeviceInventoryResponse {
     current_page: Number(body.current_page ?? pagination.page ?? 1),
     per_page: Number(body.per_page ?? pagination.limit ?? pagination.per_page ?? 10),
     data: rows,
+    excel_download_url: body.excel_download_url ? String(body.excel_download_url) : null,
+    ppt_download_url: body.ppt_download_url ? String(body.ppt_download_url) : null,
   };
 }
 
@@ -115,4 +117,92 @@ export async function fetchAllDeviceInventoryRows(
   }
 
   return all;
+}
+
+function resolveSspDownloadPath(downloadUrl: string): string {
+  const trimmed = downloadUrl.trim();
+  if (!trimmed) return trimmed;
+
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+
+  return trimmed.replace(/^\/+/, '');
+}
+
+/** Download an inventory export file from the SSP API using auth headers. */
+export async function downloadDeviceInventoryExport(
+  downloadUrl: string,
+  fallbackFilename: string
+): Promise<void> {
+  const { downloadBlobFile, defaultDatedXlsxFilename, parseContentDispositionFilename } =
+    await import('../utils/downloadFile');
+
+  const target = resolveSspDownloadPath(downloadUrl);
+  const isAbsolute = target.startsWith('http://') || target.startsWith('https://');
+
+  if (isAbsolute) {
+    const resp = await fetch(target);
+    if (!resp.ok) {
+      throw new Error(`Failed to download export (${resp.status})`);
+    }
+    const blob = await resp.blob();
+    if (!blob || blob.size === 0) {
+      throw new Error('Export file was empty.');
+    }
+    const filename =
+      parseContentDispositionFilename(resp.headers.get('content-disposition')) ??
+      fallbackFilename;
+    downloadBlobFile(filename, blob);
+    return;
+  }
+
+  try {
+    const resp = await sspHttp.get(target, { responseType: 'blob' });
+    const contentType = String(resp.headers?.['content-type'] ?? '');
+
+    if (contentType.includes('application/json')) {
+      const text = await (resp.data as Blob).text();
+      try {
+        const json = JSON.parse(text) as { message?: string };
+        throw new Error(json.message || 'Export failed.');
+      } catch (parseError) {
+        if (parseError instanceof Error && parseError.message !== 'Export failed.') {
+          throw parseError;
+        }
+        throw new Error(text || 'Export failed.');
+      }
+    }
+
+    const blob = resp.data as Blob;
+    if (!blob || blob.size === 0) {
+      throw new Error('Export file was empty.');
+    }
+
+    const filename =
+      parseContentDispositionFilename(String(resp.headers?.['content-disposition'] ?? '')) ??
+      (contentType.includes('presentation') || fallbackFilename.endsWith('.pptx')
+        ? `Device_Inventory_Report_${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.pptx`
+        : defaultDatedXlsxFilename('device-inventory'));
+
+    downloadBlobFile(filename, blob);
+  } catch (error: unknown) {
+    const axiosError = error as {
+      response?: { data?: Blob; status?: number; headers?: Record<string, string> };
+    };
+
+    if (axiosError.response?.data instanceof Blob) {
+      const text = await axiosError.response.data.text();
+      try {
+        const json = JSON.parse(text) as { message?: string };
+        throw new Error(json.message || `Export failed (${axiosError.response.status ?? ''})`.trim());
+      } catch (parseError) {
+        if (parseError instanceof Error && !parseError.message.startsWith('Export failed')) {
+          throw parseError;
+        }
+      }
+    }
+
+    throw error;
+  }
 }

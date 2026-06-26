@@ -36,6 +36,8 @@ const DeviceInventory: React.FC = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState<DeviceData | null>(null);
+  const [excelDownloadUrl, setExcelDownloadUrl] = useState<string | null>(null);
+  const [pptDownloadUrl, setPptDownloadUrl] = useState<string | null>(null);
 
   const getInventoryFilters = useCallback(
     () => ({
@@ -109,10 +111,14 @@ const DeviceInventory: React.FC = () => {
         if (!alive) return;
         setData(Array.isArray(res.data) ? res.data : []);
         setTotalItems(Number(res.total_records || 0));
+        setExcelDownloadUrl(res.excel_download_url ?? null);
+        setPptDownloadUrl(res.ppt_download_url ?? null);
       } catch {
         if (!alive) return;
         setData([]);
         setTotalItems(0);
+        setExcelDownloadUrl(null);
+        setPptDownloadUrl(null);
       } finally {
         if (alive) setLoading(false);
       }
@@ -155,10 +161,16 @@ const DeviceInventory: React.FC = () => {
           </div>
 
           <div className="flex w-full min-w-0 flex-wrap items-center justify-end gap-2 sm:w-auto">
-            <PPTExport fetchRows={exportFetchRows} />
+            <PPTExport
+              downloadUrl={pptDownloadUrl}
+              fetchRows={pptDownloadUrl ? undefined : exportFetchRows}
+              disabled={totalItems === 0}
+            />
             <ExportExcelButton
-              fetchExport={handleExportExcel}
+              downloadUrl={excelDownloadUrl}
+              fetchExport={excelDownloadUrl ? undefined : handleExportExcel}
               label="Excel Export"
+              disabled={totalItems === 0}
               aria-label="Export filtered device inventory as Excel"
             />
             <div className="relative w-full min-w-0 sm:w-auto">
