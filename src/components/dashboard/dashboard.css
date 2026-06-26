@@ -286,11 +286,45 @@
   }
 }
 
-@media (min-width: 1280px) {
+@media (min-width: 1024px) {
   .dashboard-stat-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 1rem;
   }
+
+  .dashboard-stat-grid--3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.dashboard-metric-card--tone-blue .dashboard-metric-card__icon {
+  background: #eff6ff;
+  border-color: #dbeafe;
+  color: #2563eb;
+}
+
+.dashboard-metric-card--tone-amber .dashboard-metric-card__icon {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #d97706;
+}
+
+.dashboard-metric-card--tone-teal .dashboard-metric-card__icon {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #059669;
+}
+
+.dashboard-metric-card--tone-violet .dashboard-metric-card__icon {
+  background: #f5f3ff;
+  border-color: #ddd6fe;
+  color: #7c3aed;
+}
+
+.dashboard-metric-card--tone-rose .dashboard-metric-card__icon {
+  background: #fff1f2;
+  border-color: #fecdd3;
+  color: #e11d48;
 }
 
 .dashboard-metric-card {
@@ -650,6 +684,56 @@
   font-size: 0.9375rem;
   font-weight: 600;
   color: #111827;
+}
+
+.dashboard-section-block__header {
+  margin-bottom: 0.875rem;
+}
+
+.dashboard-section-block__subtitle {
+  margin-top: 0.25rem;
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+.dashboard-planner-org-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.875rem;
+  background: #fff;
+}
+
+.dashboard-planner-org-table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+}
+
+.dashboard-planner-org-table th,
+.dashboard-planner-org-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.875rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.dashboard-planner-org-table th {
+  background: #f8fafc;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #007b83;
+}
+
+.dashboard-planner-org-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.dashboard-planner-org-table__empty {
+  padding: 2rem 1rem !important;
+  text-align: center;
+  color: #6b7280;
 }
 
 .dashboard-activity-grid {

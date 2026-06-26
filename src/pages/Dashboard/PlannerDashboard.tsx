@@ -7,9 +7,9 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   RiFileList3Line,
-  RiCheckboxCircleLine,
   RiTimerLine,
   RiErrorWarningLine,
+  RiClipboardLine,
 } from 'react-icons/ri';
 import DashboardChartsSection from '../../components/dashboard/DashboardChartsSection';
 import DashboardMetricCard from '../../components/dashboard/DashboardMetricCard';
@@ -114,22 +114,26 @@ const PlannerDashboard: React.FC<PlannerDashboardProps> = ({ embedded = false, f
             loading={cardLoading}
           />
           <DashboardMetricCard
-            title="Completed Brief"
-            value={cardData?.closed_briefs ?? 0}
-            icon={<RiCheckboxCircleLine />}
+            title="Plans Assigned"
+            value={cardData?.assigned_plans ?? 0}
+            icon={<RiClipboardLine />}
             embedded={embedded}
             loading={cardLoading}
           />
           <DashboardMetricCard
-            title="Avg Planning Time"
-            value={cardData ? `${cardData.average_planning_time_days} days` : '--'}
+            title="Avg Plan Submission Time"
+            value={
+              cardData?.average_assignment_days != null
+                ? `${cardData.average_assignment_days} days`
+                : '--'
+            }
             icon={<RiTimerLine />}
             embedded={embedded}
             loading={cardLoading}
           />
           <DashboardMetricCard
-            title="Overdue Items"
-            value={0}
+            title="Overdue Briefs"
+            value={cardData?.overdue_briefs ?? 0}
             icon={<RiErrorWarningLine />}
             embedded={embedded}
             loading={cardLoading}

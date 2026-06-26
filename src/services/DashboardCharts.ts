@@ -157,6 +157,8 @@ export type PlannerChartOrganisationRow = {
   organisationName: string;
   briefs: number;
   briefBudget: number;
+  assignedPlans: number;
+  avgAssignmentDays: number;
 };
 
 export type PlannerChartMetrics = {
@@ -164,6 +166,8 @@ export type PlannerChartMetrics = {
   totals: {
     briefs: number;
     briefBudget: number;
+    assignedPlans: number;
+    avgAssignmentDays: number;
   };
   briefStatus: {
     activeBriefs: number;
@@ -210,20 +214,26 @@ function normalizeSalesMetrics(data: unknown): SalesChartMetrics {
   };
 }
 
+function normalizePlannerRow(raw: unknown, index: number): PlannerChartOrganisationRow | null {
+  const base = normalizeRow(raw, index);
+  if (!base) return null;
+  const record = raw as Record<string, unknown>;
+
+  return {
+    organisationId: base.organisationId,
+    organisationName: base.organisationName,
+    briefs: base.briefs,
+    briefBudget: base.briefBudget,
+    assignedPlans: toNumber(record.assigned_plans ?? record.assignedPlans),
+    avgAssignmentDays: toNumber(record.avg_assignment_days ?? record.avgAssignmentDays),
+  };
+}
+
 function normalizePlannerMetrics(data: unknown): PlannerChartMetrics {
   const payload = (data ?? {}) as Record<string, unknown>;
   const rawRows = Array.isArray(payload.by_organisation) ? payload.by_organisation : [];
   const rows = rawRows
-    .map((row, index) => {
-      const base = normalizeRow(row, index);
-      if (!base) return null;
-      return {
-        organisationId: base.organisationId,
-        organisationName: base.organisationName,
-        briefs: base.briefs,
-        briefBudget: base.briefBudget,
-      };
-    })
+    .map((row, index) => normalizePlannerRow(row, index))
     .filter((row): row is PlannerChartOrganisationRow => row != null);
 
   const totalsSource = (payload.totals ?? {}) as Record<string, unknown>;
@@ -234,6 +244,8 @@ function normalizePlannerMetrics(data: unknown): PlannerChartMetrics {
     totals: {
       briefs: toNumber(totalsSource.briefs),
       briefBudget: toNumber(totalsSource.brief_budget ?? totalsSource.briefBudget),
+      assignedPlans: toNumber(totalsSource.assigned_plans ?? totalsSource.assignedPlans),
+      avgAssignmentDays: toNumber(totalsSource.avg_assignment_days ?? totalsSource.avgAssignmentDays),
     },
     briefStatus: {
       activeBriefs: toNumber(statusSource.active_briefs ?? statusSource.activeBriefs),

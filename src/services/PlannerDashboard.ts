@@ -19,8 +19,10 @@ export interface PlannerDashboardBrief {
 export interface PlannerDashboardCardResponse {
   active_briefs: number;
   closed_briefs: number;
-  total_left_time_days: number;
+  overdue_briefs: number;
+  assigned_plans: number;
   average_planning_time_days: number;
+  average_assignment_days: number;
 }
 
 export async function getLatestFiveBriefs(

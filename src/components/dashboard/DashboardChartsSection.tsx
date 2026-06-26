@@ -22,6 +22,8 @@ import type { DashboardFilterState } from '../../utils/dashboardFilters';
 import { serializeDashboardFilters } from '../../utils/dashboardFilters';
 
 import { useDashboardPermissions } from '../../utils/dashboardPermissions';
+import type { DashboardChartKey } from '../../utils/dashboardPermissions';
+import PlannerOrganisationTable from './PlannerOrganisationTable';
 
 import {
 
@@ -58,17 +60,11 @@ type DashboardChartsSectionProps = {
 
 
 type MetricConfig = {
-
   key: string;
-
-  chartKey: 'totalLeads' | 'preLeads' | 'briefs' | 'briefBudget';
-
+  chartKey: DashboardChartKey;
   title: string;
-
   color: string;
-
   valueFormatter?: (value: number) => string;
-
 };
 
 
@@ -99,12 +95,25 @@ const SALES_METRICS: MetricConfig[] = [
 
 
 
+const formatDays = (value: number) => `${value.toLocaleString('en-IN', { maximumFractionDigits: 1 })} days`;
+
 const PLANNER_METRICS: MetricConfig[] = [
-
   { key: 'briefs', chartKey: 'briefs', title: 'Briefs', color: '#ea580c' },
-
-  { key: 'briefBudget', chartKey: 'briefBudget', title: 'Brief Budget', color: '#059669', valueFormatter: formatCurrency },
-
+  { key: 'assignedPlans', chartKey: 'assignedPlans', title: 'Plans Assigned', color: '#2563eb' },
+  {
+    key: 'avgAssignmentDays',
+    chartKey: 'avgAssignmentDays',
+    title: 'Avg Plan Submission Time',
+    color: '#7c3aed',
+    valueFormatter: formatDays,
+  },
+  {
+    key: 'briefBudget',
+    chartKey: 'briefBudget',
+    title: 'Brief Budget',
+    color: '#059669',
+    valueFormatter: formatCurrency,
+  },
 ];
 
 
@@ -147,9 +156,9 @@ const SECTION_COPY: Record<
 
     title: 'Planner Analytics',
 
-    subtitle: 'Brief volume, budget, and status breakdown by organisation.',
+    subtitle: 'Briefs, assigned plans, plan submission time (assign → submit), and budget by organisation.',
 
-    gridClass: 'dashboard-charts__grid dashboard-charts__grid--3',
+    gridClass: 'dashboard-charts__grid dashboard-charts__grid--2',
 
   },
 
@@ -277,25 +286,21 @@ function renderTotals(
   const data = metrics as PlannerChartMetrics;
 
   return (
-
     <>
-
       {visibleMetrics.some((item) => item.chartKey === 'briefs') ? (
-
         <span>Briefs: {formatCount(data.totals.briefs)}</span>
-
       ) : null}
-
+      {visibleMetrics.some((item) => item.chartKey === 'assignedPlans') ? (
+        <span>Plans: {formatCount(data.totals.assignedPlans)}</span>
+      ) : null}
+      {visibleMetrics.some((item) => item.chartKey === 'avgAssignmentDays') ? (
+        <span>Avg Submit: {formatDays(data.totals.avgAssignmentDays)}</span>
+      ) : null}
       {visibleMetrics.some((item) => item.chartKey === 'briefBudget') ? (
-
         <span>Budget: {formatCurrency(data.totals.briefBudget)}</span>
-
       ) : null}
-
     </>
-
   );
-
 }
 
 
@@ -430,7 +435,7 @@ const DashboardChartsSection: React.FC<DashboardChartsSectionProps> = ({ variant
 
 
 
-      {visibleMetrics.length > 0 ? (
+      {visibleMetrics.length > 0 || showBriefStatus ? (
 
         <div className={copy.gridClass}>
 
@@ -496,6 +501,10 @@ const DashboardChartsSection: React.FC<DashboardChartsSectionProps> = ({ variant
 
         </div>
 
+      ) : null}
+
+      {variant === 'planner' && plannerData ? (
+        <PlannerOrganisationTable rows={plannerData.rows} loading={loading} />
       ) : null}
 
     </section>

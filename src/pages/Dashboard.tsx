@@ -5,9 +5,9 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSelector } from 'react-redux';
-import { Users, FileCheck, BarChart3 } from 'lucide-react';
+import { Users, FileCheck } from 'lucide-react';
 import { BsGraphUpArrow } from 'react-icons/bs';
-import StatCard from '../components/ui/StatCard';
+import DashboardMetricCard from '../components/dashboard/DashboardMetricCard';
 import DashboardFilterBar from '../components/dashboard/DashboardFilterBar';
 import DashboardSection from '../components/dashboard/DashboardSection';
 import DashboardChartsSection from '../components/dashboard/DashboardChartsSection';
@@ -26,7 +26,7 @@ import {
   serializeDashboardFilters,
   type DashboardFilterState,
 } from '../utils/dashboardFilters';
-import { formatDashboardNumber } from '../utils/dashboardFormat';
+import { formatDashboardCurrency } from '../utils/dashboardFormat';
 import {
   getDefaultDashboardOrganisationIds,
   isSuperAdminUser,
@@ -184,14 +184,28 @@ const Dashboard: React.FC = () => {
     return (
       <div className="dashboard-content">
         {dashboardPermissions.canViewOverviewStats() ? (
-          <div className="dashboard-stat-grid">
-            <StatCard title="Total Users" value={stats.totalUsers} icon={<Users />} />
-            <StatCard title="Pending Assignments" value={stats.pendingAssignments} icon={<FileCheck />} />
-            <StatCard title="Team Performance" value={stats.teamPerformance} icon={<BarChart3 />} />
-            <StatCard
+          <div className="dashboard-stat-grid dashboard-stat-grid--3">
+            <DashboardMetricCard
+              title="Total Users"
+              value={stats.totalUsers}
+              icon={<Users />}
+              loading={loading}
+              className="dashboard-metric-card--tone-blue"
+            />
+            <DashboardMetricCard
+              title="Pending Assignments"
+              value={stats.pendingAssignments}
+              icon={<FileCheck />}
+              loading={loading}
+              className="dashboard-metric-card--tone-amber"
+            />
+            {/* Team Performance hidden until metric is finalized */}
+            <DashboardMetricCard
               title="Monthly Revenue"
-              value={formatDashboardNumber(monthlyRevenue)}
-              icon={<BsGraphUpArrow className="h-6 w-6" />}
+              value={formatDashboardCurrency(monthlyRevenue)}
+              icon={<BsGraphUpArrow />}
+              loading={loading}
+              className="dashboard-metric-card--tone-teal"
             />
           </div>
         ) : null}

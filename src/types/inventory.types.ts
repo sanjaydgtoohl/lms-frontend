@@ -104,7 +104,6 @@ export type DeviceInventoryResponse = {
   per_page: number;
   data: DeviceData[];
   excel_download_url?: string | null;
-  ppt_download_url?: string | null;
 };
 
 export type ListDeviceInventoryParams = {

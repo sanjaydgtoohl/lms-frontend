@@ -21,13 +21,17 @@ export type DashboardChartKey =
   | 'totalLeads'
   | 'preLeads'
   | 'briefs'
-  | 'briefBudget';
+  | 'briefBudget'
+  | 'assignedPlans'
+  | 'avgAssignmentDays';
 
 const CHART_KEY_PERMISSIONS: Record<DashboardChartKey, string> = {
   totalLeads: DASHBOARD_PERMISSIONS.CHART_LEADS,
   preLeads: DASHBOARD_PERMISSIONS.CHART_PRE_LEADS,
   briefs: DASHBOARD_PERMISSIONS.CHART_BRIEFS,
   briefBudget: DASHBOARD_PERMISSIONS.CHART_BRIEF_BUDGET,
+  assignedPlans: DASHBOARD_PERMISSIONS.CHART_BRIEFS,
+  avgAssignmentDays: DASHBOARD_PERMISSIONS.CHART_BRIEF_STATUS,
 };
 
 export function createDashboardPermissionChecker(hasPermission: (name: string) => boolean) {

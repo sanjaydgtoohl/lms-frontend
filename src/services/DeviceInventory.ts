@@ -72,7 +72,6 @@ function normalizeInventoryResponse(json: unknown): DeviceInventoryResponse {
     per_page: Number(body.per_page ?? pagination.limit ?? pagination.per_page ?? 10),
     data: rows,
     excel_download_url: body.excel_download_url ? String(body.excel_download_url) : null,
-    ppt_download_url: body.ppt_download_url ? String(body.ppt_download_url) : null,
   };
 }
 
