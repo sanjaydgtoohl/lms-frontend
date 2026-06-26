@@ -157,17 +157,6 @@ const SECTION_COPY: Record<
 
 
 
-const FETCHERS = {
-
-  overview: getDashboardChartMetrics,
-
-  sales: getSalesChartMetrics,
-
-  planner: getPlannerChartMetrics,
-
-} as const;
-
-
 
 function buildOrgChartData(
 
@@ -354,64 +343,58 @@ const DashboardChartsSection: React.FC<DashboardChartsSectionProps> = ({ variant
 
 
   const filterKey = serializeDashboardFilters(filters);
+  const fetchEnabled = canFetch && (visibleMetrics.length > 0 || showPipeline || showBriefStatus);
 
-  const { data, loading, error } = useApiQuery(
-    () => FETCHERS[variant](filters),
-    [variant, filterKey],
-    { enabled: canFetch && (visibleMetrics.length > 0 || showPipeline || showBriefStatus) },
+  const overviewQuery = useApiQuery(
+    () => getDashboardChartMetrics(filters),
+    ['overview', filterKey],
+    { enabled: variant === 'overview' && fetchEnabled },
   );
 
+  const salesQuery = useApiQuery(
+    () => getSalesChartMetrics(filters),
+    ['sales', filterKey],
+    { enabled: variant === 'sales' && fetchEnabled },
+  );
 
+  const plannerQuery = useApiQuery(
+    () => getPlannerChartMetrics(filters),
+    ['planner', filterKey],
+    { enabled: variant === 'planner' && fetchEnabled },
+  );
+
+  const activeQuery =
+    variant === 'overview' ? overviewQuery : variant === 'sales' ? salesQuery : plannerQuery;
+
+  const { data, loading, error } = activeQuery;
+  const salesData = salesQuery.data;
+  const plannerData = plannerQuery.data;
 
   const orgChartData = useMemo(() => {
-
     const rows = (data?.rows ?? []) as Array<Record<string, string | number>>;
-
     return buildOrgChartData(rows, visibleMetrics);
-
   }, [data, visibleMetrics]);
 
-
-
   const pipelineData = useMemo(() => {
-
-    if (!showPipeline || !data) return [];
-
-    const pipeline = (data as SalesChartMetrics).pipeline;
-
+    if (!showPipeline || !salesData) return [];
+    const pipeline = salesData.pipeline;
     return [
-
       { name: 'New Leads', value: pipeline.newLeads },
-
       { name: 'Follow Up', value: pipeline.followUp },
-
       { name: 'Meetings', value: pipeline.meetingScheduled },
-
       { name: 'Briefs', value: pipeline.briefs },
-
     ];
-
-  }, [showPipeline, data]);
-
-
+  }, [showPipeline, salesData]);
 
   const statusData = useMemo(() => {
-
-    if (!showBriefStatus || !data) return [];
-
-    const status = (data as PlannerChartMetrics).briefStatus;
-
+    if (!showBriefStatus || !plannerData) return [];
+    const status = plannerData.briefStatus;
     return [
-
       { name: 'Active', value: status.activeBriefs },
-
       { name: 'Closed', value: status.closedBriefs },
-
       { name: 'Overdue', value: status.overdueBriefs },
-
     ];
-
-  }, [showBriefStatus, data]);
+  }, [showBriefStatus, plannerData]);
 
 
 

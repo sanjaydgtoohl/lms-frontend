@@ -1,5 +1,3 @@
-import React from 'react';
-
 export type DashboardTabItem<T extends string> = {
   id: T;
   label: string;

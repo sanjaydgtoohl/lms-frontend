@@ -108,7 +108,9 @@ export async function updatePermissionWithFile(
     formData.append('display_name', payload.display_name);
     formData.append('name', payload.name);
     formData.append('url', payload.url || '');
-    formData.append('is_parent', String(payload.is_parent || ''));
+    if (payload.is_parent != null) {
+      formData.append('is_parent', String(payload.is_parent));
+    }
     formData.append('description', payload.description);
     formData.append('icon_text', payload.icon_text || '');
     formData.append('status', payload.status || '1');

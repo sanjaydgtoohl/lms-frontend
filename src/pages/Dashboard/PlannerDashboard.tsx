@@ -45,10 +45,11 @@ const PlannerDashboard: React.FC<PlannerDashboardProps> = ({ embedded = false, f
     [filterKey],
   );
 
-  const { data: assignedBriefs = [], loading: briefsLoading, error: briefsError } = useApiQuery(
+  const { data: assignedBriefsData, loading: briefsLoading, error: briefsError } = useApiQuery(
     () => getLatestFiveBriefs(filters),
     [filterKey],
   );
+  const assignedBriefs = assignedBriefsData ?? [];
 
   const renderBriefCard = (brief: PlannerDashboardBrief) => {
     const statusKey = (brief.status || '').toLowerCase();

@@ -12,13 +12,13 @@ import {
 } from './client';
 
 export type { SelectOption };
-import type { AppUser, UserListResponse } from '../types/user/user.types';
+import type { AppUser, UserListResponse, UserOrganisation } from '../types/user/user.types';
 
 export type { AppUser, UserListResponse };
 /** @deprecated Use AppUser */
 export type User = AppUser;
 
-function parseOrganisations(it: Record<string, unknown>): AppUser['organisations'] {
+function parseOrganisations(it: Record<string, unknown>): UserOrganisation[] {
   if (Array.isArray(it.organisations) && it.organisations.length > 0) {
     return it.organisations
       .map((org) => {

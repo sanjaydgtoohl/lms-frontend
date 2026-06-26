@@ -21,7 +21,7 @@ export type DashboardFilterState = {
   dateTo: string;
   organisationIds: string[];
   /** Optional priority filter for pending assignments and related dashboard APIs. */
-  priority?: string;
+  priority?: 'High' | 'Medium' | 'Low';
 };
 
 export function buildDashboardFilterQuery(

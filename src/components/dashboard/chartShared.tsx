@@ -30,6 +30,11 @@ export const formatCurrency = (value: number) =>
 export const truncateLabel = (label: string, maxLength = 14) =>
   label.length > maxLength ? `${label.slice(0, maxLength - 1)}…` : label;
 
+function normalizeTooltipValue(value: unknown): number {
+  const raw = Array.isArray(value) ? value[0] : value;
+  return Number(raw ?? 0);
+}
+
 type MetricChartCardProps = {
   title: string;
   color: string;
@@ -77,12 +82,12 @@ export function MetricChartCard({
               />
               <YAxis
                 tick={{ fontSize: 11, fill: '#6b7280' }}
-                tickFormatter={(value) => formatCount(Number(value))}
+                tickFormatter={(value: number | string | undefined) => formatCount(Number(value ?? 0))}
                 width={48}
               />
               <Tooltip
-                formatter={(value) => [valueFormatter(Number(value)), title]}
-                labelFormatter={(label) => String(label)}
+                formatter={(value: unknown) => [valueFormatter(normalizeTooltipValue(value)), title]}
+                labelFormatter={(label: unknown) => String(label ?? '')}
                 contentStyle={{
                   borderRadius: '0.75rem',
                   border: '1px solid #e5e7eb',
@@ -126,11 +131,11 @@ export function PipelineChartCard({ title, data, loading, colors }: PipelineChar
               <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#6b7280' }} />
               <YAxis
                 tick={{ fontSize: 11, fill: '#6b7280' }}
-                tickFormatter={(value) => formatCount(Number(value))}
+                tickFormatter={(value: number | string | undefined) => formatCount(Number(value ?? 0))}
                 width={48}
               />
               <Tooltip
-                formatter={(value) => [formatCount(Number(value)), 'Count']}
+                formatter={(value: unknown) => [formatCount(normalizeTooltipValue(value)), 'Count']}
                 contentStyle={{
                   borderRadius: '0.75rem',
                   border: '1px solid #e5e7eb',
@@ -190,7 +195,7 @@ export function StatusPieChartCard({ title, data, loading, colors }: StatusPieCh
                 ))}
               </Pie>
               <Tooltip
-                formatter={(value) => [formatCount(Number(value)), 'Count']}
+                formatter={(value: unknown) => [formatCount(normalizeTooltipValue(value)), 'Count']}
                 contentStyle={{
                   borderRadius: '0.75rem',
                   border: '1px solid #e5e7eb',
