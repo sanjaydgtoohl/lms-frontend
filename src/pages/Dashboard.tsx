@@ -29,7 +29,7 @@ import {
 import { formatDashboardCurrency } from '../utils/dashboardFormat';
 import {
   getDefaultDashboardOrganisationIds,
-  isSuperAdminUser,
+  sanitizeDashboardOrganisationIds,
 } from '../utils/dashboardUserScope';
 import { useDashboardPermissions } from '../utils/dashboardPermissions';
 import type { RootState } from '../redux/store';
@@ -89,10 +89,11 @@ const Dashboard: React.FC = () => {
   }, [visibleTabs, activeView]);
 
   useEffect(() => {
-    if (!isAuthInitialized || filtersInitialized.current) return;
+    if (!isAuthInitialized || !user) return;
+    if (filtersInitialized.current) return;
 
     filtersInitialized.current = true;
-    const orgIds = user && !isSuperAdminUser(user) ? getDefaultDashboardOrganisationIds(user) : [];
+    const orgIds = getDefaultDashboardOrganisationIds(user);
     const initialFilters: DashboardFilterState = {
       ...createDefaultDashboardFilters(),
       organisationIds: orgIds,
@@ -101,6 +102,20 @@ const Dashboard: React.FC = () => {
     setDraftFilters(initialFilters);
     setAppliedFilters(initialFilters);
   }, [isAuthInitialized, user]);
+
+  useEffect(() => {
+    if (!user || !appliedFilters) return;
+
+    const scopedOrgIds = sanitizeDashboardOrganisationIds(user, appliedFilters.organisationIds);
+    const currentKey = [...appliedFilters.organisationIds].sort().join(',');
+    const scopedKey = [...scopedOrgIds].sort().join(',');
+
+    if (currentKey === scopedKey) return;
+
+    const nextFilters = { ...appliedFilters, organisationIds: scopedOrgIds };
+    setAppliedFilters(nextFilters);
+    setDraftFilters((prev) => ({ ...prev, organisationIds: scopedOrgIds }));
+  }, [user, appliedFilters]);
 
   const fetchOverviewData = useCallback(async (activeFilters: DashboardFilterState) => {
     if (!dashboardPermissions.canViewOverviewTab()) return;
@@ -160,16 +175,23 @@ const Dashboard: React.FC = () => {
   }, [appliedFilters, activeView, fetchOverviewData]);
 
   const handleApplyFilters = useCallback(() => {
-    setAppliedFilters(draftFilters);
-  }, [draftFilters]);
+    setAppliedFilters({
+      ...draftFilters,
+      organisationIds: sanitizeDashboardOrganisationIds(user, draftFilters.organisationIds),
+    });
+  }, [draftFilters, user]);
 
   const handleDateApply = useCallback(
     (dateValue: Pick<DashboardFilterState, 'preset' | 'dateFrom' | 'dateTo'>) => {
-      const nextFilters = { ...draftFilters, ...dateValue };
+      const nextFilters = {
+        ...draftFilters,
+        ...dateValue,
+        organisationIds: sanitizeDashboardOrganisationIds(user, draftFilters.organisationIds),
+      };
       setDraftFilters(nextFilters);
       setAppliedFilters(nextFilters);
     },
-    [draftFilters],
+    [draftFilters, user],
   );
 
   const handlePriorityChange = (priority: 'all' | 'High' | 'Medium' | 'Low') => {

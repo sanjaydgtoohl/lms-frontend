@@ -6,9 +6,8 @@ import DashboardDateRangePicker from './DashboardDateRangePicker';
 import { listOrganisationsForSelect } from '../../api/users';
 import type { DashboardFilterState } from '../../utils/dashboardFilters';
 import {
-  getProcessOrganisationId,
-  getUserOrganisationIds,
-  isSuperAdminUser,
+  filterOrganisationOptionsForUser,
+  sanitizeDashboardOrganisationIds,
 } from '../../utils/dashboardUserScope';
 import type { RootState } from '../../redux/store';
 
@@ -31,22 +30,26 @@ const DashboardFilterBar: React.FC<DashboardFilterBarProps> = ({
   const [organisationOptions, setOrganisationOptions] = useState<{ value: string; label: string }[]>([]);
   const [loadingOrganisations, setLoadingOrganisations] = useState(true);
 
-  const userOrgCount = getUserOrganisationIds(user).length;
-  const processOrgId = getProcessOrganisationId(user);
-  const isMultiOrgUser = userOrgCount > 1 && !isSuperAdminUser(user);
+  const visibleOrganisationOptions = useMemo(
+    () => filterOrganisationOptionsForUser(user, organisationOptions),
+    [user, organisationOptions],
+  );
 
-  const organisationLabel = isMultiOrgUser ? 'Process Organisation' : 'Organisation';
+  const organisationLabel = 'Organisation';
 
   const organisationPlaceholder = useMemo(() => {
     if (loadingOrganisations) return 'Loading organisations...';
-    if (isSuperAdminUser(user)) return 'All organisations';
-    if (organisationOptions.length === 0) return 'No organisations assigned';
-    if (isMultiOrgUser && processOrgId) {
-      const processOrg = organisationOptions.find((option) => option.value === processOrgId);
-      return processOrg ? `Default: ${processOrg.label}` : 'Select organisation(s)';
-    }
-    return organisationOptions.length === 1 ? organisationOptions[0].label : 'Select organisation(s)';
-  }, [loadingOrganisations, user, organisationOptions, isMultiOrgUser, processOrgId]);
+    if (visibleOrganisationOptions.length === 0) return 'No organisations assigned';
+    if (visibleOrganisationOptions.length === 1) return visibleOrganisationOptions[0].label;
+    return 'Select organisation(s)';
+  }, [loadingOrganisations, visibleOrganisationOptions]);
+
+  const handleOrganisationChange = (organisationIds: string[]) => {
+    onChange({
+      ...value,
+      organisationIds: sanitizeDashboardOrganisationIds(user, organisationIds),
+    });
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -93,10 +96,10 @@ const DashboardFilterBar: React.FC<DashboardFilterBarProps> = ({
             <MultiSelectDropdown
               name="organisation_ids"
               placeholder={organisationPlaceholder}
-              options={organisationOptions}
-              value={value.organisationIds}
-              onChange={(organisationIds) => onChange({ ...value, organisationIds })}
-              disabled={loadingOrganisations || organisationOptions.length === 0}
+              options={visibleOrganisationOptions}
+              value={sanitizeDashboardOrganisationIds(user, value.organisationIds)}
+              onChange={handleOrganisationChange}
+              disabled={loadingOrganisations || visibleOrganisationOptions.length === 0}
               className="w-full"
               inputClassName="dashboard-filter-input pl-9"
             />

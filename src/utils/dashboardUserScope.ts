@@ -31,18 +31,41 @@ export function getProcessOrganisationId(user: AuthUser | null | undefined): str
   return orgIds[0] ?? null;
 }
 
-export function getDefaultDashboardOrganisationIds(user: AuthUser | null | undefined): string[] {
-  const orgIds = getUserOrganisationIds(user);
-  if (orgIds.length === 0) return [];
-
-  if (orgIds.length === 1) {
-    return orgIds;
-  }
-
-  const processOrgId = getProcessOrganisationId(user);
-  return processOrgId ? [processOrgId] : [orgIds[0]];
-}
-
 export function isSuperAdminUser(user: AuthUser | null | undefined): boolean {
   return Boolean(user?.roles?.some((role) => role.name === 'Super Admin'));
+}
+
+/** Organisation-wide dashboard access requires explicit organisation assignment. */
+export function canAccessAllOrganisations(_user: AuthUser | null | undefined): boolean {
+  return false;
+}
+
+/** Default dashboard scope: all organisations assigned to the user. */
+export function getDefaultDashboardOrganisationIds(user: AuthUser | null | undefined): string[] {
+  return getUserOrganisationIds(user);
+}
+
+/** Keep organisation filter selections within the user's assigned organisations. */
+export function sanitizeDashboardOrganisationIds(
+  user: AuthUser | null | undefined,
+  selectedIds: string[],
+): string[] {
+  const accessible = getUserOrganisationIds(user);
+  if (accessible.length === 0) return [];
+
+  const normalizedSelection = selectedIds.filter(Boolean);
+  if (normalizedSelection.length === 0) return accessible;
+
+  const allowed = normalizedSelection.filter((id) => accessible.includes(id));
+  return allowed.length > 0 ? allowed : accessible;
+}
+
+export function filterOrganisationOptionsForUser<T extends { value: string }>(
+  user: AuthUser | null | undefined,
+  options: T[],
+): T[] {
+  const accessible = new Set(getUserOrganisationIds(user));
+  if (accessible.size === 0) return [];
+
+  return options.filter((option) => accessible.has(String(option.value)));
 }
