@@ -1,36 +1,86 @@
 import { useCallback, useRef, useState } from 'react';
 import { Download } from 'lucide-react';
-import type { DeviceData } from '../../types/inventory.types';
 import {
-  generateDeviceInventoryPptx,
+  forEachDeviceInventoryPage,
+  type DeviceInventoryFilterParams,
+} from '../../services/DeviceInventory';
+import {
+  generateDeviceInventoryPptxStreaming,
   type DeviceInventoryPptxProgress,
 } from '../../utils/devicePptxExport';
 import LoadingModal from './LoadingModal';
 import SweetAlert from '../../utils/SweetAlert';
 
+const LARGE_EXPORT_CONFIRM_THRESHOLD = 250;
+
 type PPTExportProps = {
-  fetchRows: () => Promise<DeviceData[]>;
+  /** Current inventory filters (same as table / Excel export). */
+  getExportFilters: () => DeviceInventoryFilterParams;
+  /** Total rows matching filters (for confirm + progress). */
+  recordCount?: number;
   className?: string;
   disabled?: boolean;
 };
 
-function formatProgressMessage(progress: DeviceInventoryPptxProgress): string {
-  const { loaded, total, stage } = progress;
+type ExportStage = DeviceInventoryPptxProgress['stage'];
 
-  if (stage === 'images') {
-    return `Loading device images ${loaded} of ${total}…`;
-  }
-  if (stage === 'slides') {
-    return `Building slides ${loaded} of ${total}…`;
-  }
-  return 'Saving PowerPoint file…';
+function stageWeight(stage: ExportStage): number {
+  if (stage === 'fetch') return 0;
+  if (stage === 'slides') return 0.7;
+  if (stage === 'file') return 0.92;
+  return 1;
 }
 
-function PPTExport({ fetchRows, className = '', disabled = false }: PPTExportProps) {
+function computeOverallProgress(
+  stage: ExportStage,
+  loaded: number,
+  total: number
+): number {
+  if (total <= 0) return 0;
+  const ratio = Math.min(1, loaded / total);
+  const start = stageWeight(stage);
+  const end =
+    stage === 'fetch'
+      ? 0.35
+      : stage === 'slides'
+        ? 0.92
+        : stage === 'file'
+          ? 0.98
+          : 1;
+  return (start + (end - start) * ratio) * 100;
+}
+
+function formatProgressMessage(
+  stage: ExportStage,
+  loaded: number,
+  total: number
+): string {
+  const loadedLabel = loaded.toLocaleString();
+  const totalLabel = total.toLocaleString();
+
+  if (stage === 'fetch') {
+    return `Loading filtered devices ${loadedLabel} of ${totalLabel}…`;
+  }
+  if (stage === 'slides') {
+    return `Building slides ${loadedLabel} of ${totalLabel}…`;
+  }
+  if (stage === 'file') {
+    return `Saving presentation part ${loadedLabel} of ${totalLabel}…`;
+  }
+  return `Packaging export files… ${loadedLabel}%`;
+}
+
+function PPTExport({
+  getExportFilters,
+  recordCount = 0,
+  className = '',
+  disabled = false,
+}: PPTExportProps) {
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState(
-    'Your PowerPoint export is being created. Device images are being prepared.'
+    'Your PowerPoint export is being created. Please wait a moment.'
   );
+  const [loadingProgress, setLoadingProgress] = useState<number | undefined>(undefined);
   const inFlightRef = useRef(false);
 
   const handleExport = useCallback(async () => {
@@ -38,43 +88,78 @@ function PPTExport({ fetchRows, className = '', disabled = false }: PPTExportPro
       return;
     }
 
+    if (recordCount > LARGE_EXPORT_CONFIRM_THRESHOLD) {
+      const confirmed = await SweetAlert.showConfirm({
+        title: 'Export all filtered devices?',
+        text: `${recordCount.toLocaleString()} device slide(s) will be exported in batches of 50 per file. Large exports are downloaded as a ZIP. Continue?`,
+      });
+      if (!confirmed) return;
+    }
+
     inFlightRef.current = true;
     setLoading(true);
-    setLoadingMessage('Fetching filtered device records…');
+    setLoadingProgress(undefined);
 
     try {
-      const rows = await fetchRows();
-      if (!rows || rows.length === 0) {
-        await SweetAlert.showError('No device records matched the current filters.', {
-          title: 'No data to export',
-        });
-        return;
-      }
+      const filters = getExportFilters();
+      let exportTotal = recordCount > 0 ? recordCount : 0;
 
-      setLoadingMessage(`Preparing ${rows.length.toLocaleString()} device slide(s)…`);
+      setLoadingMessage(
+        exportTotal > 0
+          ? `Loading filtered devices (0 of ${exportTotal.toLocaleString()})…`
+          : 'Loading filtered device records…'
+      );
 
-      const result = await generateDeviceInventoryPptx(rows, {
-        onProgress: (progress) => {
-          setLoadingMessage(formatProgressMessage(progress));
-        },
-      });
+      const result = await generateDeviceInventoryPptxStreaming(
+        async (onPage) =>
+          forEachDeviceInventoryPage(filters, {
+            onPageRows: async (rows, progress) => {
+              exportTotal = progress.total;
+              await onPage(rows, { loaded: progress.loaded, total: progress.total });
+            },
+          }),
+        {
+          estimatedTotal: recordCount,
+          onProgress: (progress: DeviceInventoryPptxProgress) => {
+            exportTotal = Math.max(exportTotal, progress.total);
+            setLoadingMessage(
+              formatProgressMessage(progress.stage, progress.loaded, progress.total)
+            );
+            setLoadingProgress(
+              computeOverallProgress(progress.stage, progress.loaded, progress.total)
+            );
+          },
+        }
+      );
+
+      setLoadingProgress(100);
+
+      const fileSummary =
+        result.fileCount > 1
+          ? `${result.exportedCount.toLocaleString()} slides saved in ${result.fileCount} files (${result.archiveName}).`
+          : `${result.exportedCount.toLocaleString()} device slide(s) exported successfully.`;
 
       await SweetAlert.showSuccess({
         title: 'PPT export ready',
-        text: `${result.exportedCount.toLocaleString()} device slide(s) exported successfully.`,
-        timer: 2500,
+        text: fileSummary,
+        timer: 3000,
       });
     } catch (err) {
       console.error('PPT export failed:', err);
-      const message = err instanceof Error ? err.message : String(err);
+      const rawMessage = err instanceof Error ? err.message : String(err);
+      const message =
+        rawMessage.includes('Array buffer allocation failed')
+          ? 'This export is too large for the browser to build in one go. Try narrowing your filters or export in smaller batches.'
+          : rawMessage;
       await SweetAlert.showError(message, {
         title: 'PPT export failed',
       });
     } finally {
       setLoading(false);
+      setLoadingProgress(undefined);
       inFlightRef.current = false;
     }
-  }, [disabled, fetchRows]);
+  }, [disabled, getExportFilters, recordCount]);
 
   return (
     <div className={className}>
@@ -83,7 +168,7 @@ function PPTExport({ fetchRows, className = '', disabled = false }: PPTExportPro
         onClick={handleExport}
         disabled={loading || disabled}
         className="btn-primary inline-flex items-center whitespace-nowrap shrink-0"
-        aria-label="Export all filtered device inventory to PowerPoint"
+        aria-label="Export filtered device inventory to PowerPoint"
         aria-busy={loading}
       >
         <Download className="h-4 w-4 mr-2 shrink-0 text-gray-700" aria-hidden />
@@ -93,6 +178,7 @@ function PPTExport({ fetchRows, className = '', disabled = false }: PPTExportPro
         isOpen={loading}
         title="Generating PPT"
         message={loadingMessage}
+        progress={loadingProgress}
       />
     </div>
   );

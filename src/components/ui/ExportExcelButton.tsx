@@ -73,7 +73,7 @@ const ExportExcelButton: React.FC<ExportExcelButtonProps> = ({
       <LoadingModal
         isOpen={exporting}
         title="Preparing Excel export"
-        message="Your Excel export is being generated. Please wait a moment."
+        message="Generating Excel file with your current filters. This may take a moment for large inventories."
       />
     </div>
   );

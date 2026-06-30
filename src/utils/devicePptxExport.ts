@@ -1,8 +1,13 @@
+import JSZip from 'jszip';
 import PptxGenJS from 'pptxgenjs';
 import logoUrl from '../assets/logo.svg';
 import { BRAND } from '../constants/brand';
 import type { DeviceData } from '../types/inventory.types';
-import { loadDeviceImageDataUrl } from './deviceImageLoader';
+import { downloadBlobFile } from './downloadFile';
+import {
+  clearDeviceImageDataUrlCache,
+  loadDeviceImageDataUrl,
+} from './deviceImageLoader';
 import { ensureImageProxyReady } from './registerImageProxy';
 
 const SLIDE_BACKGROUND = 'FFFFFF';
@@ -31,13 +36,18 @@ const PANEL_HEIGHT =
 const HEADER_TITLE = 'Device Inventory Report';
 const DETAIL_FONT_SIZE = 9;
 const DETAIL_ROW_HEIGHT = 0.28;
-const IMAGE_BATCH_SIZE = 4;
 const IMAGE_FETCH_TIMEOUT = 8000;
+/** Max slides per PPT part — keeps browser memory within safe limits. */
+const SLIDES_PER_PART = 50;
+const PPT_IMAGE_MAX_WIDTH = 960;
+const PPT_IMAGE_JPEG_QUALITY = 0.72;
 
 const brandLogoSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 60"><rect width="260" height="60" rx="12" fill="#0F4C81"/><text x="20" y="38" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#FFFFFF">${BRAND.productShort}</text><text x="20" y="52" font-family="Arial, sans-serif" font-size="12" fill="#D9E7FF">LMS</text></svg>`;
 
 const placeholderSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480"><rect width="640" height="480" rx="24" fill="#F1F5F9"/><rect x="128" y="96" width="384" height="232" rx="16" fill="#E2E8F0"/><path d="M208 320h224a16 16 0 0 1 16 16v24H192v-24a16 16 0 0 1 16-16Z" fill="#CBD5E1"/><text x="320" y="360" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#64748B" text-anchor="middle">No Image Available</text></svg>`;
 const PLACEHOLDER_IMAGE = `data:image/svg+xml;base64,${window.btoa(unescape(encodeURIComponent(placeholderSvg)))}`;
+
+let cachedLogoDataUrl: string | null = null;
 
 const safeText = (value?: string | null) => (value ? String(value) : 'N/A');
 
@@ -45,6 +55,8 @@ const encodeSvgToDataUrl = (svg: string) =>
   `data:image/svg+xml;base64,${window.btoa(unescape(encodeURIComponent(svg)))}`;
 
 const getLogoDataUrl = async (): Promise<string> => {
+  if (cachedLogoDataUrl) return cachedLogoDataUrl;
+
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), IMAGE_FETCH_TIMEOUT);
 
@@ -52,28 +64,62 @@ const getLogoDataUrl = async (): Promise<string> => {
     const response = await fetch(logoUrl, { signal: controller.signal });
     if (!response.ok) throw new Error(`Logo fetch failed: ${response.status}`);
     const svgText = await response.text();
-    return encodeSvgToDataUrl(svgText);
+    cachedLogoDataUrl = encodeSvgToDataUrl(svgText);
+    return cachedLogoDataUrl;
   } catch (error) {
     console.warn('Failed to fetch logo asset, using fallback brand logo.', error);
-    return encodeSvgToDataUrl(brandLogoSvg);
+    cachedLogoDataUrl = encodeSvgToDataUrl(brandLogoSvg);
+    return cachedLogoDataUrl;
   } finally {
     window.clearTimeout(timeoutId);
   }
 };
 
-type ImageSource = {
-  data: string;
-};
-
-const getImageSource = async (device: DeviceData): Promise<ImageSource> => {
-  const dataUrl = await loadDeviceImageDataUrl(device);
-  if (dataUrl) {
-    return { data: dataUrl };
+async function compressImageDataUrl(dataUrl: string): Promise<string> {
+  if (dataUrl.startsWith('data:image/svg+xml')) {
+    return dataUrl;
   }
 
-  console.warn('PPT image fetch failed, using placeholder:', device.device_name);
-  return { data: PLACEHOLDER_IMAGE };
-};
+  return await new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => {
+      try {
+        const naturalWidth = image.naturalWidth || image.width || 1;
+        const naturalHeight = image.naturalHeight || image.height || 1;
+        const scale = Math.min(1, PPT_IMAGE_MAX_WIDTH / naturalWidth);
+        const width = Math.max(1, Math.round(naturalWidth * scale));
+        const height = Math.max(1, Math.round(naturalHeight * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext('2d');
+        if (!context) {
+          resolve(dataUrl);
+          return;
+        }
+        context.drawImage(image, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', PPT_IMAGE_JPEG_QUALITY));
+      } catch {
+        resolve(dataUrl);
+      }
+    };
+    image.onerror = () => reject(new Error('Failed to compress image'));
+    image.src = dataUrl;
+  });
+}
+
+async function getCompressedDeviceImage(device: DeviceData): Promise<string> {
+  const dataUrl = await loadDeviceImageDataUrl(device);
+  if (!dataUrl) {
+    return PLACEHOLDER_IMAGE;
+  }
+
+  try {
+    return await compressImageDataUrl(dataUrl);
+  } catch {
+    return dataUrl;
+  }
+}
 
 type DetailRow = { label: string; value: string };
 
@@ -146,58 +192,31 @@ function buildDetailTableRows(rows: DetailRow[]): PptxGenJS.TableRow[] {
   ]);
 }
 
-export type DeviceInventoryPptxProgress = {
-  loaded: number;
-  total: number;
-  stage: 'images' | 'slides' | 'file';
-};
-
-export type DeviceInventoryPptxOptions = {
-  onProgress?: (progress: DeviceInventoryPptxProgress) => void;
-};
-
-export type DeviceInventoryPptxResult = {
-  exportedCount: number;
-};
-
-async function loadImageSourcesInBatches(
-  devices: DeviceData[],
-  onProgress?: (progress: DeviceInventoryPptxProgress) => void
-): Promise<ImageSource[]> {
-  const results: ImageSource[] = [];
-  const total = devices.length;
-
-  for (let index = 0; index < devices.length; index += IMAGE_BATCH_SIZE) {
-    const batch = devices.slice(index, index + IMAGE_BATCH_SIZE);
-    const batchSources = await Promise.all(batch.map((device) => getImageSource(device)));
-    results.push(...batchSources);
-
-    onProgress?.({
-      loaded: Math.min(index + batch.length, total),
-      total,
-      stage: 'images',
-    });
-  }
-
-  return results;
-}
-
-export async function generateDeviceInventoryPptx(
-  devices: DeviceData[],
-  options: DeviceInventoryPptxOptions = {}
-): Promise<DeviceInventoryPptxResult> {
-  const exportDevices = devices;
-  const { onProgress } = options;
-
+function createPptxDocument(): PptxGenJS {
   const pptx = new PptxGenJS();
   pptx.author = BRAND.exportAuthor;
   pptx.company = BRAND.exportCompany;
   pptx.title = 'Device Inventory Report';
   pptx.layout = 'LAYOUT_WIDE';
+  return pptx;
+}
 
-  await ensureImageProxyReady();
-  const logoDataUrl = await getLogoDataUrl();
+async function writePptxBlob(pptx: PptxGenJS): Promise<Blob> {
+  const output = await pptx.write({ outputType: 'blob' });
+  if (output instanceof Blob) {
+    return output;
+  }
+  throw new Error('Failed to generate PowerPoint file.');
+}
 
+type SlideRenderers = {
+  addReportHeader: (slide: PptxGenJS.Slide, device: DeviceData) => void;
+  addDeviceImagePanel: (slide: PptxGenJS.Slide, imageData: string) => void;
+  addDeviceDetailsPanel: (slide: PptxGenJS.Slide, device: DeviceData) => void;
+  addFooter: (slide: PptxGenJS.Slide, device: DeviceData) => void;
+};
+
+function createSlideRenderers(pptx: PptxGenJS, logoDataUrl: string): SlideRenderers {
   const contentTop = SLIDE_PADDING + HEADER_BLOCK_HEIGHT;
 
   const addReportHeader = (slide: PptxGenJS.Slide, device: DeviceData) => {
@@ -248,7 +267,7 @@ export async function generateDeviceInventoryPptx(
     });
   };
 
-  const addDeviceImagePanel = (slide: PptxGenJS.Slide, imageSource: ImageSource) => {
+  const addDeviceImagePanel = (slide: PptxGenJS.Slide, imageData: string) => {
     const panelX = SLIDE_PADDING;
     const panelY = contentTop;
 
@@ -263,7 +282,7 @@ export async function generateDeviceInventoryPptx(
     });
 
     slide.addImage({
-      data: imageSource.data,
+      data: imageData,
       x: panelX + 0.18,
       y: panelY + 0.18,
       w: LEFT_PANEL_WIDTH - 0.36,
@@ -428,36 +447,182 @@ export async function generateDeviceInventoryPptx(
     });
   };
 
-  const imageSources = await loadImageSourcesInBatches(exportDevices, onProgress);
+  return {
+    addReportHeader,
+    addDeviceImagePanel,
+    addDeviceDetailsPanel,
+    addFooter,
+  };
+}
 
-  exportDevices.forEach((device, index) => {
-    const slide = pptx.addSlide();
-    slide.background = { color: SLIDE_BACKGROUND };
+async function addDeviceSlide(
+  pptx: PptxGenJS,
+  renderers: SlideRenderers,
+  device: DeviceData
+): Promise<void> {
+  const imageData = await getCompressedDeviceImage(device);
+  const slide = pptx.addSlide();
+  slide.background = { color: SLIDE_BACKGROUND };
 
-    addReportHeader(slide, device);
-    addDeviceImagePanel(slide, imageSources[index]);
-    addDeviceDetailsPanel(slide, device);
-    addFooter(slide, device);
+  renderers.addReportHeader(slide, device);
+  renderers.addDeviceImagePanel(slide, imageData);
+  renderers.addDeviceDetailsPanel(slide, device);
+  renderers.addFooter(slide, device);
+}
 
-    if ((index + 1) % IMAGE_BATCH_SIZE === 0 || index + 1 === exportDevices.length) {
-      onProgress?.({
-        loaded: index + 1,
-        total: exportDevices.length,
-        stage: 'slides',
-      });
+export type DeviceInventoryPptxProgress = {
+  loaded: number;
+  total: number;
+  stage: 'fetch' | 'slides' | 'file' | 'zip';
+};
+
+export type DeviceInventoryPptxOptions = {
+  onProgress?: (progress: DeviceInventoryPptxProgress) => void;
+};
+
+export type DeviceInventoryPptxResult = {
+  exportedCount: number;
+  fileCount: number;
+  archiveName: string;
+};
+
+type DeviceIterator = (
+  onDevice: (device: DeviceData) => Promise<void>
+) => Promise<{ total: number }>;
+
+async function runChunkedPptxExport(
+  iterateDevices: DeviceIterator,
+  options: DeviceInventoryPptxOptions = {}
+): Promise<DeviceInventoryPptxResult> {
+  const { onProgress } = options;
+  await ensureImageProxyReady();
+  const logoDataUrl = await getLogoDataUrl();
+
+  const partBlobs: Blob[] = [];
+  let pptx = createPptxDocument();
+  let renderers = createSlideRenderers(pptx, logoDataUrl);
+  let slidesInPart = 0;
+  let exportedCount = 0;
+  let exportTotal = 0;
+
+  const flushPart = async () => {
+    if (slidesInPart === 0) return;
+    onProgress?.({ loaded: exportedCount, total: exportTotal, stage: 'file' });
+    partBlobs.push(await writePptxBlob(pptx));
+    pptx = createPptxDocument();
+    renderers = createSlideRenderers(pptx, logoDataUrl);
+    slidesInPart = 0;
+    clearDeviceImageDataUrlCache();
+  };
+
+  const { total } = await iterateDevices(async (device) => {
+    await addDeviceSlide(pptx, renderers, device);
+    exportedCount += 1;
+    slidesInPart += 1;
+    exportTotal = Math.max(exportTotal, exportedCount);
+
+    onProgress?.({
+      loaded: exportedCount,
+      total: Math.max(exportTotal, exportedCount),
+      stage: 'slides',
+    });
+
+    if (slidesInPart >= SLIDES_PER_PART) {
+      await flushPart();
     }
   });
 
-  onProgress?.({
-    loaded: exportDevices.length,
-    total: exportDevices.length,
-    stage: 'file',
-  });
+  exportTotal = Math.max(total, exportedCount);
+  await flushPart();
+
+  if (exportedCount === 0) {
+    throw new Error('No device records matched the current filters.');
+  }
 
   const dateStamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-  await pptx.writeFile({ fileName: `Device_Inventory_Report_${dateStamp}.pptx` });
+
+  if (partBlobs.length === 1) {
+    const archiveName = `Device_Inventory_Report_${dateStamp}.pptx`;
+    downloadBlobFile(archiveName, partBlobs[0]);
+    return { exportedCount, fileCount: 1, archiveName };
+  }
+
+  const zip = new JSZip();
+  partBlobs.forEach((blob, index) => {
+    zip.file(`Device_Inventory_Report_${dateStamp}_Part${index + 1}.pptx`, blob);
+  });
+
+  onProgress?.({ loaded: 0, total: 100, stage: 'zip' });
+
+  const zipBlob = await zip.generateAsync(
+    { type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } },
+    (metadata) => {
+      onProgress?.({
+        loaded: Math.round(metadata.percent),
+        total: 100,
+        stage: 'zip',
+      });
+    }
+  );
+
+  const archiveName = `Device_Inventory_Report_${dateStamp}.zip`;
+  downloadBlobFile(archiveName, zipBlob);
 
   return {
-    exportedCount: exportDevices.length,
+    exportedCount,
+    fileCount: partBlobs.length,
+    archiveName,
   };
+}
+
+/** Build PPT from an in-memory device list (small exports). */
+export async function generateDeviceInventoryPptx(
+  devices: DeviceData[],
+  options: DeviceInventoryPptxOptions = {}
+): Promise<DeviceInventoryPptxResult> {
+  return runChunkedPptxExport(async (onDevice) => {
+    for (const device of devices) {
+      await onDevice(device);
+    }
+    return { total: devices.length };
+  }, {
+    ...options,
+    onProgress: (progress) => {
+      options.onProgress?.({
+        ...progress,
+        total: Math.max(progress.total, devices.length),
+      });
+    },
+  });
+}
+
+/**
+ * Stream filtered inventory pages into chunked PPT part(s) without loading
+ * the full dataset into memory at once.
+ */
+export async function generateDeviceInventoryPptxStreaming(
+  forEachPage: (
+    onPage: (rows: DeviceData[], progress: { loaded: number; total: number }) => Promise<void>
+  ) => Promise<number>,
+  options: DeviceInventoryPptxOptions & { estimatedTotal?: number } = {}
+): Promise<DeviceInventoryPptxResult> {
+  const { estimatedTotal = 0, onProgress } = options;
+  let knownTotal = estimatedTotal;
+
+  return runChunkedPptxExport(async (onDevice) => {
+    const total = await forEachPage(async (rows, progress) => {
+      knownTotal = progress.total;
+      onProgress?.({
+        loaded: progress.loaded,
+        total: progress.total,
+        stage: 'fetch',
+      });
+
+      for (const device of rows) {
+        await onDevice(device);
+      }
+    });
+
+    return { total: Math.max(total, knownTotal) };
+  }, options);
 }

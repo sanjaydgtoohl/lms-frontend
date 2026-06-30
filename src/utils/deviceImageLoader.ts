@@ -324,6 +324,11 @@ export async function loadDeviceImageDataUrl(device: DeviceData): Promise<string
   }
 }
 
+/** Drop cached image data URLs (call during large exports to limit memory). */
+export function clearDeviceImageDataUrlCache(): void {
+  imageDataUrlCache.clear();
+}
+
 /** URL for `<img src>` in the UI (direct CDN when possible). */
 export function getDeviceImageDisplayUrl(device: DeviceData): string | null {
   const raw = resolveDeviceImageUrl(device);

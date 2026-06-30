@@ -732,7 +732,7 @@ html.dark {
 }
 
 .pagination-btn.start {
-  @apply bg-gray-100 min-w-10 h-10 text-black transition-all duration-300 py-2 px-3 m-0 text-sm hover:bg-black hover:text-white active:bg-black;
+  @apply bg-gray-100 min-w-10 h-10 text-black transition-all duration-300 py-2 px-3 m-0 text-sm hover:bg-black hover:text-white active:bg-black disabled:hover:bg-gray-100 disabled:hover:text-black;
 }
 
 .pagination-btn.no {
@@ -740,7 +740,7 @@ html.dark {
 }
 
 .pagination-btn.last {
-  @apply bg-gray-100 min-w-10 h-10 py-2 px-3 text-black transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm hover:bg-black hover:text-white active:bg-black;
+  @apply bg-gray-100 min-w-10 h-10 py-2 px-3 text-black transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm hover:bg-black hover:text-white active:bg-black disabled:hover:bg-gray-100 disabled:hover:text-black;
 }
   
 .a-tag-button {

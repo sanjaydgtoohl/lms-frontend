@@ -3,7 +3,7 @@
  * @description Device inventory list with filters, export, and detail view.
  */
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Filter } from 'lucide-react';
 import Pagination from '../../components/ui/Pagination';
 import Table from '../../components/ui/Table';
@@ -13,14 +13,10 @@ import ExportExcelButton from '../../components/ui/ExportExcelButton';
 import MasterHeader from '../../components/ui/MasterHeader';
 import PPTExport from '../../components/ui/PPTExport';
 import {
-  fetchAllDeviceInventoryRows,
-  listDeviceInventory,
   type DeviceData,
 } from '../../services/DeviceInventory';
-import { exportDeviceInventoryExcel } from '../../utils/deviceInventoryExcel';
-import {
-  DEFAULT_APPLIED_LOCATION,
-} from './deviceInventoryConfig.ts';
+import { useDeviceInventoryList } from '../../hooks/useDeviceInventoryList';
+import { DEFAULT_APPLIED_LOCATION } from './deviceInventoryConfig.ts';
 import { buildDeviceTableColumns } from './deviceInventoryColumns.tsx';
 import DeviceDetailModal from './DeviceDetailModal';
 
@@ -28,15 +24,10 @@ const ITEMS_PER_PAGE = 10;
 
 const DeviceInventory: React.FC = () => {
   const filterAnchorRef = useRef<HTMLButtonElement>(null);
-  const [data, setData] = useState<DeviceData[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
   const [appliedLocation, setAppliedLocation] = useState(DEFAULT_APPLIED_LOCATION);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-  const [loading, setLoading] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState<DeviceData | null>(null);
-  const [excelDownloadUrl, setExcelDownloadUrl] = useState<string | null>(null);
 
   const getInventoryFilters = useCallback(
     () => ({
@@ -63,6 +54,21 @@ const DeviceInventory: React.FC = () => {
     [searchQuery, appliedLocation]
   );
 
+  const {
+    data,
+    currentPage,
+    totalItems,
+    loading,
+    refreshing,
+    setCurrentPage,
+    resetToFirstPage,
+    exportExcel,
+    hasExportableRows,
+  } = useDeviceInventoryList({
+    pageSize: ITEMS_PER_PAGE,
+    getFilters: getInventoryFilters,
+  });
+
   const hasActiveLocationFilter = useMemo(
     () =>
       Object.entries(appliedLocation).some(([key, value]) => {
@@ -73,59 +79,6 @@ const DeviceInventory: React.FC = () => {
       }),
     [appliedLocation]
   );
-
-  const exportFetchRows = useCallback(
-    () => fetchAllDeviceInventoryRows(getInventoryFilters()),
-    [getInventoryFilters]
-  );
-
-  const handleExportExcel = useCallback(async () => {
-    const rows = await exportFetchRows();
-    if (!rows.length) {
-      throw new Error('No device records matched the current filters.');
-    }
-    exportDeviceInventoryExcel(rows);
-  }, [exportFetchRows]);
-
-  const totalPages = useMemo(() => {
-    const pages = Math.ceil(totalItems / ITEMS_PER_PAGE);
-    return pages > 0 ? pages : 1;
-  }, [totalItems]);
-
-  useEffect(() => {
-    if (currentPage > totalPages) setCurrentPage(totalPages);
-  }, [currentPage, totalPages]);
-
-  useEffect(() => {
-    let alive = true;
-
-    const load = async () => {
-      try {
-        setLoading(true);
-        const res = await listDeviceInventory({
-          page: currentPage,
-          per_page: ITEMS_PER_PAGE,
-          ...getInventoryFilters(),
-        });
-        if (!alive) return;
-        setData(Array.isArray(res.data) ? res.data : []);
-        setTotalItems(Number(res.total_records || 0));
-        setExcelDownloadUrl(res.excel_download_url ?? null);
-      } catch {
-        if (!alive) return;
-        setData([]);
-        setTotalItems(0);
-        setExcelDownloadUrl(null);
-      } finally {
-        if (alive) setLoading(false);
-      }
-    };
-
-    load();
-    return () => {
-      alive = false;
-    };
-  }, [currentPage, getInventoryFilters]);
 
   const handleViewDetails = useCallback((item: DeviceData) => {
     setSelectedDevice(item);
@@ -151,19 +104,24 @@ const DeviceInventory: React.FC = () => {
           <div>
             <h2 className="text-sm font-semibold text-gray-900 md:text-base">Device Inventory</h2>
             <p className="mt-0.5 text-xs text-gray-500">
-              {totalItems > 0
-                ? `${totalItems.toLocaleString()} devices found`
-                : 'Browse and filter available inventory devices'}
+              {loading
+                ? 'Loading devices…'
+                : totalItems > 0
+                  ? `${totalItems.toLocaleString()} devices found${refreshing ? ' · updating…' : ''}`
+                  : 'Browse and filter available inventory devices'}
             </p>
           </div>
 
           <div className="flex w-full min-w-0 flex-wrap items-center justify-end gap-2 sm:w-auto">
-            <PPTExport fetchRows={exportFetchRows} disabled={totalItems === 0} />
+            <PPTExport
+              getExportFilters={getInventoryFilters}
+              recordCount={totalItems}
+              disabled={!hasExportableRows || loading}
+            />
             <ExportExcelButton
-              downloadUrl={excelDownloadUrl}
-              fetchExport={excelDownloadUrl ? undefined : handleExportExcel}
+              fetchExport={exportExcel}
               label="Excel Export"
-              disabled={totalItems === 0}
+              disabled={!hasExportableRows || loading}
               aria-label="Export filtered device inventory as Excel"
             />
             <div className="relative w-full min-w-0 sm:w-auto">
@@ -189,7 +147,7 @@ const DeviceInventory: React.FC = () => {
                 }
                 onSearch={(query) => {
                   setSearchQuery(query);
-                  setCurrentPage(1);
+                  resetToFirstPage();
                 }}
               />
               <FilterPopup
@@ -198,11 +156,11 @@ const DeviceInventory: React.FC = () => {
                 appliedValues={appliedLocation}
                 onApply={(values) => {
                   setAppliedLocation(values);
-                  setCurrentPage(1);
+                  resetToFirstPage();
                 }}
                 onReset={() => {
                   setAppliedLocation(DEFAULT_APPLIED_LOCATION);
-                  setCurrentPage(1);
+                  resetToFirstPage();
                 }}
               />
             </div>
@@ -224,7 +182,7 @@ const DeviceInventory: React.FC = () => {
             currentPage={currentPage}
             totalItems={totalItems}
             itemsPerPage={ITEMS_PER_PAGE}
-            onPageChange={(page) => setCurrentPage(Math.min(totalPages, Math.max(1, page)))}
+            onPageChange={setCurrentPage}
           />
         </div>
       </div>

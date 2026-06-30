@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { IoIosArrowBack } from 'react-icons/io';
+import { getPaginationRange } from '../../utils/paginationRange';
 
 interface PaginationProps {
   currentPage: number;
@@ -15,64 +16,78 @@ const Pagination: React.FC<PaginationProps> = ({
   itemsPerPage,
   onPageChange,
 }) => {
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  // Clamp currentPage to valid range
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
   const safePage = Math.min(Math.max(currentPage, 1), totalPages);
-  let startIndex = (safePage - 1) * itemsPerPage;
-  let endIndex = startIndex + itemsPerPage;
-  // Clamp indices to valid bounds
-  startIndex = Math.max(0, Math.min(startIndex, totalItems === 0 ? 0 : totalItems - 1));
-  endIndex = Math.max(startIndex + 1, Math.min(endIndex, totalItems));
 
-  // If there are no items, don't render the summary or pagination controls.
+  const { startIndex, endIndex } = useMemo(() => {
+    if (totalItems === 0) {
+      return { startIndex: 0, endIndex: 0 };
+    }
+
+    const start = (safePage - 1) * itemsPerPage;
+    const end = Math.min(start + itemsPerPage, totalItems);
+    return { startIndex: start, endIndex: end };
+  }, [safePage, itemsPerPage, totalItems]);
+
+  const pageItems = useMemo(
+    () => getPaginationRange(safePage, totalPages),
+    [safePage, totalPages]
+  );
+
   if (!totalItems || totalItems === 0) return null;
 
-  const pages: number[] = [];
-  const maxVisiblePages = 5;
-
-  let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-  const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-  if (endPage - startPage + 1 < maxVisiblePages) {
-    startPage = Math.max(1, endPage - maxVisiblePages + 1);
-  }
-
-  for (let i = startPage; i <= endPage; i++) pages.push(i);
-
   return (
-    <div className="flex items-center justify-between flex-wrap gap-2 py-2 w-full">
-      <div className="text-sm text-gray-800 whitespace-nowrap">
-        Showing {totalItems === 0 ? 0 : startIndex + 1} to {endIndex} of {totalItems} entries
+    <div className="flex w-full flex-wrap items-center justify-between gap-2 py-2">
+      <div className="whitespace-nowrap text-sm text-gray-800">
+        Showing {startIndex + 1} to {endIndex} of {totalItems.toLocaleString('en-IN')} entries
       </div>
 
-      <div className="pagination-container flex items-center justify-end bg-transparent px-2 gap-x-1 ml-auto">
+      <div className="pagination-container ml-auto flex items-center justify-end gap-x-1 bg-transparent px-2">
         <button
-          onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-          disabled={currentPage === 1}
-          className="pagination-btn start"
+          type="button"
+          onClick={() => onPageChange(safePage - 1)}
+          disabled={safePage === 1}
+          aria-label="Previous page"
+          className="pagination-btn start disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <IoIosArrowBack className="w-5 h-5" />
+          <IoIosArrowBack className="h-5 w-5" aria-hidden />
         </button>
 
-        {pages.map((i) => (
-          <button
-            key={i}
-            onClick={() => onPageChange(i)}
-            className={`pagination-btn no ${Number(i) === Number(currentPage)
-              ? '!bg-orange-600 !text-white font-semibold'
-              : 'text-gray-800 hover:text-orange-600'
+        {pageItems.map((item, index) =>
+          item === 'ellipsis' ? (
+            <span
+              key={`ellipsis-${index}`}
+              className="pagination-ellipsis flex h-10 min-w-10 items-center justify-center px-2 text-sm text-gray-500"
+              aria-hidden
+            >
+              …
+            </span>
+          ) : (
+            <button
+              key={item}
+              type="button"
+              onClick={() => onPageChange(item)}
+              aria-label={`Page ${item}`}
+              aria-current={item === safePage ? 'page' : undefined}
+              className={`pagination-btn no ${
+                item === safePage
+                  ? '!bg-orange-600 !text-white font-semibold'
+                  : 'text-gray-800 hover:text-orange-600'
               }`}
-          >
-            {i}
-          </button>
-        ))}
+            >
+              {item}
+            </button>
+          )
+        )}
 
         <button
-          onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-          disabled={currentPage === totalPages}
-          className="pagination-btn last"
+          type="button"
+          onClick={() => onPageChange(safePage + 1)}
+          disabled={safePage === totalPages}
+          aria-label="Next page"
+          className="pagination-btn last disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <ChevronRight className="w-4 h-4" />
+          <ChevronRight className="h-4 w-4" aria-hidden />
         </button>
       </div>
     </div>
