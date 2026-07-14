@@ -66,6 +66,7 @@ export interface MissCampaign {
   country?: string;
   assignTo?: string;
   assignBy?: string;
+  createdBy?: string;
 }
 
 const MISS_CAMPAIGN_ENDPOINTS = ENDPOINTS.MISS_CAMPAIGNS;

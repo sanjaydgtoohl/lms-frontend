@@ -34,7 +34,7 @@
     "react-is": "^19.1.0",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.9.4",
-    "recharts": "^3.9.0",
+    "recharts": "^3.9.2",
     "sweetalert2": "^11.26.10",
     "xlsx": "^0.18.5",
     "zod": "^4.1.12",
@@ -66,3 +66,4 @@
     "vite": "^7.1.7"
   }
 }
+  

@@ -785,6 +785,7 @@ const View: React.FC = () => {
                   { key: 'city', header: 'City', render: (it: MissCampaign) => it.city },
                   { key: 'state', header: 'State', render: (it: MissCampaign) => it.state },
                   { key: 'country', header: 'Country', render: (it: MissCampaign) => it.country },
+                  { key: 'createdBy',  header: 'Created By',  render: (it: MissCampaign) => it.createdBy?.trim() || '-',},
                   {
                     key: 'assignBy', header: 'Assign By', render: (it: MissCampaign) => {
                       const cleanId = it.assignBy ? String(it.assignBy).replace(/^#USR0*/, '') : '';
