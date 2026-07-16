@@ -186,6 +186,15 @@ const Create: React.FC<MissCampaignCreateProps> = ({
           name: String(org.name ?? org.organisation_name ?? org.label ?? ''),
         })).filter(o => o.id && o.name);
         setOrganizationOptions(options);
+
+        // Preselect organization if only one is returned, otherwise ensure none is selected (on create mode)
+        if (mode === 'create') {
+          if (options.length === 1) {
+            setFormData(prev => ({ ...prev, organization: options[0].id }));
+          } else if (options.length > 1) {
+            setFormData(prev => ({ ...prev, organization: '' }));
+          }
+        }
       } catch (err) {
         console.error('Failed to fetch organizations:', err);
         setOrganizationOptions([]);
@@ -194,18 +203,19 @@ const Create: React.FC<MissCampaignCreateProps> = ({
       }
     };
     fetchOrganizations();
-  }, []);
+  }, [mode]);
 
-  // Fetch child users by organization when organization changes
+  // Fetch child users by organization when organization changes, fallback to all attendees
   useEffect(() => {
-    if (!formData.organization) {
-      return;
-    }
-
-    const fetchUsersByOrganization = async () => {
+    const fetchUsers = async () => {
       try {
         setAssignToLoading(true);
-        const response = await apiClient.get(`/profile/child-users-by-organisation/${formData.organization}`);
+        let response;
+        if (formData.organization) {
+          response = await apiClient.get(`/profile/child-users-by-organisation?organisation_id=${formData.organization}&organization_id=${formData.organization}`);
+        } else {
+          response = await listAttendees(1, 200);
+        }
         const users = Array.isArray(response.data) ? response.data : [];
         const options = users.map((user: any) => ({
           value: String(user.id),
@@ -213,8 +223,7 @@ const Create: React.FC<MissCampaignCreateProps> = ({
         }));
         setAssignToOptions(options);
       } catch (err) {
-        console.error('Failed to fetch users by organization:', err);
-        // Fallback to all users
+        console.error('Failed to fetch users matching organization, falling back to all attendees:', err);
         try {
           const response = await listAttendees(1, 200);
           const options = (response.data || []).map((user: any) => ({
@@ -222,34 +231,16 @@ const Create: React.FC<MissCampaignCreateProps> = ({
             label: String(user.name),
           }));
           setAssignToOptions(options);
-        } catch {}
+        } catch (fallbackErr) {
+          console.error('Failed fallback fetch of all attendees:', fallbackErr);
+          setAssignToOptions([]);
+        }
       } finally {
         setAssignToLoading(false);
       }
     };
-    fetchUsersByOrganization();
+    fetchUsers();
   }, [formData.organization]);
-
-  // Original: Fetch assign to users on component mount
-  useEffect(() => {
-    const fetchAssignToUsers = async () => {
-      try {
-        setAssignToLoading(true);
-        const response = await listAttendees(1, 200);
-        const options = (response.data || []).map((user: any) => ({
-          value: String(user.id),
-          label: String(user.name),
-        }));
-        setAssignToOptions(options);
-      } catch (err) {
-        console.error('Failed to fetch assign to users:', err);
-        setAssignToOptions([]);
-      } finally {
-        setAssignToLoading(false);
-      }
-    };
-    fetchAssignToUsers();
-  }, []);
 
   // Fetch media types on component mount
   useEffect(() => {
@@ -282,13 +273,29 @@ const Create: React.FC<MissCampaignCreateProps> = ({
         const user = await fetchCurrentUser();
         if (user && user.name) {
           setCurrentUser({ id: String(user.id), name: user.name });
+
+          // Preselect organization if current user profile is assigned to exactly one
+          if (mode === 'create') {
+            const orgs = user.organisations || [];
+            if (orgs.length === 1) {
+              const singleOrgId = String(orgs[0].id ?? orgs[0].organisation_id ?? orgs[0].value ?? '');
+              if (singleOrgId) {
+                setFormData(prev => ({ ...prev, organization: singleOrgId }));
+              }
+            } else if (orgs.length > 1) {
+              setFormData(prev => ({ ...prev, organization: '' }));
+            } else if (user.organisation_id) {
+              setFormData(prev => ({ ...prev, organization: String(user.organisation_id) }));
+            }
+          }
         }
       } catch (err) {
         console.error('Failed to fetch current user:', err);
       }
     };
     fetchUser();
-  }, []);
+  }, [mode]);
+
 
   useEffect(() => {
     const fetchCountries = async () => {
@@ -1042,25 +1049,26 @@ const Create: React.FC<MissCampaignCreateProps> = ({
               />
             </div> */}
 
-            {/* Assign To — only when child-users API returns at least one user */}
-            {!assignToLoading && assignToOptions.length > 0 ? (
-              <div className='w-full sm:w-[calc(50%-12px)]'>
-                <label className="block text-sm font-medium mb-2 text-gray-800">
-                  Assign To
-                </label>
-                <div>
-                  <SelectField
-                    name="assignTo"
-                    value={formData.assignTo || ''}
-                    onChange={(v) => { setFormData(prev => ({ ...prev, assignTo: typeof v === 'string' ? v : v[0] ?? '' })); }}
-                    options={assignToOptions}
-                    placeholder="Select Assign To"
-                    inputClassName="border-gray-200 focus:ring-blue-500"
-                    disabled={assignToLoading}
-                  />
-                </div>
+            {/* Assign To — disabled until an organization is selected */}
+            <div className='w-full sm:w-[calc(50%-12px)]'>
+              <label className="block text-sm font-medium mb-2 text-gray-800">
+                Assign To
+              </label>
+              <div>
+                <SelectField
+                  name="assignTo"
+                  value={formData.assignTo || ''}
+                  onChange={(v) => { setFormData(prev => ({ ...prev, assignTo: typeof v === 'string' ? v : v[0] ?? '' })); }}
+                  options={assignToOptions}
+                  placeholder={!formData.organization ? 'Select Organization first' : (assignToLoading ? 'Loading...' : 'Select Assign To')}
+                  inputClassName={`focus:ring-blue-500 ${!formData.organization ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed' : 'border-gray-200'}`}
+                  disabled={assignToLoading || !formData.organization}
+                />
               </div>
-            ) : null}
+              {!formData.organization && (
+                <div className="text-xs text-amber-500 mt-1">Please select an organization first.</div>
+              )}
+            </div>
 
             {/* Industry */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
