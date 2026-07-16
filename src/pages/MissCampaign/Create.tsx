@@ -32,6 +32,7 @@ const Create: React.FC<MissCampaignCreateProps> = ({
     brandName: '',
     source: '',
     subSource: '',
+    organization: '',
     industry: '',
     assignBy: '',
     assignTo: '',
@@ -79,6 +80,10 @@ const Create: React.FC<MissCampaignCreateProps> = ({
   // Assign To users dropdown state
   const [assignToOptions, setAssignToOptions] = useState<{ value: string; label: string }[]>([]);
   const [assignToLoading, setAssignToLoading] = useState(false);
+
+  // Organization dropdown state
+  const [organizationOptions, setOrganizationOptions] = useState<{ id: string; name: string }[]>([]);
+  const [organizationLoading, setOrganizationLoading] = useState(false);
 
   // Media Type dropdown state
   const [mediaTypeOptions, setMediaTypeOptions] = useState<{ id: string; name: string }[]>([]);
@@ -169,6 +174,63 @@ const Create: React.FC<MissCampaignCreateProps> = ({
     fetchIndustries();
   }, []);
 
+  // Fetch organizations on component mount
+  useEffect(() => {
+    const fetchOrganizations = async () => {
+      try {
+        setOrganizationLoading(true);
+        const response = await apiClient.get<any[]>('/organisations/list');
+        const orgs = Array.isArray(response.data) ? response.data : [];
+        const options = orgs.map((org: any) => ({
+          id: String(org.id ?? org.organisation_id ?? org.value ?? ''),
+          name: String(org.name ?? org.organisation_name ?? org.label ?? ''),
+        })).filter(o => o.id && o.name);
+        setOrganizationOptions(options);
+      } catch (err) {
+        console.error('Failed to fetch organizations:', err);
+        setOrganizationOptions([]);
+      } finally {
+        setOrganizationLoading(false);
+      }
+    };
+    fetchOrganizations();
+  }, []);
+
+  // Fetch child users by organization when organization changes
+  useEffect(() => {
+    if (!formData.organization) {
+      return;
+    }
+
+    const fetchUsersByOrganization = async () => {
+      try {
+        setAssignToLoading(true);
+        const response = await apiClient.get(`/profile/child-users-by-organisation/${formData.organization}`);
+        const users = Array.isArray(response.data) ? response.data : [];
+        const options = users.map((user: any) => ({
+          value: String(user.id),
+          label: String(user.name),
+        }));
+        setAssignToOptions(options);
+      } catch (err) {
+        console.error('Failed to fetch users by organization:', err);
+        // Fallback to all users
+        try {
+          const response = await listAttendees(1, 200);
+          const options = (response.data || []).map((user: any) => ({
+            value: String(user.id),
+            label: String(user.name),
+          }));
+          setAssignToOptions(options);
+        } catch {}
+      } finally {
+        setAssignToLoading(false);
+      }
+    };
+    fetchUsersByOrganization();
+  }, [formData.organization]);
+
+  // Original: Fetch assign to users on component mount
   useEffect(() => {
     const fetchAssignToUsers = async () => {
       try {
@@ -413,6 +475,7 @@ const Create: React.FC<MissCampaignCreateProps> = ({
           brandName: String(brandId ?? prev.brandName ?? ''),
           source: String(sourceId ?? prev.source ?? ''),
           subSource: String(subSourceId ?? prev.subSource ?? ''),
+          organization: String(initialData.organization_id ?? initialData.organization?.id ?? initialData.organizationId ?? prev.organization ?? ''),
           industry: String(resolvedIndustryId ?? prev.industry ?? ''),
           assignBy: mode === 'edit' ? (initialData.assign_by_name ?? initialData.created_by_user?.name ?? initialData.created_by ?? '') : (currentUser?.name ?? ''),
           assignTo: String(assignToValue ?? prev.assignTo ?? ''),
@@ -659,6 +722,7 @@ const Create: React.FC<MissCampaignCreateProps> = ({
     if (!formData.brandName) next.brandName = 'Please select a brand';
     if (!formData.source) next.source = 'Please select a source';
     if (!formData.subSource) next.subSource = 'Please select a sub source';
+    if (!formData.organization) next.organization = 'Please select an organization';
     // Industry optional — was mandatory: if (!formData.industry) next.industry = 'Please select an industry';
     if (!formData.productName || formData.productName.trim() === '') next.productName = 'Please enter product name';
     if (!formData.country) next.country = 'Please select a country';
@@ -682,6 +746,7 @@ const Create: React.FC<MissCampaignCreateProps> = ({
       brand_id: formData.brandName,
       lead_source_id: formData.source,
       lead_sub_source_id: formData.subSource,
+      organization_id: formData.organization,
       industry_id: formData.industry,
       country_id: formData.country,
       state_id: formData.state,
@@ -883,6 +948,85 @@ const Create: React.FC<MissCampaignCreateProps> = ({
               )}
             </div>
 
+            {/* Organization (dropdown) */}
+            <div className='w-full sm:w-[calc(50%-12px)]'>
+              <label className="block text-sm font-medium mb-2 text-gray-800">
+                Organization <span className="text-[#FF0000]">*</span>
+                {organizationLoading && <Loader className="w-4 h-4 animate-spin text-blue-500 inline ml-2" />}
+              </label>
+              <div className='w-full'>
+                <SelectField
+                  name="organization"
+                  value={formData.organization}
+                  onChange={(v) => {
+                    const organization = typeof v === 'string' ? v : v[0] ?? '';
+                    setFormData(prev => ({
+                      ...prev,
+                      organization,
+                      assignTo: '' // Reset assignTo when organization changes
+                    }));
+                    setErrors(prev => ({
+                      ...prev,
+                      organization: ''
+                    }));
+                  }}
+                  options={organizationOptions.map(o => ({ value: String(o.id), label: o.name }))}
+                  placeholder={organizationLoading ? 'Loading organizations...' : 'Search or select organization'}
+                  inputClassName={errors.organization ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}
+                  disabled={organizationLoading}
+                />
+              </div>
+              {errors.organization && (
+                <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.organization}
+                </div>
+              )}
+            </div>
+
+             {/* Country */}
+            <div className='w-full sm:w-[calc(50%-12px)]'>
+              <label className="block text-sm font-medium mb-2 text-gray-800">
+                Country  <span className="text-[#FF0000]">*</span>
+              </label>
+              <div className='w-full'>
+                <SelectField
+                  name="country"
+                  value={formData.country}
+                  onChange={(v) => {
+                    const country = typeof v === 'string' ? v : v[0] ?? '';
+                    setFormData(prev => ({
+                      ...prev,
+                      country,
+                      state: '',
+                      city: ''
+                    }));
+                    setErrors(prev => ({
+                      ...prev,
+                      country: '',
+                      state: '',
+                      city: ''
+                    }));
+                  }}
+                  options={countryOptions.map(c => ({ value: String(c.id), label: c.name }))}
+                  placeholder={countryLoading ? 'Loading countries...' : 'Search or select country'}
+                  inputClassName={errors.country ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}
+                  disabled={countryLoading}
+                />
+              </div>
+              {errors.country && (
+                <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.country}
+                </div>
+              )}
+            </div>
+
+
 
             {/* Assign By (read-only) */}
             {/* <div className='w-full sm:w-[calc(50%-12px)]'>
@@ -968,8 +1112,8 @@ const Create: React.FC<MissCampaignCreateProps> = ({
                   {errors.productName}
                 </div>
               )}
-            </div>
-
+            </div> 
+            
             {/* Country */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
               <label className="block text-sm font-medium mb-2 text-gray-800">

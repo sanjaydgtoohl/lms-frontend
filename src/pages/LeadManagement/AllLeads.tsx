@@ -308,6 +308,7 @@ const AllLeads: React.FC = () => {
         phoneNumber: Array.isArray(it.mobile_number) ? (it.mobile_number[0]?.number || '') : (it.number || it.mobile_number || it.phone || ''),
         source: it.lead_source || it.source || '',
         subSource: it.sub_source?.name || it.lead_sub_source?.name || it.lead_sub_source_name || it.lead_sub_source || '',
+        organisation: it.organisation?.name || it.organisation?.name || it.organisation_name || it.organisation_name || it.organisation || it.organisation || '',
         assignBy: it.created_by_user?.name || it.assign_by_name || it.created_by || '',
         assignTo: it.current_assign_user_name || it.assigned_user?.name || (it.current_assign_user && typeof it.current_assign_user === 'object' ? it.current_assign_user.name : '') || it.assign_to_name || '',
         dateTime: it.created_at || it.dateTime || it.created_at_formatted || '',
@@ -391,6 +392,7 @@ const AllLeads: React.FC = () => {
     { key: 'contactPerson', header: 'Contact Person', render: (it: AllLeadtype) => it.contactPerson || '-', className: 'max-w-[160px] overflow-hidden text-ellipsis whitespace-nowrap' },
     { key: 'phoneNumber', header: 'Phone Number', render: (it: AllLeadtype) => it.phoneNumber || '-', className: 'whitespace-nowrap' },
     { key: 'subSource', header: 'Sub-Source', render: (it: AllLeadtype) => it.subSource || '-', className: 'whitespace-nowrap' },
+    { key: 'organisation', header: 'organisation', render: (it: AllLeadtype) => it.organisation || '-', className: 'whitespace-nowrap' },
     { key: 'assignBy', header: 'Created By', render: (it: AllLeadtype) => it.assignBy || '-', className: 'whitespace-nowrap' },
     ...(hasPermission('all-lead.assign') ? [{
       key: 'assignTo',

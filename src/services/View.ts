@@ -54,6 +54,8 @@ export interface MissCampaign {
   source: string;
   sourceId?: string;
   subSource: string;
+  organisation?: string;
+  organisationId?: string;
   proof: string;
   dateTime: string;
   industry?: string;
@@ -67,6 +69,7 @@ export interface MissCampaign {
   assignTo?: string;
   assignBy?: string;
 }
+
 
 const MISS_CAMPAIGN_ENDPOINTS = ENDPOINTS.MISS_CAMPAIGNS;
 
@@ -269,6 +272,8 @@ export function mapMissCampaignApiToMissCampaign(it: any, idx?: number): MissCam
     (it.created_by ? normalizeNestedMissCampaignValue(it.created_by) : '') ||
     '';
 
+  const organisation = it.organisation?.name ?? it.organisation?.name ?? it.organisation ?? it.organisation ?? it.organisation_name ?? it.organisation_name ?? '';
+  const organisationId = it.organisation?.id ?? it.organisation?.id ?? it.organisation_id ?? it.organisation_id ?? '';
   const sourceId =
     it.lead_source?.id ?? it.lead_source_id ?? it.source_id ?? it.sourceId ?? it.lead_source?.value ?? '';
   const mediaTypeId = it.media?.id ?? it.media_type_id ?? it.mediaTypeId ?? it.media_type?.id ?? '';
@@ -290,6 +295,8 @@ export function mapMissCampaignApiToMissCampaign(it: any, idx?: number): MissCam
     source,
     sourceId,
     subSource,
+    organisation,
+    organisationId,
     proof,
     dateTime,
     industry,

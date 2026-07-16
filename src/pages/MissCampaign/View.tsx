@@ -695,6 +695,10 @@ const View: React.FC = () => {
                     <div className="text-sm text-gray-600">{viewItem.subSource || '-'}</div>
                   </div>
                   <div className='flex bg-gray-100 p-3 rounded-lg mb-3'>
+                    <div className="text-sm text-gray-800 font-semibold min-w-[100px]">organisation : </div>
+                    <div className="text-sm text-gray-600">{viewItem.organisation || '-'}</div>
+                  </div>
+                  <div className='flex bg-gray-100 p-3 rounded-lg mb-3'>
                     <div className="text-sm text-gray-800 font-semibold min-w-[100px]">Industry : </div>
                     <div className="text-sm text-gray-600">{viewItem.industry || '-'}</div>
                   </div>
@@ -782,11 +786,12 @@ const View: React.FC = () => {
                   { key: 'productName', header: 'Product Name ', render: (it: MissCampaign) => it.productName },
                   { key: 'source', header: 'Source', render: (it: MissCampaign) => it.source },
                   { key: 'subSource', header: 'Sub Source', render: (it: MissCampaign) => it.subSource },
+                  { key: 'organisation', header: 'organisation', render: (it: MissCampaign) => it.organisation || '-' },
                   { key: 'city', header: 'City', render: (it: MissCampaign) => it.city },
                   { key: 'state', header: 'State', render: (it: MissCampaign) => it.state },
                   { key: 'country', header: 'Country', render: (it: MissCampaign) => it.country },
                   {
-                    key: 'assignBy', header: 'Assign By', render: (it: MissCampaign) => {
+                    key: 'assignBy', header: 'Created By', render: (it: MissCampaign) => {
                       const cleanId = it.assignBy ? String(it.assignBy).replace(/^#USR0*/, '') : '';
                       return userMap[cleanId] || it.assignBy || '-';
                     }

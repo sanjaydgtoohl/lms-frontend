@@ -252,6 +252,7 @@ const LeadList: React.FC<LeadListPageProps> = ({
           : (item.mobile_number || item.number || item.phone || item.email || ''),
         source: item.lead_source || item.source || '',
         subSource: item.sub_source?.name || item.lead_sub_source?.name || item.lead_sub_source_name || item.lead_sub_source || '',
+        organisation: item.organisation?.name || item.organisation?.name || item.organisation_name || item.organisation_name || item.organisation || item.organisation || '',
         assignBy: item.created_by_user?.name || item.assign_by_name || item.created_by || '',
         assignTo: item.current_assign_user_name || item.assigned_user?.name
           || (item.current_assign_user && typeof item.current_assign_user === 'object' ? item.current_assign_user.name : '')
@@ -495,6 +496,7 @@ const LeadList: React.FC<LeadListPageProps> = ({
     { key: 'contactPerson', header: 'Contact Person', minWidth: 120, maxWidth: 160, render: (it: Lead) => it.contactPerson || '-' },
     { key: 'phoneNumber', header: 'Phone Number', minWidth: 120, maxWidth: 140, render: (it: Lead) => it.phoneNumber || '-' },
     { key: 'subSource', header: 'Sub-Source', minWidth: 100, maxWidth: 140, render: (it: Lead) => it.subSource || '-' },
+    { key: 'organisation', header: 'organisation', minWidth: 100, maxWidth: 140, render: (it: Lead) => it.organisation || '-' },
     { key: 'assignBy', header: 'Created By', minWidth: 110, maxWidth: 150, render: (it: Lead) => it.assignBy || '-' },
     ...(hasPermission(assignPermissionMap[permissionKey] || assignPermissionMap.All) ? [{
       key: 'assignTo',
