@@ -819,10 +819,10 @@ const View: React.FC = () => {
                   { key: 'productName', header: 'Product Name ', render: (it: MissCampaign) => it.productName },
                   { key: 'source', header: 'Source', render: (it: MissCampaign) => it.source },
                   { key: 'subSource', header: 'Sub Source', render: (it: MissCampaign) => it.subSource },
-                  { key: 'organisation', header: 'Organisation', render: (it: MissCampaign) => it.organisation || '-' },
                   { key: 'city', header: 'City', render: (it: MissCampaign) => it.city },
                   { key: 'state', header: 'State', render: (it: MissCampaign) => it.state },
                   { key: 'country', header: 'Country', render: (it: MissCampaign) => it.country },
+                  { key: 'organisation', header: 'Organisation', render: (it: MissCampaign) => it.organisation || '-' },
                   {
                     key: 'assignBy', header: 'Created By', render: (it: MissCampaign) => {
                       const cleanId = it.assignBy ? String(it.assignBy).replace(/^#USR0*/, '') : '';

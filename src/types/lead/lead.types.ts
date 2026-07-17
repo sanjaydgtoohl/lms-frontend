@@ -97,6 +97,8 @@ export interface EditLeadFormData {
   }>;
   assignTo?: string;
   assignToName?: string;
+  organisation?: string;
+  organisationName?: string;
   priority?: string;
   callFeedback?: string;
   comment?: string;

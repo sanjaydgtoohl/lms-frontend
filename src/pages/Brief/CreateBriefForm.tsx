@@ -12,6 +12,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { listBrands } from '../../services/BrandMaster';
 import { listAgencies } from '../../services/AgencyMaster';
 import { listAttendees } from '../../services/AllUsers';
+import { listChildUsersByLead } from '../../api/lookups';
 import { listLeads } from '../../services/AllLeads';
 import { fetchBriefStatuses } from '../../services/BriefStatus';
 import { getPriorities } from '../../services/Priority';
@@ -81,6 +82,7 @@ const CreateBriefForm: React.FC<MasterFormWithSaveProps> = ({ onClose, onSave, i
   const [briefStatusesLoading, setBriefStatusesLoading] = useState(false);
   const [briefStatusesError, setBriefStatusesError] = useState<string | null>(null);
   const [priorityOptions, setPriorityOptions] = useState<Array<{ value: string; label: string }>>([]);
+  const assignHydratedRef = useRef<string | null>(null);
   const [priorityLoading, setPriorityLoading] = useState(false);
   const [priorityError, setPriorityError] = useState<string | null>(null);
 
@@ -469,52 +471,109 @@ const CreateBriefForm: React.FC<MasterFormWithSaveProps> = ({ onClose, onSave, i
 
   }, [form.createdBy, form.brandName]);
 
-  // Load user options on mount (for Assign To)
+  const resolveAssignToFromInitialData = (
+    opts: Array<{ value: string; label: string }>
+  ) => {
+    const assignUserId = String(initialData?.assign_user_id ?? '').trim();
+    const assignToVal = initialData?.assignTo || initialData?.assigned_user;
+    const assignToName =
+      typeof assignToVal === 'object' && assignToVal?.name
+        ? String(assignToVal.name)
+        : String(assignToVal ?? '');
+
+    if (!assignUserId && !assignToVal) return;
+
+    const foundById = opts.find((o) => o.value === assignUserId);
+    const foundByName = opts.find((o) => o.label === assignToName);
+
+    if (foundById) {
+      setForm((prev) => ({ ...prev, assignTo: foundById.value }));
+    } else if (foundByName) {
+      setForm((prev) => ({ ...prev, assignTo: foundByName.value }));
+    } else if (assignUserId && /^\d+$/.test(assignUserId)) {
+      setForm((prev) => ({ ...prev, assignTo: assignUserId }));
+    } else if (assignToName) {
+      setUsers((prev) => {
+        const exists = prev.some(
+          (option) =>
+            typeof option === 'object' &&
+            (option.label === assignToName || option.value === assignUserId)
+        );
+        if (exists) return prev;
+        return [{ value: assignUserId || assignToName, label: assignToName }, ...prev];
+      });
+      if (assignUserId && /^\d+$/.test(assignUserId)) {
+        setForm((prev) => ({ ...prev, assignTo: assignUserId }));
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (mode !== 'edit') {
+      assignHydratedRef.current = null;
+    }
+  }, [mode]);
+
+  // Load Assign To options from child-users-by-lead API (based on selected contact person / lead id)
   useEffect(() => {
     let mounted = true;
+
     (async () => {
+      const leadId = String(form.contactPerson || '').trim();
+
+      if (!leadId) {
+        if (!mounted) return;
+        setUsers([]);
+        setUsersError(null);
+        setUsersLoading(false);
+        return;
+      }
+
       try {
         setUsersLoading(true);
-        // Use child-users endpoint (listAttendees) for Assign To dropdown
-        const res = await listAttendees(1, 200);
+        setUsersError(null);
+
+        let opts: Array<{ value: string; label: string }> = [];
+
+        try {
+          const hierarchyUsers = await listChildUsersByLead(leadId);
+          opts = hierarchyUsers.map((u) => ({
+            value: String(u.id),
+            label: String(u.name),
+          }));
+        } catch (err) {
+          console.error('Failed to load assign to users for lead:', err);
+          const res = await listAttendees(1, 200);
+          opts = (res.data || []).map((u) => ({
+            value: String(u.id),
+            label: String(u.name),
+          }));
+        }
+
         if (!mounted) return;
-        const opts = (res.data || []).map(u => ({ value: String(u.id), label: String(u.name) }));
         setUsers(opts);
 
-        // Autofill Assign To field for edit mode
-        // Handle both assign_user_id from API and the assignTo object/ID
-        const assignUserId = String(initialData?.assign_user_id ?? '').trim();
-        const assignToVal = initialData?.assignTo || initialData?.assigned_user;
-        const assignToName = typeof assignToVal === 'object' && assignToVal?.name
-          ? String(assignToVal.name)
-          : String(assignToVal ?? '');
-
-        if (assignUserId || assignToVal) {
-          // Try to find by ID first
-          const foundById = opts.find(o => o.value === assignUserId);
-          // Then try by name
-          const foundByName = opts.find(o => o.label === assignToName);
-
-          if (foundById) {
-            setForm(prev => ({ ...prev, assignTo: foundById.value }));
-          } else if (foundByName) {
-            setForm(prev => ({ ...prev, assignTo: foundByName.value }));
-          } else if (assignUserId && /^\d+$/.test(assignUserId)) {
-            // If we have an ID that looks numeric, use it directly
-            setForm(prev => ({ ...prev, assignTo: assignUserId }));
+        if (mode === 'edit' && initialData) {
+          const recordId = String(initialData.id ?? initialData.uuid ?? '').trim();
+          if (recordId && assignHydratedRef.current !== recordId) {
+            resolveAssignToFromInitialData(opts);
+            assignHydratedRef.current = recordId;
           }
         }
       } catch (err: any) {
         console.error('Failed to load users', err);
         if (!mounted) return;
         setUsersError(err?.message || 'Failed to load users');
+        setUsers([]);
       } finally {
         if (mounted) setUsersLoading(false);
       }
     })();
 
-    return () => { mounted = false; };
-  }, [initialData]);
+    return () => {
+      mounted = false;
+    };
+  }, [form.contactPerson, initialData, mode]);
 
   // Load contact persons (from leads) on mount
   useEffect(() => {
@@ -920,7 +979,11 @@ const CreateBriefForm: React.FC<MasterFormWithSaveProps> = ({ onClose, onSave, i
       if (cp !== undefined) payload.contact_person_id = cp;
       const assignId = toInt(form.assignTo);
       console.log('assignTo value:', form.assignTo, 'converted to:', assignId);
-      payload.assign_user_id = assignId || null;
+      if (mode === 'edit') {
+        payload.assign_user_id = assignId ?? null;
+      } else if (assignId !== undefined) {
+        payload.assign_user_id = assignId;
+      }
       const statusId = toInt(form.status);
       if (statusId !== undefined) payload.brief_status_id = statusId;
 
@@ -1103,18 +1166,26 @@ const CreateBriefForm: React.FC<MasterFormWithSaveProps> = ({ onClose, onSave, i
                   <label className="block text-sm text-gray-800 mb-1">Assign To</label>
                   <SelectField
                     name="assignTo"
-                    placeholder={usersLoading ? 'Loading users...' : 'Please Assign To Planner'}
+                    placeholder={
+                      !form.contactPerson
+                        ? 'Select Contact Person first'
+                        : usersLoading
+                          ? 'Loading users...'
+                          : 'Please Assign To Planner'
+                    }
                     options={users}
                     value={String(form.assignTo || '')}
                     onChange={(v: any) => {
                       const val = String(v || '').trim();
-                      console.log('Assign To onChange fired with value:', v, 'parsed as:', val);
                       setForm(prev => ({ ...prev, assignTo: val }));
                     }}
                     searchable
-                    inputClassName="border border-gray-200 focus:ring-black"
-                    disabled={usersLoading}
+                    inputClassName={`border border-gray-200 focus:ring-black ${!form.contactPerson ? 'bg-gray-50 opacity-60 cursor-not-allowed' : ''}`}
+                    disabled={usersLoading || !form.contactPerson}
                   />
+                  {!form.contactPerson && (
+                    <div className="text-xs text-amber-500 mt-1">Please select a contact person first.</div>
+                  )}
                   {usersError && <div className="text-xs text-red-600 mt-1">{usersError}</div>}
                 </div>
                 <div>
@@ -1235,7 +1306,11 @@ const CreateBriefForm: React.FC<MasterFormWithSaveProps> = ({ onClose, onSave, i
                     placeholder={contactPersonsLoading ? 'Loading contacts...' : 'Search or select contact person'}
                     options={contactPersons}
                     value={form.contactPerson}
-                    onChange={(v: any) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; setForm(prev => ({ ...prev, contactPerson: val })); setErrors(prev => ({ ...prev, contactPerson: '' })); }}
+                    onChange={(v: any) => {
+                      const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v;
+                      setForm(prev => ({ ...prev, contactPerson: val, assignTo: '' }));
+                      setErrors(prev => ({ ...prev, contactPerson: '' }));
+                    }}
                     searchable
                     disabled={contactPersonsLoading}
                     inputClassName={errors.contactPerson ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-gray-200 focus:ring-black'}

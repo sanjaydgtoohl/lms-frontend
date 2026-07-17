@@ -51,8 +51,14 @@ const EditLead: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState('');
   // const editorRef = useRef<HTMLDivElement>(null);
 
-  const handlePriorityChange = useCallback(({ assignTo, priority, callFeedback }: { organisation?: string; assignTo?: string; priority?: string; callFeedback?: string }) => {
-    setLead(prev => prev ? { ...prev, assignTo, priority, ...(callFeedback !== undefined ? { callFeedback } : {}) } : null);
+  const handlePriorityChange = useCallback(({ organisation, assignTo, priority, callFeedback }: { organisation?: string; assignTo?: string; priority?: string; callFeedback?: string }) => {
+    setLead(prev => prev ? {
+      ...prev,
+      ...(organisation !== undefined ? { organisation } : {}),
+      assignTo,
+      priority,
+      ...(callFeedback !== undefined ? { callFeedback } : {}),
+    } : null);
   }, []);
 
   useEffect(() => {
@@ -100,6 +106,19 @@ const EditLead: React.FC = () => {
           postalCode: apiLead.postal_code || '',
         };
 
+        const resolvedOrganisation = {
+          id:
+            rawLead.organisation?.id != null
+              ? String(rawLead.organisation.id)
+              : rawLead.organisation_id != null
+                ? String(rawLead.organisation_id)
+                : undefined,
+          name:
+            rawLead.organisation?.name ??
+            rawLead.organisation_name ??
+            undefined,
+        };
+
         const mappedLead: EditLeadtype = {
           id: String(apiLead.id),
           selectedOption: apiLead.brand ? 'brand' : (apiLead.agency ? 'agency' : 'brand'),
@@ -108,6 +127,8 @@ const EditLead: React.FC = () => {
           contacts: [contact],
           assignTo: apiLead.assigned_user?.id ? String(apiLead.assigned_user.id) : undefined,
           assignToName: apiLead.assigned_user?.name || undefined,
+          organisation: resolvedOrganisation.id,
+          organisationName: resolvedOrganisation.name,
           priority: apiLead.priority?.id ? String(apiLead.priority.id) : undefined,
           callFeedback: apiLead.call_status_relation?.id ? String(apiLead.call_status_relation.id) : undefined,
           comment: apiLead.comment || '',
@@ -270,12 +291,16 @@ const EditLead: React.FC = () => {
       // Fix: Ensure call feedback ID is submitted
       const callStatusId = extractNumericId(lead.callFeedback);
 
+      const assignUserId = lead.assignTo && String(lead.assignTo).trim()
+        ? extractNumericId(lead.assignTo)
+        : null;
+
       const payload: Record<string, any> = {
         name: contact?.fullName || undefined,
         email: contact?.email || null,
         profile_url: contact?.profileUrl || null,
         mobile_number: mobile_number.length ? mobile_number : undefined,
-        current_assign_user: extractNumericId(lead.assignTo),
+        current_assign_user: assignUserId,
         priority_id: lead.priority ? extractNumericId(lead.priority) : undefined,
         designation_id: contact?.designation ? Number(contact.designation) : undefined,
         department_id: contact?.department ? Number(contact.department) : undefined,
@@ -303,6 +328,10 @@ const EditLead: React.FC = () => {
 
       if (selectedOption === 'brand') payload.brand_id = lead.brandId || undefined;
       else payload.agency_id = lead.agencyId || undefined;
+
+      if (lead.organisation) {
+        payload.organisation_id = extractNumericId(lead.organisation);
+      }
 
       await updateLead(id || '', payload);
       // Assume updateLead throws on error or returns the updated item
@@ -461,7 +490,9 @@ const EditLead: React.FC = () => {
         />
 
         <AssignPriorityCard
-          organisation="edit"
+          mode="edit"
+          organisation={lead.organisation}
+          organisationName={lead.organisationName}
           assignTo={lead.assignTo}
           assignedLabel={lead.assignToName}
           priority={lead.priority}

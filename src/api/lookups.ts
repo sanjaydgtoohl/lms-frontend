@@ -139,6 +139,24 @@ export async function listChildUsersByLead(
   return flattenChildUserHierarchy(res.data);
 }
 
+export async function listChildUsersByBrief(
+  briefId: string | number
+): Promise<Array<{ id: number | string; name: string }>> {
+  const res = await apiClient.get<ChildUserHierarchyNode[]>(
+    ENDPOINTS.USERS.CHILD_USERS_BY_BRIEF(briefId)
+  );
+  return flattenChildUserHierarchy(res.data);
+}
+
+export async function listChildUsersForBriefCreation(
+  organisationId: string | number
+): Promise<Array<{ id: number | string; name: string }>> {
+  const res = await apiClient.get<ChildUserHierarchyNode[]>(
+    ENDPOINTS.USERS.CHILD_USERS_FOR_BRIEF_CREATION(organisationId)
+  );
+  return flattenChildUserHierarchy(res.data);
+}
+
 export async function listLeadTypes(): Promise<Array<{ id: number | string; name: string }>> {
   const res = await apiClient.get<Array<{ id: number | string; name: string }>>(
     ENDPOINTS.LEAD_TYPES.LIST

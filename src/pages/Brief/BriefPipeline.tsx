@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import CreateBriefForm from './CreateBriefForm';
-import { listChildUsers } from '../../api/lookups';
+import { listChildUsers, listChildUsersByBrief } from '../../api/lookups';
 import { usePermissions } from '../../hooks/SidebarMenuHooks';
 import MasterView from '../../components/ui/MasterView';
 import Pagination from '../../components/ui/Pagination';
@@ -213,26 +213,52 @@ const BriefPipeline: React.FC = () => {
   }, [currentPage, itemsPerPage, searchQuery]);
 
 
-  // Assign To options state and effect (fetch from API)
-  const [assignToOptions, setAssignToOptions] = useState<UserOption[]>([]);
+  // Assign To options per brief row (fetched from child-users-by-brief API)
+  const [assignOptionsByBriefId, setAssignOptionsByBriefId] = useState<Record<string, UserOption[]>>({});
+
   useEffect(() => {
-    const loadUsers = async () => {
-      try {
-        // Request a large page size to avoid truncation
-        const users = await listChildUsers(1000);
-        setAssignToOptions(users.map((u) => ({ id: u.id, name: u.name })));
-      } catch {
-        setAssignToOptions([]);
+    let cancelled = false;
+
+    const fetchAssignOptionsForPage = async () => {
+      if (currentData.length === 0) {
+        setAssignOptionsByBriefId({});
+        return;
       }
+
+      const results = await Promise.all(
+        currentData.map(async (brief) => {
+          try {
+            const users = await listChildUsersByBrief(brief.id);
+            return [brief.id, users.map((u) => ({ id: u.id, name: u.name }))] as const;
+          } catch (err) {
+            console.error(`Failed to fetch assign to users for brief ${brief.id}:`, err);
+            try {
+              const users = await listChildUsers(1000);
+              return [brief.id, users.map((u) => ({ id: u.id, name: u.name }))] as const;
+            } catch (fallbackErr) {
+              console.error(`Failed fallback assign to users for brief ${brief.id}:`, fallbackErr);
+              return [brief.id, []] as const;
+            }
+          }
+        })
+      );
+
+      if (cancelled) return;
+      setAssignOptionsByBriefId(Object.fromEntries(results));
     };
-    loadUsers();
-  }, []);
+
+    fetchAssignOptionsForPage();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentData]);
 
   const handleAssignToChange = async (briefId: string, newPlanner: string) => {
     try {
       setLoading(true);
-      // resolve selected name to user id from assignToOptions
-      const found = assignToOptions.find(o => o.name === newPlanner);
+      // resolve selected name to user id from brief-specific assign options
+      const found = (assignOptionsByBriefId[briefId] || []).find(o => o.name === newPlanner);
       const assignId = found ? found.id : newPlanner;
       const updated = await updateAssignUser(briefId, assignId);
       // updated may be the brief object in response.data
@@ -567,11 +593,17 @@ const BriefPipeline: React.FC = () => {
                   } else {
                     displayName = String(assignToVal ?? '');
                   }
+                  const rowAssignOptions = assignOptionsByBriefId[it.id] || [];
+                  const optionNames = rowAssignOptions.map((opt) => opt.name);
+                  const assignDropdownOptions =
+                    displayName && !optionNames.includes(displayName)
+                      ? [displayName, ...optionNames]
+                      : optionNames;
                   return hasPermission('brief.assign') ? (
                     <div className="min-w-[140px]">
                       <AssignDropdown
                         value={displayName}
-                        options={assignToOptions.map(opt => opt.name)}
+                        options={assignDropdownOptions}
                         onChange={(newPlanner: string) => handleAssignToChange(it.id, newPlanner)}
                         onConfirm={handleAssignConfirm}
                       />

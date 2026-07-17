@@ -21,6 +21,49 @@ import SweetAlert from '../../utils/SweetAlert';
 import { quickCreateApi } from '../../services/QuickCreate';
 import type { MissCampaignCreateProps } from '../../types/pages/forms.types';
 
+function resolveAssignToId(data: any): string {
+  const objectId =
+    data?.assign_to?.id ??
+    data?.current_assign_user?.id ??
+    data?.assigned_user?.id;
+  if (objectId != null && String(objectId).trim() !== '') {
+    return String(objectId);
+  }
+
+  const raw =
+    data?.assign_to_id ??
+    data?.current_assign_user_id ??
+    data?.assignTo ??
+    data?.assign_to ??
+    data?.current_assign_user ??
+    '';
+
+  if (typeof raw === 'number' && Number.isFinite(raw)) {
+    return String(raw);
+  }
+
+  if (typeof raw === 'string' && /^\d+$/.test(raw.trim())) {
+    return raw.trim();
+  }
+
+  return '';
+}
+
+function resolveAssignToLabel(data: any): string {
+  return String(
+    data?.assign_to_name ??
+    data?.current_assign_user_name ??
+    data?.assigned_user?.name ??
+    (data?.current_assign_user && typeof data.current_assign_user === 'object'
+      ? data.current_assign_user.name
+      : '') ??
+    (data?.assigned_user && typeof data.assigned_user === 'object'
+      ? data.assigned_user.name
+      : '') ??
+    ''
+  );
+}
+
 const Create: React.FC<MissCampaignCreateProps> = ({
   inline = false,
   mode = 'create',
@@ -220,10 +263,21 @@ const Create: React.FC<MissCampaignCreateProps> = ({
         const users = formData.organisation
           ? flattenChildUserHierarchy(Array.isArray(response.data) ? response.data : [])
           : (Array.isArray(response.data) ? response.data : []);
-        const options = users.map((user: any) => ({
+        let options = users.map((user: any) => ({
           value: String(user.id),
           label: String(user.name),
         }));
+
+        if (formData.assignTo) {
+          const exists = options.some((option) => String(option.value) === String(formData.assignTo));
+          if (!exists) {
+            options = [{
+              value: String(formData.assignTo),
+              label: assignToLabelRef.current || String(formData.assignTo),
+            }, ...options];
+          }
+        }
+
         setAssignToOptions(options);
       } catch (err) {
         console.error('Failed to fetch users matching organisation, falling back to all attendees:', err);
@@ -243,7 +297,7 @@ const Create: React.FC<MissCampaignCreateProps> = ({
       }
     };
     fetchUsers();
-  }, [formData.organisation]);
+  }, [formData.organisation, formData.assignTo]);
 
   // Fetch media types on component mount
   useEffect(() => {
@@ -375,6 +429,8 @@ const Create: React.FC<MissCampaignCreateProps> = ({
 
   // Store initial nested sub-source for reference during fetch cycles
   const initialSubSourceRef = useRef<{ id: string; label: string } | null>(null);
+  const editRecordIdRef = useRef<string | null>(null);
+  const assignToLabelRef = useRef<string>('');
 
   useEffect(() => {
     if (mode === 'edit' && initialData) {
@@ -419,8 +475,18 @@ const Create: React.FC<MissCampaignCreateProps> = ({
   }, [formData.source]);
 
   useEffect(() => {
+    if (mode !== 'edit') {
+      editRecordIdRef.current = null;
+      assignToLabelRef.current = '';
+    }
+  }, [mode]);
+
+  useEffect(() => {
     const resolveLocationIds = async () => {
       if (mode === 'edit' && initialData) {
+        const recordId = String(initialData.id ?? initialData.uuid ?? '');
+        const isAlreadyHydrated = editRecordIdRef.current === recordId && recordId !== '';
+
         const brandId = initialData.brand_id || initialData.brand?.id || initialData.brandId || initialData.brandName;
         const sourceId = initialData.lead_source_id || initialData.lead_source?.id || initialData.source_id || initialData.source;
         const subSourceId = initialData.lead_sub_source_id || initialData.lead_sub_source?.id || initialData.sub_source_id || initialData.subSource;
@@ -430,6 +496,16 @@ const Create: React.FC<MissCampaignCreateProps> = ({
         if (industryOptions.length > 0 && industryId && typeof industryId === 'string') {
           const found = industryOptions.find(opt => opt.name.toLowerCase() === industryId.toLowerCase() || opt.id === industryId);
           if (found) resolvedIndustryId = found.id;
+        }
+
+        if (isAlreadyHydrated) {
+          if (resolvedIndustryId) {
+            setFormData(prev => ({
+              ...prev,
+              industry: String(resolvedIndustryId),
+            }));
+          }
+          return;
         }
 
         const countryId: any = initialData.country?.id || initialData.country_id || initialData.country;
@@ -471,7 +547,8 @@ const Create: React.FC<MissCampaignCreateProps> = ({
         }
 
         // ✅ FINAL setFormData (only after resolving IDs)
-        const assignToValue = initialData.assign_to_name ?? initialData.current_assign_user_name ?? initialData.assigned_user?.name ?? (initialData.current_assign_user && typeof initialData.current_assign_user === 'object' ? initialData.current_assign_user.name : '') ?? (initialData.assigned_user && typeof initialData.assigned_user === 'object' ? initialData.assigned_user.name : '') ?? initialData.assignTo ?? initialData.assign_to ?? '';
+        const assignToId = resolveAssignToId(initialData);
+        assignToLabelRef.current = resolveAssignToLabel(initialData);
 
         // Resolve media type robustly
         const rawMediaType = initialData.media_type ?? initialData.media_type_id ?? initialData.mediaType ?? initialData.media_type ?? '';
@@ -497,7 +574,7 @@ const Create: React.FC<MissCampaignCreateProps> = ({
           ),
           industry: String(resolvedIndustryId ?? prev.industry ?? ''),
           assignBy: mode === 'edit' ? (initialData.assign_by_name ?? initialData.created_by_user?.name ?? initialData.created_by ?? '') : (currentUser?.name ?? ''),
-          assignTo: String(assignToValue ?? prev.assignTo ?? ''),
+          assignTo: assignToId,
           productName: String(initialData.name ?? initialData.productName ?? prev.productName ?? ''),
           country: String(countryId ?? prev.country ?? ''),
           state: String(stateId ?? prev.state ?? ''),
@@ -507,6 +584,10 @@ const Create: React.FC<MissCampaignCreateProps> = ({
           image_url: initialData.image_url || initialData.image_path || '',
           remove_image: false,
         }));
+
+        if (recordId) {
+          editRecordIdRef.current = recordId;
+        }
 
         // ✅ Sub-source injection (same as your code)
         const nestedSub =
@@ -765,20 +846,31 @@ const Create: React.FC<MissCampaignCreateProps> = ({
       brand_id: formData.brandName,
       lead_source_id: formData.source,
       lead_sub_source_id: formData.subSource,
-      organisation_id: formData.organisation && String(formData.organisation).replace(/\D/g, '') !== ''
-        ? Number(String(formData.organisation).replace(/\D/g, ''))
-        : undefined,
-      industry_id: formData.industry,
       country_id: formData.country,
       state_id: formData.state,
       city_id: formData.city,
       media_type: formData.mediaType,
-      remove_image: formData.remove_image,
     };
+
+    if (formData.organisation) {
+      payload.organisation_id = Number(String(formData.organisation).replace(/\D/g, ''));
+    }
+
+    if (formData.industry) {
+      payload.industry_id = formData.industry;
+    }
+
+    if (formData.remove_image) {
+      payload.remove_image = formData.remove_image;
+    }
 
     if (assignByVal !== undefined) payload.assign_by = assignByVal;
 
-    if (assignToVal !== undefined) payload.assign_to = assignToVal;
+    if (mode === 'edit') {
+      payload.assign_to = assignToVal ?? null;
+    } else if (assignToVal !== undefined) {
+      payload.assign_to = assignToVal;
+    }
     // Only include image if a new file is selected
     if (formData.image) {
       payload.image_path = formData.image;
@@ -981,6 +1073,7 @@ const Create: React.FC<MissCampaignCreateProps> = ({
                   value={formData.organisation}
                   onChange={(v) => {
                     const organisation = typeof v === 'string' ? v : v[0] ?? '';
+                    assignToLabelRef.current = '';
                     setFormData(prev => ({
                       ...prev,
                       organisation,
@@ -1006,48 +1099,6 @@ const Create: React.FC<MissCampaignCreateProps> = ({
                 </div>
               )}
             </div>
-
-             {/* Country */}
-            <div className='w-full sm:w-[calc(50%-12px)]'>
-              <label className="block text-sm font-medium mb-2 text-gray-800">
-                Country  <span className="text-[#FF0000]">*</span>
-              </label>
-              <div className='w-full'>
-                <SelectField
-                  name="country"
-                  value={formData.country}
-                  onChange={(v) => {
-                    const country = typeof v === 'string' ? v : v[0] ?? '';
-                    setFormData(prev => ({
-                      ...prev,
-                      country,
-                      state: '',
-                      city: ''
-                    }));
-                    setErrors(prev => ({
-                      ...prev,
-                      country: '',
-                      state: '',
-                      city: ''
-                    }));
-                  }}
-                  options={countryOptions.map(c => ({ value: String(c.id), label: c.name }))}
-                  placeholder={countryLoading ? 'Loading countries...' : 'Search or select country'}
-                  inputClassName={errors.country ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}
-                  disabled={countryLoading}
-                />
-              </div>
-              {errors.country && (
-                <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
-                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                  {errors.country}
-                </div>
-              )}
-            </div>
-
-
 
             {/* Assign By (read-only) */}
             {/* <div className='w-full sm:w-[calc(50%-12px)]'>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import SelectField from '../../ui/SelectField';
 import { getUsers } from '../../../services/CreateLead';
 import { getPriorities, getPrioritiesByCallStatus } from '../../../services/Priority';
@@ -14,7 +14,9 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
   priority,
   callFeedback,
   organisation,
+  organisationName,
   organisationError,
+  mode = 'create',
   onChange
 }) => {
   const priorityRef = useRef(priority);
@@ -90,10 +92,12 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
 
         setOrganisationOptions(options);
 
-        // Preselect organisation if only one is returned (on create mode)
+        // Create only: auto-preselect organisation; edit keeps lead's assigned organisation
+        if (mode === 'edit') return;
+
         if (options.length === 1) {
           onChangeRef.current?.({ organisation: options[0].id, assignTo: assignToRef.current, priority: priorityRef.current, callFeedback });
-        } else if (options.length > 1) {
+        } else if (options.length > 1 && !organisationRef.current) {
           onChangeRef.current?.({ organisation: '', assignTo: assignToRef.current, priority: priorityRef.current, callFeedback });
         }
       } catch (err: any) {
@@ -111,15 +115,18 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [callFeedback]);
+  }, [callFeedback, mode]);
 
-  // Preselect organisation if current user profile is assigned to exactly one
+  // Preselect organisation if current user profile is assigned to exactly one (create only)
   useEffect(() => {
+    if (mode === 'edit') return undefined;
+
     let isMounted = true;
     const fetchUser = async () => {
       try {
         const user = await fetchCurrentUser();
         if (!isMounted) return;
+        if (organisationRef.current) return;
         if (user && user.name) {
           const orgs = user.organisations || [];
           if (orgs.length === 1) {
@@ -141,7 +148,19 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [callFeedback]);
+  }, [callFeedback, mode]);
+
+  const organisationSelectOptions = useMemo(() => {
+    const base = organisationOptions.map((o) => ({ value: String(o.id), label: o.name }));
+    if (
+      organisation &&
+      organisationName &&
+      !base.some((option) => option.value === String(organisation))
+    ) {
+      return [{ value: String(organisation), label: organisationName }, ...base];
+    }
+    return base;
+  }, [organisationOptions, organisation, organisationName]);
 
   // Fetch child users matching selected organisation with fallback
   useEffect(() => {
@@ -271,7 +290,7 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
               Organisation <span className="text-[#FF0000]">*</span>
             </label>
             <SelectField
-              options={organisationOptions.map((o) => ({ value: String(o.id), label: o.name }))}
+              options={organisationSelectOptions}
               placeholder={organisationLoading ? 'Loading organisations...' : 'Select Organisation'}
               value={organisation}
               onChange={(value) => {

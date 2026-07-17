@@ -100,13 +100,25 @@ export async function createMissCampaign(payload: CreateMissCampaignPayload): Pr
       form.append('media_type_name', String(payload.media_type_name));
     }
 
+    const orgId = payload.organisation_id ?? payload.organization_id;
+    if (orgId !== undefined && orgId !== null && String(orgId) !== '') {
+      form.append('organisation_id', String(orgId));
+      form.append('organization_id', String(orgId));
+    }
+
+    if (payload.remove_image === true || payload.remove_image === 1 || payload.remove_image === '1') {
+      form.append('remove_image', '1');
+    }
+
     const knownKeys = new Set([
       'productName', 'name', 'brandId', 'brand_id', 'brandName', 'source', 'lead_source_id',
-      'subSource', 'lead_sub_source_id', 'image', 'image_path', 'imagePath', 'status', 'mediaType', 'media_type', 'media_type_id', 'media_type_name'
+      'subSource', 'lead_sub_source_id', 'image', 'image_path', 'imagePath', 'status', 'mediaType', 'media_type', 'media_type_id', 'media_type_name',
+      'organisation_id', 'organization_id', 'remove_image',
     ]);
 
     Object.entries(payload).forEach(([key, value]) => {
-      if (value === undefined || value === null) return;
+      if (value === undefined || value === null || value === '') return;
+      if (typeof value === 'boolean' && value === false) return;
       if (knownKeys.has(key)) return;
       if (key === 'mediaType' || key === 'media_type') return;
       if (key === 'image' || key === 'image_path' || key === 'imagePath') return;
@@ -174,13 +186,34 @@ export async function updateMissCampaignWithForm(id: string | number, payload: C
       form.append('media_type_name', String(payload.media_type_name));
     }
 
+    const orgId = payload.organisation_id ?? payload.organization_id;
+    if (orgId !== undefined && orgId !== null && String(orgId) !== '') {
+      form.append('organisation_id', String(orgId));
+      form.append('organization_id', String(orgId));
+    }
+
+    if (payload.remove_image === true || payload.remove_image === 1 || payload.remove_image === '1') {
+      form.append('remove_image', '1');
+    }
+
+    if ('assign_to' in payload) {
+      const assignToVal = payload.assign_to;
+      if (assignToVal === null || assignToVal === undefined || assignToVal === '') {
+        form.append('assign_to', '');
+      } else {
+        form.append('assign_to', String(assignToVal));
+      }
+    }
+
     const knownKeys = new Set([
       'productName', 'name', 'brandId', 'brand_id', 'brandName', 'source', 'lead_source_id',
-      'subSource', 'lead_sub_source_id', 'image', 'image_path', 'imagePath', 'status', 'mediaType', 'media_type', 'media_type_id', 'media_type_name'
+      'subSource', 'lead_sub_source_id', 'image', 'image_path', 'imagePath', 'status', 'mediaType', 'media_type', 'media_type_id', 'media_type_name',
+      'organisation_id', 'organization_id', 'remove_image', 'assign_to',
     ]);
 
     Object.entries(payload).forEach(([key, value]) => {
-      if (value === undefined || value === null) return;
+      if (value === undefined || value === null || value === '') return;
+      if (typeof value === 'boolean' && value === false) return;
       if (knownKeys.has(key)) return;
       if (key === 'mediaType' || key === 'media_type') return;
       if (key === 'image' || key === 'image_path' || key === 'imagePath') return;

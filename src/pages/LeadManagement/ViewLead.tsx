@@ -135,6 +135,19 @@ const ViewLead: React.FC = () => {
               </div>
 
               {/* Status removed per request */}
+              {/* Organisation */}
+              <div className='flex items-center gap-3'>
+                <span className='inline-flex items-center justify-center text-center rounded-md bg-gray-100 w-10 h-10  text-gray-800 text-sm'>
+                  <Building2 />
+                </span>
+
+                <div className="flex items-center flex-wrap">
+                  <label className="flex items-center text-sm font-semibold text-gray-800 gap-3">
+                    Organisation : </label>
+                  <p className="text-sm text-gray-600">{lead.organisation?.name || lead.organisation_name || '-'}</p>
+                </div>
+              </div>
+
               {/* Priority */}
               <div className='flex items-center gap-3'>
                 <span className='inline-flex items-center justify-center text-center rounded-md bg-gray-100 w-10 h-10  text-gray-800 text-sm'>
@@ -369,6 +382,13 @@ const ViewLead: React.FC = () => {
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-5 mb-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Assignment</h3>
             <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-600 block mb-2">Organisation</label>
+                <div className="bg-orange-100 rounded-lg p-3 border border-orange-200">
+                  <p className="text-base font-medium text-gray-800">{lead.organisation?.name || lead.organisation_name || '-'}</p>
+                </div>
+              </div>
+
               <div>
                 <label className="text-sm font-medium text-gray-600 block mb-2">Assigned User</label>
                 <div className="bg-orange-100 rounded-lg p-3 border border-orange-200">
