@@ -490,21 +490,8 @@ const CreateBriefForm: React.FC<MasterFormWithSaveProps> = ({ onClose, onSave, i
       setForm((prev) => ({ ...prev, assignTo: foundById.value }));
     } else if (foundByName) {
       setForm((prev) => ({ ...prev, assignTo: foundByName.value }));
-    } else if (assignUserId && /^\d+$/.test(assignUserId)) {
-      setForm((prev) => ({ ...prev, assignTo: assignUserId }));
-    } else if (assignToName) {
-      setUsers((prev) => {
-        const exists = prev.some(
-          (option) =>
-            typeof option === 'object' &&
-            (option.label === assignToName || option.value === assignUserId)
-        );
-        if (exists) return prev;
-        return [{ value: assignUserId || assignToName, label: assignToName }, ...prev];
-      });
-      if (assignUserId && /^\d+$/.test(assignUserId)) {
-        setForm((prev) => ({ ...prev, assignTo: assignUserId }));
-      }
+    } else {
+      setForm((prev) => ({ ...prev, assignTo: '' }));
     }
   };
 

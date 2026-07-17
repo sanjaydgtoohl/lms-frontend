@@ -24,7 +24,7 @@ export type CreateMissCampaignPayload = {
   media_type_id?: string | number;
   media_type_name?: string;
   assignBy?: string;
-  assign_to?: string;
+  assign_to?: string | number | null;
   assignByName?: string;
   image?: File | null; // file object
   [key: string]: any;
@@ -142,6 +142,18 @@ export async function createMissCampaign(payload: CreateMissCampaignPayload): Pr
  */
 export async function updateMissCampaignWithForm(id: string | number, payload: CreateMissCampaignPayload): Promise<any> {
   try {
+    const file = payload.image ?? payload.image_path ?? payload.imagePath;
+    const hasFile = file instanceof File;
+
+    if (
+      !hasFile &&
+      'assign_to' in payload &&
+      (payload.assign_to === null || payload.assign_to === undefined || payload.assign_to === '')
+    ) {
+      const res = await apiClient.put(ENDPOINTS.UPDATE(id), { ...payload, assign_to: null });
+      return handleResponse<any>(res);
+    }
+
     const form = new FormData();
 
     const nameVal = payload.productName ?? payload.name;
@@ -162,7 +174,6 @@ export async function updateMissCampaignWithForm(id: string | number, payload: C
       form.append('lead_sub_source_id', String(leadSubSource));
     }
 
-    const file = payload.image ?? payload.image_path ?? payload.imagePath;
     if (file instanceof File) {
       form.append('image_path', file);
     }

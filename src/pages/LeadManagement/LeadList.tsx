@@ -288,49 +288,57 @@ const LeadList: React.FC<LeadListPageProps> = ({
   }, [filterStatus, extraStatusesKey, activeFilters]);
 
   // Filter leads by search query (local search across a few fields)
-  const filteredLeads = leads.filter((l) => {
+  const filteredLeads = useMemo(() => {
     const normalizeStatus = (value: string) => value.trim().toLowerCase();
-    const normalizedLeadStatus = normalizeStatus(l.status || '');
     const allowedStatuses = [filterStatus, ...normalizedExtraStatuses]
       .filter((status) => status && status !== 'All')
       .map(normalizeStatus);
 
-    if (allowedStatuses.length > 0) {
-      // Special handling for 'Brief' group: include both Received and Pending
-      if (allowedStatuses.includes(normalizeStatus('Brief'))) {
-        if (
-          normalizedLeadStatus !== normalizeStatus('Brief Recieved') &&
-          normalizedLeadStatus !== normalizeStatus('Brief Pending') &&
-          normalizedLeadStatus !== normalizeStatus('Brief Received')
-        ) return false;
+    return leads.filter((l) => {
+      const normalizedLeadStatus = normalizeStatus(l.status || '');
+
+      if (allowedStatuses.length > 0) {
+        // Special handling for 'Brief' group: include both Received and Pending
+        if (allowedStatuses.includes(normalizeStatus('Brief'))) {
+          if (
+            normalizedLeadStatus !== normalizeStatus('Brief Recieved') &&
+            normalizedLeadStatus !== normalizeStatus('Brief Pending') &&
+            normalizedLeadStatus !== normalizeStatus('Brief Received')
+          ) return false;
+        }
+        // Special handling for 'Meeting Scheduled' group: only Meeting Schedule (not Meeting Done)
+        else if (allowedStatuses.includes(normalizeStatus('Meeting Scheduled'))) {
+          if (
+            normalizedLeadStatus !== normalizeStatus('Meeting Schedule') &&
+            normalizedLeadStatus !== normalizeStatus('Meeting Scheduled') &&
+            !allowedStatuses.includes(normalizedLeadStatus)
+          ) return false;
+        }
+        else {
+          if (!allowedStatuses.includes(normalizedLeadStatus)) return false;
+        }
       }
-      // Special handling for 'Meeting Scheduled' group: only Meeting Schedule (not Meeting Done)
-      else if (allowedStatuses.includes(normalizeStatus('Meeting Scheduled'))) {
-        if (
-          normalizedLeadStatus !== normalizeStatus('Meeting Schedule') &&
-          normalizedLeadStatus !== normalizeStatus('Meeting Scheduled') &&
-          !allowedStatuses.includes(normalizedLeadStatus)
-        ) return false;
-      }
-      else {
-        if (!allowedStatuses.includes(normalizedLeadStatus)) return false;
-      }
-    }
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return true;
-    return (
-      l.id.toLowerCase().includes(q) ||
-      (l.brandName ?? '').toLowerCase().includes(q) ||
-      (l.contactPerson ?? '').toLowerCase().includes(q) ||
-      (l.phoneNumber ?? '').toLowerCase().includes(q) ||
-      (l.callStatus ?? '').toLowerCase().includes(q)
-    );
-  });
+      const q = searchQuery.trim().toLowerCase();
+      if (!q) return true;
+      return (
+        l.id.toLowerCase().includes(q) ||
+        (l.brandName ?? '').toLowerCase().includes(q) ||
+        (l.contactPerson ?? '').toLowerCase().includes(q) ||
+        (l.phoneNumber ?? '').toLowerCase().includes(q) ||
+        (l.callStatus ?? '').toLowerCase().includes(q)
+      );
+    });
+  }, [leads, filterStatus, normalizedExtraStatuses, searchQuery]);
 
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentData = useMemo(
     () => filteredLeads.slice(startIndex, startIndex + itemsPerPage),
     [filteredLeads, startIndex, itemsPerPage]
+  );
+
+  const currentPageLeadIdsKey = useMemo(
+    () => currentData.map((lead) => lead.id).join('|'),
+    [currentData]
   );
 
   useEffect(() => {
@@ -370,7 +378,7 @@ const LeadList: React.FC<LeadListPageProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [currentData]);
+  }, [currentPageLeadIdsKey, currentData]);
 
   const navigate = useNavigate();
 
