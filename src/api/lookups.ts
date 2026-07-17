@@ -75,6 +75,43 @@ export async function listAgenciesFlat(): Promise<Array<{ id: number | string; n
   return (res.data || []) as Array<{ id: number | string; name: string }>;
 }
 
+interface ChildUserHierarchyNode {
+  id?: number | string;
+  name?: string;
+  children?: ChildUserHierarchyNode[];
+}
+
+export function flattenChildUserHierarchy(
+  nodes: ChildUserHierarchyNode[] | ChildUserHierarchyNode | null | undefined
+): Array<{ id: number | string; name: string }> {
+  const result: Array<{ id: number | string; name: string }> = [];
+  const seen = new Set<string>();
+
+  const walk = (nodeList: ChildUserHierarchyNode[]) => {
+    nodeList.forEach((node) => {
+      if (node?.id === undefined || node.id === null) return;
+
+      const key = String(node.id);
+      if (!seen.has(key)) {
+        seen.add(key);
+        result.push({ id: node.id, name: String(node.name ?? '') });
+      }
+
+      if (Array.isArray(node.children) && node.children.length > 0) {
+        walk(node.children);
+      }
+    });
+  };
+
+  if (Array.isArray(nodes)) {
+    walk(nodes);
+  } else if (nodes && typeof nodes === 'object') {
+    walk([nodes]);
+  }
+
+  return result;
+}
+
 export async function listChildUsers(
   perPage = 1000
 ): Promise<Array<{ id: number | string; name: string }>> {
@@ -82,6 +119,42 @@ export async function listChildUsers(
     `${ENDPOINTS.USERS.CHILD_USERS}?per_page=${perPage}`
   );
   return (res.data || []) as Array<{ id: number | string; name: string }>;
+}
+
+export async function listChildUsersByMissCampaign(
+  missCampaignId: string | number
+): Promise<Array<{ id: number | string; name: string }>> {
+  const res = await apiClient.get<ChildUserHierarchyNode[]>(
+    ENDPOINTS.USERS.CHILD_USERS_BY_MISS_CAMPAIGN(missCampaignId)
+  );
+  return flattenChildUserHierarchy(res.data);
+}
+
+export async function listChildUsersByLead(
+  leadId: string | number
+): Promise<Array<{ id: number | string; name: string }>> {
+  const res = await apiClient.get<ChildUserHierarchyNode[]>(
+    ENDPOINTS.USERS.CHILD_USERS_BY_LEAD(leadId)
+  );
+  return flattenChildUserHierarchy(res.data);
+}
+
+export async function listChildUsersByBrief(
+  briefId: string | number
+): Promise<Array<{ id: number | string; name: string }>> {
+  const res = await apiClient.get<ChildUserHierarchyNode[]>(
+    ENDPOINTS.USERS.CHILD_USERS_BY_BRIEF(briefId)
+  );
+  return flattenChildUserHierarchy(res.data);
+}
+
+export async function listChildUsersForBriefCreation(
+  organisationId: string | number
+): Promise<Array<{ id: number | string; name: string }>> {
+  const res = await apiClient.get<ChildUserHierarchyNode[]>(
+    ENDPOINTS.USERS.CHILD_USERS_FOR_BRIEF_CREATION(organisationId)
+  );
+  return flattenChildUserHierarchy(res.data);
 }
 
 export async function listLeadTypes(): Promise<Array<{ id: number | string; name: string }>> {

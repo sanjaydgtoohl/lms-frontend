@@ -4,6 +4,7 @@ import isoWeek from 'dayjs/plugin/isoWeek';
 dayjs.extend(isoWeek);
 
 export type DatePreset =
+  | 'none' // No date filter selected (dashboard default)
   | 'today'
   | 'tomorrow'
   | 'this_week'
@@ -91,6 +92,12 @@ export function getDateRangeForPreset(preset: DatePreset): { dateFrom: string; d
   const today = dayjs().startOf('day');
 
   switch (preset) {
+    // Empty range — picker shows "Select date range"; API gets no date_from/date_to
+    case 'none':
+      return {
+        dateFrom: '',
+        dateTo: '',
+      };
     case 'today':
       return {
         dateFrom: today.format('YYYY-MM-DD'),
@@ -159,11 +166,20 @@ export function serializeDashboardFilters(filters: DashboardFilterState): string
 }
 
 export function createDefaultDashboardFilters(): DashboardFilterState {
-  const range = getDateRangeForPreset('this_week');
+  // Previously: default selected "This Week" on dashboard load
+  // const range = getDateRangeForPreset('this_week');
+  // return {
+  //   preset: 'this_week',
+  //   dateFrom: range.dateFrom,
+  //   dateTo: range.dateTo,
+  //   organisationIds: [],
+  // };
+
+  // Date range is intentionally unset on load; user picks a preset or custom range
   return {
-    preset: 'this_week',
-    dateFrom: range.dateFrom,
-    dateTo: range.dateTo,
+    preset: 'none',
+    dateFrom: '',
+    dateTo: '',
     organisationIds: [],
   };
 }

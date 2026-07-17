@@ -39,6 +39,7 @@ export interface AllLeadtype {
   phoneNumber: string;
   source: string;
   subSource: string;
+  organisation: string;
   assignBy: string;
   assignTo: string;
   dateTime: string;
@@ -96,6 +97,8 @@ export interface EditLeadFormData {
   }>;
   assignTo?: string;
   assignToName?: string;
+  organisation?: string;
+  organisationName?: string;
   priority?: string;
   callFeedback?: string;
   comment?: string;

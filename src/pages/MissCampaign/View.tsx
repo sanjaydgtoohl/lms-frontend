@@ -5,7 +5,7 @@
  * @date 2026-05-25
  */
 
-import React, { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Pagination from '../../components/ui/Pagination';
@@ -27,7 +27,7 @@ import {
   type MissCampaign
 } from '../../services/View';
 import { apiClient } from '../../utils/apiClient';
-import { listChildUsers } from '../../api/lookups';
+import { listChildUsers, listChildUsersByMissCampaign } from '../../api/lookups';
 import { usePermissions } from '../../hooks/SidebarMenuHooks';
 import { IoIosArrowBack } from 'react-icons/io';
 import TableHeader from '../../components/ui/TableHeader';
@@ -55,7 +55,9 @@ const View: React.FC = () => {
   const [industryOptions, setIndustryOptions] = useState<{ value: string; label: string }[]>([]);
   const [mediaTypeOptions, setMediaTypeOptions] = useState<{ value: string; label: string }[]>([]);
   const [sourceOptions, setSourceOptions] = useState<{ value: string; label: string }[]>([]);
-  const [assignToOptions, setAssignToOptions] = useState<{ id: string | number; name: string }[]>([]);
+  const [assignOptionsByCampaignId, setAssignOptionsByCampaignId] = useState<
+    Record<string, { id: string | number; name: string }[]>
+  >({});
   const [userMap, setUserMap] = useState<Record<string, string>>({});
   const [showCreate, setShowCreate] = useState(false);
   const [viewItem, setViewItem] = useState<MissCampaign | null>(null);
@@ -94,7 +96,10 @@ const View: React.FC = () => {
   const shouldFetchAll = Boolean(searchQuery.trim()) || Object.keys(activeFilters).length > 0;
 
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentData = shouldFetchAll ? campaigns.slice(startIndex, startIndex + itemsPerPage) : campaigns;
+  const currentData = useMemo(
+    () => (shouldFetchAll ? campaigns.slice(startIndex, startIndex + itemsPerPage) : campaigns),
+    [shouldFetchAll, campaigns, startIndex, itemsPerPage]
+  );
 
   // [Previously] Router hooks were here:
   // const navigate = useNavigate();
@@ -274,16 +279,42 @@ const View: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const fetchAssignToOptions = async () => {
-      try {
-        const users = await listChildUsers(1000);
-        setAssignToOptions(users.map((u) => ({ id: u.id, name: u.name })));
-      } catch (err) {
-        console.error('Failed to fetch assign to users:', err);
+    let cancelled = false;
+
+    const fetchAssignOptionsForPage = async () => {
+      if (currentData.length === 0) {
+        setAssignOptionsByCampaignId({});
+        return;
       }
+
+      const results = await Promise.all(
+        currentData.map(async (campaign) => {
+          try {
+            const users = await listChildUsersByMissCampaign(campaign.id);
+            return [campaign.id, users.map((u) => ({ id: u.id, name: u.name }))] as const;
+          } catch (err) {
+            console.error(`Failed to fetch assign to users for pre-lead ${campaign.id}:`, err);
+            try {
+              const users = await listChildUsers(1000);
+              return [campaign.id, users.map((u) => ({ id: u.id, name: u.name }))] as const;
+            } catch (fallbackErr) {
+              console.error(`Failed fallback assign to users for pre-lead ${campaign.id}:`, fallbackErr);
+              return [campaign.id, []] as const;
+            }
+          }
+        })
+      );
+
+      if (cancelled) return;
+      setAssignOptionsByCampaignId(Object.fromEntries(results));
     };
-    fetchAssignToOptions();
-  }, []);
+
+    fetchAssignOptionsForPage();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentData]);
 
   const handleEdit = (id: string) => navigate(`/pre-lead/view/${encodeURIComponent(id)}/edit`);
   const handleView = (id: string) => navigate(`/pre-lead/view/${encodeURIComponent(id)}`);
@@ -313,9 +344,11 @@ const View: React.FC = () => {
     (async () => {
       try {
         const numericId = String(campaignId).replace(/\D/g, '');
-        const found = assignToOptions.find(u => u.name === newSalesMan);
-        if (found && found.id != null) {
-          await updateMissCampaignWithForm(numericId, { assign_to: String(found.id) });
+        const found = (assignOptionsByCampaignId[campaignId] || []).find(u => u.name === newSalesMan);
+        const fallbackAssignId = Object.entries(userMap).find(([, name]) => name === newSalesMan)?.[0];
+        const assignToId = found?.id != null ? String(found.id) : fallbackAssignId;
+        if (assignToId) {
+          await updateMissCampaignWithForm(numericId, { assign_to: assignToId });
           SweetAlert.showUpdateSuccess();
         } else {
           try { SweetAlert.showError('User ID not found'); } catch {
@@ -622,7 +655,7 @@ const View: React.FC = () => {
         onConfirm={confirmDelete}
       />
       {showCreate ? (
-        
+
         <Create inline onClose={() => navigate('/pre-lead/view')} onSave={handleSave} />
       ) : viewItem ? (
         <>
@@ -695,6 +728,10 @@ const View: React.FC = () => {
                     <div className="text-sm text-gray-600">{viewItem.subSource || '-'}</div>
                   </div>
                   <div className='flex bg-gray-100 p-3 rounded-lg mb-3'>
+                    <div className="text-sm text-gray-800 font-semibold min-w-[100px]">Organisation : </div>
+                    <div className="text-sm text-gray-600">{viewItem.organisation || '-'}</div>
+                  </div>
+                  <div className='flex bg-gray-100 p-3 rounded-lg mb-3'>
                     <div className="text-sm text-gray-800 font-semibold min-w-[100px]">Industry : </div>
                     <div className="text-sm text-gray-600">{viewItem.industry || '-'}</div>
                   </div>
@@ -742,7 +779,7 @@ const View: React.FC = () => {
           {(hasPermission('miss-campaigns.create')) && (
             <MasterHeader onCreateClick={handleCreate} createButtonLabel="Create Pre Lead" createPermissionSlug="miss-campaigns.create" />
           )}
-         
+
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
             {/* Table Header */}
             <TableHeader
@@ -785,8 +822,9 @@ const View: React.FC = () => {
                   { key: 'city', header: 'City', render: (it: MissCampaign) => it.city },
                   { key: 'state', header: 'State', render: (it: MissCampaign) => it.state },
                   { key: 'country', header: 'Country', render: (it: MissCampaign) => it.country },
+                  { key: 'organisation', header: 'Organisation', render: (it: MissCampaign) => it.organisation || '-' },
                   {
-                    key: 'assignBy', header: 'Assign By', render: (it: MissCampaign) => {
+                    key: 'assignBy', header: 'Created By', render: (it: MissCampaign) => {
                       const cleanId = it.assignBy ? String(it.assignBy).replace(/^#USR0*/, '') : '';
                       return userMap[cleanId] || it.assignBy || '-';
                     }
@@ -795,10 +833,16 @@ const View: React.FC = () => {
                     key: 'assignTo', header: 'Assign To', render: (it: MissCampaign) => {
                       const cleanId = it.assignTo ? String(it.assignTo).replace(/^#USR0*/, '') : '';
                       const displayedName = userMap[cleanId] || it.assignTo || '';
+                      const rowAssignOptions = assignOptionsByCampaignId[it.id] || [];
+                      const optionNames = rowAssignOptions.map((opt) => opt.name);
+                      const assignDropdownOptions =
+                        displayedName && !optionNames.includes(displayedName)
+                          ? [displayedName, ...optionNames]
+                          : optionNames;
                       return (
                         <AssignDropdown
                           value={displayedName}
-                          options={assignToOptions.map(opt => opt.name)}
+                          options={assignDropdownOptions}
                           onChange={(newSalesMan) => handleAssignToChange(it.id, newSalesMan)}
                           onConfirm={handleAssignConfirm}
                           context="lead"
@@ -839,7 +883,7 @@ const View: React.FC = () => {
                 viewPermissionSlug="miss-campaigns.view"
                 deletePermissionSlug="miss-campaigns.delete"
                 uploadPermissionSlug="miss-campaigns.upload"
-                
+
               />
             </div>
           </div>

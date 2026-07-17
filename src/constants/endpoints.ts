@@ -17,6 +17,12 @@ export const ENDPOINTS = {
     UPDATE: (id: string | number) => `/users/${id}`,
     DELETE: (id: string | number) => `/users/${id}`,
     CHILD_USERS: '/profile/child-users',
+    CHILD_USERS_BY_MISS_CAMPAIGN: (id: string | number) =>
+      `/profile/child-users-by-miss-campaign/${id}`,
+    CHILD_USERS_BY_LEAD: (id: string | number) => `/profile/child-users-by-lead/${id}`,
+    CHILD_USERS_BY_BRIEF: (id: string | number) => `/profile/child-users-by-brief/${id}`,
+    CHILD_USERS_FOR_BRIEF_CREATION: (id: string | number) =>
+      `/profile/child-users-for-brief-creation/${id}`,
   },
   ROLES: {
     LIST: '/roles',

@@ -312,6 +312,10 @@ export async function getBrief(id: string): Promise<BriefItem> {
 const payloadToFormData = (payload: Record<string, any>) => {
   const fd = new FormData();
   Object.entries(payload || {}).forEach(([k, v]) => {
+    if (k === 'assign_user_id' && v === null) {
+      fd.append(k, '');
+      return;
+    }
     if (v === undefined || v === null) return;
     if (k === '_raw') return;
     if (v instanceof File) {

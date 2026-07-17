@@ -76,6 +76,8 @@ const CreateLead: React.FC = () => {
   const [priority, setPriority] = useState<string | undefined>(undefined);
   const [assignTo, setAssignTo] = useState<string | undefined>(undefined);
   const [callFeedback, setCallFeedback] = useState<string | undefined>(undefined);
+  const [organisation, setOrganisation] = useState<string | undefined>(undefined);
+  const [organisationError, setOrganisationError] = useState<string | null>(null);
   const [contacts, setContacts] = useState<any[]>([{ id: '1', fullName: '', profileUrl: '', email: '', mobileNo: '', mobileNo2: '', showSecondMobile: false, type: '', designation: '', agencyBrand: '', subSource: '', department: '', country: '', state: '', city: '', zone: '', postalCode: '' }]);
   const [contactErrors, setContactErrors] = useState<Record<string, Partial<Record<string, string>>>>({});
 
@@ -292,6 +294,15 @@ const CreateLead: React.FC = () => {
       } else {
         setError(null);
       }
+
+      // Validate organisation
+      setOrganisationError(null);
+      if (!organisation) {
+        setOrganisationError('Please select an organisation.');
+        setContactErrors(newContactErrors);
+        return;
+      }
+
       if (Object.keys(newContactErrors).length > 0) {
         setContactErrors(newContactErrors);
         return;
@@ -356,6 +367,7 @@ const CreateLead: React.FC = () => {
         postal_code: lead.postalCode || undefined,
         comment: comment || undefined,
         call_status_id: callFeedback ? Number(callFeedback) : undefined,
+        organisation_id: organisation ? Number(String(organisation).replace(/\D/g, '')) || undefined : undefined,
       };
 
       const typeValue = String(lead.type || '').trim();
@@ -459,10 +471,16 @@ const CreateLead: React.FC = () => {
         />
 
         <AssignPriorityCard
+          organisation={organisation}
+          organisationError={organisationError}
           assignTo={assignTo}
           priority={priority}
           callFeedback={callFeedback}
-          onChange={({ assignTo: newAssignTo, priority: newPriority, callFeedback: newCallFeedback }) => {
+          onChange={({ organisation: newOrganisation, assignTo: newAssignTo, priority: newPriority, callFeedback: newCallFeedback }) => {
+            if (newOrganisation !== undefined) {
+              setOrganisation(newOrganisation);
+              setOrganisationError(null);
+            }
             if (newAssignTo !== undefined) setAssignTo(newAssignTo);
             if (newPriority !== undefined) setPriority(newPriority);
             if (newCallFeedback !== undefined) setCallFeedback(newCallFeedback);

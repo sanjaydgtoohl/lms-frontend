@@ -32,6 +32,9 @@ export interface Lead {
   brand: { id: number; name: string };
   agency: null | { id: number; name: string };
   assigned_user: { id: number; name: string; email: string };
+  organisation?: { id: number; name: string } | null;
+  organisation_id?: number | null;
+  organisation_name?: string | null;
   priority: { id: number; name: string; slug: string };
   designation: { id: number; name: string | null };
   department: { id: number; name: string };
