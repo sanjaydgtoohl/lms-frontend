@@ -51,7 +51,7 @@ const EditLead: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState('');
   // const editorRef = useRef<HTMLDivElement>(null);
 
-  const handlePriorityChange = useCallback(({ assignTo, priority, callFeedback }: { organization?: string; assignTo?: string; priority?: string; callFeedback?: string }) => {
+  const handlePriorityChange = useCallback(({ assignTo, priority, callFeedback }: { organisation?: string; assignTo?: string; priority?: string; callFeedback?: string }) => {
     setLead(prev => prev ? { ...prev, assignTo, priority, ...(callFeedback !== undefined ? { callFeedback } : {}) } : null);
   }, []);
 
@@ -461,7 +461,7 @@ const EditLead: React.FC = () => {
         />
 
         <AssignPriorityCard
-          organization="edit"
+          organisation="edit"
           assignTo={lead.assignTo}
           assignedLabel={lead.assignToName}
           priority={lead.priority}

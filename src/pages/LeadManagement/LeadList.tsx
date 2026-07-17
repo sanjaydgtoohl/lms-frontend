@@ -27,7 +27,7 @@ import type { Lead, UserOption } from '../../types/AllLeadtype';
 import type { LeadListPageProps } from '../../types/pages/lead-list.types';
 
 import { getCallStatuses } from '../../services/CallStatus';
-import { listBrandsFlat, listChildUsers } from '../../api/lookups';
+import { listBrandsFlat, listChildUsers, listChildUsersByLead } from '../../api/lookups';
 import { fetchLeadSubSources } from '../../services/ContactPersonsCard';
 import http from '../../services/http';
 import SweetAlert from '../../utils/SweetAlert';
@@ -116,19 +116,19 @@ const LeadList: React.FC<LeadListPageProps> = ({
     [extraStatuses]
   );
   const extraStatusesKey = useMemo(() => normalizedExtraStatuses.join('|'), [normalizedExtraStatuses]);
-  // Assign To options state and effect (must be inside component)
-  const [assignToOptions, setAssignToOptions] = useState<UserOption[]>([]);
+  // Assign To options for table dropdown (per lead); filter users loaded separately
+  const [assignOptionsByLeadId, setAssignOptionsByLeadId] = useState<
+    Record<string, UserOption[]>
+  >({});
   const { hasPermission } = usePermissions();
   useEffect(() => {
     const loadUsers = async () => {
       try {
         const users = await listChildUsers();
-        setAssignToOptions(users.map((u) => ({ id: u.id, name: u.name })));
         setUserFilterOptions(
           users.map((u) => ({ value: String(u.id), label: u.name }))
         );
       } catch {
-        setAssignToOptions([]);
         setUserFilterOptions([]);
       }
     };
@@ -328,7 +328,49 @@ const LeadList: React.FC<LeadListPageProps> = ({
   });
 
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentData = filteredLeads.slice(startIndex, startIndex + itemsPerPage);
+  const currentData = useMemo(
+    () => filteredLeads.slice(startIndex, startIndex + itemsPerPage),
+    [filteredLeads, startIndex, itemsPerPage]
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchAssignOptionsForPage = async () => {
+      if (currentData.length === 0) {
+        setAssignOptionsByLeadId({});
+        return;
+      }
+
+      const results = await Promise.all(
+        currentData.map(async (lead) => {
+          const cleanLeadId = String(lead.id).replace('#', '');
+          try {
+            const users = await listChildUsersByLead(cleanLeadId);
+            return [lead.id, users.map((u) => ({ id: u.id, name: u.name }))] as const;
+          } catch (err) {
+            console.error(`Failed to fetch assign to users for lead ${lead.id}:`, err);
+            try {
+              const users = await listChildUsers();
+              return [lead.id, users.map((u) => ({ id: u.id, name: u.name }))] as const;
+            } catch (fallbackErr) {
+              console.error(`Failed fallback assign to users for lead ${lead.id}:`, fallbackErr);
+              return [lead.id, []] as const;
+            }
+          }
+        })
+      );
+
+      if (cancelled) return;
+      setAssignOptionsByLeadId(Object.fromEntries(results));
+    };
+
+    fetchAssignOptionsForPage();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentData]);
 
   const navigate = useNavigate();
 
@@ -376,18 +418,18 @@ const LeadList: React.FC<LeadListPageProps> = ({
     (async () => {
       try {
         const numericId = String(leadId).replace('#', '');
-        const found = assignToOptions.find(u => u.name === newSalesMan);
+        const found = (assignOptionsByLeadId[leadId] || []).find(u => u.name === newSalesMan);
         if (found && found.id != null) {
           await assignUserToLead(numericId, found.id);
         } else {
           await updateLead(numericId, { current_assign_user: newSalesMan });
         }
         SweetAlert.showUpdateSuccess();
-        
+
         // Immediately increment badge in Redux, then sync with server
         dispatch(incrementUnreadCount({ module: 'all' }));
         dispatch(incrementUnreadCount({ module: 'leadManagement' }));
-        
+
         // Sync with server count
         try {
           await syncLeadNotificationCounts();
@@ -496,7 +538,7 @@ const LeadList: React.FC<LeadListPageProps> = ({
     { key: 'contactPerson', header: 'Contact Person', minWidth: 120, maxWidth: 160, render: (it: Lead) => it.contactPerson || '-' },
     { key: 'phoneNumber', header: 'Phone Number', minWidth: 120, maxWidth: 140, render: (it: Lead) => it.phoneNumber || '-' },
     { key: 'subSource', header: 'Sub-Source', minWidth: 100, maxWidth: 140, render: (it: Lead) => it.subSource || '-' },
-    { key: 'organisation', header: 'organisation', minWidth: 100, maxWidth: 140, render: (it: Lead) => it.organisation || '-' },
+    { key: 'organisation', header: 'Organisation', minWidth: 100, maxWidth: 140, render: (it: Lead) => it.organisation || '-' },
     { key: 'assignBy', header: 'Created By', minWidth: 110, maxWidth: 150, render: (it: Lead) => it.assignBy || '-' },
     ...(hasPermission(assignPermissionMap[permissionKey] || assignPermissionMap.All) ? [{
       key: 'assignTo',
@@ -504,15 +546,25 @@ const LeadList: React.FC<LeadListPageProps> = ({
       minWidth: 160,
       maxWidth: 200,
       allowOverflow: true,
-      render: (it: Lead) => (
-        <AssignDropdown
-          value={it.assignTo ?? ''}
-          options={assignToOptions.map(opt => opt.name)}
-          onChange={(newSalesMan) => handleAssignToChange(it.id, newSalesMan)}
-          onConfirm={handleAssignConfirm}
-          context="lead"
-        />
-      ),
+      render: (it: Lead) => {
+        const displayedName = it.assignTo ?? '';
+        const rowAssignOptions = assignOptionsByLeadId[it.id] || [];
+        const optionNames = rowAssignOptions.map((opt) => opt.name);
+        const assignDropdownOptions =
+          displayedName && !optionNames.includes(displayedName)
+            ? [displayedName, ...optionNames]
+            : optionNames;
+
+        return (
+          <AssignDropdown
+            value={displayedName}
+            options={assignDropdownOptions}
+            onChange={(newSalesMan) => handleAssignToChange(it.id, newSalesMan)}
+            onConfirm={handleAssignConfirm}
+            context="lead"
+          />
+        );
+      },
     } as Column<Lead>] : []),
     { key: 'dateTime', header: 'Date & Time', minWidth: 130, maxWidth: 170, render: (it: Lead) => it.dateTime || '-' },
     {
@@ -612,10 +664,10 @@ const LeadList: React.FC<LeadListPageProps> = ({
           showSignInButton={true}
           signInIcon={<FaRegCalendarAlt className="cursor-pointer text-orange-500 hover:text-orange-500 w-4 h-4 sm:w-6 sm:h-6" />}
           onSignInClick={() => navigate(ROUTES.LEAD.MEETING_SCHEDULE)}
-          createPermissionSlug={createPermissionMap[permissionKey] }
+          createPermissionSlug={createPermissionMap[permissionKey]}
         />
       )}
-      
+
       <div className="overflow-visible bg-white rounded-lg border border-gray-200 shadow-sm">
         {/* Table Header */}
         <TableHeader
@@ -626,16 +678,16 @@ const LeadList: React.FC<LeadListPageProps> = ({
           filterExtras={filterExtras}
           extraFilterActive={extraFilterActive}
         >
-         {headerActions}
-         <SearchBar
-              className="w-full"
-              placeholder="Search leads..."
-              delay={250}
-              onSearch={(q: string) => {
-                setSearchQuery(q);
-                setCurrentPage(1);
-              }}
-            />
+          {headerActions}
+          <SearchBar
+            className="w-full"
+            placeholder="Search leads..."
+            delay={250}
+            onSearch={(q: string) => {
+              setSearchQuery(q);
+              setCurrentPage(1);
+            }}
+          />
         </TableHeader>
 
 

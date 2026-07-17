@@ -5,6 +5,7 @@ import { getPriorities, getPrioritiesByCallStatus } from '../../../services/Prio
 import { getCallStatuses } from '../../../services/CallStatus';
 import { apiClient } from '../../../utils/apiClient';
 import { fetchCurrentUser } from '../../../services/Header';
+import { flattenChildUserHierarchy } from '../../../api/lookups';
 import type { AssignPriorityCardProps } from '../../../types/LeadManagentForm';
 
 const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
@@ -12,31 +13,31 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
   assignedLabel,
   priority,
   callFeedback,
-  organization,
-  organizationError,
+  organisation,
+  organisationError,
   onChange
 }) => {
   const priorityRef = useRef(priority);
   const assignToRef = useRef(assignTo);
-  const organizationRef = useRef(organization);
+  const organisationRef = useRef(organisation);
   const onChangeRef = useRef(onChange);
 
   useEffect(() => {
     priorityRef.current = priority;
     assignToRef.current = assignTo;
-    organizationRef.current = organization;
+    organisationRef.current = organisation;
     onChangeRef.current = onChange;
-  }, [priority, assignTo, organization, onChange]);
+  }, [priority, assignTo, organisation, onChange]);
 
   // Assign To dropdown state
   const [userOptions, setUserOptions] = useState<{ value: string; label: string }[]>([]);
   const [userLoading, setUserLoading] = useState(false);
   const [userError, setUserError] = useState<string | null>(null);
 
-  // Organization dropdown state
-  const [organizationOptions, setOrganizationOptions] = useState<{ id: string; name: string }[]>([]);
-  const [organizationLoading, setOrganizationLoading] = useState(false);
-  const [organizationErrorState, setOrganizationErrorState] = useState<string | null>(null);
+  // Organisation dropdown state
+  const [organisationOptions, setOrganisationOptions] = useState<{ id: string; name: string }[]>([]);
+  const [organisationLoading, setOrganisationLoading] = useState(false);
+  const [organisationErrorState, setOrganisationErrorState] = useState<string | null>(null);
 
   // Priority dropdown state
   const [priorityOptions, setPriorityOptions] = useState<{ value: string; label: string }[]>([]);
@@ -71,12 +72,12 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
     return () => { isMounted = false; };
   }, []);
 
-  // Fetch organizations on mount
+  // Fetch organisations on mount
   useEffect(() => {
     let isMounted = true;
     const fetchOrgs = async () => {
       try {
-        setOrganizationLoading(true);
+        setOrganisationLoading(true);
         const response = await apiClient.get<any[]>('/organisations/list');
         if (!isMounted) return;
         const orgs = Array.isArray(response.data) ? response.data : [];
@@ -87,21 +88,21 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
           }))
           .filter((o) => o.id && o.name);
 
-        setOrganizationOptions(options);
+        setOrganisationOptions(options);
 
-        // Preselect organization if only one is returned (on create mode)
+        // Preselect organisation if only one is returned (on create mode)
         if (options.length === 1) {
-          onChangeRef.current?.({ organization: options[0].id, assignTo: assignToRef.current, priority: priorityRef.current, callFeedback });
+          onChangeRef.current?.({ organisation: options[0].id, assignTo: assignToRef.current, priority: priorityRef.current, callFeedback });
         } else if (options.length > 1) {
-          onChangeRef.current?.({ organization: '', assignTo: assignToRef.current, priority: priorityRef.current, callFeedback });
+          onChangeRef.current?.({ organisation: '', assignTo: assignToRef.current, priority: priorityRef.current, callFeedback });
         }
       } catch (err: any) {
         if (isMounted) {
-          setOrganizationErrorState(err?.message || 'Failed to load organizations');
+          setOrganisationErrorState(err?.message || 'Failed to load organisations');
         }
       } finally {
         if (isMounted) {
-          setOrganizationLoading(false);
+          setOrganisationLoading(false);
         }
       }
     };
@@ -112,7 +113,7 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
     };
   }, [callFeedback]);
 
-  // Preselect organization if current user profile is assigned to exactly one
+  // Preselect organisation if current user profile is assigned to exactly one
   useEffect(() => {
     let isMounted = true;
     const fetchUser = async () => {
@@ -124,12 +125,12 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
           if (orgs.length === 1) {
             const singleOrgId = String(orgs[0].id ?? orgs[0].organisation_id ?? orgs[0].value ?? '');
             if (singleOrgId) {
-              onChangeRef.current?.({ organization: singleOrgId, assignTo: assignToRef.current, priority: priorityRef.current, callFeedback });
+              onChangeRef.current?.({ organisation: singleOrgId, assignTo: assignToRef.current, priority: priorityRef.current, callFeedback });
             }
           } else if (orgs.length > 1) {
-            onChangeRef.current?.({ organization: '', assignTo: assignToRef.current, priority: priorityRef.current, callFeedback });
+            onChangeRef.current?.({ organisation: '', assignTo: assignToRef.current, priority: priorityRef.current, callFeedback });
           } else if (user.organisation_id) {
-            onChangeRef.current?.({ organization: String(user.organisation_id), assignTo: assignToRef.current, priority: priorityRef.current, callFeedback });
+            onChangeRef.current?.({ organisation: String(user.organisation_id), assignTo: assignToRef.current, priority: priorityRef.current, callFeedback });
           }
         }
       } catch (err) {
@@ -142,33 +143,36 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
     };
   }, [callFeedback]);
 
-  // Fetch child users matching selected organization with fallback
+  // Fetch child users matching selected organisation with fallback
   useEffect(() => {
     let isMounted = true;
     const fetchUsers = async () => {
       try {
         setUserLoading(true);
         setUserError(null);
-        let data: any[];
-        if (organization) {
+        let fetched: { value: string; label: string }[] = [];
+        if (organisation) {
           const res = await apiClient.get<any>(
-            `/profile/child-users-by-organisation?organisation_id=${organization}&organization_id=${organization}`
+            `/profile/child-users-by-organisation?organisation_id=${organisation}&organization_id=${organisation}`
           );
-          data = Array.isArray(res.data) ? res.data : [];
+          const data = Array.isArray(res.data) ? res.data : [];
+          fetched = flattenChildUserHierarchy(data).map((item) => ({
+            value: String(item.id),
+            label: item.name,
+          }));
         } else {
-          data = await getUsers();
+          const data = await getUsers();
+          fetched = data.map((item: any) => ({
+            value: String(item.id),
+            label: item.name,
+          }));
         }
 
         if (!isMounted) return;
 
-        const fetched = data.map((item: any) => ({
-          value: String(item.id),
-          label: item.name,
-        }));
-
         // If assignTo prop exists but is not in fetched options, prepend it using assignedLabel if available
         if (assignTo) {
-          const exists = fetched.find((o: any) => String(o.value) === String(assignTo));
+          const exists = fetched.find((o) => String(o.value) === String(assignTo));
           if (!exists) {
             fetched.unshift({
               value: String(assignTo),
@@ -178,7 +182,7 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
         }
         setUserOptions(fetched);
       } catch (error: any) {
-        console.error('Failed to load users for organization, falling back to all:', error);
+        console.error('Failed to load users for organisation, falling back to all:', error);
         try {
           const data = await getUsers();
           if (!isMounted) return;
@@ -214,7 +218,7 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [organization, assignTo, assignedLabel]);
+  }, [organisation, assignTo, assignedLabel]);
 
   useEffect(() => {
     let isMounted = true;
@@ -235,12 +239,12 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
         // Check if current priority is still valid, if not, clear it
         const isCurrentPriorityValid = priorityRef.current && fetched.some((option: any) => option.value === priorityRef.current);
         if (priorityRef.current && !isCurrentPriorityValid) {
-          onChangeRef.current?.({ organization: organizationRef.current, assignTo: assignToRef.current, priority: undefined, callFeedback });
+          onChangeRef.current?.({ organisation: organisationRef.current, assignTo: assignToRef.current, priority: undefined, callFeedback });
         }
 
         // Auto-select if only one priority and no priority is currently selected
         if (fetched.length === 1 && !priorityRef.current) {
-          onChangeRef.current?.({ organization: organizationRef.current, assignTo: assignToRef.current, priority: fetched[0].value, callFeedback });
+          onChangeRef.current?.({ organisation: organisationRef.current, assignTo: assignToRef.current, priority: fetched[0].value, callFeedback });
         }
 
         setPriorityLoading(false);
@@ -264,29 +268,29 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm text-gray-800 mb-1">
-              Organization <span className="text-[#FF0000]">*</span>
+              Organisation <span className="text-[#FF0000]">*</span>
             </label>
             <SelectField
-              options={organizationOptions.map((o) => ({ value: String(o.id), label: o.name }))}
-              placeholder={organizationLoading ? 'Loading organizations...' : 'Select Organization'}
-              value={organization}
+              options={organisationOptions.map((o) => ({ value: String(o.id), label: o.name }))}
+              placeholder={organisationLoading ? 'Loading organisations...' : 'Select Organisation'}
+              value={organisation}
               onChange={(value) => {
                 const orgVal = typeof value === 'string' ? value : value[0] ?? '';
-                onChange?.({ organization: orgVal, assignTo: '', priority, callFeedback });
+                onChange?.({ organisation: orgVal, assignTo: '', priority, callFeedback });
               }}
               inputClassName={`px-3 py-2 rounded-lg bg-white text-gray-800 border focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
-                organizationError ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200'
+                organisationError ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200'
               }`}
-              disabled={organizationLoading}
+              disabled={organisationLoading}
             />
-            {organizationLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
-            {organizationErrorState && <div className="text-xs text-red-500 mt-1">{organizationErrorState}</div>}
-            {organizationError && (
+            {organisationLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
+            {organisationErrorState && <div className="text-xs text-red-500 mt-1">{organisationErrorState}</div>}
+            {organisationError && (
               <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
                 <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
-                {organizationError}
+                {organisationError}
               </div>
             )}
           </div>
@@ -294,20 +298,20 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
             <label className="block text-sm text-gray-800 mb-1">Assign To</label>
             <SelectField
               options={userOptions}
-              placeholder={!organization ? 'Select Organization first' : 'Select Team Member'}
+              placeholder={!organisation ? 'Select Organisation first' : 'Select Team Member'}
               value={assignTo}
-              onChange={(value) => onChange?.({ organization, assignTo: typeof value === 'string' ? value : value[0] ?? '', priority, callFeedback })}
+              onChange={(value) => onChange?.({ organisation, assignTo: typeof value === 'string' ? value : value[0] ?? '', priority, callFeedback })}
               inputClassName={`px-3 py-2 rounded-lg bg-white text-gray-800 border focus:outline-none focus:ring-2 transition-colors ${
-                !organization ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed' : 'border-gray-200 focus:ring-blue-500'
+                !organisation ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed' : 'border-gray-200 focus:ring-blue-500'
               }`}
-              disabled={userLoading || !organization}
+              disabled={userLoading || !organisation}
             />
-            {!organization && (
-              <div className="text-xs text-amber-500 mt-1">Please select an organization first.</div>
+            {!organisation && (
+              <div className="text-xs text-amber-500 mt-1">Please select an organisation first.</div>
             )}
-            {organization && userLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
-            {organization && userError && <div className="text-xs text-red-500 mt-1">{userError}</div>}
-            {organization && !userLoading && !userError && userOptions.length === 0 && (
+            {organisation && userLoading && <div className="text-xs text-gray-400 mt-1">Loading...</div>}
+            {organisation && userError && <div className="text-xs text-red-500 mt-1">{userError}</div>}
+            {organisation && !userLoading && !userError && userOptions.length === 0 && (
               <div className="text-xs text-gray-400 mt-1">No users found.</div>
             )}
           </div>
@@ -317,7 +321,7 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
               options={priorityOptions}
               placeholder="Select Priority"
               value={priority}
-              onChange={(value) => onChange?.({ organization, assignTo, priority: typeof value === 'string' ? value : value[0] ?? '', callFeedback })}
+              onChange={(value) => onChange?.({ organisation, assignTo, priority: typeof value === 'string' ? value : value[0] ?? '', callFeedback })}
               inputClassName="px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               disabled={priorityLoading}
             />
@@ -333,7 +337,7 @@ const AssignPriorityCard: React.FC<AssignPriorityCardProps> = ({
               options={callStatusOptions}
               placeholder="Please Select Feedback"
               value={callFeedback}
-              onChange={(value: any) => onChange?.({ organization, assignTo, priority, callFeedback: value })}
+              onChange={(value: any) => onChange?.({ organisation, assignTo, priority, callFeedback: value })}
               inputClassName="px-3 py-2 rounded-lg bg-white text-[var(--text-primary)] border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               disabled={callStatusLoading}
             />

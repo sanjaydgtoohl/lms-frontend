@@ -16,6 +16,7 @@ import { createMissCampaign, updateMissCampaignWithForm } from '../../services/C
 import { listCountries, listStates, listCities } from '../../services/CreateBrandForm';
 import { listAttendees } from '../../services/AllUsers';
 import { fetchCurrentUser } from '../../services/Header';
+import { flattenChildUserHierarchy } from '../../api/lookups';
 import SweetAlert from '../../utils/SweetAlert';
 import { quickCreateApi } from '../../services/QuickCreate';
 import type { MissCampaignCreateProps } from '../../types/pages/forms.types';
@@ -32,7 +33,7 @@ const Create: React.FC<MissCampaignCreateProps> = ({
     brandName: '',
     source: '',
     subSource: '',
-    organization: '',
+    organisation: '',
     industry: '',
     assignBy: '',
     assignTo: '',
@@ -81,9 +82,9 @@ const Create: React.FC<MissCampaignCreateProps> = ({
   const [assignToOptions, setAssignToOptions] = useState<{ value: string; label: string }[]>([]);
   const [assignToLoading, setAssignToLoading] = useState(false);
 
-  // Organization dropdown state
-  const [organizationOptions, setOrganizationOptions] = useState<{ id: string; name: string }[]>([]);
-  const [organizationLoading, setOrganizationLoading] = useState(false);
+  // Organisation dropdown state
+  const [organisationOptions, setOrganisationOptions] = useState<{ id: string; name: string }[]>([]);
+  const [organisationLoading, setOrganisationLoading] = useState(false);
 
   // Media Type dropdown state
   const [mediaTypeOptions, setMediaTypeOptions] = useState<{ id: string; name: string }[]>([]);
@@ -174,56 +175,58 @@ const Create: React.FC<MissCampaignCreateProps> = ({
     fetchIndustries();
   }, []);
 
-  // Fetch organizations on component mount
+  // Fetch organisations on component mount
   useEffect(() => {
-    const fetchOrganizations = async () => {
+    const fetchOrganisations = async () => {
       try {
-        setOrganizationLoading(true);
+        setOrganisationLoading(true);
         const response = await apiClient.get<any[]>('/organisations/list');
         const orgs = Array.isArray(response.data) ? response.data : [];
         const options = orgs.map((org: any) => ({
           id: String(org.id ?? org.organisation_id ?? org.value ?? ''),
           name: String(org.name ?? org.organisation_name ?? org.label ?? ''),
         })).filter(o => o.id && o.name);
-        setOrganizationOptions(options);
+        setOrganisationOptions(options);
 
-        // Preselect organization if only one is returned, otherwise ensure none is selected (on create mode)
+        // Preselect organisation if only one is returned, otherwise ensure none is selected (on create mode)
         if (mode === 'create') {
           if (options.length === 1) {
-            setFormData(prev => ({ ...prev, organization: options[0].id }));
+            setFormData(prev => ({ ...prev, organisation: options[0].id }));
           } else if (options.length > 1) {
-            setFormData(prev => ({ ...prev, organization: '' }));
+            setFormData(prev => ({ ...prev, organisation: '' }));
           }
         }
       } catch (err) {
-        console.error('Failed to fetch organizations:', err);
-        setOrganizationOptions([]);
+        console.error('Failed to fetch organisations:', err);
+        setOrganisationOptions([]);
       } finally {
-        setOrganizationLoading(false);
+        setOrganisationLoading(false);
       }
     };
-    fetchOrganizations();
+    fetchOrganisations();
   }, [mode]);
 
-  // Fetch child users by organization when organization changes, fallback to all attendees
+  // Fetch child users by organisation when organisation changes, fallback to all attendees
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         setAssignToLoading(true);
         let response;
-        if (formData.organization) {
-          response = await apiClient.get(`/profile/child-users-by-organisation?organisation_id=${formData.organization}&organization_id=${formData.organization}`);
+        if (formData.organisation) {
+          response = await apiClient.get(`/profile/child-users-by-organisation?organisation_id=${formData.organisation}&organization_id=${formData.organisation}`);
         } else {
           response = await listAttendees(1, 200);
         }
-        const users = Array.isArray(response.data) ? response.data : [];
+        const users = formData.organisation
+          ? flattenChildUserHierarchy(Array.isArray(response.data) ? response.data : [])
+          : (Array.isArray(response.data) ? response.data : []);
         const options = users.map((user: any) => ({
           value: String(user.id),
           label: String(user.name),
         }));
         setAssignToOptions(options);
       } catch (err) {
-        console.error('Failed to fetch users matching organization, falling back to all attendees:', err);
+        console.error('Failed to fetch users matching organisation, falling back to all attendees:', err);
         try {
           const response = await listAttendees(1, 200);
           const options = (response.data || []).map((user: any) => ({
@@ -240,7 +243,7 @@ const Create: React.FC<MissCampaignCreateProps> = ({
       }
     };
     fetchUsers();
-  }, [formData.organization]);
+  }, [formData.organisation]);
 
   // Fetch media types on component mount
   useEffect(() => {
@@ -274,18 +277,18 @@ const Create: React.FC<MissCampaignCreateProps> = ({
         if (user && user.name) {
           setCurrentUser({ id: String(user.id), name: user.name });
 
-          // Preselect organization if current user profile is assigned to exactly one
+          // Preselect organisation if current user profile is assigned to exactly one
           if (mode === 'create') {
             const orgs = user.organisations || [];
             if (orgs.length === 1) {
               const singleOrgId = String(orgs[0].id ?? orgs[0].organisation_id ?? orgs[0].value ?? '');
               if (singleOrgId) {
-                setFormData(prev => ({ ...prev, organization: singleOrgId }));
+                setFormData(prev => ({ ...prev, organisation: singleOrgId }));
               }
             } else if (orgs.length > 1) {
-              setFormData(prev => ({ ...prev, organization: '' }));
+              setFormData(prev => ({ ...prev, organisation: '' }));
             } else if (user.organisation_id) {
-              setFormData(prev => ({ ...prev, organization: String(user.organisation_id) }));
+              setFormData(prev => ({ ...prev, organisation: String(user.organisation_id) }));
             }
           }
         }
@@ -482,7 +485,16 @@ const Create: React.FC<MissCampaignCreateProps> = ({
           brandName: String(brandId ?? prev.brandName ?? ''),
           source: String(sourceId ?? prev.source ?? ''),
           subSource: String(subSourceId ?? prev.subSource ?? ''),
-          organization: String(initialData.organization_id ?? initialData.organization?.id ?? initialData.organizationId ?? prev.organization ?? ''),
+          organisation: String(
+            initialData.organisation_id ??
+            initialData.organisation?.id ??
+            initialData.organization_id ??
+            initialData.organization?.id ??
+            initialData.organisationId ??
+            initialData.organizationId ??
+            prev.organisation ??
+            ''
+          ),
           industry: String(resolvedIndustryId ?? prev.industry ?? ''),
           assignBy: mode === 'edit' ? (initialData.assign_by_name ?? initialData.created_by_user?.name ?? initialData.created_by ?? '') : (currentUser?.name ?? ''),
           assignTo: String(assignToValue ?? prev.assignTo ?? ''),
@@ -729,7 +741,7 @@ const Create: React.FC<MissCampaignCreateProps> = ({
     if (!formData.brandName) next.brandName = 'Please select a brand';
     if (!formData.source) next.source = 'Please select a source';
     if (!formData.subSource) next.subSource = 'Please select a sub source';
-    if (!formData.organization) next.organization = 'Please select an organization';
+    if (!formData.organisation) next.organisation = 'Please select an organisation';
     // Industry optional — was mandatory: if (!formData.industry) next.industry = 'Please select an industry';
     if (!formData.productName || formData.productName.trim() === '') next.productName = 'Please enter product name';
     if (!formData.country) next.country = 'Please select a country';
@@ -753,7 +765,9 @@ const Create: React.FC<MissCampaignCreateProps> = ({
       brand_id: formData.brandName,
       lead_source_id: formData.source,
       lead_sub_source_id: formData.subSource,
-      organization_id: formData.organization,
+      organisation_id: formData.organisation && String(formData.organisation).replace(/\D/g, '') !== ''
+        ? Number(String(formData.organisation).replace(/\D/g, ''))
+        : undefined,
       industry_id: formData.industry,
       country_id: formData.country,
       state_id: formData.state,
@@ -955,40 +969,40 @@ const Create: React.FC<MissCampaignCreateProps> = ({
               )}
             </div>
 
-            {/* Organization (dropdown) */}
+            {/* Organisation (dropdown) */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
               <label className="block text-sm font-medium mb-2 text-gray-800">
-                Organization <span className="text-[#FF0000]">*</span>
-                {organizationLoading && <Loader className="w-4 h-4 animate-spin text-blue-500 inline ml-2" />}
+                Organisation <span className="text-[#FF0000]">*</span>
+                {organisationLoading && <Loader className="w-4 h-4 animate-spin text-blue-500 inline ml-2" />}
               </label>
               <div className='w-full'>
                 <SelectField
-                  name="organization"
-                  value={formData.organization}
+                  name="organisation"
+                  value={formData.organisation}
                   onChange={(v) => {
-                    const organization = typeof v === 'string' ? v : v[0] ?? '';
+                    const organisation = typeof v === 'string' ? v : v[0] ?? '';
                     setFormData(prev => ({
                       ...prev,
-                      organization,
-                      assignTo: '' // Reset assignTo when organization changes
+                      organisation,
+                      assignTo: '' // Reset assignTo when organisation changes
                     }));
                     setErrors(prev => ({
                       ...prev,
-                      organization: ''
+                      organisation: ''
                     }));
                   }}
-                  options={organizationOptions.map(o => ({ value: String(o.id), label: o.name }))}
-                  placeholder={organizationLoading ? 'Loading organizations...' : 'Search or select organization'}
-                  inputClassName={errors.organization ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}
-                  disabled={organizationLoading}
+                  options={organisationOptions.map(o => ({ value: String(o.id), label: o.name }))}
+                  placeholder={organisationLoading ? 'Loading organisations...' : 'Search or select organisation'}
+                  inputClassName={errors.organisation ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}
+                  disabled={organisationLoading}
                 />
               </div>
-              {errors.organization && (
+              {errors.organisation && (
                 <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
                   <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                   </svg>
-                  {errors.organization}
+                  {errors.organisation}
                 </div>
               )}
             </div>
@@ -1049,7 +1063,7 @@ const Create: React.FC<MissCampaignCreateProps> = ({
               />
             </div> */}
 
-            {/* Assign To — disabled until an organization is selected */}
+            {/* Assign To — disabled until an organisation is selected */}
             <div className='w-full sm:w-[calc(50%-12px)]'>
               <label className="block text-sm font-medium mb-2 text-gray-800">
                 Assign To
@@ -1060,13 +1074,13 @@ const Create: React.FC<MissCampaignCreateProps> = ({
                   value={formData.assignTo || ''}
                   onChange={(v) => { setFormData(prev => ({ ...prev, assignTo: typeof v === 'string' ? v : v[0] ?? '' })); }}
                   options={assignToOptions}
-                  placeholder={!formData.organization ? 'Select Organization first' : (assignToLoading ? 'Loading...' : 'Select Assign To')}
-                  inputClassName={`focus:ring-blue-500 ${!formData.organization ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed' : 'border-gray-200'}`}
-                  disabled={assignToLoading || !formData.organization}
+                  placeholder={!formData.organisation ? 'Select Organisation first' : (assignToLoading ? 'Loading...' : 'Select Assign To')}
+                  inputClassName={`focus:ring-blue-500 ${!formData.organisation ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed' : 'border-gray-200'}`}
+                  disabled={assignToLoading || !formData.organisation}
                 />
               </div>
-              {!formData.organization && (
-                <div className="text-xs text-amber-500 mt-1">Please select an organization first.</div>
+              {!formData.organisation && (
+                <div className="text-xs text-amber-500 mt-1">Please select an organisation first.</div>
               )}
             </div>
 

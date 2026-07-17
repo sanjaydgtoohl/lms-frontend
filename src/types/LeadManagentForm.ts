@@ -69,7 +69,7 @@ export interface AssignPriorityCardProps {
   assignedLabel?: string;
   priority?: string;
   callFeedback?: string;
-  organization?: string;
-  organizationError?: string | null;
-  onChange?: (values: { organization?: string; assignTo?: string; priority?: string; callFeedback?: string }) => void;
+  organisation?: string;
+  organisationError?: string | null;
+  onChange?: (values: { organisation?: string; assignTo?: string; priority?: string; callFeedback?: string }) => void;
 }

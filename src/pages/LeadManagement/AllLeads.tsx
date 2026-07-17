@@ -20,7 +20,7 @@ import { listLeads, updateLead, deleteLead } from '../../services/AllLeads';
 import SweetAlert from '../../utils/SweetAlert';
 import { assignUserToLead } from '../../services/leadAssignTo';
 import { getCallStatuses, updateCallStatus } from '../../services/CallStatus';
-import { listBrandsFlat, listChildUsers } from '../../api/lookups';
+import { listBrandsFlat, listChildUsers, listChildUsersByLead } from '../../api/lookups';
 import { fetchLeadSubSources } from '../../services/ContactPersonsCard';
 import { usePermissions } from '../../hooks/SidebarMenuHooks';
 import TableHeader from '../../components/ui/TableHeader';
@@ -44,7 +44,9 @@ const AllLeads: React.FC = () => {
   const itemsPerPage = 15;
   const [leads, setLeads] = useState<AllLeadtype[]>([]);
   const [callStatusOptions, setCallStatusOptions] = useState<CallStatusOption[]>([]);
-  const [assignToOptions, setAssignToOptions] = useState<UserOption[]>([]);
+  const [assignOptionsByLeadId, setAssignOptionsByLeadId] = useState<
+    Record<string, UserOption[]>
+  >({});
   const { hasPermission } = usePermissions();
   const [loading, setLoading] = useState(false);
   const [totalItems, setTotalItems] = useState(0);
@@ -66,17 +68,15 @@ const AllLeads: React.FC = () => {
     loadCallStatuses();
   }, []);
 
-  // Fetch assign to (user) options from API
+  // Fetch user options for filters (assign dropdown loads per lead)
   useEffect(() => {
     const loadUsers = async () => {
       try {
         const users = await listChildUsers(1000);
-        setAssignToOptions(users.map((u) => ({ id: u.id, name: u.name })));
         setUserFilterOptions(
           users.map((u) => ({ value: String(u.id), label: u.name }))
         );
       } catch {
-        setAssignToOptions([]);
         setUserFilterOptions([]);
       }
     };
@@ -120,7 +120,46 @@ const AllLeads: React.FC = () => {
 
   // Use API paginated data directly
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentData = leads;
+  const currentData = useMemo(() => leads, [leads]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchAssignOptionsForPage = async () => {
+      if (currentData.length === 0) {
+        setAssignOptionsByLeadId({});
+        return;
+      }
+
+      const results = await Promise.all(
+        currentData.map(async (lead) => {
+          const cleanLeadId = String(lead.id).replace('#', '');
+          try {
+            const users = await listChildUsersByLead(cleanLeadId);
+            return [lead.id, users.map((u) => ({ id: u.id, name: u.name }))] as const;
+          } catch (err) {
+            console.error(`Failed to fetch assign to users for lead ${lead.id}:`, err);
+            try {
+              const users = await listChildUsers(1000);
+              return [lead.id, users.map((u) => ({ id: u.id, name: u.name }))] as const;
+            } catch (fallbackErr) {
+              console.error(`Failed fallback assign to users for lead ${lead.id}:`, fallbackErr);
+              return [lead.id, []] as const;
+            }
+          }
+        })
+      );
+
+      if (cancelled) return;
+      setAssignOptionsByLeadId(Object.fromEntries(results));
+    };
+
+    fetchAssignOptionsForPage();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentData]);
 
   const navigate = useNavigate();
 
@@ -184,7 +223,7 @@ const AllLeads: React.FC = () => {
         // remove leading '#' if present
         const numericId = String(leadId).replace('#', '');
         // try to find user id from assignToOptions (we store options as {id, name})
-        const found = assignToOptions.find(u => u.name === newSalesMan);
+        const found = (assignOptionsByLeadId[leadId] || []).find(u => u.name === newSalesMan);
         if (found && found.id != null) {
           await assignUserToLead(numericId, found.id);
         } else {
@@ -392,20 +431,30 @@ const AllLeads: React.FC = () => {
     { key: 'contactPerson', header: 'Contact Person', render: (it: AllLeadtype) => it.contactPerson || '-', className: 'max-w-[160px] overflow-hidden text-ellipsis whitespace-nowrap' },
     { key: 'phoneNumber', header: 'Phone Number', render: (it: AllLeadtype) => it.phoneNumber || '-', className: 'whitespace-nowrap' },
     { key: 'subSource', header: 'Sub-Source', render: (it: AllLeadtype) => it.subSource || '-', className: 'whitespace-nowrap' },
-    { key: 'organisation', header: 'organisation', render: (it: AllLeadtype) => it.organisation || '-', className: 'whitespace-nowrap' },
+    { key: 'organisation', header: 'Organisation', render: (it: AllLeadtype) => it.organisation || '-', className: 'whitespace-nowrap' },
     { key: 'assignBy', header: 'Created By', render: (it: AllLeadtype) => it.assignBy || '-', className: 'whitespace-nowrap' },
     ...(hasPermission('all-lead.assign') ? [{
       key: 'assignTo',
       header: 'Assign To',
-      render: (it: AllLeadtype) => (
-        <AssignDropdown
-          value={it.assignTo ?? ''}
-          options={assignToOptions.map(opt => opt.name)}
-          onChange={(newSalesMan) => handleAssignToChange(it.id, newSalesMan)}
-          onConfirm={handleAssignConfirm}
-          context="lead"
-        />
-      ),
+      render: (it: AllLeadtype) => {
+        const displayedName = it.assignTo ?? '';
+        const rowAssignOptions = assignOptionsByLeadId[it.id] || [];
+        const optionNames = rowAssignOptions.map((opt) => opt.name);
+        const assignDropdownOptions =
+          displayedName && !optionNames.includes(displayedName)
+            ? [displayedName, ...optionNames]
+            : optionNames;
+
+        return (
+          <AssignDropdown
+            value={displayedName}
+            options={assignDropdownOptions}
+            onChange={(newSalesMan) => handleAssignToChange(it.id, newSalesMan)}
+            onConfirm={handleAssignConfirm}
+            context="lead"
+          />
+        );
+      },
       className: 'min-w-[140px]',
     } as Column<AllLeadtype>] : []),
     { key: 'dateTime', header: 'Date & Time', render: (it: AllLeadtype) => it.dateTime || '-', className: 'whitespace-nowrap' },
