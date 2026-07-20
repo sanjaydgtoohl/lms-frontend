@@ -972,7 +972,7 @@ const CreateBriefForm: React.FC<MasterFormWithSaveProps> = ({ onClose, onSave, i
         payload.assign_user_id = assignId;
       }
       const statusId = toInt(form.status);
-      if (statusId !== undefined) payload.brief_status_id = statusId;
+      if (mode === 'edit' && statusId !== undefined) payload.brief_status_id = statusId;
 
       // Product / mode / media / budget / comment
       if (form.productName) payload.product_name = form.productName;
@@ -1185,7 +1185,7 @@ const CreateBriefForm: React.FC<MasterFormWithSaveProps> = ({ onClose, onSave, i
                     onChange={(v: any) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; lastChangedFieldRef.current = 'status'; setForm(prev => ({ ...prev, status: val })); setTimeout(() => { if (lastChangedFieldRef.current === 'status') lastChangedFieldRef.current = null; }, 500); }}
                     searchable
                     inputClassName="border border-gray-200 focus:ring-black"
-                    disabled={briefStatusesLoading}
+                    disabled={mode !== 'edit' || briefStatusesLoading}
                   />
                   {briefStatusesError && <div className="text-xs text-red-600 mt-1">{briefStatusesError}</div>}
                 </div>
