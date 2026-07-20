@@ -63,6 +63,18 @@ const ViewUser: React.FC = () => {
     (user as any)?.orientation ??
     '-'
   ) || '-';
+  const departmentLabel = (() => {
+    const departments = (user as any)?.departments;
+    if (Array.isArray(departments) && departments.length > 0) {
+      return departments.map((d: any) => d?.name ?? d).filter(Boolean).join(', ');
+    }
+    return String(
+      (user as any)?.department_name ??
+      (user as any)?.department?.name ??
+      (user as any)?.department ??
+      '-'
+    ) || '-';
+  })();
 
   if (isLoading) {
     return (
@@ -169,6 +181,11 @@ const ViewUser: React.FC = () => {
             <div className='flex gap-x-3 gap-y-1 items-center flex-wrap bg-gray-50 border border-gray-200 rounded-lg py-3 px-3'>
               <div className="text-base text-gray-800 font-semibold">Organisations :</div>
               <div className="text-sm text-black">{organisationLabel}</div>
+            </div>
+
+            <div className='flex gap-x-3 gap-y-1 items-center flex-wrap bg-gray-50 border border-gray-200 rounded-lg py-3 px-3'>
+              <div className="text-base text-gray-800 font-semibold">Departments :</div>
+              <div className="text-sm text-black">{departmentLabel}</div>
             </div>
 
             <div className='flex gap-x-3 gap-y-1 flex-wrap bg-gray-50 border border-gray-200 rounded-lg py-3 px-3 flex-col'>

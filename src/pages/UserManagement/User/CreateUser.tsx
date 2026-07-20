@@ -29,6 +29,7 @@ const CreateUser: React.FC<RbacFormPageProps> = ({ mode = 'create', initialData 
     password_confirmation: '',
     roles: [] as string[],
     managers: [] as string[],
+    departments: [] as string[],
     zone: '',
     organisations: [] as string[],
   });
@@ -41,12 +42,15 @@ const CreateUser: React.FC<RbacFormPageProps> = ({ mode = 'create', initialData 
     zoneOptions,
     originationOptions,
     managerOptions,
+    departmentOptions,
     rolesLoading,
     zoneLoading,
     originationLoading,
     managersLoading,
+    departmentsLoading,
     rolesError,
     managersError,
+    departmentsError,
   } = useUserFormLookups();
 
   useEffect(() => {
@@ -81,6 +85,28 @@ const CreateUser: React.FC<RbacFormPageProps> = ({ mode = 'create', initialData 
           : initialData.organisation_id
             ? [String(initialData.organisation_id)]
             : [];
+      const departmentsRaw = initialData.departments ?? initialData.department;
+      const departmentsValue = Array.isArray(departmentsRaw)
+        ? departmentsRaw
+            .map((item: any) =>
+              String(item?.id ?? item?.department_id ?? item?.value ?? item?.name ?? item ?? '')
+            )
+            .filter(Boolean)
+        : departmentsRaw
+          ? [
+              typeof departmentsRaw === 'object' && departmentsRaw !== null
+                ? String(
+                    (departmentsRaw as any).id ??
+                      (departmentsRaw as any).value ??
+                      (departmentsRaw as any).department_id ??
+                      (departmentsRaw as any).name ??
+                      ''
+                  )
+                : String(departmentsRaw),
+            ].filter(Boolean)
+          : initialData.department_id
+            ? [String(initialData.department_id)]
+            : [];
       // Avoid copying sensitive fields like `email`, `password`, and
       // `password_confirmation` from `initialData` so they are not
       // autofilled when opening the edit form.
@@ -96,6 +122,7 @@ const CreateUser: React.FC<RbacFormPageProps> = ({ mode = 'create', initialData 
         managers: initialData.managers && Array.isArray(initialData.managers)
           ? initialData.managers.map((m: any) => String(m.id))
           : prev.managers,
+        departments: departmentsValue.length > 0 ? departmentsValue : prev.departments,
         zone: zoneValue || prev.zone,
         organisations: organisationsValue.length > 0 ? organisationsValue : prev.organisations,
         // Ensure password inputs remain empty
@@ -194,6 +221,10 @@ const CreateUser: React.FC<RbacFormPageProps> = ({ mode = 'create', initialData 
         payload.is_parent = base.managers.map((m: string) => Number(m));
       }
 
+      if (base.departments && base.departments.length > 0) {
+        payload.department_ids = base.departments.map((d: string) => Number(d));
+      }
+
       // include password only when provided (required on create)
       if (base.password && String(base.password).trim() !== '') {
         payload.password = base.password;
@@ -227,6 +258,7 @@ const CreateUser: React.FC<RbacFormPageProps> = ({ mode = 'create', initialData 
           if (k === 'role_ids' || k === 'role_id') mappedKey = 'roles';
           if (k === 'manager_ids' || k === 'manager_id') mappedKey = 'managers';
           if (k === 'organisation_ids' || k === 'organisation_id' || k === 'origination') mappedKey = 'organisations';
+          if (k === 'department_ids' || k === 'department_id') mappedKey = 'departments';
           if (k === 'first_name' || k === 'full_name') mappedKey = 'name';
           if (k === 'name') mappedKey = 'name';
           // take first message if array
@@ -261,7 +293,7 @@ const CreateUser: React.FC<RbacFormPageProps> = ({ mode = 'create', initialData 
         title={mode === 'edit' ? 'Edit User' : 'Add User'}
       />
 
-      <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-200">
         <div className="px-4 py-5 sm:p-6 bg-gray-50">
           <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-wrap" autoComplete="off">
             {/* Name */}
@@ -557,6 +589,42 @@ const CreateUser: React.FC<RbacFormPageProps> = ({ mode = 'create', initialData 
                     />
                   </svg>
                   {errors.organisations}
+                </div>
+              )}
+            </div>
+
+            {/* Departments */}
+            <div className="col-span-2 sm:col-span-1">
+              <label className="block text-sm text-gray-40 mb-1">
+                Departments
+              </label>
+              <MultiSelectDropdown
+                name="departments"
+                placeholder={departmentsLoading ? 'Loading departments...' : 'Select department(s)'}
+                options={departmentOptions}
+                value={form.departments}
+                onChange={(v) => {
+                  setForm((prev) => ({ ...prev, departments: v }));
+                  setErrors((prev) => ({ ...prev, departments: '' }));
+                }}
+                disabled={departmentsLoading}
+                inputClassName={`${errors.departments ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-black'}`}
+                maxVisibleOptions={2}
+              />
+              {departmentsError && (
+                <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {departmentsError}
+                </div>
+              )}
+              {errors.departments && (
+                <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.departments}
                 </div>
               )}
             </div>

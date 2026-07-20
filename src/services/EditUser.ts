@@ -12,6 +12,7 @@ export interface EditUserPayload {
   organisation_id?: string | null;
   organisation_ids?: number[];
   organisation_name?: string | null;
+  department_ids?: number[];
   password?: string;
   password_confirmation?: string;
   role_ids?: number[];
@@ -39,6 +40,11 @@ export interface EditUserDetail {
     id: string | number;
     name: string;
   }>;
+  departments?: Array<{
+    id: string | number;
+    name: string;
+  }>;
+  department_ids?: number[];
   parent?: {
     id: string | number;
     name: string;
@@ -157,6 +163,11 @@ export async function updateUserDetails(
     if (payload.organisation_ids && Array.isArray(payload.organisation_ids)) {
       payload.organisation_ids.forEach((organisationId) => {
         formData.append('organisation_ids[]', String(organisationId));
+      });
+    }
+    if (payload.department_ids && Array.isArray(payload.department_ids)) {
+      payload.department_ids.forEach((departmentId) => {
+        formData.append('department_ids[]', String(departmentId));
       });
     }
     if (payload.password) formData.append('password', payload.password);
