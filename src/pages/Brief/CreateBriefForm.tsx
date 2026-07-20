@@ -284,6 +284,8 @@ const CreateBriefForm: React.FC<MasterFormWithSaveProps> = ({ onClose, onSave, i
       if (!raw) return;
       // Skip auto-fill if agency was the last manually changed field
       if (lastChangedFieldRef.current === 'agency') return;
+      // Keep agency from lead/edit prefill when already provided
+      if (initialData?.agency_id || initialData?.createdBy) return;
       // If value looks like an id, call brand agencies endpoint
       const idMatch = String(raw).match(/^\d+$/);
       if (!idMatch) return;

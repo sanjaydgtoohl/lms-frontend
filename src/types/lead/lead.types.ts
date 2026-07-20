@@ -48,6 +48,9 @@ export interface AllLeadtype {
   callStatus: string;
   callAttempt: number;
   comment: string;
+  brandId?: string;
+  agencyId?: string;
+  leadNumericId?: string;
 }
 
 /** @deprecated Use AllLeadtype for UI or LeadListItem for API */

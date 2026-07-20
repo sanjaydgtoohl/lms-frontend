@@ -30,6 +30,7 @@ import { setUnreadCount, setNotifications } from '../../redux/slices/notificatio
 import { getUnreadNotificationCount, listNotifications } from '../../services/notifications';
 import FilePreviewModal from '../../components/ui/FilePreviewModal';
 import { Eye } from 'lucide-react';
+import type { BriefCreateLocationState } from '../../utils/briefLeadPrefill';
 import type { UserOption } from '../../types/lead/lead.types';
 
 type Brief = ServiceBriefItem;
@@ -72,6 +73,7 @@ const BriefPipeline: React.FC = () => {
   const navigate = useNavigate();
   const params = useParams();
   const location = useLocation();
+  const leadBriefPrefill = (location.state as BriefCreateLocationState | null)?.leadBriefPrefill;
 
   const handleEdit = (id: string) => navigate(ROUTES.BRIEF.EDIT(encodeURIComponent(id)));
   const handleView = (id: string) => navigate(ROUTES.BRIEF.DETAIL(encodeURIComponent(id)));
@@ -481,8 +483,9 @@ const BriefPipeline: React.FC = () => {
       {location.pathname.endsWith('/create') ? (
         <CreateBriefForm
           inline
+          initialData={leadBriefPrefill}
           onClose={() => {
-            navigate(ROUTES.BRIEF.PIPELINE);
+            navigate(ROUTES.BRIEF.PIPELINE, { replace: true, state: null });
             setTimeout(() => { fetchBriefs(); }, 300);
           }}
           onSave={handleSaveBrief}

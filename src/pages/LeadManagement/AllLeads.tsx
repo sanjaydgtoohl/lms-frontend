@@ -29,6 +29,7 @@ import type { AppDispatch } from '../../redux/store';
 import { setUnreadCount, setNotifications } from '../../redux/slices/notificationSlice';
 import { getUnreadNotificationCount, listNotifications } from '../../services/notifications';
 import type { CallStatusOption, UserOption, AllLeadtype } from '../../types/AllLeadtype';
+import { buildBriefInitialDataFromLead } from '../../utils/briefLeadPrefill';
 
 // Call status options will be fetched from API
 // (status mapping removed - not used in this file)
@@ -200,14 +201,18 @@ const AllLeads: React.FC = () => {
     navigate(ROUTES.LEAD.DETAIL(cleanId));
   };
 
-  const handleCreateMeeting = (_id: string) => {
-    void _id;
-    navigate(ROUTES.LEAD.MEETING_SCHEDULE);
+  const handleCreateMeeting = (lead: AllLeadtype) => {
+    const leadId = String(lead.leadNumericId ?? lead.id).replace(/^#/, '');
+    navigate(ROUTES.LEAD.MEETING_SCHEDULE_WITH_LEAD(leadId), {
+      state: { prefillLeadId: leadId },
+    });
   };
 
-  const handleBriefCreation = (_id: string) => {
-    void _id;
-    navigate(ROUTES.BRIEF.CREATE);
+  const handleBriefCreation = (lead: AllLeadtype) => {
+    const leadId = String(lead.leadNumericId ?? lead.id).replace(/^#/, '');
+    navigate(ROUTES.BRIEF.CREATE_WITH_LEAD(leadId), {
+      state: { leadBriefPrefill: buildBriefInitialDataFromLead(lead) },
+    });
   };
 
   const handleAssignToChange = (leadId: string, newSalesMan: string) => {
@@ -359,6 +364,9 @@ const AllLeads: React.FC = () => {
         })(),
         callAttempt: Number(it.call_attempt ?? it.callAttempt ?? 0),
         comment: it.comment || it.notes || '',
+        brandId: String(it.brand_id ?? it.brand?.id ?? ''),
+        agencyId: String(it.agency_id ?? it.agency?.id ?? ''),
+        leadNumericId: String(it.id ?? '').replace(/^#/, ''),
       } as AllLeadtype));
 
       setLeads(items);
@@ -568,8 +576,8 @@ const AllLeads: React.FC = () => {
             onEdit={(it: AllLeadtype) => handleEdit(it.id)}
             onView={(it: AllLeadtype) => handleView(it.id)}
             onDelete={(it: AllLeadtype) => handleDelete(it.id)}
-            onCreateMeeting={(it: AllLeadtype) => handleCreateMeeting(it.id)}
-            onBriefCreation={(it: AllLeadtype) => handleBriefCreation(it.id)}
+            onCreateMeeting={(it: AllLeadtype) => handleCreateMeeting(it)}
+            onBriefCreation={(it: AllLeadtype) => handleBriefCreation(it)}
             editPermissionSlug="leads.edit"
             viewPermissionSlug="leads.view"
             deletePermissionSlug="leads.delete"

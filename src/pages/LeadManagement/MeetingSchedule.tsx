@@ -10,7 +10,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import Breadcrumb from '../../components/ui/Breadcrumb';
 import SweetAlert from '../../utils/SweetAlert';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import SelectField from '../../components/ui/SelectField';
 import { createMeeting } from '../../services/MeetingSchedule';
 import { listAttendees } from '../../services/AllUsers';
@@ -20,6 +20,11 @@ import { IoIosArrowBack } from 'react-icons/io';
 
 const MeetingSchedule: React.FC = () => {
   const navigate = useNavigate();
+  const routerLocation = useLocation();
+  const [searchParams] = useSearchParams();
+  const prefillLeadId =
+    searchParams.get('leadId')?.replace(/^#/, '') ||
+    (routerLocation.state as { prefillLeadId?: string } | null)?.prefillLeadId;
 
   // Disable datepicker animations on component mount
   useEffect(() => {
@@ -89,6 +94,10 @@ const MeetingSchedule: React.FC = () => {
         }));
         setLeadOptions(leadOpts);
 
+        if (prefillLeadId) {
+          setLead(prefillLeadId);
+        }
+
         // Fetch attendees
         const { data: usersData } = await listAttendees(1, 100);
         const attendeeOpts = usersData.map((user: any) => ({
@@ -103,7 +112,7 @@ const MeetingSchedule: React.FC = () => {
       }
     };
     fetchData();
-  }, []);
+  }, [prefillLeadId]);
 
   const handleSave = async () => {
     // Validate required fields and set errors
