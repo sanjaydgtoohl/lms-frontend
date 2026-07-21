@@ -456,6 +456,9 @@ const EditUser: React.FC = () => {
     if (!form.organisations || form.organisations.length === 0) {
       next.organisations = 'Please select at least one organisation';
     }
+    if (!form.departments || form.departments.length === 0) {
+      next.departments = 'Please select at least one department';
+    }
 
     // If editing and password fields provided, ensure confirmation matches
     if (form.password && form.password_confirmation && form.password !== form.password_confirmation) {
@@ -492,9 +495,7 @@ const EditUser: React.FC = () => {
       (payload as Record<string, any>).zone_name = zoneName;
       (payload as Record<string, any>).organisation_name = organisationName;
 
-      if (base.departments && base.departments.length > 0) {
-        payload.department_ids = base.departments.map((d: string) => Number(d));
-      }
+      payload.department_ids = (base.departments as string[]).map((d: string) => Number(d));
 
       // roles is array of role ids -> send as role_ids (array)
       if (base.roles && base.roles.length > 0) {
@@ -885,7 +886,7 @@ const EditUser: React.FC = () => {
 
             <div className="col-span-2 sm:col-span-1">
               <label className="block text-sm text-gray-600 mb-1">
-                Departments
+                Departments <span className="text-[#FF0000]">*</span>
               </label>
               <MultiSelectDropdown
                 name="departments"

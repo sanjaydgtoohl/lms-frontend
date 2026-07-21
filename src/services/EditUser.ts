@@ -165,10 +165,14 @@ export async function updateUserDetails(
         formData.append('organisation_ids[]', String(organisationId));
       });
     }
-    if (payload.department_ids && Array.isArray(payload.department_ids)) {
-      payload.department_ids.forEach((departmentId) => {
-        formData.append('department_ids[]', String(departmentId));
-      });
+    if (payload.department_ids !== undefined) {
+      if (payload.department_ids.length === 0) {
+        formData.append('department_ids[]', '');
+      } else {
+        payload.department_ids.forEach((departmentId) => {
+          formData.append('department_ids[]', String(departmentId));
+        });
+      }
     }
     if (payload.password) formData.append('password', payload.password);
     if (payload.password_confirmation) formData.append('password_confirmation', payload.password_confirmation);

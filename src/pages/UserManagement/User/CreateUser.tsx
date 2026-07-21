@@ -163,6 +163,9 @@ const CreateUser: React.FC<RbacFormPageProps> = ({ mode = 'create', initialData 
     if (!form.organisations || form.organisations.length === 0) {
       next.organisations = 'Please select at least one organisation';
     }
+    if (!form.departments || form.departments.length === 0) {
+      next.departments = 'Please select at least one department';
+    }
 
     // Password required on create
     if (mode !== 'edit') {
@@ -596,7 +599,7 @@ const CreateUser: React.FC<RbacFormPageProps> = ({ mode = 'create', initialData 
             {/* Departments */}
             <div className="col-span-2 sm:col-span-1">
               <label className="block text-sm text-gray-40 mb-1">
-                Departments
+                Departments <span className="text-[#FF0000]">*</span>
               </label>
               <MultiSelectDropdown
                 name="departments"
