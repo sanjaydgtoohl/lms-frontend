@@ -464,6 +464,7 @@ const AllLeads: React.FC = () => {
         );
       },
       className: 'min-w-[140px]',
+      allowOverflow: true,
     } as Column<AllLeadtype>] : []),
     { key: 'dateTime', header: 'Date & Time', render: (it: AllLeadtype) => it.dateTime || '-', className: 'whitespace-nowrap' },
     {
@@ -511,6 +512,7 @@ const AllLeads: React.FC = () => {
         </div>
       ),
       className: 'min-w-[160px]',
+      allowOverflow: true,
     },
     { key: 'callAttempt', header: 'Call Attempt', render: (it: AllLeadtype) => it.callAttempt ? String(it.callAttempt) : '-', className: 'whitespace-nowrap' },
     {

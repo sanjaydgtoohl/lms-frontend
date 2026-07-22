@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import CreateBriefForm from './CreateBriefForm';
-import { listChildUsers, listChildUsersByBrief } from '../../api/lookups';
+import { listChildUsers, listChildPlannersByBrief } from '../../api/lookups';
 import { usePermissions } from '../../hooks/SidebarMenuHooks';
 import MasterView from '../../components/ui/MasterView';
 import Pagination from '../../components/ui/Pagination';
@@ -215,7 +215,7 @@ const BriefPipeline: React.FC = () => {
   }, [currentPage, itemsPerPage, searchQuery]);
 
 
-  // Assign To options per brief row (fetched from child-users-by-brief API)
+  // Assign To options per brief row (fetched from child-planners-by-brief API)
   const [assignOptionsByBriefId, setAssignOptionsByBriefId] = useState<Record<string, UserOption[]>>({});
 
   useEffect(() => {
@@ -230,7 +230,7 @@ const BriefPipeline: React.FC = () => {
       const results = await Promise.all(
         currentData.map(async (brief) => {
           try {
-            const users = await listChildUsersByBrief(brief.id);
+            const users = await listChildPlannersByBrief(brief.id);
             return [brief.id, users.map((u) => ({ id: u.id, name: u.name }))] as const;
           } catch (err) {
             console.error(`Failed to fetch assign to users for brief ${brief.id}:`, err);
@@ -603,7 +603,7 @@ const BriefPipeline: React.FC = () => {
                       ? [displayName, ...optionNames]
                       : optionNames;
                   return hasPermission('brief.assign') ? (
-                    <div className="min-w-[140px]">
+                    <div className="relative min-w-[140px]">
                       <AssignDropdown
                         value={displayName}
                         options={assignDropdownOptions}
@@ -616,7 +616,7 @@ const BriefPipeline: React.FC = () => {
                       {displayName || 'Not Assigned'}
                     </div>
                   );
-                }, className: 'min-w-[140px]' },
+                }, className: 'min-w-[140px]', allowOverflow: true },
                 { key: 'status', header: 'Status', render: (it: Brief) => {
                   // Show status name from brief_status object, fallback to '-' or 'No Status'
                   const statusName = it.brief_status && typeof it.brief_status === 'object' && 'name' in it.brief_status
@@ -636,7 +636,7 @@ const BriefPipeline: React.FC = () => {
                       {statusName}
                     </div>
                   );
-                }, className: 'min-w-[140px]' },
+                }, className: 'min-w-[140px]', allowOverflow: true },
                 {
                   key: 'briefDetail',
                   header: 'Brief Detail',

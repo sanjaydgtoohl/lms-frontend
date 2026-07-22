@@ -22,6 +22,7 @@ export const ENDPOINTS = {
     CHILD_USERS_BY_LEAD: (id: string | number) => `/profile/child-users-by-lead/${id}`,
     CHILD_PLANNERS_BY_LEAD: (id: string | number) => `/profile/child-planners-by-lead/${id}`,
     CHILD_USERS_BY_BRIEF: (id: string | number) => `/profile/child-users-by-brief/${id}`,
+    CHILD_PLANNERS_BY_BRIEF: (id: string | number) => `/profile/child-planners-by-brief/${id}`,
     CHILD_USERS_FOR_BRIEF_CREATION: (id: string | number) =>
       `/profile/child-users-for-brief-creation/${id}`,
   },
