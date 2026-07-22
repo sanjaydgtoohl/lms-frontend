@@ -12,7 +12,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { listBrands } from '../../services/BrandMaster';
 import { listAgencies } from '../../services/AgencyMaster';
 import { listAttendees } from '../../services/AllUsers';
-import { listChildUsersByLead } from '../../api/lookups';
+import { listChildPlannersByLead } from '../../api/lookups';
 import { listLeads } from '../../services/AllLeads';
 import { fetchBriefStatuses } from '../../services/BriefStatus';
 import { getPriorities } from '../../services/Priority';
@@ -503,7 +503,7 @@ const CreateBriefForm: React.FC<MasterFormWithSaveProps> = ({ onClose, onSave, i
     }
   }, [mode]);
 
-  // Load Assign To options from child-users-by-lead API (based on selected contact person / lead id)
+  // Load Assign To options from child-planners-by-lead API (based on selected contact person / lead id)
   useEffect(() => {
     let mounted = true;
 
@@ -525,7 +525,7 @@ const CreateBriefForm: React.FC<MasterFormWithSaveProps> = ({ onClose, onSave, i
         let opts: Array<{ value: string; label: string }> = [];
 
         try {
-          const hierarchyUsers = await listChildUsersByLead(leadId);
+          const hierarchyUsers = await listChildPlannersByLead(leadId);
           opts = hierarchyUsers.map((u) => ({
             value: String(u.id),
             label: String(u.name),

@@ -139,6 +139,15 @@ export async function listChildUsersByLead(
   return flattenChildUserHierarchy(res.data);
 }
 
+export async function listChildPlannersByLead(
+  leadId: string | number
+): Promise<Array<{ id: number | string; name: string }>> {
+  const res = await apiClient.get<ChildUserHierarchyNode[]>(
+    ENDPOINTS.USERS.CHILD_PLANNERS_BY_LEAD(leadId)
+  );
+  return flattenChildUserHierarchy(res.data);
+}
+
 export async function listChildUsersByBrief(
   briefId: string | number
 ): Promise<Array<{ id: number | string; name: string }>> {
