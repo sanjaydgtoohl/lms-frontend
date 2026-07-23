@@ -78,7 +78,7 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
     onChange(safeValue.filter(v => v !== val));
   };
 
-  const optionHeight = 40; // px approx per option
+  const optionHeight = 60; // px approx per option
   const maxHeight = Math.min(filtered.length, maxVisibleOptions) * optionHeight;
 
   return (

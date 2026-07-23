@@ -12,7 +12,7 @@ import {
 } from './client';
 
 export type { SelectOption };
-import type { AppUser, UserListResponse, UserOrganisation } from '../types/user/user.types';
+import type { AppUser, UserListResponse, UserDepartment, UserOrganisation } from '../types/user/user.types';
 
 export type { AppUser, UserListResponse };
 /** @deprecated Use AppUser */
@@ -50,6 +50,42 @@ function parseOrganisations(it: Record<string, unknown>): UserOrganisation[] {
       it.origination ??
       it.orientation ??
       it.organisation_name ??
+      ''
+  ).trim();
+
+  return singleName ? [{ name: singleName }] : [];
+}
+
+function parseDepartments(it: Record<string, unknown>): UserDepartment[] {
+  if (Array.isArray(it.departments) && it.departments.length > 0) {
+    return it.departments
+      .map((dept) => {
+        const item = dept as Record<string, unknown>;
+        const name = String(
+          item.name ?? item.department_name ?? item.label ?? item.title ?? ''
+        ).trim();
+        if (!name) return null;
+        return {
+          id: (item.id ?? item.department_id) as number | string | undefined,
+          name,
+        };
+      })
+      .filter((dept): dept is NonNullable<typeof dept> => Boolean(dept));
+  }
+
+  const departmentName = it.department_name;
+  if (typeof departmentName === 'string' && departmentName.includes(',')) {
+    return departmentName
+      .split(',')
+      .map((name) => name.trim())
+      .filter(Boolean)
+      .map((name) => ({ name }));
+  }
+
+  const singleName = String(
+    (it.department as { name?: string })?.name ??
+      it.department ??
+      it.department_name ??
       ''
   ).trim();
 
@@ -99,6 +135,8 @@ function mapUserRow(it: Record<string, unknown>, idx: number): AppUser {
   );
   const organisations = parseOrganisations(it);
   const origination = organisations.map((org) => org.name).join(', ');
+  const departments = parseDepartments(it);
+  const department = departments.map((dept) => dept.name).join(', ');
 
   let parentsArray: AppUser['parents'];
   if (Array.isArray(it.parents) && it.parents.length > 0) {
@@ -117,6 +155,8 @@ function mapUserRow(it: Record<string, unknown>, idx: number): AppUser {
     zone,
     origination,
     organisations,
+    department,
+    departments,
     role,
     roles,
     status,
@@ -227,6 +267,16 @@ export async function listManagersForSelect(perPage = 100): Promise<SelectOption
   return mapToSelectOptions(extractListItems(res), {
     idKeys: ['id', 'user_id'],
     labelKeys: ['name', 'full_name', 'display_name', 'email'],
+  });
+}
+
+export async function listDepartmentsForSelect(perPage = 100): Promise<SelectOption[]> {
+  const res = await apiClient.get(
+    `${ENDPOINTS.MASTER.DEPARTMENTS.LIST}${buildPaginationQuery(1, perPage)}`
+  );
+  return mapToSelectOptions(extractListItems(res), {
+    idKeys: ['id', 'department_id'],
+    labelKeys: ['name', 'department_name', 'label'],
   });
 }
 

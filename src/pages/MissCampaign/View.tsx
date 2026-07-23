@@ -848,7 +848,9 @@ const View: React.FC = () => {
                           context="lead"
                         />
                       );
-                    }
+                    },
+                    className: 'min-w-[140px]',
+                    allowOverflow: true,
                   },
                   { key: 'mediaType', header: 'Media Type', render: (it: MissCampaign) => it.mediaType || '-' },
                   {

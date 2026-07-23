@@ -47,6 +47,11 @@ const AllUsers: React.FC = () => {
   const [selectedOrganisations, setSelectedOrganisations] = useState<Array<{ name: string }>>([]);
   const [organisationsContextName, setOrganisationsContextName] = useState('');
 
+  // Departments modal state
+  const [departmentsModalOpen, setDepartmentsModalOpen] = useState(false);
+  const [selectedDepartments, setSelectedDepartments] = useState<Array<{ name: string }>>([]);
+  const [departmentsContextName, setDepartmentsContextName] = useState('');
+
   const fetchUsers = async () => {
     setLoading(true);
     try {
@@ -142,6 +147,21 @@ const AllUsers: React.FC = () => {
     setOrganisationsModalOpen(false);
     setSelectedOrganisations([]);
     setOrganisationsContextName('');
+  };
+
+  const handleDepartmentsClick = (user: User) => {
+    const departments = user.departments ?? (user.department ? [{ name: user.department }] : []);
+    if (departments.length > 0) {
+      setSelectedDepartments(departments);
+      setDepartmentsContextName(user.name);
+      setDepartmentsModalOpen(true);
+    }
+  };
+
+  const handleDepartmentsModalClose = () => {
+    setDepartmentsModalOpen(false);
+    setSelectedDepartments([]);
+    setDepartmentsContextName('');
   };
   // ...existing code...
 
@@ -326,6 +346,37 @@ const AllUsers: React.FC = () => {
       },
       className: 'text-center max-w-[220px]',
     },
+    {
+      key: 'department',
+      header: 'Department',
+      render: (it: User) => {
+        const departments =
+          it.departments ?? (it.department ? [{ name: it.department }] : []);
+
+        return (
+          <div
+            className="flex gap-2 justify-start items-center cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => departments.length > 0 && handleDepartmentsClick(it)}
+          >
+            {departments.length > 0 ? (
+              <>
+                <span className="inline-flex items-center justify-center h-7 px-3 border border-teal-300 rounded-full text-xs font-medium leading-tight whitespace-nowrap bg-teal-50 text-teal-700 max-w-[140px] overflow-hidden text-ellipsis">
+                  {departments[0].name}
+                </span>
+                {departments.length > 1 && (
+                  <span className="inline-flex items-center justify-center h-7 px-2 border border-gray-200 rounded-full text-xs font-medium leading-tight whitespace-nowrap bg-gray-50 text-gray-700">
+                    +{departments.length - 1}
+                  </span>
+                )}
+              </>
+            ) : (
+              <span className="text-gray-400">-</span>
+            )}
+          </div>
+        );
+      },
+      className: 'text-center max-w-[220px]',
+    },
   ] as Column<User>[]);
 
   return (
@@ -362,7 +413,7 @@ const AllUsers: React.FC = () => {
             onDelete={(it: User) => handleDeleteRequest(it)}
             editPermissionSlug="user.edit"
             viewPermissionSlug="user.view"
-            deletePermissionSlug="user.delete"
+            deletePermissionSlug="users.delete"
           />
           {/* ConfirmDialog for delete */}
           <ConfirmDialog
@@ -401,6 +452,14 @@ const AllUsers: React.FC = () => {
             onClose={handleOrganisationsModalClose}
             title="Organisations"
           />
+
+          <RolesModal
+            isOpen={departmentsModalOpen}
+            roles={selectedDepartments}
+            userName={departmentsContextName}
+            onClose={handleDepartmentsModalClose}
+            title="Departments"
+          />
         </div>
       </div>
 
@@ -414,4 +473,4 @@ const AllUsers: React.FC = () => {
   );
 };
 
-export default AllUsers;
+export default AllUsers;  

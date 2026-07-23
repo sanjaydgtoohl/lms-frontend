@@ -193,6 +193,7 @@ const BriefLog: React.FC = () => {
         );
       },
       className: 'min-w-[140px]',
+      allowOverflow: true,
     },
     {
       key: 'budget',

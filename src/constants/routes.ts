@@ -117,11 +117,15 @@ export const ROUTES = {
     EDIT: (id: string) => `/lead-management/edit/${id}`,
     DETAIL: (id: string) => `/lead-management/${id}`,
     MEETING_SCHEDULE: abs(ROUTE_SEGMENTS.MEETING_SCHEDULE),
+    MEETING_SCHEDULE_WITH_LEAD: (leadId: string) =>
+      `${abs(ROUTE_SEGMENTS.MEETING_SCHEDULE)}?leadId=${encodeURIComponent(leadId)}`,
   },
   BRIEF: {
     ROOT: abs(ROUTE_SEGMENTS.BRIEF),
     PIPELINE: `/brief/${ROUTE_SEGMENTS.BRIEF_PIPELINE}`,
     CREATE: abs(ROUTE_SEGMENTS.BRIEF_CREATE),
+    CREATE_WITH_LEAD: (leadId: string) =>
+      `${abs(ROUTE_SEGMENTS.BRIEF_CREATE)}?leadId=${encodeURIComponent(leadId)}`,
     LOG: abs(ROUTE_SEGMENTS.BRIEF_LOG),
     PLAN_HISTORY: (id: string) => `/brief/plan-history/${id}`,
     PLAN_SUBMISSION: (id: string) => `/brief/plan-submission/${id}`,

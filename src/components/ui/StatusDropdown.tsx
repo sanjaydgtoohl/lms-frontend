@@ -1,11 +1,9 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import Badge from './Badge';
 import ConfirmDialog from './ConfirmDialog';
 
 const DROPDOWN_WIDTH = 176;
 const DROPDOWN_EST_HEIGHT = 220;
-const VIEWPORT_GAP = 8;
 
 interface StatusDropdownProps {
   value: string;
@@ -16,39 +14,30 @@ interface StatusDropdownProps {
 
 const StatusDropdown: React.FC<StatusDropdownProps> = ({ value, options, onChange, onConfirm }) => {
   const [open, setOpen] = useState(false);
+  const [openAbove, setOpenAbove] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const portalRef = useRef<HTMLDivElement>(null);
-  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
 
-  const updatePosition = useCallback(() => {
+  const computePlacement = () => {
     const el = ref.current;
     if (!el) return;
 
     const rect = el.getBoundingClientRect();
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
-    const openAbove = spaceBelow < DROPDOWN_EST_HEIGHT && spaceAbove > spaceBelow;
+    setOpenAbove(spaceBelow < DROPDOWN_EST_HEIGHT && spaceAbove > spaceBelow);
+  };
 
-    let left = rect.left;
-    if (left + DROPDOWN_WIDTH > window.innerWidth - VIEWPORT_GAP) {
-      left = Math.max(VIEWPORT_GAP, rect.right - DROPDOWN_WIDTH);
-    }
-
-    setDropdownPos({
-      top: openAbove
-        ? Math.max(VIEWPORT_GAP, rect.top - DROPDOWN_EST_HEIGHT - VIEWPORT_GAP)
-        : Math.min(window.innerHeight - DROPDOWN_EST_HEIGHT - VIEWPORT_GAP, rect.bottom + VIEWPORT_GAP),
-      left: Math.max(VIEWPORT_GAP, left),
-    });
-  }, []);
+  useLayoutEffect(() => {
+    if (!open) return;
+    computePlacement();
+  }, [open]);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (ref.current && !ref.current.contains(target) && portalRef.current && !portalRef.current.contains(target)) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
         setOpen(false);
       }
     };
@@ -59,32 +48,32 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({ value, options, onChang
   useEffect(() => {
     if (!open) return;
 
-    updatePosition();
-
-    window.addEventListener('resize', updatePosition);
-    window.addEventListener('scroll', updatePosition, true);
+    const handleReposition = () => computePlacement();
+    window.addEventListener('resize', handleReposition);
+    window.addEventListener('scroll', handleReposition, true);
 
     return () => {
-      window.removeEventListener('resize', updatePosition);
-      window.removeEventListener('scroll', updatePosition, true);
+      window.removeEventListener('resize', handleReposition);
+      window.removeEventListener('scroll', handleReposition, true);
     };
-  }, [open, updatePosition]);
+  }, [open]);
 
   const handleToggle = () => {
-    if (!open) {
-      updatePosition();
+    if (open) {
+      setOpen(false);
+      return;
     }
-    setOpen((o) => !o);
+
+    computePlacement();
+    setOpen(true);
   };
 
   const handleOptionSelect = (opt: string) => {
     if (onConfirm) {
-      // Show confirmation dialog before making the change
       setSelectedOption(opt);
       setConfirmDialogOpen(true);
       setOpen(false);
     } else {
-      // Direct change without confirmation
       onChange(opt);
       setOpen(false);
     }
@@ -94,7 +83,6 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({ value, options, onChang
     if (!selectedOption) return;
     setConfirmLoading(true);
     try {
-      // Always call onChange first to update parent state
       onChange(selectedOption);
       if (onConfirm) {
         await onConfirm(selectedOption);
@@ -119,15 +107,12 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({ value, options, onChang
         <Badge status={value}>{value}</Badge>
       </span>
 
-      {open && createPortal(
+      {open && (
         <div
-          ref={portalRef}
-          className="fixed z-50 bg-white shadow-lg rounded-xl border border-gray-200"
-          style={{
-            top: `${dropdownPos.top}px`,
-            left: `${dropdownPos.left}px`,
-            width: `${DROPDOWN_WIDTH}px`,
-          }}
+          className={`absolute left-0 z-[200] rounded-xl border border-gray-200 bg-white shadow-lg ${
+            openAbove ? 'bottom-full mb-1' : 'top-full mt-1'
+          }`}
+          style={{ width: `${DROPDOWN_WIDTH}px` }}
         >
           <ul
             tabIndex={-1}
@@ -161,8 +146,7 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({ value, options, onChang
               background: #fff;
             }
           `}</style>
-        </div>,
-        document.body
+        </div>
       )}
       <ConfirmDialog
         isOpen={confirmDialogOpen}

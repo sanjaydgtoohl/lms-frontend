@@ -9,6 +9,11 @@ export interface UserOrganisation {
   name: string;
 }
 
+export interface UserDepartment {
+  id?: number | string;
+  name: string;
+}
+
 export interface AppUser {
   id: string;
   name: string;
@@ -16,6 +21,8 @@ export interface AppUser {
   zone?: string;
   origination?: string;
   organisations?: UserOrganisation[];
+  department?: string;
+  departments?: UserDepartment[];
   role?: string;
   roles?: Array<{ id?: number | string; name?: string; display_name?: string; [key: string]: unknown }>;
   status?: 'Active' | 'Inactive';

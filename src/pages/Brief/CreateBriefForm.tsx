@@ -12,7 +12,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { listBrands } from '../../services/BrandMaster';
 import { listAgencies } from '../../services/AgencyMaster';
 import { listAttendees } from '../../services/AllUsers';
-import { listChildUsersByLead } from '../../api/lookups';
+import { listChildPlannersByLead } from '../../api/lookups';
 import { listLeads } from '../../services/AllLeads';
 import { fetchBriefStatuses } from '../../services/BriefStatus';
 import { getPriorities } from '../../services/Priority';
@@ -284,6 +284,8 @@ const CreateBriefForm: React.FC<MasterFormWithSaveProps> = ({ onClose, onSave, i
       if (!raw) return;
       // Skip auto-fill if agency was the last manually changed field
       if (lastChangedFieldRef.current === 'agency') return;
+      // Keep agency from lead/edit prefill when already provided
+      if (initialData?.agency_id || initialData?.createdBy) return;
       // If value looks like an id, call brand agencies endpoint
       const idMatch = String(raw).match(/^\d+$/);
       if (!idMatch) return;
@@ -501,7 +503,7 @@ const CreateBriefForm: React.FC<MasterFormWithSaveProps> = ({ onClose, onSave, i
     }
   }, [mode]);
 
-  // Load Assign To options from child-users-by-lead API (based on selected contact person / lead id)
+  // Load Assign To options from child-planners-by-lead API (based on selected contact person / lead id)
   useEffect(() => {
     let mounted = true;
 
@@ -523,7 +525,7 @@ const CreateBriefForm: React.FC<MasterFormWithSaveProps> = ({ onClose, onSave, i
         let opts: Array<{ value: string; label: string }> = [];
 
         try {
-          const hierarchyUsers = await listChildUsersByLead(leadId);
+          const hierarchyUsers = await listChildPlannersByLead(leadId);
           opts = hierarchyUsers.map((u) => ({
             value: String(u.id),
             label: String(u.name),
@@ -972,7 +974,7 @@ const CreateBriefForm: React.FC<MasterFormWithSaveProps> = ({ onClose, onSave, i
         payload.assign_user_id = assignId;
       }
       const statusId = toInt(form.status);
-      if (statusId !== undefined) payload.brief_status_id = statusId;
+      if (mode === 'edit' && statusId !== undefined) payload.brief_status_id = statusId;
 
       // Product / mode / media / budget / comment
       if (form.productName) payload.product_name = form.productName;
@@ -1185,7 +1187,7 @@ const CreateBriefForm: React.FC<MasterFormWithSaveProps> = ({ onClose, onSave, i
                     onChange={(v: any) => { const val = (typeof v === 'object') ? (v.value ?? v.id ?? v) : v; lastChangedFieldRef.current = 'status'; setForm(prev => ({ ...prev, status: val })); setTimeout(() => { if (lastChangedFieldRef.current === 'status') lastChangedFieldRef.current = null; }, 500); }}
                     searchable
                     inputClassName="border border-gray-200 focus:ring-black"
-                    disabled={briefStatusesLoading}
+                    disabled={mode !== 'edit' || briefStatusesLoading}
                   />
                   {briefStatusesError && <div className="text-xs text-red-600 mt-1">{briefStatusesError}</div>}
                 </div>

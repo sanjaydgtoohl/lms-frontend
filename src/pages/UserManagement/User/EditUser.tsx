@@ -45,6 +45,32 @@ function parseOrganisationsFromUser(user: Record<string, any>): string[] {
   return single && single !== 'undefined' && single !== 'null' ? [single] : [];
 }
 
+function parseDepartmentsFromUser(user: Record<string, any>): string[] {
+  if (Array.isArray(user.departments) && user.departments.length > 0) {
+    return user.departments
+      .map((item: any) =>
+        String(item?.id ?? item?.department_id ?? item?.value ?? item?.name ?? item ?? '')
+      )
+      .filter(Boolean);
+  }
+
+  if (Array.isArray(user.department_ids) && user.department_ids.length > 0) {
+    return user.department_ids.map((id: any) => String(id)).filter(Boolean);
+  }
+
+  const single = String(
+    user.department?.id ??
+      user.department_id ??
+      user.department?.value ??
+      user.department?.name ??
+      user.department_name ??
+      user.department ??
+      ''
+  ).trim();
+
+  return single && single !== 'undefined' && single !== 'null' ? [single] : [];
+}
+
 const EditUser: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -59,6 +85,7 @@ const EditUser: React.FC = () => {
     managers: [] as string[],
     zone: '',
     organisations: [] as string[],
+    departments: [] as string[],
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -76,6 +103,9 @@ const EditUser: React.FC = () => {
   const [zoneLoading, setZoneLoading] = useState(false);
   const [originationOptions, setOriginationOptions] = useState<Array<{ label: string; value: string }>>([]);
   const [originationLoading, setOriginationLoading] = useState(false);
+  const [departmentOptions, setDepartmentOptions] = useState<Array<{ label: string; value: string }>>([]);
+  const [departmentsLoading, setDepartmentsLoading] = useState(false);
+  const [departmentsError, setDepartmentsError] = useState<string | null>(null);
 
   // Fetch initial user data
   useEffect(() => {
@@ -123,6 +153,7 @@ const EditUser: React.FC = () => {
             managers,
             zone: String((user as any).zone?.id ?? (user as any).zone_id ?? (user as any).zone?.value ?? (user as any).zone?.name ?? (user as any).zone?.zone ?? (user as any).zone_name ?? (user as any).zone ?? ''),
             organisations: parseOrganisationsFromUser(user as Record<string, any>),
+            departments: parseDepartmentsFromUser(user as Record<string, any>),
           });
         }
       } catch (error) {
@@ -220,6 +251,23 @@ const EditUser: React.FC = () => {
   }, [originationOptions, form.organisations]);
 
   useEffect(() => {
+    if (!form.departments.length || departmentOptions.length === 0) return;
+
+    const remapped = form.departments.map((current) => {
+      if (departmentOptions.some((opt) => opt.value === current)) return current;
+      const byLabel = departmentOptions.find(
+        (opt) => opt.label.toLowerCase() === String(current).toLowerCase()
+      );
+      return byLabel?.value ?? current;
+    });
+
+    const changed = remapped.some((value, index) => value !== form.departments[index]);
+    if (changed) {
+      setForm((prev) => ({ ...prev, departments: remapped }));
+    }
+  }, [departmentOptions, form.departments]);
+
+  useEffect(() => {
     let mounted = true;
 
     const loadZones = async () => {
@@ -282,6 +330,44 @@ const EditUser: React.FC = () => {
     };
 
     loadOrganisations();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadDepartments = async () => {
+      setDepartmentsLoading(true);
+      setDepartmentsError(null);
+      try {
+        const resp = await apiClient.get<any>('/departments?per_page=100');
+        let items: any[] = [];
+        if (Array.isArray((resp as any)?.data)) items = (resp as any).data;
+        else if (Array.isArray((resp as any)?.data?.data)) items = (resp as any).data.data;
+        else if (Array.isArray(resp as any)) items = resp as any;
+
+        const opts = items
+          .map((it: any) => ({
+            label: String(it.name ?? it.department_name ?? it.label ?? ''),
+            value: String(it.id ?? it.value ?? it.department_id ?? ''),
+          }))
+          .filter((it) => it.label && it.value);
+
+        if (mounted) setDepartmentOptions(opts);
+      } catch (err: any) {
+        console.error('Failed to load departments', err);
+        if (mounted) {
+          setDepartmentOptions([]);
+          setDepartmentsError(err?.message || 'Failed to load departments');
+        }
+      } finally {
+        if (mounted) setDepartmentsLoading(false);
+      }
+    };
+
+    loadDepartments();
     return () => {
       mounted = false;
     };
@@ -370,6 +456,9 @@ const EditUser: React.FC = () => {
     if (!form.organisations || form.organisations.length === 0) {
       next.organisations = 'Please select at least one organisation';
     }
+    if (!form.departments || form.departments.length === 0) {
+      next.departments = 'Please select at least one department';
+    }
 
     // If editing and password fields provided, ensure confirmation matches
     if (form.password && form.password_confirmation && form.password !== form.password_confirmation) {
@@ -405,6 +494,8 @@ const EditUser: React.FC = () => {
       };
       (payload as Record<string, any>).zone_name = zoneName;
       (payload as Record<string, any>).organisation_name = organisationName;
+
+      payload.department_ids = (base.departments as string[]).map((d: string) => Number(d));
 
       // roles is array of role ids -> send as role_ids (array)
       if (base.roles && base.roles.length > 0) {
@@ -453,6 +544,7 @@ const EditUser: React.FC = () => {
           if (k === 'role_ids' || k === 'role_id') mappedKey = 'roles';
           if (k === 'manager_ids' || k === 'manager_id') mappedKey = 'managers';
           if (k === 'organisation_ids' || k === 'organisation_id' || k === 'origination') mappedKey = 'organisations';
+          if (k === 'department_ids' || k === 'department_id') mappedKey = 'departments';
           if (k === 'first_name' || k === 'full_name') mappedKey = 'name';
           if (k === 'name') mappedKey = 'name';
           // take first message if array
@@ -788,6 +880,41 @@ const EditUser: React.FC = () => {
                     />
                   </svg>
                   {errors.organisations}
+                </div>
+              )}
+            </div>
+
+            <div className="col-span-2 sm:col-span-1">
+              <label className="block text-sm text-gray-600 mb-1">
+                Departments <span className="text-[#FF0000]">*</span>
+              </label>
+              <MultiSelectDropdown
+                name="departments"
+                placeholder={departmentsLoading ? 'Loading departments...' : 'Select department(s)'}
+                options={departmentOptions}
+                value={form.departments}
+                onChange={(v) => {
+                  setForm((prev) => ({ ...prev, departments: v }));
+                  setErrors((prev) => ({ ...prev, departments: '' }));
+                }}
+                disabled={departmentsLoading}
+                inputClassName={`${errors.departments ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-gray-200 focus:ring-black'}`}
+                maxVisibleOptions={2}
+              />
+              {departmentsError && (
+                <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {departmentsError}
+                </div>
+              )}
+              {errors.departments && (
+                <div className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.departments}
                 </div>
               )}
             </div>
