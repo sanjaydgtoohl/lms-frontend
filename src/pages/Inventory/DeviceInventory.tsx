@@ -71,10 +71,8 @@ const DeviceInventory: React.FC = () => {
 
   const hasActiveLocationFilter = useMemo(
     () =>
-      Object.entries(appliedLocation).some(([key, value]) => {
-        if (key === 'country' && value.trim() === DEFAULT_APPLIED_LOCATION.country) {
-          return false;
-        }
+      // Treat every applied filter, including the default country, as active for the filter affordance.
+      Object.values(appliedLocation).some((value) => {
         return Boolean(value.trim());
       }),
     [appliedLocation]

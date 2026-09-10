@@ -66,9 +66,11 @@ export function useDeviceInventoryList({
         setTotalItems(0);
         hasLoadedRef.current = true;
       } finally {
-        if (requestId !== requestIdRef.current) return;
-        setLoading(false);
-        setRefreshing(false);
+        // Only the newest request may clear loading state after filters or pages change.
+        if (requestId === requestIdRef.current) {
+          setLoading(false);
+          setRefreshing(false);
+        }
       }
     };
 

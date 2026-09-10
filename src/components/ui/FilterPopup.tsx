@@ -26,6 +26,7 @@ import {
 
 /** Comma-separated tokens (legacy labels or IDs during hydration). */
 function splitCsvTokens(value: string): string[] {
+  // Filter state is stored as CSV so it can flow through the existing form and API contracts.
   if (!value) return [];
   return value.split(',').map((item) => item.trim()).filter(Boolean);
 }
@@ -142,81 +143,195 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
   const [draft, setDraft] = useState<LocationFilterValues>(appliedValues);
   const [loadingFields, setLoadingFields] = useState<Set<string>>(new Set());
   const [allOptions, setAllOptions] = useState<FilterOptions>(options);
+  const allOptionsRef = useRef<FilterOptions>(options);
+  const initialOptionsLoadedRef = useRef(false);
+  const categoryOptionsRef = useRef<LocationOption[]>([]);
+  const categorySubOptionsRef = useRef<LocationOption[]>([]);
+  const modeOptionsRef = useRef<LocationOption[]>([]);
+  const publisherOptionsRef = useRef<LocationOption[]>([]);
+  const mainCategoryOptionsRef = useRef<LocationOption[]>([]);
+  const deviceOptionsRef = useRef<Record<string, LocationOption[]>>({});
+  const hydratedCountryKeyRef = useRef<string | null>(null);
+  const hydratedStateKeyRef = useRef<string | null>(null);
   const stateCascadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  /** Latest generation per cascade target — stale async completions must not call updateFieldOptions. */
-  const cascadeGenRef = useRef<Record<string, number>>({});
-
-  const bumpCascadeGen = (key: string): number => {
-    const next = (cascadeGenRef.current[key] ?? 0) + 1;
-    cascadeGenRef.current[key] = next;
-    return next;
-  };
-
-  const isStaleCascadeGen = (key: string, gen: number): boolean =>
-    cascadeGenRef.current[key] !== gen;
-
-  /** Single token for paired zoneArea + arterialRoute updates from city. */
-  const CITY_CHILDREN_CASCADE_KEY = '__city_children__';
-
-  const invalidateCascadeTargets = (keys: string[]) => {
-    keys.forEach((k) => bumpCascadeGen(k));
-  };
-
+  allOptionsRef.current = allOptions;
   const getNormalizedOptionLabel = useCallback((opt: LocationOption): string => {
     return String(opt.name || opt.label || opt.id || '').trim();
   }, []);
 
   const mergeUniqueOptions = useCallback((groups: LocationOption[][]): LocationOption[] => {
     const map = new Map<string, LocationOption>();
-    groups.forEach((group) => {
-      group.forEach((opt) => {
-        const key = `${String(opt.id)}::${getNormalizedOptionLabel(opt).toLowerCase()}`;
-        if (!map.has(key)) {
-          map.set(key, opt);
-        }
-      });
-    });
+    groups.forEach((group) => group.forEach((option) => {
+      const key = `${String(option.id)}::${getNormalizedOptionLabel(option).toLowerCase()}`;
+      if (!map.has(key)) map.set(key, option);
+    }));
     return Array.from(map.values());
   }, [getNormalizedOptionLabel]);
 
-  // Helper function to mark field as loading
   const setFieldLoading = useCallback((fieldName: string, isLoading: boolean) => {
-    setLoadingFields((prev) => {
-      const next = new Set(prev);
-      if (isLoading) {
-        next.add(fieldName);
-      } else {
-        next.delete(fieldName);
-      }
+    setLoadingFields((previous) => {
+      const next = new Set(previous);
+      if (isLoading) next.add(fieldName);
+      else next.delete(fieldName);
       return next;
     });
   }, []);
 
-  // Helper function to update options for a specific field
   const updateFieldOptions = useCallback((fieldName: string, newOptions: LocationOption[]) => {
-    setAllOptions((prev) => ({
-      ...prev,
-      [fieldName]: newOptions,
-    }));
+    setAllOptions((previous) => ({ ...previous, [fieldName]: newOptions }));
   }, []);
 
-  /** Resolve comma-separated tokens to option IDs (tokens are IDs for multi-select draft, or labels for country). */
   const getSelectedOptionIds = useCallback(
-    (fieldName: string, selectedValue: string): Array<string | number> => {
-      const tokens = splitCsvTokens(selectedValue);
-      if (!tokens.length) return [];
-      const opts = allOptions[fieldName] || [];
-      return tokens
-        .map((token) => {
-          const byId = opts.find((o) => String(o.id) === token);
-          if (byId) return byId.id;
-          const trimmed = token.trim();
-          const byLabel = opts.find((o) => getNormalizedOptionLabel(o) === trimmed);
-          return byLabel?.id;
-        })
-        .filter((id): id is string | number => id !== undefined && id !== null);
-    },
+    (fieldName: string, selectedValue: string): Array<string | number> => splitCsvTokens(selectedValue)
+      .map((token) => {
+        const option = (allOptions[fieldName] || []).find(
+          (item) => String(item.id) === token || getNormalizedOptionLabel(item) === token
+        );
+        return option?.id;
+      })
+      .filter((id): id is string | number => id !== undefined && id !== null),
     [allOptions, getNormalizedOptionLabel]
+  );
+  const getSelectedOptionValues = useCallback(
+    (fieldName: string, selectedValue: string): Array<string | number> => splitCsvTokens(selectedValue)
+      .map((token) => {
+        const option = (allOptions[fieldName] || []).find(
+          (item) => String(item.id) === token || getNormalizedOptionLabel(item) === token
+        );
+        return option?.value ?? option?.id;
+      })
+      .filter((value): value is string | number => value !== undefined && value !== null),
+    [allOptions, getNormalizedOptionLabel]
+  );
+
+  const refreshDeviceOptionsForCategories = useCallback(async (values: LocationFilterValues) => {
+    // Rebuild device options from the current category/location selection so dependent filters stay valid.
+    const state = getSelectedOptionValues('state', values.state);
+    const city = getSelectedOptionValues('city', values.city);
+    const zone = getSelectedOptionValues('zoneArea', values.zoneArea);
+    const subZone = getSelectedOptionValues('subZoneArea', values.subZoneArea);
+    const pincode = getSelectedOptionValues('pincode', values.pincode);
+    const arterialRoute = getSelectedOptionValues('arterialRoute', values.arterialRoute);
+    const filters = {
+      state,
+      city,
+      zone,
+      subZone,
+      pincode,
+      arterialRoute,
+      publisher: getSelectedOptionValues('publisher', values.publisher),
+      mainCategory: getSelectedOptionValues('mainCategory', values.mainCategory),
+      category: getSelectedOptionValues('category', values.category),
+      subCategory: getSelectedOptionValues('categorySub', values.categorySub),
+    };
+    const [locationType, orientation, resolution, screenLocation, stretch, property] = await Promise.all([
+      fetchLocationTypes(filters.publisher, filters),
+      fetchOrientations(undefined, filters),
+      fetchResolutions(undefined, filters),
+      fetchScreenLocations(undefined, filters),
+      fetchStretches(undefined, filters),
+      fetchProperties(undefined, filters),
+    ]);
+    updateFieldOptions('locationType', locationType);
+    updateFieldOptions('orientation', orientation);
+    updateFieldOptions('resolution', resolution);
+    updateFieldOptions('screenLocation', screenLocation);
+    updateFieldOptions('stretch', stretch);
+    updateFieldOptions('property', property);
+  }, [getSelectedOptionValues, updateFieldOptions]);
+
+  const refreshPublisherOptionsForCategories = useCallback(async (values: LocationFilterValues) => {
+    // Publisher choices depend on both location and category selections.
+    const filters = {
+      state: getSelectedOptionValues('state', values.state),
+      city: getSelectedOptionValues('city', values.city),
+      zone: getSelectedOptionValues('zoneArea', values.zoneArea),
+      subZone: getSelectedOptionValues('subZoneArea', values.subZoneArea),
+      pincode: getSelectedOptionValues('pincode', values.pincode),
+      arterialRoute: getSelectedOptionValues('arterialRoute', values.arterialRoute),
+      mainCategory: getSelectedOptionValues('mainCategory', values.mainCategory),
+      category: getSelectedOptionValues('category', values.category),
+      subCategory: getSelectedOptionValues('categorySub', values.categorySub),
+    };
+    const modeOfMedia = getSelectedOptionValues('modeOfMedia', values.modeOfMedia);
+    const publisherOptions = await fetchPublishers(modeOfMedia, filters);
+    updateFieldOptions('publisher', publisherOptions);
+    return publisherOptions;
+  }, [getSelectedOptionValues, updateFieldOptions]);
+
+  const refreshOptionsForLocation = useCallback(async (
+    state: Array<string | number>,
+    city: Array<string | number>,
+    zone: Array<string | number>,
+    subZone: Array<string | number>,
+    pincode: Array<string | number>,
+    arterialRoute: Array<string | number>
+  ) => {
+    // Load all filter families affected by a location change in parallel to keep the cascade responsive.
+    const categoryFilters = { state, city, zone, subZone, pincode, arterialRoute };
+    const deviceFilters = { state, city, zone, subZone, pincode, arterialRoute };
+    const [modeOfMedia, publishers, mainCategories, categories, subCategories, locationTypes, orientations, resolutions, screenLocations, stretches, properties] = await Promise.all([
+      fetchModeOfMedia(categoryFilters),
+      fetchPublishers(undefined, categoryFilters),
+      fetchMainCategories(undefined, categoryFilters),
+      fetchCategories(undefined, undefined, categoryFilters),
+      fetchSubCategories(undefined, undefined, undefined, categoryFilters),
+      fetchLocationTypes(undefined, deviceFilters),
+      fetchOrientations(undefined, deviceFilters),
+      fetchResolutions(undefined, deviceFilters),
+      fetchScreenLocations(undefined, deviceFilters),
+      fetchStretches(undefined, deviceFilters),
+      fetchProperties(undefined, deviceFilters),
+    ]);
+
+    updateFieldOptions('modeOfMedia', modeOfMedia);
+    updateFieldOptions('publisher', publishers);
+    updateFieldOptions('mainCategory', mainCategories);
+    updateFieldOptions('category', categories);
+    updateFieldOptions('categorySub', subCategories);
+    updateFieldOptions('locationType', locationTypes);
+    updateFieldOptions('orientation', orientations);
+    updateFieldOptions('resolution', resolutions);
+    updateFieldOptions('screenLocation', screenLocations);
+    updateFieldOptions('stretch', stretches);
+    updateFieldOptions('property', properties);
+    categoryOptionsRef.current = categories;
+    categorySubOptionsRef.current = subCategories;
+    modeOptionsRef.current = modeOfMedia;
+    publisherOptionsRef.current = publishers;
+    mainCategoryOptionsRef.current = mainCategories;
+    deviceOptionsRef.current = {
+      locationType: locationTypes,
+      orientation: orientations,
+      resolution: resolutions,
+      screenLocation: screenLocations,
+      stretch: stretches,
+      property: properties,
+    };
+  }, [updateFieldOptions]);
+
+  const filterCategoryOptions = useCallback(
+    (source: LocationOption[], parentField: 'mainCategory' | 'category', selectedValue: string) => {
+      const selectedIds = splitCsvTokens(selectedValue);
+      if (!selectedIds.length) return source;
+
+      const parentKeys = parentField === 'mainCategory'
+        ? ['main_category_id', 'mainCategoryId', 'main_category', 'mainCategory', 'parent_id', 'parentId']
+        : ['category_id', 'categoryId', 'category', 'parent_id', 'parentId'];
+      const getParentIds = (option: LocationOption): string[] => {
+        const rawOption = option as LocationOption & Record<string, unknown>;
+        for (const key of parentKeys) {
+          const rawValue = rawOption[key];
+          if (Array.isArray(rawValue)) return rawValue.map(String);
+          if (rawValue !== undefined && rawValue !== null && rawValue !== '') return [String(rawValue)];
+        }
+        return [];
+      };
+      const optionsWithParent = source.filter((option) => getParentIds(option).length > 0);
+      if (!optionsWithParent.length) return source;
+      return source.filter((option) => getParentIds(option).some((id) => selectedIds.includes(id)));
+    },
+    []
   );
 
   // Initialize with options from parent or fetch if not provided and rehydrate dependent cascades.
@@ -228,13 +343,114 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
     const loadInitial = async () => {
       let countries: LocationOption[];
       let modeOfMedia: LocationOption[];
+      let publishers: LocationOption[];
+      let mainCategories: LocationOption[];
+      let categories: LocationOption[];
+      let subCategories: LocationOption[];
+      let states: LocationOption[];
+      let cities: LocationOption[];
+      let zones: LocationOption[];
+      let subZones: LocationOption[];
+      let pincodes: LocationOption[];
+      let arterialRoutes: LocationOption[];
       let locationTypes: LocationOption[];
+      let orientations: LocationOption[];
+      let resolutions: LocationOption[];
+      let screenLocations: LocationOption[];
+      let stretches: LocationOption[];
+      let properties: LocationOption[];
       try {
-        [countries, modeOfMedia, locationTypes] = await Promise.all([
-          fetchCountries(),
-          fetchModeOfMedia(),
-          fetchLocationTypes(),
-        ]);
+        if (!initialOptionsLoadedRef.current) {
+          const initialState = splitCsvTokens(appliedValues.state);
+          const initialCity = splitCsvTokens(appliedValues.city);
+          const initialZone = splitCsvTokens(appliedValues.zoneArea);
+          const initialSubZone = splitCsvTokens(appliedValues.subZoneArea);
+          const initialPincode = splitCsvTokens(appliedValues.pincode);
+          const initialArterialRoute = splitCsvTokens(appliedValues.arterialRoute);
+          const initialCategoryFilters = {
+            state: initialState,
+            city: initialCity,
+            zone: initialZone,
+            subZone: initialSubZone,
+            pincode: initialPincode,
+            arterialRoute: initialArterialRoute,
+          };
+          const initialDeviceFilters = {
+            state: initialState,
+            city: initialCity,
+            zone: initialZone,
+            subZone: initialSubZone,
+            pincode: initialPincode,
+            arterialRoute: initialArterialRoute,
+          };
+          [
+            countries,
+            modeOfMedia,
+            publishers,
+            mainCategories,
+            categories,
+            subCategories,
+            zones,
+            subZones,
+            pincodes,
+            arterialRoutes,
+            locationTypes,
+            orientations,
+            resolutions,
+            screenLocations,
+            stretches,
+            properties,
+          ] = await Promise.all([
+            fetchCountries(),
+            fetchModeOfMedia(initialCategoryFilters),
+            fetchPublishers(undefined, initialCategoryFilters),
+            fetchMainCategories(undefined, initialCategoryFilters),
+            fetchCategories(undefined, undefined, initialCategoryFilters),
+            fetchSubCategories(undefined, undefined, undefined, initialCategoryFilters),
+            fetchZones(),
+            fetchSubZones(),
+            fetchPincodes({
+              state: initialState,
+              city: initialCity,
+              zone: initialZone,
+              subZone: initialSubZone,
+              country: splitCsvTokens(appliedValues.country),
+            }),
+            fetchArterialRoutes(undefined, {
+              state: initialState,
+              city: initialCity,
+              zone: initialZone,
+              subZone: initialSubZone,
+            }),
+            fetchLocationTypes(undefined, initialDeviceFilters),
+            fetchOrientations(undefined, initialDeviceFilters),
+            fetchResolutions(undefined, initialDeviceFilters),
+            fetchScreenLocations(undefined, initialDeviceFilters),
+            fetchStretches(undefined, initialDeviceFilters),
+            fetchProperties(undefined, initialDeviceFilters),
+          ]);
+          initialOptionsLoadedRef.current = true;
+        } else {
+          const currentOptions = allOptionsRef.current;
+          countries = currentOptions.country || [];
+          modeOfMedia = currentOptions.modeOfMedia || [];
+          publishers = currentOptions.publisher || [];
+          mainCategories = currentOptions.mainCategory || [];
+          categories = categoryOptionsRef.current;
+          subCategories = categorySubOptionsRef.current;
+          zones = currentOptions.zoneArea || [];
+          subZones = currentOptions.subZoneArea || [];
+          pincodes = currentOptions.pincode || [];
+          arterialRoutes = currentOptions.arterialRoute || [];
+          locationTypes = currentOptions.locationType || [];
+          orientations = currentOptions.orientation || [];
+          resolutions = currentOptions.resolution || [];
+          screenLocations = currentOptions.screenLocation || [];
+          stretches = currentOptions.stretch || [];
+          properties = currentOptions.property || [];
+        }
+        states = [];
+        cities = [];
       } catch (error) {
         if (!cancelled) {
           console.warn('Failed to load initial filter options:', error);
@@ -246,8 +462,41 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
         ...options,
         country: countries,
         modeOfMedia,
+        publisher: publishers,
+        mainCategory: mainCategories,
+        category: categories,
+        categorySub: subCategories,
+        state: states,
+        city: cities,
+        zoneArea: zones,
+        subZoneArea: subZones,
+        pincode: pincodes,
+        arterialRoute: arterialRoutes,
         locationType: locationTypes,
+        orientation: orientations,
+        resolution: resolutions,
+        screenLocation: screenLocations,
+        stretch: stretches,
+        property: properties,
       };
+
+      categoryOptionsRef.current = categories;
+      categorySubOptionsRef.current = subCategories;
+      modeOptionsRef.current = modeOfMedia;
+      publisherOptionsRef.current = publishers;
+      mainCategoryOptionsRef.current = mainCategories;
+      deviceOptionsRef.current = {
+        locationType: locationTypes,
+        orientation: orientations,
+        resolution: resolutions,
+        screenLocation: screenLocations,
+        stretch: stretches,
+        property: properties,
+      };
+      nextOptions.category = filterCategoryOptions(categories, 'mainCategory', appliedValues.mainCategory);
+      nextOptions.categorySub = appliedValues.category
+        ? filterCategoryOptions(subCategories, 'category', appliedValues.category)
+        : subCategories;
 
       const commit = () => {
         if (cancelled) return;
@@ -275,8 +524,21 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
           })
           .filter((id): id is string | number => id !== undefined && id !== null);
 
-      const countryIds = resolveIds('country', appliedValues.country);
-      if (countryIds.length) {
+      const resolveValues = (fieldName: string, rawValue: string) =>
+        splitCsvTokens(rawValue)
+          .map((item) => {
+            const matched = (nextOptions[fieldName] || []).find((opt) => {
+              const label = getNormalizedOptionLabel(opt);
+              return label === item || String(opt.id) === item;
+            });
+            return matched?.value ?? matched?.id;
+          })
+          .filter((value): value is string | number => value !== undefined && value !== null);
+
+      const countryKey = appliedValues.country || '';
+      const countryIds = resolveIds('country', countryKey);
+      if (countryKey !== hydratedCountryKeyRef.current && countryIds.length) {
+        hydratedCountryKeyRef.current = countryKey;
         try {
           const statesByCountry = await Promise.all(countryIds.map((id) => fetchStates(id)));
           nextOptions = { ...nextOptions, state: mergeUniqueOptions(statesByCountry) };
@@ -286,169 +548,19 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
         }
       }
 
-      const stateIds = resolveIds('state', appliedValues.state);
-      if (stateIds.length) {
+      const stateKey = appliedValues.state || '';
+      const stateValues = resolveValues('state', stateKey);
+      if (stateKey !== hydratedStateKeyRef.current && stateValues.length) {
+        hydratedStateKeyRef.current = stateKey;
         try {
-          const citiesByState = await Promise.all(stateIds.map((id) => fetchCities(id)));
-          nextOptions = { ...nextOptions, city: mergeUniqueOptions(citiesByState) };
+          const cities = await fetchCities(stateValues);
+          nextOptions = { ...nextOptions, city: cities };
           commit();
         } catch (error) {
           if (!cancelled) console.warn('Failed to load city options for filter:', error);
         }
       }
 
-      const cityIds = resolveIds('city', appliedValues.city);
-      if (cityIds.length) {
-        try {
-          const zonesByCity = await Promise.all(cityIds.map((id) => fetchZones(id)));
-          nextOptions = { ...nextOptions, zoneArea: mergeUniqueOptions(zonesByCity) };
-          commit();
-        } catch (error) {
-          if (!cancelled) console.warn('Failed to load zone options for filter:', error);
-        }
-        try {
-          const arterialByCity = await Promise.all(cityIds.map((id) => fetchArterialRoutes(id)));
-          nextOptions = { ...nextOptions, arterialRoute: mergeUniqueOptions(arterialByCity) };
-          commit();
-        } catch (error) {
-          if (!cancelled) console.warn('Failed to load arterial route options for filter:', error);
-        }
-      }
-
-      const zoneIds = resolveIds('zoneArea', appliedValues.zoneArea);
-      if (zoneIds.length) {
-        try {
-          const subZonesByZone = await Promise.all(zoneIds.map((id) => fetchSubZones(id)));
-          nextOptions = { ...nextOptions, subZoneArea: mergeUniqueOptions(subZonesByZone) };
-          commit();
-        } catch (error) {
-          if (!cancelled) console.warn('Failed to load sub-zone options for filter:', error);
-        }
-      }
-
-      const subZoneIds = resolveIds('subZoneArea', appliedValues.subZoneArea);
-      if (subZoneIds.length) {
-        try {
-          const pincodesBySubZone = await Promise.all(subZoneIds.map((id) => fetchPincodes(id)));
-          nextOptions = { ...nextOptions, pincode: mergeUniqueOptions(pincodesBySubZone) };
-          commit();
-        } catch (error) {
-          if (!cancelled) console.warn('Failed to load pincode options for filter:', error);
-        }
-      }
-
-      const modeIds = resolveIds('modeOfMedia', appliedValues.modeOfMedia);
-      if (modeIds.length) {
-        try {
-          const publishersByMode = await Promise.all(modeIds.map((id) => fetchPublishers(id)));
-          nextOptions = { ...nextOptions, publisher: mergeUniqueOptions(publishersByMode) };
-          commit();
-        } catch (error) {
-          if (!cancelled) console.warn('Failed to load publisher options for filter:', error);
-        }
-      }
-
-      const publisherIds = resolveIds('publisher', appliedValues.publisher);
-      if (publisherIds.length) {
-        try {
-          const mainCategoriesByPublisher = await Promise.all(
-            publisherIds.map((id) => fetchMainCategories(id))
-          );
-          nextOptions = { ...nextOptions, mainCategory: mergeUniqueOptions(mainCategoriesByPublisher) };
-          commit();
-        } catch (error) {
-          if (!cancelled) console.warn('Failed to load main category options for filter:', error);
-        }
-      }
-
-      const mainCategoryIds = resolveIds('mainCategory', appliedValues.mainCategory);
-      if (mainCategoryIds.length) {
-        try {
-          const categoriesByMainCategory = await Promise.all(
-            mainCategoryIds.map((id) => fetchCategories(id))
-          );
-          nextOptions = { ...nextOptions, category: mergeUniqueOptions(categoriesByMainCategory) };
-          commit();
-        } catch (error) {
-          if (!cancelled) console.warn('Failed to load category options for filter:', error);
-        }
-      }
-
-      const categoryIds = resolveIds('category', appliedValues.category);
-      if (categoryIds.length) {
-        try {
-          const subCategoriesByCategory = await Promise.all(
-            categoryIds.map((id) => fetchSubCategories(id))
-          );
-          nextOptions = { ...nextOptions, categorySub: mergeUniqueOptions(subCategoriesByCategory) };
-          commit();
-        } catch (error) {
-          if (!cancelled) console.warn('Failed to load sub-category options for filter:', error);
-        }
-      }
-
-      const locationTypeIds = resolveIds('locationType', appliedValues.locationType);
-      if (locationTypeIds.length) {
-        try {
-          const orientationsByLocationType = await Promise.all(
-            locationTypeIds.map((id) => fetchOrientations(id))
-          );
-          nextOptions = { ...nextOptions, orientation: mergeUniqueOptions(orientationsByLocationType) };
-          commit();
-        } catch (error) {
-          if (!cancelled) console.warn('Failed to load orientation options for filter:', error);
-        }
-      }
-
-      const orientationIds = resolveIds('orientation', appliedValues.orientation);
-      if (orientationIds.length) {
-        try {
-          const resolutionsByOrientation = await Promise.all(
-            orientationIds.map((id) => fetchResolutions(id))
-          );
-          nextOptions = { ...nextOptions, resolution: mergeUniqueOptions(resolutionsByOrientation) };
-          commit();
-        } catch (error) {
-          if (!cancelled) console.warn('Failed to load resolution options for filter:', error);
-        }
-      }
-
-      const resolutionIds = resolveIds('resolution', appliedValues.resolution);
-      if (resolutionIds.length) {
-        try {
-          const screenLocationsByResolution = await Promise.all(
-            resolutionIds.map((id) => fetchScreenLocations(id))
-          );
-          nextOptions = { ...nextOptions, screenLocation: mergeUniqueOptions(screenLocationsByResolution) };
-          commit();
-        } catch (error) {
-          if (!cancelled) console.warn('Failed to load screen location options for filter:', error);
-        }
-      }
-
-      const screenLocationIds = resolveIds('screenLocation', appliedValues.screenLocation);
-      if (screenLocationIds.length) {
-        try {
-          const stretchesByScreenLocation = await Promise.all(
-            screenLocationIds.map((id) => fetchStretches(id))
-          );
-          nextOptions = { ...nextOptions, stretch: mergeUniqueOptions(stretchesByScreenLocation) };
-          commit();
-        } catch (error) {
-          if (!cancelled) console.warn('Failed to load stretch options for filter:', error);
-        }
-      }
-
-      const stretchIds = resolveIds('stretch', appliedValues.stretch);
-      if (stretchIds.length) {
-        try {
-          const propertiesByStretch = await Promise.all(stretchIds.map((id) => fetchProperties(id)));
-          nextOptions = { ...nextOptions, property: mergeUniqueOptions(propertiesByStretch) };
-          commit();
-        } catch (error) {
-          if (!cancelled) console.warn('Failed to load property options for filter:', error);
-        }
-      }
     };
 
     loadInitial();
@@ -463,10 +575,14 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
     options,
     getNormalizedOptionLabel,
     mergeUniqueOptions,
+    filterCategoryOptions,
   ]);
 
   useEffect(() => {
     if (isOpen) return;
+    initialOptionsLoadedRef.current = false;
+    hydratedCountryKeyRef.current = null;
+    hydratedStateKeyRef.current = null;
     if (stateCascadeTimerRef.current) {
       clearTimeout(stateCascadeTimerRef.current);
       stateCascadeTimerRef.current = null;
@@ -483,404 +599,351 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
       };
 
       // Cascading logic - reset dependent fields when parent changes
-      if (fieldName === 'country' && value !== draft.country) {
-        newDraft.state = '';
-        newDraft.city = '';
-        newDraft.zoneArea = '';
-        newDraft.subZoneArea = '';
-        newDraft.pincode = '';
-        newDraft.arterialRoute = '';
-      }
-
-      if (fieldName === 'state' && value !== draft.state) {
-        newDraft.city = '';
-        newDraft.zoneArea = '';
-        newDraft.subZoneArea = '';
-        newDraft.pincode = '';
-        newDraft.arterialRoute = '';
-      }
-
-      if (fieldName === 'city' && value !== draft.city) {
-        newDraft.zoneArea = '';
-        newDraft.subZoneArea = '';
-        newDraft.pincode = '';
-        newDraft.arterialRoute = '';
-      }
-
-      if (fieldName === 'zoneArea' && value !== draft.zoneArea) {
-        newDraft.subZoneArea = '';
-        newDraft.pincode = '';
-      }
-
-      if (fieldName === 'subZoneArea' && value !== draft.subZoneArea) {
-        newDraft.pincode = '';
-      }
-
-      if (fieldName === 'mainCategory' && value !== draft.mainCategory) {
-        newDraft.category = '';
-        newDraft.categorySub = '';
-      }
-
-      if (fieldName === 'modeOfMedia' && value !== draft.modeOfMedia) {
-        newDraft.publisher = '';
-        newDraft.mainCategory = '';
-        newDraft.category = '';
-        newDraft.categorySub = '';
-      }
-
-      if (fieldName === 'publisher' && value !== draft.publisher) {
-        newDraft.mainCategory = '';
-        newDraft.category = '';
-        newDraft.categorySub = '';
-      }
-
-      if (fieldName === 'category' && value !== draft.category) {
-        newDraft.categorySub = '';
-      }
-
-      if (fieldName === 'locationType' && value !== draft.locationType) {
-        newDraft.orientation = '';
-        newDraft.resolution = '';
-        newDraft.screenLocation = '';
-        newDraft.stretch = '';
-        newDraft.property = '';
-      }
-
-      if (fieldName === 'orientation' && value !== draft.orientation) {
-        newDraft.resolution = '';
-        newDraft.screenLocation = '';
-        newDraft.stretch = '';
-        newDraft.property = '';
-      }
-
-      if (fieldName === 'resolution' && value !== draft.resolution) {
-        newDraft.screenLocation = '';
-        newDraft.stretch = '';
-        newDraft.property = '';
-      }
-
-      if (fieldName === 'screenLocation' && value !== draft.screenLocation) {
-        newDraft.stretch = '';
-        newDraft.property = '';
-      }
-
-      if (fieldName === 'stretch' && value !== draft.stretch) {
-        newDraft.property = '';
-      }
-
       setDraft(newDraft);
 
-      // Fetch dependent field data
+      if (fieldName === 'modeOfMedia') {
+        setDraft({ ...newDraft, publisher: '', mainCategory: '', category: '', categorySub: '' });
+        setFieldLoading('publisher', Boolean(value));
+        setFieldLoading('mainCategory', Boolean(value));
+        setFieldLoading('category', Boolean(value));
+        setFieldLoading('categorySub', Boolean(value));
+        const modeSelection = getSelectedOptionIds('modeOfMedia', value);
+        const categoryFilters = {
+          state: getSelectedOptionValues('state', newDraft.state),
+          city: getSelectedOptionValues('city', newDraft.city),
+          zone: getSelectedOptionValues('zoneArea', newDraft.zoneArea),
+          subZone: getSelectedOptionValues('subZoneArea', newDraft.subZoneArea),
+          pincode: getSelectedOptionValues('pincode', newDraft.pincode),
+          arterialRoute: getSelectedOptionValues('arterialRoute', newDraft.arterialRoute),
+        };
+        const [publisherOptions, mainCategoryOptions, categoryOptions, subCategoryOptions] = await Promise.all([
+          value ? fetchPublishers(modeSelection, categoryFilters) : Promise.resolve(publisherOptionsRef.current),
+          fetchMainCategories(undefined, categoryFilters),
+          fetchCategories(undefined, undefined, categoryFilters),
+          fetchSubCategories(undefined, undefined, undefined, categoryFilters),
+        ]);
+        updateFieldOptions('publisher', publisherOptions);
+        updateFieldOptions('mainCategory', mainCategoryOptions);
+        updateFieldOptions('category', categoryOptions);
+        updateFieldOptions('categorySub', subCategoryOptions);
+        updateFieldOptions('stretch', deviceOptionsRef.current.stretch || []);
+        updateFieldOptions('property', deviceOptionsRef.current.property || []);
+        setFieldLoading('publisher', false);
+        setFieldLoading('mainCategory', false);
+        setFieldLoading('category', false);
+        setFieldLoading('categorySub', false);
+        return;
+      }
+
+      if (fieldName === 'publisher') {
+        await refreshDeviceOptionsForCategories(newDraft);
+        return;
+      }
+
+      const categoryCascade = {
+        mainCategory: {
+          child: 'category' as const,
+          selection: getSelectedOptionValues('mainCategory', value),
+          defaults: categoryOptionsRef,
+          load: (selection: Array<string | number>) => fetchCategories(
+            selection,
+            undefined,
+            {
+              state: getSelectedOptionValues('state', newDraft.state),
+              city: getSelectedOptionValues('city', newDraft.city),
+              zone: getSelectedOptionValues('zoneArea', newDraft.zoneArea),
+              subZone: getSelectedOptionValues('subZoneArea', newDraft.subZoneArea),
+              pincode: getSelectedOptionValues('pincode', newDraft.pincode),
+              arterialRoute: getSelectedOptionValues('arterialRoute', newDraft.arterialRoute),
+            }
+          ),
+        },
+        category: {
+          child: 'categorySub' as const,
+          selection: getSelectedOptionValues('category', value),
+          defaults: categorySubOptionsRef,
+          load: (selection: Array<string | number>) => fetchSubCategories(
+            selection,
+            getSelectedOptionValues('mainCategory', newDraft.mainCategory),
+            undefined,
+            {
+              state: getSelectedOptionValues('state', newDraft.state),
+              city: getSelectedOptionValues('city', newDraft.city),
+              zone: getSelectedOptionValues('zoneArea', newDraft.zoneArea),
+              subZone: getSelectedOptionValues('subZoneArea', newDraft.subZoneArea),
+              pincode: getSelectedOptionValues('pincode', newDraft.pincode),
+              arterialRoute: getSelectedOptionValues('arterialRoute', newDraft.arterialRoute),
+            }
+          ),
+        },
+      }[fieldName as 'mainCategory' | 'category'];
+
+      if (fieldName === 'categorySub') {
+        setFieldLoading('publisher', true);
+        await refreshPublisherOptionsForCategories(newDraft);
+        setFieldLoading('publisher', false);
+        await refreshDeviceOptionsForCategories(newDraft);
+        return;
+      }
+
+      if (fieldName === 'property') {
+        const propertySelection = getSelectedOptionIds('property', value);
+        const propertyFilters = {
+          state: getSelectedOptionValues('state', newDraft.state),
+          city: getSelectedOptionValues('city', newDraft.city),
+          zone: getSelectedOptionValues('zoneArea', newDraft.zoneArea),
+          subZone: getSelectedOptionValues('subZoneArea', newDraft.subZoneArea),
+          pincode: getSelectedOptionValues('pincode', newDraft.pincode),
+          arterialRoute: getSelectedOptionValues('arterialRoute', newDraft.arterialRoute),
+          publisher: getSelectedOptionIds('publisher', newDraft.publisher),
+          property: propertySelection,
+          mainCategory: getSelectedOptionValues('mainCategory', newDraft.mainCategory),
+          category: getSelectedOptionValues('category', newDraft.category),
+          subCategory: getSelectedOptionValues('categorySub', newDraft.categorySub),
+        };
+        setFieldLoading('locationType', true);
+        setFieldLoading('orientation', true);
+        setFieldLoading('resolution', true);
+        setFieldLoading('screenLocation', true);
+        setFieldLoading('stretch', true);
+        const [locationTypeOptions, orientationOptions, resolutionOptions, screenLocationOptions, stretchOptions] = await Promise.all([
+          fetchLocationTypes(undefined, propertyFilters),
+          fetchOrientations(undefined, propertyFilters),
+          fetchResolutions(undefined, propertyFilters),
+          fetchScreenLocations(undefined, propertyFilters),
+          fetchStretches(undefined, propertyFilters),
+        ]);
+        updateFieldOptions('locationType', locationTypeOptions);
+        updateFieldOptions('orientation', orientationOptions);
+        updateFieldOptions('resolution', resolutionOptions);
+        updateFieldOptions('screenLocation', screenLocationOptions);
+        updateFieldOptions('stretch', stretchOptions);
+        setFieldLoading('locationType', false);
+        setFieldLoading('orientation', false);
+        setFieldLoading('resolution', false);
+        setFieldLoading('screenLocation', false);
+        setFieldLoading('stretch', false);
+        return;
+      }
+
+      if (categoryCascade) {
+        const categoryDescendants: Partial<Record<string, string[]>> = {
+          modeOfMedia: ['publisher', 'mainCategory', 'category', 'categorySub'],
+          mainCategory: ['category'],
+          category: ['categorySub'],
+        };
+        const fieldsToClear = categoryDescendants[fieldName] || [categoryCascade.child];
+        setDraft({
+          ...newDraft,
+          ...Object.fromEntries(fieldsToClear.map((field) => [field, ''])),
+        });
+        setFieldLoading(categoryCascade.child, Boolean(value));
+        const childOptions = value
+          ? await categoryCascade.load(categoryCascade.selection)
+          : categoryCascade.defaults.current;
+        updateFieldOptions(categoryCascade.child, childOptions);
+        setFieldLoading(categoryCascade.child, false);
+        const nextCategoryValues = {
+          ...newDraft,
+          ...Object.fromEntries(fieldsToClear.map((field) => [field, ''])),
+        } as LocationFilterValues;
+        setFieldLoading('publisher', true);
+        await refreshPublisherOptionsForCategories(nextCategoryValues);
+        setFieldLoading('publisher', false);
+        await refreshDeviceOptionsForCategories(nextCategoryValues);
+        return;
+      }
+
       try {
-        if (fieldName === 'country' && value) {
-          const countryId = getSelectedOptionIds('country', value)[0];
-          if (countryId === undefined) return;
-          invalidateCascadeTargets(['city', CITY_CHILDREN_CASCADE_KEY, 'subZoneArea', 'pincode']);
-          const gen = bumpCascadeGen('state');
-          setFieldLoading('state', true);
-          try {
-            const states = await fetchStates(countryId);
-            if (isStaleCascadeGen('state', gen)) return;
-            updateFieldOptions('state', states);
-          } catch (error) {
-            console.warn('Cascade fetch error handled gracefully:', error);
-          } finally {
-            setFieldLoading('state', false);
-          }
-        }
+        const selected = (field: keyof LocationFilterValues): Array<string | number> =>
+          getSelectedOptionValues(field, newDraft[field]);
+        const country = selected('country');
+        const state = selected('state');
+        const city = selected('city');
+        const zone = selected('zoneArea');
+        const subZone = selected('subZoneArea');
+        const pincode = selected('pincode');
+        const arterialRoute = selected('arterialRoute');
+        const common = {
+            // Clear descendants from the request context because their selections are reset below.
+          country,
+          state: ['country'].includes(fieldName) ? [] : state,
+          city: ['country', 'state'].includes(fieldName) ? [] : city,
+          zone: ['country', 'state', 'city'].includes(fieldName) ? [] : zone,
+          subZone: ['country', 'state', 'city', 'zoneArea'].includes(fieldName) ? [] : subZone,
+        };
+        const descendantMap: Partial<Record<keyof LocationFilterValues, Array<keyof LocationFilterValues>>> = {
+          country: ['state', 'city', 'zoneArea', 'subZoneArea', 'pincode', 'arterialRoute'],
+          state: ['city', 'zoneArea', 'subZoneArea', 'pincode', 'arterialRoute'],
+          city: ['zoneArea', 'subZoneArea', 'pincode', 'arterialRoute'],
+          zoneArea: ['subZoneArea', 'pincode', 'arterialRoute'],
+          subZoneArea: ['pincode', 'arterialRoute'],
+          pincode: ['arterialRoute'],
+        };
+        const descendants = descendantMap[fieldName] || [];
 
-        if (fieldName === 'state') {
-          if (!value) {
-            if (stateCascadeTimerRef.current) {
-              clearTimeout(stateCascadeTimerRef.current);
-              stateCascadeTimerRef.current = null;
-            }
-            invalidateCascadeTargets([CITY_CHILDREN_CASCADE_KEY, 'subZoneArea', 'pincode']);
-            bumpCascadeGen('city');
-            setFieldLoading('city', false);
-            updateFieldOptions('city', []);
-          } else {
-            invalidateCascadeTargets([CITY_CHILDREN_CASCADE_KEY, 'subZoneArea', 'pincode']);
-            bumpCascadeGen('city');
-            if (stateCascadeTimerRef.current) {
-              clearTimeout(stateCascadeTimerRef.current);
-              stateCascadeTimerRef.current = null;
-              // Cancelled callbacks never reach `finally`, so clear loading from superseded runs.
-              setFieldLoading('city', false);
-            }
-            setFieldLoading('city', true);
-            stateCascadeTimerRef.current = setTimeout(async () => {
-              const gen = bumpCascadeGen('city');
-              try {
-                const stateIds = getSelectedOptionIds('state', value);
-                if (!stateIds.length) {
-                  if (!isStaleCascadeGen('city', gen)) {
-                    updateFieldOptions('city', []);
-                  }
-                  return;
-                }
-                const citiesByState = await Promise.all(stateIds.map((stateId) => fetchCities(stateId)));
-                const cities = mergeUniqueOptions(citiesByState);
-                if (isStaleCascadeGen('city', gen)) return;
-                updateFieldOptions('city', cities);
-              } catch (error) {
-                console.warn('State cascade fetch error handled gracefully:', error);
-              } finally {
-                setFieldLoading('city', false);
-              }
-            }, 300);
-            return;
+        if (descendants.length || fieldName === 'arterialRoute') {
+          setDraft((previous) => ({
+            ...previous,
+            ...Object.fromEntries(descendants.map((field) => [field, ''])),
+          }));
+          if (
+            fieldName === 'state' ||
+            fieldName === 'city' ||
+            fieldName === 'zoneArea' ||
+            fieldName === 'subZoneArea' ||
+            fieldName === 'pincode' ||
+            fieldName === 'arterialRoute'
+          ) {
+            const dependentFilterFields: Array<keyof LocationFilterValues> = [
+              'modeOfMedia',
+              'publisher',
+              'mainCategory',
+              'category',
+              'categorySub',
+              'locationType',
+              'orientation',
+              'resolution',
+              'screenLocation',
+              'stretch',
+              'property',
+            ];
+            setDraft((previous) => ({
+              ...previous,
+              ...Object.fromEntries(dependentFilterFields.map((field) => [field, ''])),
+            }));
           }
-        }
-
-        if (fieldName === 'city' && value) {
-          const cityIds = getSelectedOptionIds('city', value);
-          if (!cityIds.length) return;
-          invalidateCascadeTargets(['subZoneArea', 'pincode']);
-          const gen = bumpCascadeGen(CITY_CHILDREN_CASCADE_KEY);
-          setFieldLoading('zoneArea', true);
-          setFieldLoading('arterialRoute', true);
-          try {
-            const [zonesByCity, arterialRoutesByCity] = await Promise.all([
-              Promise.all(cityIds.map((cityId) => fetchZones(cityId))),
-              Promise.all(cityIds.map((cityId) => fetchArterialRoutes(cityId))),
-            ]);
-            const zones = mergeUniqueOptions(zonesByCity);
-            const arterialRoutes = mergeUniqueOptions(arterialRoutesByCity);
-            if (isStaleCascadeGen(CITY_CHILDREN_CASCADE_KEY, gen)) return;
-            updateFieldOptions('zoneArea', zones);
-            updateFieldOptions('arterialRoute', arterialRoutes);
-          } catch (error) {
-            console.warn('Cascade fetch error handled gracefully:', error);
-          } finally {
-            setFieldLoading('zoneArea', false);
-            setFieldLoading('arterialRoute', false);
-          }
-        }
-
-        if (fieldName === 'zoneArea' && value) {
-          const zoneIds = getSelectedOptionIds('zoneArea', value);
-          if (!zoneIds.length) return;
-          invalidateCascadeTargets(['pincode']);
-          const gen = bumpCascadeGen('subZoneArea');
-          setFieldLoading('subZoneArea', true);
-          try {
-            const subZonesByZone = await Promise.all(zoneIds.map((zoneId) => fetchSubZones(zoneId)));
-            const subZones = mergeUniqueOptions(subZonesByZone);
-            if (isStaleCascadeGen('subZoneArea', gen)) return;
-            updateFieldOptions('subZoneArea', subZones);
-          } catch (error) {
-            console.warn('Cascade fetch error handled gracefully:', error);
-          } finally {
-            setFieldLoading('subZoneArea', false);
-          }
-        }
-
-        if (fieldName === 'subZoneArea' && value) {
-          const subZoneIds = getSelectedOptionIds('subZoneArea', value);
-          if (!subZoneIds.length) return;
-          const gen = bumpCascadeGen('pincode');
-          setFieldLoading('pincode', true);
-          try {
-            const pincodesBySubZone = await Promise.all(subZoneIds.map((subZoneId) => fetchPincodes(subZoneId)));
-            const pincodes = mergeUniqueOptions(pincodesBySubZone);
-            if (isStaleCascadeGen('pincode', gen)) return;
-            updateFieldOptions('pincode', pincodes);
-          } catch (error) {
-            console.warn('Cascade fetch error handled gracefully:', error);
-          } finally {
-            setFieldLoading('pincode', false);
-          }
-        }
-
-        if (fieldName === 'mainCategory' && value) {
-          const mainCategoryIds = getSelectedOptionIds('mainCategory', value);
-          if (!mainCategoryIds.length) return;
-          invalidateCascadeTargets(['category', 'categorySub']);
-          const gen = bumpCascadeGen('category');
-          setFieldLoading('category', true);
-          try {
-            const categoriesByMainCategory = await Promise.all(
-              mainCategoryIds.map((mainCategoryId) => fetchCategories(mainCategoryId))
+          const filter = (overrides: Partial<typeof common> = {}) => ({ ...common, ...overrides });
+          // Only request descendants affected by this field, avoiding unrelated API calls.
+          const requests: Partial<Record<keyof LocationFilterValues, Promise<LocationOption[]>>> = {};
+          if (fieldName === 'country') requests.state = fetchStates(country[0]);
+          if (descendants.includes('city')) requests.city = fetchCities(undefined, filter());
+          if (descendants.includes('zoneArea')) requests.zoneArea = fetchZones(undefined, filter());
+          if (descendants.includes('subZoneArea')) requests.subZoneArea = fetchSubZones(undefined, filter());
+          if (descendants.includes('pincode')) requests.pincode = fetchPincodes({
+            country,
+            state,
+            city,
+            zone,
+            subZone,
+          });
+          if (descendants.includes('arterialRoute')) requests.arterialRoute = fetchArterialRoutes(undefined, filter());
+          const results = await Promise.all(
+            Object.entries(requests).map(async ([field, request]) => [field, await request!] as const)
+          );
+          results.forEach(([field, options]) => updateFieldOptions(field, options));
+          if (fieldName === 'state' || fieldName === 'city' || fieldName === 'zoneArea' || fieldName === 'subZoneArea' || fieldName === 'pincode' || fieldName === 'arterialRoute') {
+            await refreshOptionsForLocation(
+              state,
+              fieldName === 'state' ? [] : city,
+              fieldName === 'state' || fieldName === 'city' ? [] : zone,
+              fieldName === 'state' || fieldName === 'city' || fieldName === 'zoneArea' ? [] : subZone,
+              fieldName === 'state' || fieldName === 'city' || fieldName === 'zoneArea' || fieldName === 'subZoneArea'
+                ? []
+                : pincode,
+              fieldName === 'arterialRoute' ? arterialRoute : []
             );
-            const categories = mergeUniqueOptions(categoriesByMainCategory);
-            if (isStaleCascadeGen('category', gen)) return;
-            updateFieldOptions('category', categories);
-          } catch (error) {
-            console.warn('Cascade fetch error handled gracefully:', error);
-          } finally {
-            setFieldLoading('category', false);
           }
+          return;
         }
 
-        if (fieldName === 'category' && value) {
-          const categoryIds = getSelectedOptionIds('category', value);
-          if (!categoryIds.length) return;
-          invalidateCascadeTargets(['categorySub']);
-          const gen = bumpCascadeGen('categorySub');
-          setFieldLoading('categorySub', true);
-          try {
-            const subCategoriesByCategory = await Promise.all(
-              categoryIds.map((categoryId) => fetchSubCategories(categoryId))
-            );
-            const subCategories = mergeUniqueOptions(subCategoriesByCategory);
-            if (isStaleCascadeGen('categorySub', gen)) return;
-            updateFieldOptions('categorySub', subCategories);
-          } catch (error) {
-            console.warn('Cascade fetch error handled gracefully:', error);
-          } finally {
-            setFieldLoading('categorySub', false);
-          }
-        }
-
-        if (fieldName === 'modeOfMedia' && value) {
-          const modeOfMediaIds = getSelectedOptionIds('modeOfMedia', value);
-          if (!modeOfMediaIds.length) return;
-          invalidateCascadeTargets(['publisher', 'mainCategory', 'category', 'categorySub']);
-          const gen = bumpCascadeGen('publisher');
-          setFieldLoading('publisher', true);
-          try {
-            const publishersByMode = await Promise.all(
-              modeOfMediaIds.map((modeOfMediaValue) => fetchPublishers(modeOfMediaValue))
-            );
-            const publishers = mergeUniqueOptions(publishersByMode);
-            if (isStaleCascadeGen('publisher', gen)) return;
-            updateFieldOptions('publisher', publishers);
-          } catch (error) {
-            console.warn('Cascade fetch error handled gracefully:', error);
-          } finally {
-            setFieldLoading('publisher', false);
-          }
-        }
-
-        if (fieldName === 'publisher' && value) {
-          const publisherIds = getSelectedOptionIds('publisher', value);
-          if (!publisherIds.length) return;
-          invalidateCascadeTargets(['mainCategory', 'category', 'categorySub']);
-          const gen = bumpCascadeGen('mainCategory');
-          setFieldLoading('mainCategory', true);
-          try {
-            const mainCategoriesByPublisher = await Promise.all(
-              publisherIds.map((publisherValue) => fetchMainCategories(publisherValue))
-            );
-            const mainCategories = mergeUniqueOptions(mainCategoriesByPublisher);
-            if (isStaleCascadeGen('mainCategory', gen)) return;
-            updateFieldOptions('mainCategory', mainCategories);
-          } catch (error) {
-            console.warn('Cascade fetch error handled gracefully:', error);
-          } finally {
-            setFieldLoading('mainCategory', false);
-          }
-        }
-
-        if (fieldName === 'locationType' && value) {
-          const locationTypeIds = getSelectedOptionIds('locationType', value);
-          if (!locationTypeIds.length) return;
-          invalidateCascadeTargets(['orientation', 'resolution', 'screenLocation', 'stretch', 'property']);
-          const gen = bumpCascadeGen('orientation');
-          setFieldLoading('orientation', true);
-          try {
-            const orientationsByLocationType = await Promise.all(
-              locationTypeIds.map((locationTypeValue) => fetchOrientations(locationTypeValue))
-            );
-            const orientations = mergeUniqueOptions(orientationsByLocationType);
-            if (isStaleCascadeGen('orientation', gen)) return;
-            updateFieldOptions('orientation', orientations);
-          } catch (error) {
-            console.warn('Cascade fetch error handled gracefully:', error);
-          } finally {
-            setFieldLoading('orientation', false);
-          }
-        }
-
-        if (fieldName === 'orientation' && value) {
-          const orientationIds = getSelectedOptionIds('orientation', value);
-          if (!orientationIds.length) return;
-          invalidateCascadeTargets(['resolution', 'screenLocation', 'stretch', 'property']);
-          const gen = bumpCascadeGen('resolution');
-          setFieldLoading('resolution', true);
-          try {
-            const resolutionsByOrientation = await Promise.all(
-              orientationIds.map((orientationValue) => fetchResolutions(orientationValue))
-            );
-            const resolutions = mergeUniqueOptions(resolutionsByOrientation);
-            if (isStaleCascadeGen('resolution', gen)) return;
-            updateFieldOptions('resolution', resolutions);
-          } catch (error) {
-            console.warn('Cascade fetch error handled gracefully:', error);
-          } finally {
-            setFieldLoading('resolution', false);
-          }
-        }
-
-        if (fieldName === 'resolution' && value) {
-          const resolutionIds = getSelectedOptionIds('resolution', value);
-          if (!resolutionIds.length) return;
-          invalidateCascadeTargets(['screenLocation', 'stretch', 'property']);
-          const gen = bumpCascadeGen('screenLocation');
-          setFieldLoading('screenLocation', true);
-          try {
-            const screenLocationsByResolution = await Promise.all(
-              resolutionIds.map((resolutionValue) => fetchScreenLocations(resolutionValue))
-            );
-            const screenLocations = mergeUniqueOptions(screenLocationsByResolution);
-            if (isStaleCascadeGen('screenLocation', gen)) return;
-            updateFieldOptions('screenLocation', screenLocations);
-          } catch (error) {
-            console.warn('Cascade fetch error handled gracefully:', error);
-          } finally {
-            setFieldLoading('screenLocation', false);
-          }
-        }
-
-        if (fieldName === 'screenLocation' && value) {
-          const screenLocationIds = getSelectedOptionIds('screenLocation', value);
-          if (!screenLocationIds.length) return;
-          invalidateCascadeTargets(['stretch', 'property']);
-          const gen = bumpCascadeGen('stretch');
-          setFieldLoading('stretch', true);
-          try {
-            const stretchesByScreenLocation = await Promise.all(
-              screenLocationIds.map((screenLocationValue) => fetchStretches(screenLocationValue))
-            );
-            const stretches = mergeUniqueOptions(stretchesByScreenLocation);
-            if (isStaleCascadeGen('stretch', gen)) return;
-            updateFieldOptions('stretch', stretches);
-          } catch (error) {
-            console.warn('Cascade fetch error handled gracefully:', error);
-          } finally {
-            setFieldLoading('stretch', false);
-          }
-        }
-
-        if (fieldName === 'stretch' && value) {
-          const stretchIds = getSelectedOptionIds('stretch', value);
-          if (!stretchIds.length) return;
-          invalidateCascadeTargets(['property']);
-          const gen = bumpCascadeGen('property');
-          setFieldLoading('property', true);
-          try {
-            const propertiesByStretch = await Promise.all(
-              stretchIds.map((stretchValue) => fetchProperties(stretchValue))
-            );
-            const properties = mergeUniqueOptions(propertiesByStretch);
-            if (isStaleCascadeGen('property', gen)) return;
-            updateFieldOptions('property', properties);
-          } catch (error) {
-            console.warn('Cascade fetch error handled gracefully:', error);
-          } finally {
-            setFieldLoading('property', false);
-          }
+        const deviceCascade = {
+          // Each device attribute narrows the available values of the next attribute.
+          locationType: { child: 'orientation' as const, load: fetchOrientations },
+          orientation: { child: 'resolution' as const, load: fetchResolutions },
+          resolution: { child: 'screenLocation' as const, load: fetchScreenLocations },
+          screenLocation: { child: 'stretch' as const, load: fetchStretches },
+        }[fieldName as 'locationType' | 'orientation' | 'resolution' | 'screenLocation'];
+        if (deviceCascade) {
+          const child = deviceCascade.child;
+          const deviceDescendants: Record<string, Array<keyof LocationFilterValues>> = {
+            locationType: ['orientation', 'resolution', 'screenLocation', 'stretch'],
+            orientation: ['resolution', 'screenLocation', 'stretch'],
+            resolution: ['screenLocation', 'stretch'],
+            screenLocation: ['stretch'],
+            stretch: [],
+          };
+          const descendants = deviceDescendants[fieldName] || [];
+          setDraft((previous) => ({ ...previous, ...Object.fromEntries(descendants.map((item) => [item, ''])) }));
+          const selectedDevice = (field: keyof LocationFilterValues): Array<string | number> =>
+            getSelectedOptionIds(field, newDraft[field]);
+          const selectedDeviceApiValues = (field: keyof LocationFilterValues): Array<string | number> =>
+            field === 'locationType' || field === 'resolution'
+              ? getSelectedOptionValues(field, newDraft[field])
+              : selectedDevice(field);
+          const effectiveDeviceSelection = (field: keyof LocationFilterValues): Array<string | number> =>
+            field === fieldName ? selectedDeviceApiValues(field) : descendants.includes(field) ? [] : selectedDeviceApiValues(field);
+          const stretchFilters = {
+            publisher: selectedDevice('publisher'),
+            property: selectedDevice('property'),
+            locationType: effectiveDeviceSelection('locationType'),
+            orientation: effectiveDeviceSelection('orientation'),
+            resolution: effectiveDeviceSelection('resolution'),
+          };
+          const deviceParentFilters = {
+            publisher: selectedDevice('publisher'),
+            property: selectedDevice('property'),
+            locationType: effectiveDeviceSelection('locationType'),
+            orientation: effectiveDeviceSelection('orientation'),
+            resolution: effectiveDeviceSelection('resolution'),
+          };
+          const childSelection = selectedDeviceApiValues(fieldName);
+          setFieldLoading(child, Boolean(value));
+          setFieldLoading('resolution', fieldName === 'locationType' && Boolean(value));
+          setFieldLoading(
+            'screenLocation',
+            (fieldName === 'locationType' || fieldName === 'orientation') && Boolean(value)
+          );
+          const [childOptions, stretchOptions, resolutionOptions, screenLocationOptions] = await Promise.all([
+            value
+              ? child === 'orientation'
+                ? fetchOrientations(childSelection, deviceParentFilters)
+                : child === 'resolution'
+                  ? fetchResolutions(childSelection, deviceParentFilters)
+                  : child === 'screenLocation'
+                    ? fetchScreenLocations(childSelection, deviceParentFilters)
+                    : child === 'stretch'
+                      ? fetchStretches(childSelection, deviceParentFilters)
+                        : Promise.resolve(deviceOptionsRef.current[child] || [])
+              : Promise.resolve(deviceOptionsRef.current[child] || []),
+            fieldName !== 'stretch' && (value || Object.values(stretchFilters).some((items) => items.length))
+              ? fetchStretches(effectiveDeviceSelection('screenLocation'), stretchFilters)
+              : Promise.resolve(deviceOptionsRef.current.stretch || []),
+            fieldName === 'locationType' && value
+              ? fetchResolutions(undefined, deviceParentFilters)
+              : Promise.resolve(deviceOptionsRef.current.resolution || []),
+            (fieldName === 'locationType' || fieldName === 'orientation') && value
+              ? fetchScreenLocations(undefined, deviceParentFilters)
+              : Promise.resolve(deviceOptionsRef.current.screenLocation || []),
+          ]);
+          updateFieldOptions(child, childOptions);
+          updateFieldOptions('stretch', stretchOptions);
+          updateFieldOptions('resolution', resolutionOptions);
+          updateFieldOptions('screenLocation', screenLocationOptions);
+          setFieldLoading(child, false);
+          setFieldLoading('resolution', false);
+          setFieldLoading('screenLocation', false);
+          return;
         }
       } catch (error) {
         console.warn('Cascade fetch error handled gracefully:', error);
         // Errors are silently handled - dropdowns will show empty if API fails
       }
     },
-    [draft, getSelectedOptionIds, mergeUniqueOptions, setFieldLoading, updateFieldOptions]
+    [
+      draft,
+      getSelectedOptionIds,
+      getSelectedOptionValues,
+      refreshOptionsForLocation,
+      refreshPublisherOptionsForCategories,
+      refreshDeviceOptionsForCategories,
+      setFieldLoading,
+      updateFieldOptions,
+    ]
   );
 
   const handleApply = useCallback(() => {
+    // Convert draft option IDs back to labels because the parent filter state uses display values.
     const outgoing: LocationFilterValues = { ...draft };
     for (const field of MULTI_SELECT_FIELDS) {
       const opts = allOptions[field as string] || [];
@@ -891,29 +954,13 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
   }, [allOptions, draft, getNormalizedOptionLabel, onApply, onClose]);
 
   const handleReset = useCallback(() => {
-    setDraft({
-      country: 'India',
-      state: '',
-      city: '',
-      zoneArea: '',
-      subZoneArea: '',
-      pincode: '',
-      arterialRoute: '',
-      modeOfMedia: '',
-      publisher: '',
-      mainCategory: '',
-      category: '',
-      categorySub: '',
-      locationType: '',
-      orientation: '',
-      resolution: '',
-      screenLocation: '',
-      stretch: '',
-      property: '',
-    });
+    const emptyValues = Object.fromEntries(
+      Object.keys(draft).map((fieldName) => [fieldName, ''])
+    ) as LocationFilterValues;
+    setDraft(emptyValues);
     onReset();
     onClose();
-  }, [onReset, onClose]);
+  }, [draft, onReset, onClose]);
 
   // Close only on Escape key press (not on outside click)
   useEffect(() => {
@@ -957,24 +1004,7 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
   };
 
   const isFieldEnabled = (fieldName: keyof LocationFilterValues): boolean => {
-    if (fieldName === 'state') return Boolean(draft.country);
-    if (fieldName === 'city') return Boolean(draft.state);
-    if (fieldName === 'zoneArea') return Boolean(draft.city);
-    if (fieldName === 'subZoneArea') return Boolean(draft.zoneArea);
-    if (fieldName === 'pincode') return Boolean(draft.subZoneArea);
-    if (fieldName === 'arterialRoute') return Boolean(draft.city);
-
-    if (fieldName === 'publisher') return Boolean(draft.modeOfMedia);
-    if (fieldName === 'mainCategory') return Boolean(draft.publisher);
-    if (fieldName === 'category') return Boolean(draft.mainCategory);
-    if (fieldName === 'categorySub') return Boolean(draft.category);
-
-    if (fieldName === 'orientation') return Boolean(draft.locationType);
-    if (fieldName === 'resolution') return Boolean(draft.orientation);
-    if (fieldName === 'screenLocation') return Boolean(draft.resolution);
-    if (fieldName === 'stretch') return Boolean(draft.screenLocation);
-    if (fieldName === 'property') return Boolean(draft.stretch);
-
+    void fieldName;
     return true;
   };
 
@@ -995,10 +1025,16 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
       title: 'Category',
       fields: [
         { name: 'modeOfMedia', label: 'Mode of Media (Screen Type)' },
-        { name: 'publisher', label: 'Publisher' },
         { name: 'mainCategory', label: 'Main Category' },
         { name: 'category', label: 'Category' },
         { name: 'categorySub', label: 'Sub Category' },
+        { name: 'property', label: 'Property' },
+      ],
+    },
+    {
+      title: 'Publisher',
+      fields: [
+        { name: 'publisher', label: 'Publisher' },
       ],
     },
     {
@@ -1009,7 +1045,6 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
         { name: 'resolution', label: 'Resolution' },
         { name: 'screenLocation', label: 'Screen Location' },
         { name: 'stretch', label: 'Stretch' },
-        { name: 'property', label: 'Property' },
       ],
     },
   ];
