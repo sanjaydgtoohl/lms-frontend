@@ -1025,10 +1025,10 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
       title: 'Category',
       fields: [
         { name: 'modeOfMedia', label: 'Mode of Media (Screen Type)' },
-        { name: 'mainCategory', label: 'Main Category' },
-        { name: 'category', label: 'Category' },
-        { name: 'categorySub', label: 'Sub Category' },
-        { name: 'property', label: 'Property' },
+        { name: 'mainCategory', label: 'Main Category For Property' },
+        { name: 'category', label: 'Category For Property' },
+        { name: 'categorySub', label: 'Sub Category For Property' },
+        { name: 'property', label: 'Property Name' },
       ],
     },
     {
