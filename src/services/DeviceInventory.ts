@@ -1,4 +1,3 @@
-
 import { handleApiError } from '../utils/apiErrorHandler';
 import sspHttp from './sspHttp';
 import type {
@@ -6,47 +5,67 @@ import type {
   DeviceInventoryResponse,
   ListDeviceInventoryParams,
 } from '../types/inventory.types';
+import { exportDeviceInventoryExcel } from '../utils/deviceInventoryExcel';
 
 export type { DeviceData };
 
 const INVENTORY_ENDPOINT = '/inventory';
 
+function normalizeFilterValues(value?: string): string[] {
+  // UI multi-selects use CSV while the inventory API expects distinct values.
+  if (!value) return [];
+
+  const normalized = String(value)
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  return Array.from(new Set(normalized));
+}
+
 function buildInventoryQueryParams(
   params: ListDeviceInventoryParams,
   options?: { includePagination?: boolean }
-): Record<string, string | number> {
+): Record<string, string | number | Array<string | number>> {
   const includePagination = options?.includePagination ?? true;
-  const query: Record<string, string | number> = {};
+  const query: Record<string, string | number | Array<string | number>> = {};
 
   if (includePagination) {
     query.page = params.page ?? 1;
     query.per_page = params.per_page ?? 10;
   }
 
-  const append = (key: string, value?: string) => {
+  const appendScalar = (key: string, value?: string) => {
     const trimmed = value?.trim();
     if (trimmed) query[key] = trimmed;
   };
 
-  append('search', params.search);
-  append('country', params.country);
-  append('state', params.state);
-  append('city', params.city);
-  append('zone', params.zone);
-  append('sub_zone_area', params.subZoneArea);
-  append('pincode', params.pincode);
-  append('arterial_route', params.arterialRoute);
-  append('mode_of_media', params.modeOfMedia);
-  append('publisher', params.publisher);
-  append('main_category_name', params.mainCategory);
-  append('sub_category_name', params.categorySub);
-  append('category_name', params.category);
-  append('location_type', params.locationType);
-  append('orientation', params.orientation);
-  append('resolution', params.resolution);
-  append('screen_location', params.screenLocation);
-  append('stretch', params.stretch);
-  append('property', params.property);
+  const appendMulti = (key: string, value?: string) => {
+    // Send repeated bracketed query keys so all selected filter values reach the API.
+    const values = normalizeFilterValues(value);
+    if (!values.length) return;
+    query[`${key}[]`] = values;
+  };
+
+  appendScalar('search', params.search);
+  appendScalar('country', params.country);
+  appendMulti('state', params.state);
+  appendScalar('city', params.city);
+  appendMulti('zone', params.zone);
+  appendMulti('sub_zone_area', params.subZoneArea);
+  appendMulti('pincode', params.pincode);
+  appendMulti('arterial_route', params.arterialRoute);
+  appendMulti('mode_of_media', params.modeOfMedia);
+  appendScalar('publisher', params.publisher);
+  appendMulti('main_category_name', params.mainCategory);
+  appendMulti('sub_category_name', params.categorySub);
+  appendMulti('category_name', params.category);
+  appendMulti('location_type', params.locationType);
+  appendMulti('orientation', params.orientation);
+  appendMulti('resolution', params.resolution);
+  appendMulti('screen_location', params.screenLocation);
+  appendMulti('stretch', params.stretch);
+  appendMulti('property', params.property);
 
   return query;
 }
@@ -65,7 +84,19 @@ export function buildDeviceInventoryExportQuery(
   );
   const search = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
-    search.set(key, String(value));
+    if (Array.isArray(value)) {
+      // Preserve multi-select filters as repeated query parameters instead of one comma-joined value.
+      value.forEach((item) => {
+        if (item !== undefined && item !== null && String(item).trim() !== '') {
+          search.append(key, String(item));
+        }
+      });
+      return;
+    }
+
+    if (value !== undefined && value !== null && String(value).trim() !== '') {
+      search.set(key, String(value));
+    }
   });
   const query = search.toString();
   return query ? `?${query}` : '';
@@ -145,6 +176,7 @@ export async function fetchAllDeviceInventoryRows(
   filters: Omit<ListDeviceInventoryParams, 'page' | 'per_page'>,
   options: FetchAllDeviceInventoryOptions = {}
 ): Promise<DeviceData[]> {
+  // Exports must bypass the table page size and collect every page matching the active filters.
   const { onProgress } = options;
   let page = 1;
   let all: DeviceData[] = [];
@@ -266,7 +298,12 @@ async function readExportErrorMessage(data: Blob, status?: number): Promise<stri
     return `Export failed${statusSuffix}. The server returned an unexpected image response.`;
   }
 
-  if (trimmed.length > 240 || /[^\x09\x0A\x0D\x20-\x7E]/.test(trimmed.slice(0, 32))) {
+  const hasUnexpectedControlCharacter = [...trimmed.slice(0, 32)].some((char) => {
+    const code = char.charCodeAt(0);
+    return code < 0x20 && code !== 0x09 && code !== 0x0a && code !== 0x0d;
+  });
+
+  if (trimmed.length > 240 || hasUnexpectedControlCharacter) {
     return `Export failed${statusSuffix}. The server returned an unexpected file response.`;
   }
 
@@ -358,12 +395,13 @@ export async function downloadDeviceInventoryExport(
   }
 }
 
-/** Trigger Excel export for the current inventory filters (dedicated API). */
+/** Export all filtered inventory rows into a single Excel workbook. */
 export async function exportDeviceInventoryExcelFile(
   filters: DeviceInventoryFilterParams
 ): Promise<void> {
-  const path = buildDeviceInventoryExportPath(filters, 'excel');
-  await downloadDeviceInventoryExport(path, 'device-inventory.xlsx');
+  // Build the workbook from the complete filtered result rather than a single export response row.
+  const rows = await fetchAllDeviceInventoryRows(filters);
+  exportDeviceInventoryExcel(rows);
 }
 
 /** Trigger PPT export for the current inventory filters (dedicated API). */
