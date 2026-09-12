@@ -11,8 +11,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { listBrands } from '../../services/BrandMaster';
 import { listAgencies } from '../../services/AgencyMaster';
-import { listAttendees } from '../../services/AllUsers';
-import { listChildPlannersByLead } from '../../api/lookups';
+import { listChildPlaningUsers } from '../../api/lookups';
 import { listLeads } from '../../services/AllLeads';
 import { fetchBriefStatuses } from '../../services/BriefStatus';
 import { getPriorities } from '../../services/Priority';
@@ -503,41 +502,20 @@ const CreateBriefForm: React.FC<MasterFormWithSaveProps> = ({ onClose, onSave, i
     }
   }, [mode]);
 
-  // Load Assign To options from child-planners-by-lead API (based on selected contact person / lead id)
+  // Load Assign To options from the child planning users hierarchy.
   useEffect(() => {
     let mounted = true;
 
     (async () => {
-      const leadId = String(form.contactPerson || '').trim();
-
-      if (!leadId) {
-        if (!mounted) return;
-        setUsers([]);
-        setUsersError(null);
-        setUsersLoading(false);
-        return;
-      }
-
       try {
         setUsersLoading(true);
         setUsersError(null);
 
-        let opts: Array<{ value: string; label: string }> = [];
-
-        try {
-          const hierarchyUsers = await listChildPlannersByLead(leadId);
-          opts = hierarchyUsers.map((u) => ({
-            value: String(u.id),
-            label: String(u.name),
-          }));
-        } catch (err) {
-          console.error('Failed to load assign to users for lead:', err);
-          const res = await listAttendees(1, 200);
-          opts = (res.data || []).map((u) => ({
-            value: String(u.id),
-            label: String(u.name),
-          }));
-        }
+        const hierarchyUsers = await listChildPlaningUsers();
+        const opts = hierarchyUsers.map((u) => ({
+          value: String(u.id),
+          label: String(u.name),
+        }));
 
         if (!mounted) return;
         setUsers(opts);
@@ -562,7 +540,7 @@ const CreateBriefForm: React.FC<MasterFormWithSaveProps> = ({ onClose, onSave, i
     return () => {
       mounted = false;
     };
-  }, [form.contactPerson, initialData, mode]);
+  }, [initialData, mode]);
 
   // Load contact persons (from leads) on mount
   useEffect(() => {

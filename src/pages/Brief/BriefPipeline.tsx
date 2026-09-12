@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import CreateBriefForm from './CreateBriefForm';
-import { listChildUsers, listChildPlannersByBrief } from '../../api/lookups';
+import { listChildPlaningUsers } from '../../api/lookups';
 import { usePermissions } from '../../hooks/SidebarMenuHooks';
 import MasterView from '../../components/ui/MasterView';
 import Pagination from '../../components/ui/Pagination';
@@ -215,7 +215,7 @@ const BriefPipeline: React.FC = () => {
   }, [currentPage, itemsPerPage, searchQuery]);
 
 
-  // Assign To options per brief row (fetched from child-planners-by-brief API)
+  // Assign To options shared by all brief rows.
   const [assignOptionsByBriefId, setAssignOptionsByBriefId] = useState<Record<string, UserOption[]>>({});
 
   useEffect(() => {
@@ -227,26 +227,18 @@ const BriefPipeline: React.FC = () => {
         return;
       }
 
-      const results = await Promise.all(
-        currentData.map(async (brief) => {
-          try {
-            const users = await listChildPlannersByBrief(brief.id);
-            return [brief.id, users.map((u) => ({ id: u.id, name: u.name }))] as const;
-          } catch (err) {
-            console.error(`Failed to fetch assign to users for brief ${brief.id}:`, err);
-            try {
-              const users = await listChildUsers(1000);
-              return [brief.id, users.map((u) => ({ id: u.id, name: u.name }))] as const;
-            } catch (fallbackErr) {
-              console.error(`Failed fallback assign to users for brief ${brief.id}:`, fallbackErr);
-              return [brief.id, []] as const;
-            }
-          }
-        })
-      );
+      try {
+        const users = await listChildPlaningUsers();
+        const options = users.map((u) => ({ id: u.id, name: u.name }));
+        const optionsByBriefId = Object.fromEntries(
+          currentData.map((brief) => [brief.id, options])
+        );
 
-      if (cancelled) return;
-      setAssignOptionsByBriefId(Object.fromEntries(results));
+        if (!cancelled) setAssignOptionsByBriefId(optionsByBriefId);
+      } catch (err) {
+        console.error('Failed to fetch child planning users:', err);
+        if (!cancelled) setAssignOptionsByBriefId({});
+      }
     };
 
     fetchAssignOptionsForPage();
