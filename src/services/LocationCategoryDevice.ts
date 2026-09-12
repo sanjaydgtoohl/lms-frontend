@@ -286,11 +286,15 @@ export async function fetchCountries(): Promise<LocationOption[]> {
   }
 }
 
-export async function fetchStates(countryId?: string | number): Promise<LocationOption[]> {
+export async function fetchStates(countryId?: string | number | Array<string | number>): Promise<LocationOption[]> {
   try {
-    const hasCountry = countryId !== undefined && countryId !== null && String(countryId).trim() !== '';
+    const countries = Array.isArray(countryId) ? countryId : countryId !== undefined && countryId !== null ? [countryId] : [];
+    const validCountries = countries
+      .filter((c) => c !== undefined && c !== null && String(c).trim() !== '')
+      .map((c) => String(c).trim());
+
     return await makeApiRequest('/location/states', {
-      ...(hasCountry ? { 'country[]': [String(countryId)] } : {}),
+      ...(validCountries.length ? { 'country[]': validCountries } : {}),
     });
   } catch (error) {
     console.warn('Warning: Could not fetch states:', error);

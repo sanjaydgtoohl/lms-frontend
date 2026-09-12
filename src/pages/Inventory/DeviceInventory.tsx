@@ -25,7 +25,7 @@ const ITEMS_PER_PAGE = 10;
 const DeviceInventory: React.FC = () => {
   const filterAnchorRef = useRef<HTMLButtonElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterOpen, setFilterOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(true);
   const [appliedLocation, setAppliedLocation] = useState(DEFAULT_APPLIED_LOCATION);
   const [selectedDevice, setSelectedDevice] = useState<DeviceData | null>(null);
 
@@ -88,7 +88,7 @@ const DeviceInventory: React.FC = () => {
   );
 
   return (
-    <div className="flex-1 w-full max-w-full overflow-x-hidden">
+    <div className="flex-1 w-full max-w-full overflow-x-hidden space-y-4">
       <MasterHeader
         onCreateClick={() => undefined}
         createButtonLabel="Add Device"
@@ -97,6 +97,24 @@ const DeviceInventory: React.FC = () => {
         breadcrumbItems={[{ label: 'Device Inventory', path: '/inventory/device' }]}
       />
 
+      {/* Top: All Filter Cards in ONE horizontal row */}
+      {filterOpen && (
+        <FilterPopup
+          isOpen={filterOpen}
+          appliedValues={appliedLocation}
+          onApply={(values) => {
+            setAppliedLocation(values);
+            resetToFirstPage();
+          }}
+          onReset={() => {
+            setAppliedLocation(DEFAULT_APPLIED_LOCATION);
+            resetToFirstPage();
+          }}
+          onClose={() => setFilterOpen(false)}
+        />
+      )}
+
+      {/* Below: Full-width Inventory List/Table */}
       <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
         <div className="flex flex-row flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-gray-50 px-3 py-3 md:flex-nowrap md:px-6 md:py-4">
           <div>
@@ -130,7 +148,7 @@ const DeviceInventory: React.FC = () => {
                   <button
                     ref={filterAnchorRef}
                     type="button"
-                    onClick={() => setFilterOpen((open) => !open)}
+                    onClick={() => setFilterOpen((prev) => !prev)}
                     aria-expanded={filterOpen}
                     aria-haspopup="dialog"
                     aria-label="Filter devices"
@@ -145,19 +163,6 @@ const DeviceInventory: React.FC = () => {
                 }
                 onSearch={(query) => {
                   setSearchQuery(query);
-                  resetToFirstPage();
-                }}
-              />
-              <FilterPopup
-                isOpen={filterOpen}
-                onClose={() => setFilterOpen(false)}
-                appliedValues={appliedLocation}
-                onApply={(values) => {
-                  setAppliedLocation(values);
-                  resetToFirstPage();
-                }}
-                onReset={() => {
-                  setAppliedLocation(DEFAULT_APPLIED_LOCATION);
                   resetToFirstPage();
                 }}
               />
