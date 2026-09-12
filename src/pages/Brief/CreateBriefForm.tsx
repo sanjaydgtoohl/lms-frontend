@@ -897,15 +897,31 @@ const CreateBriefForm: React.FC<MasterFormWithSaveProps> = ({ onClose, onSave, i
     if (!form.productName || String(form.productName).trim() === '') next.productName = 'Please Enter Product Name';
     if (!form.budget || String(form.budget).trim() === '') next.budget = 'Please Enter Brief Budget';
 
+    const parseDate = (dStr: string) => {
+      const [dd, mm, yyyy] = String(dStr).split('-');
+      return new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+    };
+
+    if (form.submissionDate && form.campaignStartDate) {
+      const sub = parseDate(form.submissionDate);
+      const start = parseDate(form.campaignStartDate);
+      if (!isNaN(sub.getTime()) && !isNaN(start.getTime()) && start.getTime() <= sub.getTime()) {
+        next.campaignStartDate = 'Campaign start date must be after submission date.';
+      }
+    }
+
     if (form.campaignStartDate && form.campaignEndDate) {
-      const parseDate = (dStr: string) => {
-        const [dd, mm, yyyy] = String(dStr).split('-');
-        return new Date(Number(yyyy), Number(mm) - 1, Number(dd));
-      };
       const start = parseDate(form.campaignStartDate);
       const end = parseDate(form.campaignEndDate);
       if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end.getTime() < start.getTime()) {
         next.campaignEndDate = 'End date cannot be before start date.';
+      }
+    }
+
+    if (form.attachmentFile) {
+      const ext = form.attachmentFile.name.split('.').pop()?.toLowerCase() || '';
+      if (!['pdf', 'jpg', 'jpeg', 'png', 'docx', 'doc'].includes(ext)) {
+        next.attachmentFile = 'Only PDF, JPG, PNG, and DOCX files are allowed.';
       }
     }
 
@@ -1065,6 +1081,18 @@ const CreateBriefForm: React.FC<MasterFormWithSaveProps> = ({ onClose, onSave, i
     return form.campaignDuration && !isNaN(durVal) ? durVal : 0;
   };
 
+  // Campaign Start Date must be after Submission Date
+  const getMinCampaignStartDate = () => {
+    if (calendarDate) {
+      const nextDay = new Date(calendarDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+      return nextDay;
+    }
+    const today = new Date();
+    today.setDate(today.getDate() + 1);
+    return today;
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -1209,7 +1237,7 @@ const CreateBriefForm: React.FC<MasterFormWithSaveProps> = ({ onClose, onSave, i
                 </div>
                 <div>
                   <label className="block text-sm text-gray-800 mb-1">Attach File</label>
-                  <div className="border border-gray-200 rounded-lg bg-white p-3">
+                  <div className={`border rounded-lg bg-white p-3 transition-colors ${errors.attachmentFile ? 'border-red-500 bg-red-50' : 'border border-gray-200'}`}>
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
                         <div className="truncate text-sm font-medium text-gray-900">
@@ -1254,13 +1282,37 @@ const CreateBriefForm: React.FC<MasterFormWithSaveProps> = ({ onClose, onSave, i
                       id="attachmentFile"
                       type="file"
                       name="attachmentFile"
+                      accept=".pdf,.jpg,.jpeg,.png,.docx,.doc,application/pdf,image/jpeg,image/png,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword"
                       onChange={e => {
                         const file = e.target.files?.[0] ?? null;
-                        setForm(prev => ({ ...prev, attachmentFile: file }));
+                        if (file) {
+                          const ext = file.name.split('.').pop()?.toLowerCase() || '';
+                          if (!['pdf', 'jpg', 'jpeg', 'png', 'docx', 'doc'].includes(ext)) {
+                            setErrors(prev => ({
+                              ...prev,
+                              attachmentFile: 'Only PDF, JPG, PNG, and DOCX files are allowed.'
+                            }));
+                            setForm(prev => ({ ...prev, attachmentFile: null }));
+                            e.target.value = '';
+                            return;
+                          }
+                          setErrors(prev => ({ ...prev, attachmentFile: '' }));
+                          setForm(prev => ({ ...prev, attachmentFile: file }));
+                        } else {
+                          setForm(prev => ({ ...prev, attachmentFile: null }));
+                        }
                       }}
                       className="hidden"
                     />
                   </div>
+                  {errors.attachmentFile && (
+                    <div id="attachmentFile-error" className="text-xs text-red-600 mt-1.5 flex items-center gap-1" role="alert">
+                      <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      {errors.attachmentFile}
+                    </div>
+                  )}
                 </div>
 
               </div>
@@ -1336,14 +1388,35 @@ const CreateBriefForm: React.FC<MasterFormWithSaveProps> = ({ onClose, onSave, i
                       selected={calendarDate}
                       onChange={date => {
                         setCalendarDate(date);
+                        setErrors(prev => ({ ...prev, submissionDate: '' }));
                         if (date) {
                           const d = date;
                           const dd = String(d.getDate()).padStart(2, '0');
                           const mm = String(d.getMonth() + 1).padStart(2, '0');
                           const yyyy = d.getFullYear();
+                          const formattedSubDate = `${dd}-${mm}-${yyyy}`;
+
+                          // If campaign start date is already selected and is <= new submission date, reset it
+                          if (calendarCampaignStartDate && calendarCampaignStartDate <= date) {
+                            setCalendarCampaignStartDate(null);
+                            setCalendarCampaignEndDate(null);
+                            setForm(prev => ({
+                              ...prev,
+                              submissionDate: formattedSubDate,
+                              campaignStartDate: '',
+                              campaignEndDate: '',
+                            }));
+                            setErrors(prev => ({ ...prev, campaignStartDate: '', campaignEndDate: '' }));
+                          } else {
+                            setForm(prev => ({
+                              ...prev,
+                              submissionDate: formattedSubDate,
+                            }));
+                          }
+                        } else {
                           setForm(prev => ({
                             ...prev,
-                            submissionDate: `${dd}-${mm}-${yyyy}`
+                            submissionDate: '',
                           }));
                         }
                       }}
@@ -1369,6 +1442,7 @@ const CreateBriefForm: React.FC<MasterFormWithSaveProps> = ({ onClose, onSave, i
                       selected={calendarTime}
                       onChange={date => {
                         setCalendarTime(date);
+                        setErrors(prev => ({ ...prev, submissionTime: '' }));
                         if (date) {
                           const d = date;
                           const hh = String(d.getHours()).padStart(2, '0');
@@ -1406,15 +1480,37 @@ const CreateBriefForm: React.FC<MasterFormWithSaveProps> = ({ onClose, onSave, i
                       selected={calendarCampaignStartDate}
                       onChange={date => {
                         setCalendarCampaignStartDate(date);
+                        setErrors(prev => ({ ...prev, campaignStartDate: '' }));
                         if (date) {
                           const d = date;
                           const dd = String(d.getDate()).padStart(2, '0');
                           const mm = String(d.getMonth() + 1).padStart(2, '0');
                           const yyyy = d.getFullYear();
-                          setForm(prev => ({ ...prev, campaignStartDate: `${dd}-${mm}-${yyyy}` }));
+                          const formattedStartDate = `${dd}-${mm}-${yyyy}`;
+
+                          // If campaign end date is already selected and is < new campaign start date, reset it
+                          if (calendarCampaignEndDate && calendarCampaignEndDate < date) {
+                            setCalendarCampaignEndDate(null);
+                            setForm(prev => ({
+                              ...prev,
+                              campaignStartDate: formattedStartDate,
+                              campaignEndDate: '',
+                            }));
+                            setErrors(prev => ({ ...prev, campaignEndDate: '' }));
+                          } else {
+                            setForm(prev => ({
+                              ...prev,
+                              campaignStartDate: formattedStartDate,
+                            }));
+                          }
+                        } else {
+                          setForm(prev => ({
+                            ...prev,
+                            campaignStartDate: '',
+                          }));
                         }
                       }}
-                      minDate={new Date()}
+                      minDate={getMinCampaignStartDate()}
                       dateFormat="dd-MM-yyyy"
                       placeholderText="DD-MM-YYYY"
                       className={`w-full px-3 py-2 rounded-lg bg-white transition-colors ${errors.campaignStartDate ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-gray-200'}`}
@@ -1435,15 +1531,18 @@ const CreateBriefForm: React.FC<MasterFormWithSaveProps> = ({ onClose, onSave, i
                       selected={calendarCampaignEndDate}
                       onChange={date => {
                         setCalendarCampaignEndDate(date);
+                        setErrors(prev => ({ ...prev, campaignEndDate: '' }));
                         if (date) {
                           const d = date;
                           const dd = String(d.getDate()).padStart(2, '0');
                           const mm = String(d.getMonth() + 1).padStart(2, '0');
                           const yyyy = d.getFullYear();
                           setForm(prev => ({ ...prev, campaignEndDate: `${dd}-${mm}-${yyyy}` }));
+                        } else {
+                          setForm(prev => ({ ...prev, campaignEndDate: '' }));
                         }
                       }}
-                      minDate={calendarCampaignStartDate || new Date()}
+                      minDate={calendarCampaignStartDate || getMinCampaignStartDate()}
                       dateFormat="dd-MM-yyyy"
                       placeholderText="DD-MM-YYYY"
                       className={`w-full px-3 py-2 rounded-lg bg-white transition-colors ${errors.campaignEndDate ? 'border border-red-500 bg-red-50 focus:ring-red-500' : 'border border-gray-200'}`}

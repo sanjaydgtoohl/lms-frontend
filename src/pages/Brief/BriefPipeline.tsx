@@ -30,7 +30,8 @@ import { setUnreadCount, setNotifications } from '../../redux/slices/notificatio
 import { getUnreadNotificationCount, listNotifications } from '../../services/notifications';
 import FilePreviewModal from '../../components/ui/FilePreviewModal';
 import { Eye } from 'lucide-react';
-import type { BriefCreateLocationState } from '../../utils/briefLeadPrefill';
+import { buildBriefInitialDataFromLead, type BriefCreateLocationState } from '../../utils/briefLeadPrefill';
+import { getLeadById } from '../../api/leads';
 import type { UserOption } from '../../types/lead/lead.types';
 
 type Brief = ServiceBriefItem;
@@ -73,7 +74,9 @@ const BriefPipeline: React.FC = () => {
   const navigate = useNavigate();
   const params = useParams();
   const location = useLocation();
-  const leadBriefPrefill = (location.state as BriefCreateLocationState | null)?.leadBriefPrefill;
+  const [leadBriefPrefill, setLeadBriefPrefill] = useState<Record<string, unknown> | undefined>(
+    (location.state as BriefCreateLocationState | null)?.leadBriefPrefill
+  );
 
   const handleEdit = (id: string) => navigate(ROUTES.BRIEF.EDIT(encodeURIComponent(id)));
   const handleView = (id: string) => navigate(ROUTES.BRIEF.DETAIL(encodeURIComponent(id)));
@@ -130,8 +133,6 @@ const BriefPipeline: React.FC = () => {
     }
 
     if (location.pathname.endsWith('/edit') && id) {
-      // Try to find in-memory first, otherwise fetch single brief from API
-      const found = briefs.find(b => b.id === id) || null;
       const patchSubmissionFields = (item: any) => {
         // If item.submission_date exists, parse and add submissionDate/submissionTime
         if (item && item.submission_date) {
@@ -152,12 +153,6 @@ const BriefPipeline: React.FC = () => {
         }
         return item;
       };
-      if (found) {
-        setEditItem(patchSubmissionFields(found));
-        setViewItem(null);
-        return;
-      }
-
       const mounted = true;
       (async () => {
         try {
@@ -188,6 +183,31 @@ const BriefPipeline: React.FC = () => {
     setViewItem(null);
     setEditItem(null);
   }, [location.pathname, params.id, briefs]);
+
+  useEffect(() => {
+    if (!location.pathname.endsWith('/create')) return;
+
+    const leadId = new URLSearchParams(location.search).get('leadId')?.replace(/^#/, '');
+    if (!leadId) return;
+
+    let mounted = true;
+    (async () => {
+      try {
+        setLoading(true);
+        const lead = await getLeadById(leadId);
+        if (!mounted || !lead) return;
+        setLeadBriefPrefill(buildBriefInitialDataFromLead(lead));
+      } catch (err) {
+        console.error('Failed to fetch lead for brief creation', err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [location.pathname, location.search]);
 
   // Fetch briefs from API when page or search changes
   useEffect(() => {
